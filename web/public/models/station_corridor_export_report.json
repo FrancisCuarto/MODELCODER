@@ -1,0 +1,177 @@
+{
+  "export_metadata": {
+    "generator": "ProceduralAssetGenerator",
+    "asset_name": "station_corridor",
+    "timestamp": "2026-10-15T22:33:46.391938Z",
+    "format": "glTF 2.0 Binary (.glb)",
+    "output_file": "D:\\MODELCODER\\web\\public\\models\\station_corridor.glb",
+    "file_size_bytes": 106968,
+    "file_size_kb": 104.46
+  },
+  "normalization": {
+    "units": "Meters (1 Blender unit = 1.0 Godot unit)",
+    "scale_applied": true,
+    "rotation_applied": true,
+    "location_applied": true,
+    "pivot_rule": "floor_center",
+    "pivot_offset_applied": [
+      -0.0,
+      -0.0,
+      0.08
+    ],
+    "normals_shading": "Flat (poly.use_smooth = False, PS1 low-poly crisp)",
+    "normals_recalculated": true,
+    "uv_mapping": "TEXCOORD_0 (Component-mapped to PS1 Weathered Texture Atlas)",
+    "vertex_colors": "COLOR_0 (Col / PS1 Gouraud tinting and wear)"
+  },
+  "dimensions_meters": {
+    "x": 3.32,
+    "y": 4.0,
+    "z": 3.16
+  },
+  "geometry_metrics": {
+    "total_triangles": 192,
+    "total_vertices": 128,
+    "target_tri_budget": 550,
+    "budget_compliance_ratio": 0.35,
+    "object_count": 4,
+    "hierarchy": [
+      {
+        "name": "station_corridor",
+        "type": "MESH",
+        "parent": null,
+        "triangles": 192,
+        "vertices": 128
+      },
+      {
+        "name": "socket_item_spawn",
+        "type": "EMPTY",
+        "parent": "station_corridor",
+        "triangles": 0,
+        "vertices": 0
+      },
+      {
+        "name": "socket_light",
+        "type": "EMPTY",
+        "parent": "station_corridor",
+        "triangles": 0,
+        "vertices": 0
+      },
+      {
+        "name": "socket_player_interact",
+        "type": "EMPTY",
+        "parent": "station_corridor",
+        "triangles": 0,
+        "vertices": 0
+      }
+    ]
+  },
+  "materials": {
+    "count": 7,
+    "compacted": true,
+    "list": [
+      {
+        "name": "mat_psx_industrial_hazard_fluorescent_lit_w50",
+        "roughness": 0.18,
+        "metallic": 0.0,
+        "emission": "3.0x"
+      },
+      {
+        "name": "mat_psx_industrial_hazard_rubber_tire_w50",
+        "roughness": 0.9,
+        "metallic": 0.0,
+        "emission": "None"
+      },
+      {
+        "name": "mat_psx_industrial_hazard_floor_metal_w50",
+        "roughness": 0.78,
+        "metallic": 0.32,
+        "emission": "None"
+      },
+      {
+        "name": "mat_psx_industrial_hazard_floor_hazard_w50",
+        "roughness": 0.72,
+        "metallic": 0.1,
+        "emission": "None"
+      },
+      {
+        "name": "mat_psx_industrial_hazard_wall_bulkhead_w50",
+        "roughness": 0.74,
+        "metallic": 0.28,
+        "emission": "None"
+      },
+      {
+        "name": "mat_psx_industrial_hazard_wall_support_beam_w50",
+        "roughness": 0.52,
+        "metallic": 0.75,
+        "emission": "None"
+      },
+      {
+        "name": "mat_psx_industrial_hazard_ceiling_girder_w50",
+        "roughness": 0.65,
+        "metallic": 0.6,
+        "emission": "None"
+      }
+    ]
+  },
+  "collision": {
+    "enabled": false,
+    "node_name": "None",
+    "shape_type": "box",
+    "godot_suffix": "-convcolonly",
+    "extents": [
+      3.32,
+      4.0,
+      3.16
+    ]
+  },
+  "sockets": [
+    {
+      "name": "socket_player_interact",
+      "position": [
+        0.0,
+        -2.55,
+        0.0
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "Standard player character interaction stand point"
+    },
+    {
+      "name": "socket_item_spawn",
+      "position": [
+        0.0,
+        0.0,
+        3.18
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "Prop or pickup spawn snap position (keycards, ammo, medical items)"
+    },
+    {
+      "name": "socket_light",
+      "position": [
+        0.0,
+        0.0,
+        2.686
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "OmniLight3D / SpotLight3D mount anchor point"
+    }
+  ],
+  "godot_4_validation": {
+    "tested_in_godot": false,
+    "message": "Live Godot test not executed"
+  },
+  "warnings": []
+}

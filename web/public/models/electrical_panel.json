@@ -1,0 +1,121 @@
+{
+  "generator": "ProceduralAssetGenerator",
+  "model_name": "electrical_panel",
+  "seed": 1337,
+  "timestamp": "2026-10-15T22:33:45.589508Z",
+  "mesh_metrics": {
+    "triangle_count": 490,
+    "vertex_count": 322,
+    "target_tri_budget": 450,
+    "budget_compliance_ratio": 1.09,
+    "dimensions_meters": {
+      "width": 0.716,
+      "height": 1.3509,
+      "depth": 0.2739
+    },
+    "has_vertex_colors": true,
+    "materials_assigned": [
+      "mat_psx_industrial_hazard_casing_w50",
+      "mat_psx_industrial_hazard_casing_inner_w50",
+      "mat_psx_industrial_hazard_mounting_w50",
+      "mat_psx_industrial_hazard_crt_frame_w50",
+      "mat_psx_industrial_hazard_crt_screen_w50",
+      "mat_psx_industrial_hazard_btn_yellow_w50",
+      "mat_psx_industrial_hazard_btn_blue_w50",
+      "mat_psx_industrial_hazard_switch_metal_w50",
+      "mat_psx_industrial_hazard_switch_base_w50",
+      "mat_psx_industrial_hazard_screw_w50",
+      "mat_psx_industrial_hazard_led_green_w50",
+      "mat_psx_industrial_hazard_led_red_w50",
+      "mat_psx_industrial_hazard_cable_black_w50",
+      "mat_psx_industrial_hazard_cable_hazard_w50"
+    ]
+  },
+  "config_parameters": {
+    "seed": 1337,
+    "target_tri_budget": 450,
+    "name": "electrical_panel",
+    "wear_level": 0.5,
+    "add_collision_mesh": false,
+    "collision_type": "box",
+    "collision_suffix": "-convcolonly",
+    "pivot_rule": "floor_center",
+    "export_subcomponents": false,
+    "palette_name": "industrial_hazard",
+    "emission_scale": 1.0,
+    "extra_params": {},
+    "width": 0.7,
+    "height": 0.9,
+    "depth": 0.22,
+    "wall_thickness": 0.035,
+    "has_crt": true,
+    "crt_size_ratio": 0.38,
+    "crt_phosphor_color": "green",
+    "crt_bulge": 0.025,
+    "button_rows": 2,
+    "button_cols": 3,
+    "switch_count": 2,
+    "indicator_count": 3,
+    "cable_count": 2,
+    "has_knife_switch": false,
+    "door_ajar": false,
+    "door_open_angle": 35.0,
+    "has_digital_readout": true,
+    "has_side_vents": true,
+    "has_mounting_flanges": true,
+    "style_palette": "industrial_hazard"
+  },
+  "sockets": [
+    {
+      "name": "socket_player_interact",
+      "position": [
+        0.0,
+        -1.225,
+        0.0
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "Standard player character interaction stand point"
+    },
+    {
+      "name": "socket_item_spawn",
+      "position": [
+        0.0,
+        0.0,
+        0.294
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "Prop or pickup spawn snap position (keycards, ammo, medical items)"
+    },
+    {
+      "name": "socket_light",
+      "position": [
+        0.0,
+        0.0,
+        0.233
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "OmniLight3D / SpotLight3D mount anchor point"
+    }
+  ],
+  "godot_4_compatibility": {
+    "format": "glTF 2.0 Binary (.glb)",
+    "unit": "meters (1.0 Blender unit = 1.0 Godot unit)",
+    "forward_axis": "-Z",
+    "up_axis": "+Y",
+    "collision_mesh_convention": "Child node with -col or -colonly creates Godot StaticBody3D collision shape",
+    "vertex_colors": "Exported in COLOR_0 accessor (usable with StandardMaterial3D or PSX shader)",
+    "pbr_materials": "Exported as glTF PBR metallic/roughness + emissive"
+  }
+}

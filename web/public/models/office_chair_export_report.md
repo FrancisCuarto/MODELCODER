@@ -1,12 +1,12 @@
 # Informe de Exportación a Godot 4 — office_chair
-**Estado:** ✅ EXITOSA | **Fecha:** `2026-10-15T19:13:37.444537Z` | **Generador:** `OfficeChairGenerator`
+**Estado:** ✅ EXITOSA | **Fecha:** `2026-10-15T22:33:45.851260Z` | **Generador:** `ProceduralAssetGenerator`
 
 ## 1. Archivo y Dimensiones
-- **Archivo GLB:** `d:\MODELCODER\web\public\models\office_chair.glb`
-- **Tamaño:** `108.86 KB` (111472 bytes)
+- **Archivo GLB:** `D:\MODELCODER\web\public\models\office_chair.glb`
+- **Tamaño:** `107.59 KB` (110168 bytes)
 - **Dimensiones:** `0.665m (W) × 0.950m (D) × 0.661m (H)`
 - **Polígonos:** `272 tris` (Objetivo: `380`, Ratio: `0.72`)
-- **Vértices:** `178 verts` en `5` objeto(s)
+- **Vértices:** `178 verts` en `4` objeto(s)
 
 ## 2. Normalización de Pipeline
 - **Unidades:** Meters (1 Blender unit = 1.0 Godot unit)
@@ -20,7 +20,6 @@
 | Nombre de Nodo | Tipo | Triángulos | Vértices | Padre |
 | :--- | :--- | :--- | :--- | :--- |
 | `office_chair` | `MESH` | 266 | 178 | `None (Root)` |
-| `office_chair-convcolonly` | `MESH` | 12 | 8 | `office_chair` |
 | `socket_item_spawn` | `EMPTY` | 0 | 0 | `office_chair` |
 | `socket_light` | `EMPTY` | 0 | 0 | `office_chair` |
 | `socket_player_interact` | `EMPTY` | 0 | 0 | `office_chair` |
@@ -34,8 +33,8 @@
 | `mat_psx_industrial_hazard_chair_vinyl_w65` | `PBR` | 0.62 | 0.04 | None |
 
 ## 5. Colisión para Godot 4
-- **Habilitada:** Sí
-- **Nodo de Colisión:** `office_chair-convcolonly`
+- **Habilitada:** No
+- **Nodo de Colisión:** `None`
 - **Tipo de Forma:** `box`
 - **Sufijo Godot:** `-convcolonly` (Crea StaticBody3D automáticamente)
 
@@ -47,11 +46,5 @@
 | `socket_light` | `[0.0, 0.0, 0.562]` | OmniLight3D / SpotLight3D mount anchor point |
 
 ## 7. Validación Real en Motor Godot 4
-- **Ejecutado en Godot:** Sí
-- **Resultado:** ✅ IMPORTACIÓN CORRECTA
-- **Binario Utilizado:** `C:\Users\lopez\Downloads\Godot_v4.5.1-stable_win64.exe\Godot_v4.5.1-stable_win64_console.exe`
-- **Mallas Reconocidas por Godot:** 2
-- **Superficies Totales:** 5
-- **StaticBody3D Generados:** 1
-- **CollisionShape3D Generados:** 1
-- **Materiales Mapeados:** 5
+- **Ejecutado en Godot:** No
+- **Resultado:** ❌ ERROR

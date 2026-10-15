@@ -1,12 +1,12 @@
 # Informe de Exportación a Godot 4 — sign_placard
-**Estado:** ✅ EXITOSA | **Fecha:** `2026-10-15T19:13:42.891508Z` | **Generador:** `SignPlacardGenerator`
+**Estado:** ✅ EXITOSA | **Fecha:** `2026-10-15T22:33:46.264995Z` | **Generador:** `ProceduralAssetGenerator`
 
 ## 1. Archivo y Dimensiones
-- **Archivo GLB:** `d:\MODELCODER\web\public\models\sign_placard.glb`
-- **Tamaño:** `90.92 KB` (93104 bytes)
+- **Archivo GLB:** `D:\MODELCODER\web\public\models\sign_placard.glb`
+- **Tamaño:** `89.84 KB` (91996 bytes)
 - **Dimensiones:** `0.800m (W) × 0.350m (D) × 0.183m (H)`
 - **Polígonos:** `72 tris` (Objetivo: `240`, Ratio: `0.3`)
-- **Vértices:** `48 verts` en `5` objeto(s)
+- **Vértices:** `48 verts` en `4` objeto(s)
 
 ## 2. Normalización de Pipeline
 - **Unidades:** Meters (1 Blender unit = 1.0 Godot unit)
@@ -20,7 +20,6 @@
 | Nombre de Nodo | Tipo | Triángulos | Vértices | Padre |
 | :--- | :--- | :--- | :--- | :--- |
 | `sign_placard` | `MESH` | 72 | 48 | `None (Root)` |
-| `sign_placard-convcolonly` | `MESH` | 12 | 8 | `sign_placard` |
 | `socket_item_spawn` | `EMPTY` | 0 | 0 | `sign_placard` |
 | `socket_light` | `EMPTY` | 0 | 0 | `sign_placard` |
 | `socket_player_interact` | `EMPTY` | 0 | 0 | `sign_placard` |
@@ -33,8 +32,8 @@
 | `mat_psx_industrial_hazard_sign_caution_w65` | `PBR` | 0.52 | 0.08 | None |
 
 ## 5. Colisión para Godot 4
-- **Habilitada:** Sí
-- **Nodo de Colisión:** `sign_placard-convcolonly`
+- **Habilitada:** No
+- **Nodo de Colisión:** `None`
 - **Tipo de Forma:** `box`
 - **Sufijo Godot:** `-convcolonly` (Crea StaticBody3D automáticamente)
 
@@ -46,11 +45,5 @@
 | `socket_light` | `[0.0, 0.0, 0.156]` | OmniLight3D / SpotLight3D mount anchor point |
 
 ## 7. Validación Real en Motor Godot 4
-- **Ejecutado en Godot:** Sí
-- **Resultado:** ✅ IMPORTACIÓN CORRECTA
-- **Binario Utilizado:** `C:\Users\lopez\Downloads\Godot_v4.5.1-stable_win64.exe\Godot_v4.5.1-stable_win64_console.exe`
-- **Mallas Reconocidas por Godot:** 2
-- **Superficies Totales:** 4
-- **StaticBody3D Generados:** 1
-- **CollisionShape3D Generados:** 1
-- **Materiales Mapeados:** 4
+- **Ejecutado en Godot:** No
+- **Resultado:** ❌ ERROR

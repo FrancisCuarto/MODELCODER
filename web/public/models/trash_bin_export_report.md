@@ -1,12 +1,12 @@
 # Informe de Exportación a Godot 4 — trash_bin
-**Estado:** ✅ EXITOSA | **Fecha:** `2026-10-15T19:13:45.509000Z` | **Generador:** `TrashBinGenerator`
+**Estado:** ✅ EXITOSA | **Fecha:** `2026-10-15T22:33:46.517791Z` | **Generador:** `ProceduralAssetGenerator`
 
 ## 1. Archivo y Dimensiones
-- **Archivo GLB:** `d:\MODELCODER\web\public\models\trash_bin.glb`
-- **Tamaño:** `95.3 KB` (97588 bytes)
+- **Archivo GLB:** `D:\MODELCODER\web\public\models\trash_bin.glb`
+- **Tamaño:** `94.15 KB` (96408 bytes)
 - **Dimensiones:** `0.424m (W) × 0.936m (D) × 0.470m (H)`
 - **Polígonos:** `120 tris` (Objetivo: `320`, Ratio: `0.38`)
-- **Vértices:** `72 verts` en `5` objeto(s)
+- **Vértices:** `72 verts` en `4` objeto(s)
 
 ## 2. Normalización de Pipeline
 - **Unidades:** Meters (1 Blender unit = 1.0 Godot unit)
@@ -23,19 +23,18 @@
 | `socket_item_spawn` | `EMPTY` | 0 | 0 | `trash_bin` |
 | `socket_light` | `EMPTY` | 0 | 0 | `trash_bin` |
 | `socket_player_interact` | `EMPTY` | 0 | 0 | `trash_bin` |
-| `trash_bin-convcolonly` | `MESH` | 12 | 8 | `trash_bin` |
 
 ## 4. Materiales Compactados (glTF PBR)
 | Slot / Nombre | Categoría | Rugosidad | Metálico | Emisión |
 | :--- | :--- | :--- | :--- | :--- |
-| `mat_psx_industrial_hazard_casing_w65` | `PBR` | 0.68 | 0.18 | None |
-| `mat_psx_industrial_hazard_casing_inner_w65` | `PBR` | 0.75 | 0.15 | None |
-| `mat_psx_industrial_hazard_mounting_w65` | `PBR` | 0.42 | 0.88 | None |
-| `mat_psx_industrial_hazard_switch_base_w65` | `PBR` | 0.82 | 0.00 | None |
+| `mat_psx_industrial_hazard_casing_w70` | `PBR` | 0.68 | 0.18 | None |
+| `mat_psx_industrial_hazard_casing_inner_w70` | `PBR` | 0.75 | 0.15 | None |
+| `mat_psx_industrial_hazard_mounting_w70` | `PBR` | 0.42 | 0.88 | None |
+| `mat_psx_industrial_hazard_switch_base_w70` | `PBR` | 0.82 | 0.00 | None |
 
 ## 5. Colisión para Godot 4
-- **Habilitada:** Sí
-- **Nodo de Colisión:** `trash_bin-convcolonly`
+- **Habilitada:** No
+- **Nodo de Colisión:** `None`
 - **Tipo de Forma:** `box`
 - **Sufijo Godot:** `-convcolonly` (Crea StaticBody3D automáticamente)
 
@@ -47,11 +46,5 @@
 | `socket_light` | `[0.0, 0.0, 0.399]` | OmniLight3D / SpotLight3D mount anchor point |
 
 ## 7. Validación Real en Motor Godot 4
-- **Ejecutado en Godot:** Sí
-- **Resultado:** ✅ IMPORTACIÓN CORRECTA
-- **Binario Utilizado:** `C:\Users\lopez\Downloads\Godot_v4.5.1-stable_win64.exe\Godot_v4.5.1-stable_win64_console.exe`
-- **Mallas Reconocidas por Godot:** 2
-- **Superficies Totales:** 5
-- **StaticBody3D Generados:** 1
-- **CollisionShape3D Generados:** 1
-- **Materiales Mapeados:** 5
+- **Ejecutado en Godot:** No
+- **Resultado:** ❌ ERROR

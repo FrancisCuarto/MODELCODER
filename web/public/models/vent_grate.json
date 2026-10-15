@@ -1,8 +1,8 @@
 {
-  "generator": "VentGrateGenerator",
+  "generator": "ProceduralAssetGenerator",
   "model_name": "vent_grate",
   "seed": 1337,
-  "timestamp": "2026-10-15T19:13:47.940124Z",
+  "timestamp": "2026-10-15T22:33:46.656908Z",
   "mesh_metrics": {
     "triangle_count": 188,
     "vertex_count": 124,
@@ -15,26 +15,26 @@
     },
     "has_vertex_colors": true,
     "materials_assigned": [
-      "mat_psx_industrial_hazard_casing_w65",
-      "mat_psx_industrial_hazard_mounting_w65",
-      "mat_psx_industrial_hazard_switch_base_w65",
-      "mat_psx_industrial_hazard_screw_w65",
-      "mat_psx_industrial_hazard_vent_w65"
+      "mat_psx_industrial_hazard_casing_w70",
+      "mat_psx_industrial_hazard_mounting_w70",
+      "mat_psx_industrial_hazard_switch_base_w70",
+      "mat_psx_industrial_hazard_screw_w70",
+      "mat_psx_industrial_hazard_vent_w70"
     ]
   },
   "config_parameters": {
     "seed": 1337,
     "target_tri_budget": 280,
     "name": "vent_grate",
-    "wear_level": 0.65,
-    "add_collision_mesh": true,
+    "wear_level": 0.7,
+    "add_collision_mesh": false,
     "collision_type": "box",
     "collision_suffix": "-convcolonly",
     "pivot_rule": "floor_center",
     "export_subcomponents": false,
     "palette_name": "industrial_hazard",
     "emission_scale": 1.0,
-    "extra_params": null,
+    "extra_params": {},
     "width": 0.6,
     "height": 0.6,
     "frame_depth": 0.05,

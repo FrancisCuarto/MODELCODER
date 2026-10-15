@@ -1,0 +1,119 @@
+{
+  "generator": "ProceduralAssetGenerator",
+  "model_name": "crash_cart",
+  "seed": 1337,
+  "timestamp": "2026-10-15T22:33:45.315085Z",
+  "mesh_metrics": {
+    "triangle_count": 656,
+    "vertex_count": 428,
+    "target_tri_budget": 580,
+    "budget_compliance_ratio": 1.13,
+    "dimensions_meters": {
+      "width": 0.8503,
+      "height": 1.238,
+      "depth": 0.746
+    },
+    "has_vertex_colors": true,
+    "materials_assigned": [
+      "mat_psx_industrial_hazard_casing_red_w65",
+      "mat_psx_industrial_hazard_mounting_w65",
+      "mat_psx_industrial_hazard_steel_dark_w65",
+      "mat_psx_industrial_hazard_crt_frame_w65",
+      "mat_psx_industrial_hazard_crt_screen_w65",
+      "mat_psx_industrial_hazard_switch_metal_w65",
+      "mat_psx_industrial_hazard_rubber_tire_w65",
+      "mat_psx_industrial_hazard_oxygen_cyan_w65"
+    ]
+  },
+  "config_parameters": {
+    "seed": 1337,
+    "target_tri_budget": 580,
+    "name": "crash_cart",
+    "wear_level": 0.65,
+    "add_collision_mesh": false,
+    "collision_type": "box",
+    "collision_suffix": "-convcolonly",
+    "pivot_rule": "floor_center",
+    "export_subcomponents": false,
+    "palette_name": "industrial_hazard",
+    "emission_scale": 1.0,
+    "extra_params": {},
+    "width": 0.65,
+    "height": 0.85,
+    "depth": 0.48,
+    "drawer_count": 4,
+    "drawer_open_mode": "staggered",
+    "drawer_slide_max": 0.22,
+    "drawer_handle_style": "metal_bar",
+    "has_top_monitor": true,
+    "monitor_width": 0.34,
+    "monitor_height": 0.22,
+    "monitor_depth": 0.28,
+    "monitor_phosphor_color": "green",
+    "has_monitor_handle": true,
+    "has_monitor_knobs": true,
+    "has_push_handle": true,
+    "push_handle_side": "left",
+    "has_oxygen_rack": true,
+    "oxygen_tank_count": 1,
+    "has_corner_bumpers": true,
+    "has_hazard_stripes": true,
+    "caster_style": "swivel",
+    "caster_radius": 0.045,
+    "caster_height": 0.1,
+    "body_color_preset": "red_emergency"
+  },
+  "sockets": [
+    {
+      "name": "socket_player_interact",
+      "position": [
+        0.0,
+        -1.169,
+        0.0
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "Standard player character interaction stand point"
+    },
+    {
+      "name": "socket_item_spawn",
+      "position": [
+        0.0,
+        0.0,
+        0.766
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "Prop or pickup spawn snap position (keycards, ammo, medical items)"
+    },
+    {
+      "name": "socket_light",
+      "position": [
+        0.0,
+        0.0,
+        0.634
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "OmniLight3D / SpotLight3D mount anchor point"
+    }
+  ],
+  "godot_4_compatibility": {
+    "format": "glTF 2.0 Binary (.glb)",
+    "unit": "meters (1.0 Blender unit = 1.0 Godot unit)",
+    "forward_axis": "-Z",
+    "up_axis": "+Y",
+    "collision_mesh_convention": "Child node with -col or -colonly creates Godot StaticBody3D collision shape",
+    "vertex_colors": "Exported in COLOR_0 accessor (usable with StandardMaterial3D or PSX shader)",
+    "pbr_materials": "Exported as glTF PBR metallic/roughness + emissive"
+  }
+}

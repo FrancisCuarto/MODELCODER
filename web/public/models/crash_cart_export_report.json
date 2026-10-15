@@ -1,0 +1,183 @@
+{
+  "export_metadata": {
+    "generator": "ProceduralAssetGenerator",
+    "asset_name": "crash_cart",
+    "timestamp": "2026-10-15T22:33:45.316130Z",
+    "format": "glTF 2.0 Binary (.glb)",
+    "output_file": "D:\\MODELCODER\\web\\public\\models\\crash_cart.glb",
+    "file_size_bytes": 147156,
+    "file_size_kb": 143.71
+  },
+  "normalization": {
+    "units": "Meters (1 Blender unit = 1.0 Godot unit)",
+    "scale_applied": true,
+    "rotation_applied": true,
+    "location_applied": true,
+    "pivot_rule": "floor_center",
+    "pivot_offset_applied": [
+      -0.0232,
+      -0.619,
+      0.24
+    ],
+    "normals_shading": "Flat (poly.use_smooth = False, PS1 low-poly crisp)",
+    "normals_recalculated": true,
+    "uv_mapping": "TEXCOORD_0 (Component-mapped to PS1 Weathered Texture Atlas)",
+    "vertex_colors": "COLOR_0 (Col / PS1 Gouraud tinting and wear)"
+  },
+  "dimensions_meters": {
+    "x": 0.8503,
+    "y": 1.238,
+    "z": 0.746
+  },
+  "geometry_metrics": {
+    "total_triangles": 656,
+    "total_vertices": 428,
+    "target_tri_budget": 580,
+    "budget_compliance_ratio": 1.13,
+    "object_count": 4,
+    "hierarchy": [
+      {
+        "name": "crash_cart",
+        "type": "MESH",
+        "parent": null,
+        "triangles": 628,
+        "vertices": 428
+      },
+      {
+        "name": "socket_item_spawn",
+        "type": "EMPTY",
+        "parent": "crash_cart",
+        "triangles": 0,
+        "vertices": 0
+      },
+      {
+        "name": "socket_light",
+        "type": "EMPTY",
+        "parent": "crash_cart",
+        "triangles": 0,
+        "vertices": 0
+      },
+      {
+        "name": "socket_player_interact",
+        "type": "EMPTY",
+        "parent": "crash_cart",
+        "triangles": 0,
+        "vertices": 0
+      }
+    ]
+  },
+  "materials": {
+    "count": 8,
+    "compacted": true,
+    "list": [
+      {
+        "name": "mat_psx_industrial_hazard_casing_red_w65",
+        "roughness": 0.65,
+        "metallic": 0.12,
+        "emission": "None"
+      },
+      {
+        "name": "mat_psx_industrial_hazard_mounting_w65",
+        "roughness": 0.42,
+        "metallic": 0.88,
+        "emission": "None"
+      },
+      {
+        "name": "mat_psx_industrial_hazard_steel_dark_w65",
+        "roughness": 0.48,
+        "metallic": 0.85,
+        "emission": "None"
+      },
+      {
+        "name": "mat_psx_industrial_hazard_crt_frame_w65",
+        "roughness": 0.52,
+        "metallic": 0.02,
+        "emission": "None"
+      },
+      {
+        "name": "mat_psx_industrial_hazard_crt_screen_w65",
+        "roughness": 0.22,
+        "metallic": 0.0,
+        "emission": "2.2x"
+      },
+      {
+        "name": "mat_psx_industrial_hazard_switch_metal_w65",
+        "roughness": 0.3,
+        "metallic": 0.92,
+        "emission": "None"
+      },
+      {
+        "name": "mat_psx_industrial_hazard_rubber_tire_w65",
+        "roughness": 0.9,
+        "metallic": 0.0,
+        "emission": "None"
+      },
+      {
+        "name": "mat_psx_industrial_hazard_oxygen_cyan_w65",
+        "roughness": 0.12,
+        "metallic": 0.0,
+        "emission": "2.4x"
+      }
+    ]
+  },
+  "collision": {
+    "enabled": false,
+    "node_name": "None",
+    "shape_type": "box",
+    "godot_suffix": "-convcolonly",
+    "extents": [
+      0.8503,
+      1.238,
+      0.746
+    ]
+  },
+  "sockets": [
+    {
+      "name": "socket_player_interact",
+      "position": [
+        0.0,
+        -1.169,
+        0.0
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "Standard player character interaction stand point"
+    },
+    {
+      "name": "socket_item_spawn",
+      "position": [
+        0.0,
+        0.0,
+        0.766
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "Prop or pickup spawn snap position (keycards, ammo, medical items)"
+    },
+    {
+      "name": "socket_light",
+      "position": [
+        0.0,
+        0.0,
+        0.634
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "OmniLight3D / SpotLight3D mount anchor point"
+    }
+  ],
+  "godot_4_validation": {
+    "tested_in_godot": false,
+    "message": "Live Godot test not executed"
+  },
+  "warnings": []
+}

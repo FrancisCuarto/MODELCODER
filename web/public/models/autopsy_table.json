@@ -1,0 +1,102 @@
+{
+  "generator": "ProceduralAssetGenerator",
+  "model_name": "autopsy_table",
+  "seed": 1337,
+  "timestamp": "2026-10-15T22:33:45.054343Z",
+  "mesh_metrics": {
+    "triangle_count": 444,
+    "vertex_count": 272,
+    "target_tri_budget": 420,
+    "budget_compliance_ratio": 1.06,
+    "dimensions_meters": {
+      "width": 0.9,
+      "height": 2.1,
+      "depth": 1.7192
+    },
+    "has_vertex_colors": true,
+    "materials_assigned": [
+      "mat_psx_industrial_hazard_casing_w50",
+      "mat_psx_industrial_hazard_steel_brushed_w50",
+      "mat_psx_industrial_hazard_cable_black_w50",
+      "mat_psx_industrial_hazard_cable_hazard_w50",
+      "mat_psx_industrial_hazard_gauge_w50"
+    ]
+  },
+  "config_parameters": {
+    "seed": 1337,
+    "target_tri_budget": 420,
+    "name": "autopsy_table",
+    "wear_level": 0.5,
+    "add_collision_mesh": false,
+    "collision_type": "box",
+    "collision_suffix": "-convcolonly",
+    "pivot_rule": "floor_center",
+    "export_subcomponents": false,
+    "palette_name": "industrial_hazard",
+    "emission_scale": 1.0,
+    "extra_params": {},
+    "table_type": "standard_autopsy",
+    "width": 0.9,
+    "length": 2.1,
+    "height": 0.85,
+    "drainage_channel": true,
+    "overhead_lamp": true,
+    "restraint_straps": "none",
+    "fluid_stain": true,
+    "has_instrument_tray": false,
+    "specimen_jar_count": 0
+  },
+  "sockets": [
+    {
+      "name": "socket_player_interact",
+      "position": [
+        0.0,
+        -1.6,
+        0.0
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "Standard player character interaction stand point"
+    },
+    {
+      "name": "socket_item_spawn",
+      "position": [
+        0.0,
+        0.0,
+        1.739
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "Prop or pickup spawn snap position (keycards, ammo, medical items)"
+    },
+    {
+      "name": "socket_light",
+      "position": [
+        0.0,
+        0.0,
+        1.461
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "OmniLight3D / SpotLight3D mount anchor point"
+    }
+  ],
+  "godot_4_compatibility": {
+    "format": "glTF 2.0 Binary (.glb)",
+    "unit": "meters (1.0 Blender unit = 1.0 Godot unit)",
+    "forward_axis": "-Z",
+    "up_axis": "+Y",
+    "collision_mesh_convention": "Child node with -col or -colonly creates Godot StaticBody3D collision shape",
+    "vertex_colors": "Exported in COLOR_0 accessor (usable with StandardMaterial3D or PSX shader)",
+    "pbr_materials": "Exported as glTF PBR metallic/roughness + emissive"
+  }
+}

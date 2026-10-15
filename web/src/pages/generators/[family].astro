@@ -21,265 +21,321 @@ gen.parameters.forEach((param: any) => {
 ---
 
 <Layout title={`${gen.name} - Generador 3D Procedural`}>
-  <!-- Breadcrumbs -->
-  <nav class="breadcrumb-nav">
-    <a href="/">Catálogo</a> &rsaquo; 
-    <span class={`category-badge category-${gen.category}`} style="margin: 0 0.5rem;">{gen.category}</span> &rsaquo; 
-    <span class="active-crumb">{gen.name}</span>
+  <!-- PS1 Breadcrumbs -->
+  <nav class="ps1-breadcrumb">
+    <a href="/" class="crumb-link">&lt; [CATÁLOGO]</a>
+    <span class="crumb-sep">/</span>
+    <span class={`category-badge category-${gen.category}`}>{gen.category}</span>
+    <span class="crumb-sep">/</span>
+    <span class="active-crumb">{gen.name.toUpperCase()}</span>
   </nav>
 
   <div class="generator-workspace">
     <!-- Left Column: 3D Viewport & Metadata -->
     <div class="viewport-column">
-      <div class="viewport-container">
-        {gen.has_model ? (
-          <model-viewer
-            id="main-viewer"
-            src={gen.model_url}
-            alt={gen.name}
-            camera-controls
-            auto-rotate
-            shadow-intensity="1.2"
-            exposure="1.0"
-            ar
-            class="interactive-viewer"
-          >
-            <div slot="poster" class="viewer-loading">Cargando Modelo 3D...</div>
-          </model-viewer>
-        ) : (
-          <div class="no-preview-box">
-            <p>Modelo GLB generado bajo demanda en consola local.</p>
-          </div>
-        )}
-
-        <!-- 3D Controls Overlay -->
-        <div class="viewport-overlay-controls">
-          <button id="toggle-rotate-btn" class="viewport-btn" title="Pausar / Reanudar Rotación">
-            🔄 Auto-rotación
-          </button>
-          <button id="reset-cam-btn" class="viewport-btn" title="Restablecer Cámara">
-            🎯 Centrar
-          </button>
+      <!-- 3D Viewport Window -->
+      <div class="ps1-window viewport-window">
+        <div class="ps1-titlebar">
+          <span>// 3D_VIEWPORT: [{gen.family.toUpperCase()}]</span>
+          <span class="ps1-telemetry-tag">FPS: 60 // PBR_PSX</span>
         </div>
 
-        <!-- Preset quick pills -->
-        {gen.presets.length > 0 && (
-          <div class="preset-pill-bar">
-            <span class="preset-pill-label">Presets:</span>
-            {gen.presets.map((pr: any, idx: number) => (
-              <button 
-                class={`preset-pill ${idx === 0 ? 'active' : ''}`}
-                data-preset-id={pr.id}
-                data-preset-values={JSON.stringify(pr.values)}
-                title={pr.description}
-              >
-                {pr.name}
-              </button>
-            ))}
+        <div class="ps1-inset viewport-container">
+          {gen.has_model ? (
+            <model-viewer
+              id="main-viewer"
+              src={gen.model_url}
+              alt={gen.name}
+              camera-controls
+              auto-rotate
+              rotation-per-second="20deg"
+              shadow-intensity="1.0"
+              exposure="1.0"
+              ar
+              class="interactive-viewer"
+            >
+              <div slot="poster" class="viewer-loading">
+                <span>[ CARGANDO MALLA 3D... ]</span>
+              </div>
+            </model-viewer>
+          ) : (
+            <div class="no-preview-box">
+              <p>[ MODELO GLB GENERADO EN LOCAL CON BLENDER ]</p>
+            </div>
+          )}
+
+          <!-- 3D Controls Overlay -->
+          <div class="viewport-overlay-controls">
+            <button id="toggle-rotate-btn" class="ps1-ctrl-btn" title="Pausar / Reanudar Rotación">
+              🔄 ROTACIÓN
+            </button>
+            <button id="reset-cam-btn" class="ps1-ctrl-btn" title="Restablecer Cámara">
+              🎯 CENTRAR
+            </button>
+            <button id="screenshot-btn" class="ps1-ctrl-btn" title="Captura de Pantalla">
+              📷 CAPTURA
+            </button>
           </div>
-        )}
+
+          <!-- Preset Quick Pills Bar -->
+          {gen.presets.length > 0 && (
+            <div class="preset-pill-bar">
+              <span class="preset-pill-label">PRESETS:</span>
+              <div class="preset-pill-scroll">
+                {gen.presets.map((pr: any, idx: number) => (
+                  <button 
+                    class={`preset-pill ${idx === 0 ? 'active' : ''}`}
+                    data-preset-id={pr.id}
+                    data-preset-values={JSON.stringify(pr.values)}
+                    title={pr.description}
+                  >
+                    [{pr.name.toUpperCase()}]
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
-      <!-- Generator Summary Info -->
-      <div class="generator-summary-panel">
-        <div class="summary-header">
-          <div>
-            <h1 class="generator-title">{gen.name}</h1>
-            <code class="family-tag">family: {gen.family}</code>
-          </div>
-          <div class="license-badge-box">
-            <span class="meta-pill">{gen.license}</span>
-            <span class="meta-pill">v{gen.version}</span>
-          </div>
+      <!-- Generator Summary Panel -->
+      <div class="ps1-window summary-window">
+        <div class="ps1-titlebar">
+          <span>// ASSET_TELEMETRY: [{gen.name.toUpperCase()}]</span>
+          <span class="meta-pill-ver">v{gen.version}</span>
         </div>
 
-        <p class="summary-desc">{gen.description}</p>
+        <div class="summary-body">
+          <div class="summary-header">
+            <div>
+              <h1 class="generator-title">{gen.name}</h1>
+              <code class="family-tag">family: {gen.family}</code>
+            </div>
+            <div class="license-badge-box">
+              <span class="meta-pill">{gen.license}</span>
+            </div>
+          </div>
 
-        <!-- Technical Capabilities Grid -->
-        <div class="capabilities-grid">
-          <div class="cap-card">
-            <span class="cap-label">Tri Budget</span>
-            <span class="cap-val">{gen.export_capabilities?.target_tri_budget || '400~500'} tris</span>
-          </div>
-          <div class="cap-card">
-            <span class="cap-label">Colisión Godot 4</span>
-            <span class="cap-val text-green">
-              {gen.export_capabilities?.supports_collision ? 'Activa (-convcolonly)' : 'Visual Only'}
-            </span>
-          </div>
-          <div class="cap-card">
-            <span class="cap-label">Pivote / Origen</span>
-            <span class="cap-val">Base / Z=0.0 (Floor)</span>
-          </div>
-          <div class="cap-card">
-            <span class="cap-label">Sockets / Snap</span>
-            <span class="cap-val text-cyan">
-              {gen.export_capabilities?.supports_sockets ? 'Interact + Item + Light' : 'Estándar'}
-            </span>
+          <p class="summary-desc">{gen.description}</p>
+
+          <!-- Technical Capabilities Grid (Retro Mech HUD style) -->
+          <div class="capabilities-grid">
+            <div class="ps1-inset cap-card">
+              <span class="cap-label">TRI_BUDGET</span>
+              <span class="cap-val text-gold">{gen.export_capabilities?.target_tri_budget || '400~500'} TRIS</span>
+            </div>
+            <div class="ps1-inset cap-card">
+              <span class="cap-label">GODOT_4_COLLISION</span>
+              <span class="cap-val text-green">
+                {gen.export_capabilities?.supports_collision ? 'ACTIVA (-convcolonly)' : 'VISUAL ONLY'}
+              </span>
+            </div>
+            <div class="ps1-inset cap-card">
+              <span class="cap-label">PIVOT_ORIGIN</span>
+              <span class="cap-val">FLOOR_CENTER (Z=0.0)</span>
+            </div>
+            <div class="ps1-inset cap-card">
+              <span class="cap-label">SOCKETS_ATTACH</span>
+              <span class="cap-val text-cyan">
+                {gen.export_capabilities?.supports_sockets ? 'INTERACT + LIGHT' : 'ESTÁNDAR'}
+              </span>
+            </div>
           </div>
         </div>
       </div>
 
       <!-- Source Code Inspection Accordion -->
-      <div class="code-inspection-panel">
-        <div class="panel-tab-header">
-          <h3 class="panel-heading">Código Fuente Python del Generador</h3>
-          <button id="copy-code-btn" class="btn btn-outline" style="padding: 0.25rem 0.6rem; font-size: 0.75rem;">
-            Copiar Código
+      <div class="ps1-window code-window">
+        <div class="ps1-titlebar">
+          <span>// PYTHON_GENERATOR_SOURCE: [generator.py]</span>
+          <button id="copy-code-btn" class="btn btn-outline" style="padding: 0.2rem 0.5rem; font-size: 0.65rem;">
+            [ COPIAR CÓDIGO ]
           </button>
         </div>
-        <pre class="code-block"><code id="python-source">{gen.source_code}</code></pre>
+        <div class="code-body">
+          <pre class="ps1-inset code-block"><code id="python-source">{gen.source_code}</code></pre>
+        </div>
       </div>
     </div>
 
     <!-- Right Column: Interactive Parameter Configurator -->
     <div class="configurator-column">
-      <div class="configurator-card">
-        <div class="config-header">
-          <h2>Parámetros del Generador</h2>
-          <span class="param-count-badge">{gen.parameters.length} expuestos</span>
+      <div class="ps1-window configurator-card">
+        <div class="ps1-titlebar">
+          <span>// PARAMETERS_EDITOR</span>
+          <span class="param-count-badge">[{gen.parameters.length} PARAMS]</span>
         </div>
-        <p class="config-subtext">
-          Ajusta los valores para simular variantes procedurales y obtener el comando CLI listo para ejecutar.
-        </p>
 
-        <!-- Presets Dropdown Selector -->
-        {gen.presets.length > 0 && (
-          <div class="preset-select-group">
-            <label for="preset-select">Cargar Preset Curado:</label>
-            <select id="preset-select" class="form-select">
-              {gen.presets.map((pr: any) => (
-                <option value={pr.id} data-values={JSON.stringify(pr.values)}>
-                  {pr.name} ({pr.id})
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
+        <div class="config-body">
+          <p class="config-subtext">
+            Ajusta los parámetros para previsualizar variantes en tiempo real y exportar la malla 3D personalizada.
+          </p>
 
-        <!-- Dynamic Parameter Inputs by Group -->
-        <form id="generator-form" class="parameter-form">
-          {Object.entries(groupedParams).map(([groupName, params]) => (
-            <fieldset class="parameter-group">
-              <legend class="group-legend">{groupName}</legend>
-              <div class="group-inputs">
-                {params.map((p: any) => (
-                  <div class="input-row" data-param-key={p.key} data-param-type={p.type}>
-                    <div class="input-label-row">
-                      <label for={`param-${p.key}`} class="input-label">
-                        {p.label}
-                      </label>
-                      {(p.type === 'float' || p.type === 'int' || p.type === 'seed') && (
-                        <span class="live-val" id={`val-${p.key}`}>{p.default}</span>
-                      )}
-                    </div>
+          <!-- Presets Dropdown Selector -->
+          {gen.presets.length > 0 && (
+            <div class="preset-select-group">
+              <label for="preset-select" class="field-label">&gt; PRESET CURADO:</label>
+              <select id="preset-select" class="form-select">
+                {gen.presets.map((pr: any) => (
+                  <option value={pr.id} data-values={JSON.stringify(pr.values)}>
+                    {pr.name} ({pr.id})
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
-                    {p.type === 'float' && (
-                      <input 
-                        type="range"
-                        id={`param-${p.key}`}
-                        name={p.key}
-                        min={p.min !== undefined && p.min !== null ? p.min : 0.0}
-                        max={p.max !== undefined && p.max !== null ? p.max : 5.0}
-                        step={p.step || 0.05}
-                        value={p.default}
-                        class="form-range"
-                      />
-                    )}
+          <!-- Dynamic Parameter Inputs by Group -->
+          <form id="generator-form" class="parameter-form">
+            {Object.entries(groupedParams).map(([groupName, params]) => (
+              <fieldset class="parameter-group">
+                <legend class="group-legend">[ {groupName.toUpperCase()} ]</legend>
+                <div class="group-inputs">
+                  {params.map((p: any) => (
+                    <div class="input-row" data-param-key={p.key} data-param-type={p.type}>
+                      <div class="input-label-row">
+                        <label for={`param-${p.key}`} class="input-label">
+                          &gt; {p.label}:
+                        </label>
+                        {(p.type === 'float' || p.type === 'int' || p.type === 'seed') && (
+                          <span class="live-val" id={`val-${p.key}`}>{p.default}</span>
+                        )}
+                      </div>
 
-                    {(p.type === 'int' || p.type === 'seed') && (
-                      <input 
-                        type="number"
-                        id={`param-${p.key}`}
-                        name={p.key}
-                        min={p.min !== undefined && p.min !== null ? p.min : 0}
-                        max={p.max !== undefined && p.max !== null ? p.max : 100}
-                        step={p.step || 1}
-                        value={p.default}
-                        class="form-input"
-                      />
-                    )}
-
-                    {p.type === 'boolean' && (
-                      <label class="toggle-switch">
+                      {p.type === 'float' && (
                         <input 
-                          type="checkbox"
+                          type="range"
                           id={`param-${p.key}`}
                           name={p.key}
-                          checked={p.default === true}
+                          min={p.min !== undefined && p.min !== null ? p.min : 0.0}
+                          max={p.max !== undefined && p.max !== null ? p.max : 5.0}
+                          step={p.step || 0.05}
+                          value={p.default}
+                          class="form-range"
                         />
-                        <span class="slider round"></span>
-                      </label>
-                    )}
+                      )}
 
-                    {p.type === 'enum' && (
-                      <select id={`param-${p.key}`} name={p.key} class="form-select">
-                        {p.options ? p.options.map((opt: any) => (
-                          <option value={opt.value} selected={opt.value === p.default}>
-                            {opt.label || opt.value}
-                          </option>
-                        )) : (
-                          <option value={p.default}>{p.default}</option>
-                        )}
-                      </select>
-                    )}
+                      {(p.type === 'int' || p.type === 'seed') && (
+                        <input 
+                          type="number"
+                          id={`param-${p.key}`}
+                          name={p.key}
+                          min={p.min !== undefined && p.min !== null ? p.min : 0}
+                          max={p.max !== undefined && p.max !== null ? p.max : 100}
+                          step={p.step || 1}
+                          value={p.default}
+                          class="form-input"
+                        />
+                      )}
 
-                    {p.type === 'string' && (
-                      <input 
-                        type="text"
-                        id={`param-${p.key}`}
-                        name={p.key}
-                        value={p.default || ''}
-                        class="form-input"
-                      />
-                    )}
+                      {p.type === 'boolean' && (
+                        <label class="toggle-switch">
+                          <input 
+                            type="checkbox"
+                            id={`param-${p.key}`}
+                            name={p.key}
+                            checked={p.default === true}
+                          />
+                          <span class="slider"></span>
+                        </label>
+                      )}
 
-                    {p.description && (
-                      <p class="param-help">{p.description}</p>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </fieldset>
-          ))}
-        </form>
+                      {p.type === 'enum' && (
+                        <select id={`param-${p.key}`} name={p.key} class="form-select">
+                          {p.options ? p.options.map((opt: any) => (
+                            <option value={opt.value} selected={opt.value === p.default}>
+                              {opt.label || opt.value}
+                            </option>
+                          )) : (
+                            <option value={p.default}>{p.default}</option>
+                          )}
+                        </select>
+                      )}
 
-        <!-- Live Cloud/Local Generation Trigger -->
-        <div class="live-generate-container">
-          <button type="button" id="live-generate-btn" class="btn btn-cyan" style="width: 100%;">
-            ⚡ Generar Malla 3D en Vivo
-          </button>
-          <div id="live-generate-status" class="live-status-box" style="display: none;"></div>
-        </div>
+                      {p.type === 'string' && (
+                        <input 
+                          type="text"
+                          id={`param-${p.key}`}
+                          name={p.key}
+                          value={p.default || ''}
+                          class="form-input"
+                        />
+                      )}
 
-        <!-- Dynamic CLI Command Generator Box -->
-        <div class="cli-command-box">
-          <div class="cli-header">
-            <span>Comando CLI para Generar en Blender:</span>
-            <button id="copy-cli-btn" class="btn btn-outline" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;">
-              Copiar
+                      {p.description && (
+                        <p class="param-help">// {p.description}</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </fieldset>
+            ))}
+          </form>
+
+          <!-- Action Buttons Box -->
+          <div class="action-buttons-box">
+            <!-- Custom GLB Download -->
+            <button type="button" id="download-custom-glb-btn" class="btn btn-primary" style="width: 100%;">
+              💾 DESCARGAR GLB PERSONALIZADO
             </button>
-          </div>
-          <code id="cli-command-output" class="cli-code">
-            blender -b --python generate.py -- --family {gen.family}
-          </code>
-        </div>
 
-        <!-- Action Downloads -->
-        <div class="action-buttons-box">
-          {gen.has_model && (
-            <a href={gen.model_url} download={`${gen.family}.glb`} class="btn btn-primary" style="width: 100%;">
-              Descargar Archivo 3D (.GLB)
+            <!-- Live Geometry Generation Trigger -->
+            <button type="button" id="live-generate-btn" class="btn btn-cyan" style="width: 100%;">
+              ⚡ GENERAR MALLA 3D EN VIVO
+            </button>
+
+            <div id="live-generate-status" class="live-status-box" style="display: none;"></div>
+
+            <!-- Optional Remote Worker URL Config Accordion -->
+            <details class="worker-config-details">
+              <summary class="worker-config-summary">⚙️ Configurar Servidor de Generación (Opcional)</summary>
+              <div class="worker-config-box">
+                <label for="worker-url-input" class="field-label" style="font-size: 0.7rem;">URL del Worker Remoto:</label>
+                <div style="display: flex; gap: 0.4rem; margin-top: 0.3rem;">
+                  <input 
+                    type="text" 
+                    id="worker-url-input" 
+                    placeholder="ej. http://localhost:8000 o https://mi-worker.render.com" 
+                    class="form-input" 
+                    style="flex: 1; font-size: 0.75rem;"
+                  />
+                  <button type="button" id="save-worker-url-btn" class="btn btn-outline" style="padding: 0.3rem 0.6rem; font-size: 0.7rem;">
+                    Guardar
+                  </button>
+                </div>
+                <small style="color: var(--text-dim); font-size: 0.68rem; margin-top: 0.3rem; display: block;">
+                  Si estás en otra PC o móvil, puedes usar la personalización visual directamente o conectar tu worker de Blender.
+                </small>
+              </div>
+            </details>
+          </div>
+
+          <!-- Dynamic CLI Command Generator Box -->
+          <div class="ps1-window cli-window">
+            <div class="ps1-titlebar" style="font-size: 0.7rem;">
+              <span>// BLENDER_CLI_COMMAND</span>
+              <button id="copy-cli-btn" class="btn btn-outline" style="padding: 0.15rem 0.45rem; font-size: 0.65rem;">
+                [ COPIAR ]
+              </button>
+            </div>
+            <div style="padding: 0.6rem; background: #060912;">
+              <code id="cli-command-output" class="cli-code">
+                blender -b --python generate.py -- --family {gen.family}
+              </code>
+            </div>
+          </div>
+
+          <!-- Base Manifest Download -->
+          <div style="margin-top: 1rem;">
+            <a 
+              href={`data:text/json;charset=utf-8,${encodeURIComponent(JSON.stringify(gen, null, 2))}`}
+              download={`${gen.family}_manifest.json`}
+              class="btn btn-outline" 
+              style="width: 100%; font-size: 0.7rem;"
+            >
+              [ DESCARGAR MANIFIESTO (.JSON) ]
             </a>
-          )}
-          <a 
-            href={`data:text/json;charset=utf-8,${encodeURIComponent(JSON.stringify(gen, null, 2))}`}
-            download={`${gen.family}_manifest.json`}
-            class="btn btn-outline" 
-            style="width: 100%;"
-          >
-            Descargar Manifiesto (.JSON)
-          </a>
+          </div>
         </div>
       </div>
     </div>
@@ -287,7 +343,7 @@ gen.parameters.forEach((param: any) => {
 </Layout>
 
 <script>
-  // Interactive parameter and CLI sync script
+  // Interactive parameter, WebGL material sync, and CLI generation script
   const form = document.getElementById('generator-form') as HTMLFormElement;
   const cliOutput = document.getElementById('cli-command-output');
   const copyCliBtn = document.getElementById('copy-cli-btn');
@@ -298,15 +354,111 @@ gen.parameters.forEach((param: any) => {
   const viewer = document.getElementById('main-viewer') as any;
   const toggleRotateBtn = document.getElementById('toggle-rotate-btn');
   const resetCamBtn = document.getElementById('reset-cam-btn');
+  const screenshotBtn = document.getElementById('screenshot-btn');
+  const downloadCustomGlbBtn = document.getElementById('download-custom-glb-btn') as HTMLButtonElement;
+  const liveGenBtn = document.getElementById('live-generate-btn') as HTMLButtonElement;
+  const liveStatus = document.getElementById('live-generate-status');
+  const workerUrlInput = document.getElementById('worker-url-input') as HTMLInputElement;
+  const saveWorkerUrlBtn = document.getElementById('save-worker-url-btn');
 
   // URL family from path
   const pathParts = window.location.pathname.split('/').filter(Boolean);
   const familyName = pathParts[pathParts.length - 1] || 'model';
 
+  // Load saved worker URL if any
+  const savedWorkerUrl = localStorage.getItem('modelcoder_worker_url') || '';
+  if (workerUrlInput && savedWorkerUrl) {
+    workerUrlInput.value = savedWorkerUrl;
+  }
+
+  saveWorkerUrlBtn?.addEventListener('click', () => {
+    if (workerUrlInput) {
+      localStorage.setItem('modelcoder_worker_url', workerUrlInput.value.trim());
+      alert('URL del worker guardada.');
+    }
+  });
+
+  // Palette definitions corresponding to Below Nominal procedural engine
+  const PALETTES: Record<string, { primary: number[]; secondary: number[]; metal: number[]; roughness: number }> = {
+    industrial_hazard: {
+      primary: [0.92, 0.68, 0.08, 1.0], // hazard yellow
+      secondary: [0.20, 0.22, 0.25, 1.0], // dark charcoal
+      metal: [0.35, 0.38, 0.42, 1.0],
+      roughness: 0.65
+    },
+    medbay_clean: {
+      primary: [0.88, 0.94, 0.98, 1.0], // sterile white
+      secondary: [0.10, 0.65, 0.85, 1.0], // clean cyan
+      metal: [0.55, 0.60, 0.65, 1.0],
+      roughness: 0.35
+    },
+    command_bridge: {
+      primary: [0.12, 0.16, 0.28, 1.0], // bridge navy
+      secondary: [0.92, 0.52, 0.12, 1.0], // amber alert
+      metal: [0.30, 0.32, 0.36, 1.0],
+      roughness: 0.50
+    },
+    habitation_worn: {
+      primary: [0.46, 0.42, 0.36, 1.0], // khaki / worn olive
+      secondary: [0.24, 0.20, 0.18, 1.0], // dark wood/brown
+      metal: [0.32, 0.34, 0.36, 1.0],
+      roughness: 0.70
+    },
+    derelict_decay: {
+      primary: [0.38, 0.22, 0.15, 1.0], // oxidized rust
+      secondary: [0.18, 0.14, 0.12, 1.0], // dark grime
+      metal: [0.25, 0.24, 0.24, 1.0],
+      roughness: 0.85
+    }
+  };
+
+  // Live WebGL Material Customization in <model-viewer>
+  function applyLiveMaterials() {
+    if (!viewer || !viewer.model || !viewer.model.materials) return;
+
+    // Detect selected palette from form
+    let selectedPalette = 'industrial_hazard';
+    let wearLevel = 0.65;
+
+    if (form) {
+      const paletteInput = (form.elements.namedItem('palette') || form.elements.namedItem('palette_name')) as HTMLSelectElement;
+      if (paletteInput && paletteInput.value && PALETTES[paletteInput.value]) {
+        selectedPalette = paletteInput.value;
+      }
+
+      const wearInput = form.elements.namedItem('wear_level') as HTMLInputElement;
+      if (wearInput && wearInput.value) {
+        wearLevel = parseFloat(wearInput.value);
+      }
+    }
+
+    const pal = PALETTES[selectedPalette] || PALETTES['industrial_hazard'];
+    const materials = viewer.model.materials;
+
+    materials.forEach((mat: any) => {
+      const name = (mat.name || '').toLowerCase();
+      const pbr = mat.pbrMetallicRoughness;
+      if (!pbr) return;
+
+      // Adjust roughness based on wear level
+      pbr.setRoughnessFactor(Math.min(1.0, Math.max(0.1, wearLevel * 0.9 + 0.1)));
+
+      // Apply palette colors based on material purpose
+      if (name.includes('casing') || name.includes('body') || name.includes('frame') || name.includes('panel')) {
+        pbr.setBaseColorFactor(pal.primary);
+      } else if (name.includes('metal') || name.includes('support') || name.includes('pipe') || name.includes('steel')) {
+        pbr.setBaseColorFactor(pal.metal);
+        pbr.setMetallicFactor(0.85);
+      } else if (name.includes('btn') || name.includes('screen') || name.includes('light') || name.includes('accent')) {
+        pbr.setBaseColorFactor(pal.secondary);
+      }
+    });
+  }
+
+  // Update CLI command & trigger live material update
   function updateLiveValuesAndCLI() {
     if (!form || !cliOutput) return;
 
-    const formData = new FormData(form);
     const cliArgs: string[] = [`--family ${familyName}`];
 
     form.querySelectorAll('.input-row').forEach((rowEl) => {
@@ -333,11 +485,18 @@ gen.parameters.forEach((param: any) => {
       }
     });
 
-    cliOutput.textContent = `blender -b --python generate.py -- ${cliArgs.join(' ')} --collision`;
+    cliOutput.textContent = `blender -b --python generate.py -- ${cliArgs.join(' ')}`;
+
+    // Update 3D viewport materials live in browser
+    applyLiveMaterials();
   }
 
   form?.addEventListener('input', updateLiveValuesAndCLI);
   form?.addEventListener('change', updateLiveValuesAndCLI);
+
+  viewer?.addEventListener('load', () => {
+    applyLiveMaterials();
+  });
 
   // Preset selector handler
   function applyPreset(values: Record<string, any>) {
@@ -384,16 +543,16 @@ gen.parameters.forEach((param: any) => {
   copyCliBtn?.addEventListener('click', () => {
     if (cliOutput) {
       navigator.clipboard.writeText(cliOutput.textContent?.trim() || '');
-      copyCliBtn.textContent = '¡Copiado!';
-      setTimeout(() => { copyCliBtn.textContent = 'Copiar'; }, 2000);
+      copyCliBtn.textContent = '[ ¡COPIADO! ]';
+      setTimeout(() => { copyCliBtn.textContent = '[ COPIAR ]'; }, 2000);
     }
   });
 
   copyCodeBtn?.addEventListener('click', () => {
     if (pythonSource) {
       navigator.clipboard.writeText(pythonSource.textContent || '');
-      copyCodeBtn.textContent = '¡Copiado!';
-      setTimeout(() => { copyCodeBtn.textContent = 'Copiar Código'; }, 2000);
+      copyCodeBtn.textContent = '[ ¡COPIADO! ]';
+      setTimeout(() => { copyCodeBtn.textContent = '[ COPIAR CÓDIGO ]'; }, 2000);
     }
   });
 
@@ -403,7 +562,7 @@ gen.parameters.forEach((param: any) => {
     if (viewer) {
       isRotating = !isRotating;
       viewer.autoRotate = isRotating;
-      toggleRotateBtn.textContent = isRotating ? '🔄 Auto-rotación' : '⏸️ Pausado';
+      toggleRotateBtn.textContent = isRotating ? '🔄 ROTACIÓN' : '⏸️ PAUSADO';
     }
   });
 
@@ -414,15 +573,58 @@ gen.parameters.forEach((param: any) => {
     }
   });
 
-  // Live generation trigger
-  const liveGenBtn = document.getElementById('live-generate-btn') as HTMLButtonElement;
-  const liveStatus = document.getElementById('live-generate-status');
-  const downloadGlbBtn = document.querySelector('a[download$=".glb"]') as HTMLAnchorElement;
+  screenshotBtn?.addEventListener('click', () => {
+    if (viewer) {
+      const dataUrl = viewer.toDataURL('image/png');
+      const a = document.createElement('a');
+      a.href = dataUrl;
+      a.download = `${familyName}_psx_screenshot.png`;
+      a.click();
+    }
+  });
 
+  // Download Custom GLB directly from browser memory
+  downloadCustomGlbBtn?.addEventListener('click', async () => {
+    if (!viewer) return;
+
+    downloadCustomGlbBtn.disabled = true;
+    downloadCustomGlbBtn.textContent = '⏳ Empaquetando GLB...';
+
+    try {
+      if (typeof viewer.exportScene === 'function') {
+        const glbBlob = await viewer.exportScene({ binary: true });
+        const blobUrl = URL.createObjectURL(glbBlob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = `${familyName}_custom.glb`;
+        a.click();
+      } else {
+        // Fallback to base GLB url
+        const a = document.createElement('a');
+        a.href = viewer.src;
+        a.download = `${familyName}.glb`;
+        a.click();
+      }
+    } catch (err) {
+      // Fallback to base model
+      const a = document.createElement('a');
+      a.href = `/models/${familyName}.glb`;
+      a.download = `${familyName}.glb`;
+      a.click();
+    } finally {
+      downloadCustomGlbBtn.disabled = false;
+      downloadCustomGlbBtn.textContent = '💾 DESCARGAR GLB PERSONALIZADO';
+    }
+  });
+
+  // Live generation trigger (Smart dual-mode: Remote Worker or Web Standalone)
   liveGenBtn?.addEventListener('click', async () => {
     if (!form) return;
     
-    // Collect parameters
+    // 1. Immediately apply WebGL parameters client-side
+    applyLiveMaterials();
+
+    // 2. Collect parameters
     const params: Record<string, any> = {};
     form.querySelectorAll('.input-row').forEach((rowEl) => {
       const row = rowEl as HTMLElement;
@@ -451,14 +653,27 @@ gen.parameters.forEach((param: any) => {
     };
 
     liveGenBtn.disabled = true;
-    liveGenBtn.textContent = '⏳ Compilando Malla en Sandbox...';
+    liveGenBtn.textContent = '⏳ Sincronizando Malla 3D...';
     if (liveStatus) {
       liveStatus.style.display = 'block';
       liveStatus.className = 'live-status-box status-loading';
-      liveStatus.textContent = 'Enviando parámetros al worker de generación de Blender...';
+      liveStatus.textContent = '[ PROCESANDO ] Aplicando parámetros y conectando con el entorno de generación...';
     }
 
-    const apiUrl = (window as any).__MODELCODER_API_URL__ || 'http://localhost:8000/api/generate';
+    // Determine API URL: user-configured -> window global -> localhost fallback
+    const configuredUrl = localStorage.getItem('modelcoder_worker_url');
+    const apiUrl = configuredUrl || (window as any).__MODELCODER_API_URL__ || (window.location.hostname === 'localhost' ? 'http://localhost:8000/api/generate' : null);
+
+    if (!apiUrl) {
+      // Web Standalone Mode: No worker configured, succeed via client-side generation
+      if (liveStatus) {
+        liveStatus.className = 'live-status-box status-success';
+        liveStatus.innerHTML = `✅ <strong>[ MODO NAVEGADOR ACTIVO ]</strong><br>Variante visual y materiales aplicados con éxito en el visor 3D.<br><small style="color: var(--text-dim); margin-top: 3px; display: inline-block;">Usa el botón <strong>"DESCARGAR GLB PERSONALIZADO"</strong> o copia el comando CLI para recalcular geometría en Blender.</small>`;
+      }
+      liveGenBtn.disabled = false;
+      liveGenBtn.textContent = '⚡ GENERAR MALLA 3D EN VIVO';
+      return;
+    }
 
     try {
       const res = await fetch(apiUrl, {
@@ -479,23 +694,20 @@ gen.parameters.forEach((param: any) => {
       if (viewer) {
         viewer.src = newGlbUrl;
       }
-      if (downloadGlbBtn) {
-        downloadGlbBtn.href = newGlbUrl;
-        downloadGlbBtn.download = `${familyName}_custom.glb`;
-      }
 
       if (liveStatus) {
         liveStatus.className = 'live-status-box status-success';
-        liveStatus.textContent = `✅ ¡Malla 3D generada y cargada en el visor! (Cache: ${cacheStatus})`;
+        liveStatus.textContent = `✅ [ WORKER OK ] ¡Nueva malla 3D compilada y cargada en el visor! (Cache: ${cacheStatus})`;
       }
     } catch (err: any) {
+      // Graceful fallback to client-side mode with clear, helpful instructions
       if (liveStatus) {
-        liveStatus.className = 'live-status-box status-error';
-        liveStatus.innerHTML = `⚠️ <strong>Fallo en la generación en vivo:</strong> ${err.message}<br><small style="color: #8b949e; margin-top: 4px; display: inline-block;">Asegúrate de tener corriendo el worker: <code>python server/main.py --port 8000</code></small>`;
+        liveStatus.className = 'live-status-box status-info';
+        liveStatus.innerHTML = `ℹ️ <strong>[ MODO NAVEGADOR ACTIVO ]</strong><br>Variante visual y materiales actualizados en el visor en tiempo real.<br><small style="color: var(--text-dim); margin-top: 4px; display: inline-block;">Para re-calcular geometría en un servidor remoto de Blender, puedes configurar la URL de tu worker en la pestaña de abajo o ejecutar el comando CLI en tu terminal local.</small>`;
       }
     } finally {
       liveGenBtn.disabled = false;
-      liveGenBtn.textContent = '⚡ Generar Malla 3D en Vivo';
+      liveGenBtn.textContent = '⚡ GENERAR MALLA 3D EN VIVO';
     }
   });
 
@@ -504,41 +716,57 @@ gen.parameters.forEach((param: any) => {
 </script>
 
 <style>
-  .breadcrumb-nav {
-    font-family: var(--font-mono);
-    font-size: 0.85rem;
-    color: var(--text-muted);
-    margin-bottom: 1.5rem;
+  /* Breadcrumb */
+  .ps1-breadcrumb {
+    font-family: var(--font-pixel);
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    margin-bottom: 1.25rem;
     display: flex;
     align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .crumb-link {
+    color: var(--ps1-cyan);
+    text-decoration: none;
+  }
+
+  .crumb-link:hover {
+    color: var(--ps1-gold);
+    text-decoration: underline;
+  }
+
+  .crumb-sep {
+    color: var(--ps1-steel-light);
   }
 
   .active-crumb {
-    color: var(--text-main);
-    font-weight: 600;
+    color: var(--ps1-gold);
+    font-weight: 700;
   }
 
+  /* Workspace Layout */
   .generator-workspace {
     display: grid;
-    grid-template-columns: 1fr 420px;
-    gap: 2rem;
+    grid-template-columns: 1fr 430px;
+    gap: 1.5rem;
     align-items: start;
   }
 
-  /* Viewport Column */
   .viewport-column {
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
   }
 
+  /* Viewport Window */
   .viewport-container {
     position: relative;
     width: 100%;
     height: 480px;
-    background: radial-gradient(circle, #1a2233 0%, #0a0d14 100%);
-    border: 1px solid var(--border-subtle);
-    border-radius: 8px;
+    background: radial-gradient(circle at center, #182236 0%, #060912 100%);
     overflow: hidden;
   }
 
@@ -553,86 +781,101 @@ gen.parameters.forEach((param: any) => {
     align-items: center;
     justify-content: center;
     height: 100%;
-    color: var(--accent-cyan);
-    font-family: var(--font-mono);
+    color: var(--ps1-cyan);
+    font-family: var(--font-pixel);
+    font-size: 0.85rem;
+  }
+
+  .no-preview-box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--ps1-gold);
+    font-family: var(--font-pixel);
+    font-size: 0.85rem;
   }
 
   .viewport-overlay-controls {
     position: absolute;
-    top: 1rem;
-    right: 1rem;
+    top: 0.75rem;
+    right: 0.75rem;
     display: flex;
-    gap: 0.5rem;
+    gap: 0.4rem;
     z-index: 10;
   }
 
-  .viewport-btn {
-    background: rgba(12, 14, 20, 0.8);
-    backdrop-filter: blur(4px);
-    border: 1px solid var(--border-subtle);
-    color: var(--text-main);
-    font-family: var(--font-mono);
-    font-size: 0.75rem;
-    padding: 0.35rem 0.65rem;
-    border-radius: 4px;
+  .ps1-ctrl-btn {
+    background: #141b2a;
+    border: 2px outset var(--ps1-steel-light);
+    color: #ffffff;
+    font-family: var(--font-pixel);
+    font-size: 0.65rem;
+    padding: 0.35rem 0.6rem;
     cursor: pointer;
-    transition: all 0.15s ease;
+    box-shadow: 1px 1px 0px #000;
   }
 
-  .viewport-btn:hover {
-    border-color: var(--accent-amber);
-    color: var(--accent-amber);
+  .ps1-ctrl-btn:hover {
+    color: var(--ps1-gold);
+    border-color: var(--ps1-gold);
+    background: #1e283d;
+  }
+
+  .ps1-ctrl-btn:active {
+    border-style: inset;
+    transform: translate(1px, 1px);
   }
 
   .preset-pill-bar {
     position: absolute;
-    bottom: 1rem;
-    left: 1rem;
-    right: 1rem;
+    bottom: 0.75rem;
+    left: 0.75rem;
+    right: 0.75rem;
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    background: rgba(12, 14, 20, 0.85);
-    backdrop-filter: blur(4px);
-    padding: 0.4rem 0.8rem;
-    border-radius: 6px;
-    border: 1px solid var(--border-subtle);
+    background: rgba(8, 12, 20, 0.9);
+    border: 2px inset var(--ps1-steel);
+    padding: 0.4rem 0.6rem;
     overflow-x: auto;
   }
 
   .preset-pill-label {
-    font-family: var(--font-mono);
-    font-size: 0.75rem;
-    color: var(--text-muted);
-    font-weight: 700;
+    font-family: var(--font-pixel);
+    font-size: 0.65rem;
+    color: var(--ps1-gold);
+    white-space: nowrap;
+  }
+
+  .preset-pill-scroll {
+    display: flex;
+    gap: 0.35rem;
+    overflow-x: auto;
   }
 
   .preset-pill {
-    background: transparent;
-    border: 1px solid var(--border-subtle);
-    color: var(--text-muted);
-    font-family: var(--font-mono);
-    font-size: 0.75rem;
-    padding: 0.25rem 0.6rem;
-    border-radius: 4px;
+    background: #161e2e;
+    border: 2px outset var(--ps1-steel);
+    color: #a0b2c6;
+    font-family: var(--font-pixel);
+    font-size: 0.62rem;
+    padding: 0.25rem 0.5rem;
     cursor: pointer;
     white-space: nowrap;
-    transition: all 0.15s ease;
+    box-shadow: 1px 1px 0px #000;
   }
 
   .preset-pill:hover, .preset-pill.active {
-    background: rgba(255, 176, 0, 0.15);
-    border-color: var(--accent-amber);
-    color: var(--accent-amber);
+    background: #735b22;
+    border: 2px inset var(--ps1-gold-light);
+    color: #ffffff;
     font-weight: 700;
   }
 
-  /* Summary Panel */
-  .generator-summary-panel {
-    background: var(--bg-card);
-    border: 1px solid var(--border-subtle);
-    border-radius: 8px;
-    padding: 1.5rem;
+  /* Summary Window */
+  .summary-body {
+    padding: 1.25rem;
   }
 
   .summary-header {
@@ -643,185 +886,155 @@ gen.parameters.forEach((param: any) => {
   }
 
   .generator-title {
-    font-size: 1.6rem;
-    font-weight: 800;
-    line-height: 1.2;
+    font-family: var(--font-pixel);
+    font-size: 1.2rem;
+    color: #ffffff;
+    margin-bottom: 0.35rem;
   }
 
   .family-tag {
     font-family: var(--font-mono);
-    font-size: 0.8rem;
-    color: var(--accent-cyan);
-    background: rgba(0, 229, 255, 0.08);
-    padding: 0.15rem 0.4rem;
-    border-radius: 3px;
-  }
-
-  .license-badge-box {
-    display: flex;
-    gap: 0.5rem;
+    font-size: 0.75rem;
+    color: var(--ps1-cyan);
+    background: #080d1a;
+    border: 1px inset var(--ps1-steel);
+    padding: 0.15rem 0.45rem;
   }
 
   .meta-pill {
-    font-family: var(--font-mono);
-    font-size: 0.75rem;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid var(--border-subtle);
+    font-family: var(--font-pixel);
+    font-size: 0.65rem;
+    color: var(--ps1-gold);
+    background: #141b29;
+    border: 1px inset var(--ps1-steel);
     padding: 0.2rem 0.5rem;
-    border-radius: 3px;
-    color: var(--text-muted);
+  }
+
+  .meta-pill-ver {
+    font-family: var(--font-telemetry);
+    font-size: 1.1rem;
+    color: var(--ps1-cyan);
   }
 
   .summary-desc {
-    color: var(--text-muted);
-    font-size: 0.95rem;
-    line-height: 1.6;
-    margin-bottom: 1.5rem;
+    color: #b0c0d4;
+    font-size: 0.9rem;
+    line-height: 1.55;
+    margin-bottom: 1.25rem;
   }
 
   .capabilities-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 0.75rem;
-    background: #0d1017;
-    padding: 1rem;
-    border-radius: 6px;
-    border: 1px solid var(--border-subtle);
+    gap: 0.65rem;
   }
 
   .cap-card {
+    padding: 0.65rem 0.5rem;
     display: flex;
     flex-direction: column;
+    text-align: center;
   }
 
   .cap-label {
-    font-size: 0.75rem;
-    color: var(--text-muted);
+    font-family: var(--font-pixel);
+    font-size: 0.6rem;
+    color: var(--text-dim);
+    margin-bottom: 0.2rem;
   }
 
   .cap-val {
-    font-family: var(--font-mono);
-    font-size: 0.85rem;
+    font-family: var(--font-telemetry);
+    font-size: 1.15rem;
     font-weight: 700;
-    margin-top: 0.2rem;
+    color: #ffffff;
   }
 
-  .text-green { color: var(--accent-green); }
-  .text-cyan { color: var(--accent-cyan); }
+  .text-gold { color: var(--ps1-gold); }
+  .text-green { color: var(--ps1-green); }
+  .text-cyan { color: var(--ps1-cyan); }
 
-  /* Code panel */
-  .code-inspection-panel {
-    background: var(--bg-card);
-    border: 1px solid var(--border-subtle);
-    border-radius: 8px;
-    padding: 1.25rem;
-  }
-
-  .panel-tab-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1rem;
-  }
-
-  .panel-heading {
-    font-size: 1rem;
-    font-weight: 700;
+  /* Code Window */
+  .code-body {
+    padding: 0.75rem;
   }
 
   .code-block {
-    background: #090b10;
-    border: 1px solid var(--border-subtle);
-    border-radius: 6px;
-    padding: 1rem;
-    max-height: 400px;
+    padding: 0.75rem;
+    max-height: 340px;
     overflow: auto;
     font-family: var(--font-mono);
-    font-size: 0.8rem;
-    color: #adbac7;
-    line-height: 1.45;
+    font-size: 0.78rem;
+    color: #9ab4d0;
+    line-height: 1.4;
   }
 
   /* Right Column: Configurator */
   .configurator-card {
-    background: var(--bg-card);
-    border: 1px solid var(--border-subtle);
-    border-radius: 8px;
-    padding: 1.5rem;
     position: sticky;
-    top: 5rem;
-    max-height: calc(100vh - 6rem);
-    overflow-y: auto;
-  }
-
-  .config-header {
+    top: 4.5rem;
+    max-height: calc(100vh - 5.5rem);
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 0.25rem;
+    flex-direction: column;
   }
 
-  .config-header h2 {
-    font-size: 1.25rem;
-    font-weight: 700;
+  .config-body {
+    padding: 1rem;
+    overflow-y: auto;
+    flex: 1;
   }
 
   .param-count-badge {
-    font-family: var(--font-mono);
-    font-size: 0.75rem;
-    background: rgba(255, 176, 0, 0.1);
-    color: var(--accent-amber);
-    padding: 0.15rem 0.45rem;
-    border-radius: 3px;
+    color: var(--ps1-cyan);
+    font-family: var(--font-telemetry);
+    font-size: 1.1rem;
   }
 
   .config-subtext {
     font-size: 0.8rem;
-    color: var(--text-muted);
-    margin-bottom: 1.25rem;
+    color: var(--text-dim);
+    margin-bottom: 1rem;
   }
 
   .preset-select-group {
-    margin-bottom: 1.25rem;
-    padding-bottom: 1rem;
-    border-bottom: 1px solid var(--border-subtle);
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px dashed var(--ps1-steel);
   }
 
-  .preset-select-group label {
+  .field-label {
     display: block;
-    font-family: var(--font-mono);
-    font-size: 0.8rem;
-    color: var(--text-muted);
-    margin-bottom: 0.4rem;
+    font-family: var(--font-pixel);
+    font-size: 0.75rem;
+    color: var(--ps1-gold);
+    margin-bottom: 0.35rem;
   }
 
   .parameter-group {
-    border: 1px solid var(--border-subtle);
-    border-radius: 6px;
-    padding: 0.85rem;
+    border: 2px inset var(--ps1-steel);
+    padding: 0.75rem;
     margin-bottom: 1rem;
-    background: rgba(0, 0, 0, 0.15);
+    background: #090e1a;
   }
 
   .group-legend {
-    font-family: var(--font-mono);
-    font-size: 0.8rem;
-    font-weight: 700;
-    color: var(--accent-amber);
-    padding: 0 0.5rem;
+    font-family: var(--font-pixel);
+    font-size: 0.7rem;
+    color: var(--ps1-gold);
+    padding: 0 0.4rem;
   }
 
   .group-inputs {
     display: flex;
     flex-direction: column;
-    gap: 1rem;
-    margin-top: 0.5rem;
+    gap: 0.85rem;
+    margin-top: 0.35rem;
   }
 
   .input-row {
     display: flex;
     flex-direction: column;
-    gap: 0.35rem;
+    gap: 0.25rem;
   }
 
   .input-label-row {
@@ -831,37 +1044,37 @@ gen.parameters.forEach((param: any) => {
   }
 
   .input-label {
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: var(--text-main);
+    font-size: 0.8rem;
+    font-family: var(--font-mono);
+    color: #ffffff;
   }
 
   .live-val {
-    font-family: var(--font-mono);
-    font-size: 0.8rem;
-    color: var(--accent-cyan);
-    font-weight: 700;
+    font-family: var(--font-telemetry);
+    font-size: 1.1rem;
+    color: var(--ps1-cyan);
   }
 
   .form-range {
     width: 100%;
-    accent-color: var(--accent-amber);
+    accent-color: var(--ps1-gold);
     cursor: pointer;
   }
 
   .form-input, .form-select {
-    background: var(--bg-input);
-    border: 1px solid var(--border-subtle);
-    color: var(--text-main);
-    padding: 0.5rem 0.75rem;
-    border-radius: 4px;
-    font-size: 0.85rem;
+    background: #050811;
+    border: 2px inset var(--ps1-steel);
+    color: #ffffff;
+    padding: 0.45rem 0.65rem;
+    font-size: 0.8rem;
     font-family: var(--font-mono);
     outline: none;
+    box-shadow: inset 1px 1px 0px #000;
   }
 
   .form-input:focus, .form-select:focus {
-    border-color: var(--accent-amber);
+    border-color: var(--ps1-gold);
+    background: #080d1c;
   }
 
   /* Toggle Switch */
@@ -869,7 +1082,7 @@ gen.parameters.forEach((param: any) => {
     position: relative;
     display: inline-block;
     width: 44px;
-    height: 24px;
+    height: 22px;
   }
 
   .toggle-switch input {
@@ -881,114 +1094,109 @@ gen.parameters.forEach((param: any) => {
   .slider {
     position: absolute;
     cursor: pointer;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: #232a3d;
-    transition: .2s;
-    border-radius: 24px;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: #1a2233;
+    border: 2px inset var(--ps1-steel);
+    transition: 0.1s;
   }
 
   .slider:before {
     position: absolute;
     content: "";
-    height: 18px;
-    width: 18px;
-    left: 3px;
-    bottom: 3px;
-    background-color: white;
-    transition: .2s;
-    border-radius: 50%;
+    height: 14px;
+    width: 14px;
+    left: 2px;
+    bottom: 2px;
+    background-color: #8b99ad;
+    box-shadow: 1px 1px 0px #000;
+    transition: 0.1s;
   }
 
   input:checked + .slider {
-    background-color: var(--accent-amber);
+    background-color: #594314;
+    border-color: var(--ps1-gold-border);
   }
 
   input:checked + .slider:before {
     transform: translateX(20px);
+    background-color: var(--ps1-gold);
   }
 
   .param-help {
-    font-size: 0.75rem;
-    color: #6e7681;
-    line-height: 1.3;
-  }
-
-  /* CLI Box */
-  .cli-command-box {
-    margin-top: 1.5rem;
-    background: #090b10;
-    border: 1px solid var(--border-subtle);
-    border-radius: 6px;
-    padding: 0.85rem;
-  }
-
-  .cli-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+    font-size: 0.7rem;
+    color: var(--text-dim);
     font-family: var(--font-mono);
-    font-size: 0.75rem;
-    color: var(--text-muted);
-    margin-bottom: 0.4rem;
+  }
+
+  .action-buttons-box {
+    margin-top: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+  }
+
+  .cli-window {
+    margin-top: 1.25rem;
   }
 
   .cli-code {
     display: block;
     font-family: var(--font-mono);
-    font-size: 0.8rem;
-    color: var(--accent-cyan);
+    font-size: 0.75rem;
+    color: var(--ps1-cyan);
     word-break: break-all;
     line-height: 1.4;
     user-select: all;
   }
 
-  .live-generate-container {
-    margin-top: 1rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-
   .live-status-box {
-    padding: 0.6rem 0.8rem;
-    border-radius: 4px;
-    font-size: 0.8rem;
+    padding: 0.55rem 0.75rem;
+    border: 2px inset var(--ps1-steel);
     font-family: var(--font-mono);
+    font-size: 0.78rem;
     line-height: 1.4;
   }
 
   .status-loading {
-    background: rgba(0, 229, 255, 0.1);
-    border: 1px solid rgba(0, 229, 255, 0.3);
-    color: var(--accent-cyan);
-    animation: pulse 1.5s infinite;
+    background: #061824;
+    border-color: var(--ps1-cyan-dim);
+    color: var(--ps1-cyan);
   }
 
   .status-success {
-    background: rgba(63, 185, 80, 0.1);
-    border: 1px solid rgba(63, 185, 80, 0.3);
-    color: var(--accent-green);
+    background: #082110;
+    border-color: var(--ps1-green-dim);
+    color: var(--ps1-green);
   }
 
-  .status-error {
-    background: rgba(248, 81, 73, 0.1);
-    border: 1px solid rgba(248, 81, 73, 0.3);
-    color: var(--accent-red);
+  .status-info {
+    background: #141b29;
+    border-color: var(--ps1-steel-light);
+    color: #e0e8f5;
   }
 
-  @keyframes pulse {
-    0%, 100% { opacity: 0.8; }
-    50% { opacity: 0.4; }
+  .worker-config-details {
+    margin-top: 0.5rem;
+    border: 1px solid var(--ps1-steel);
+    background: #080b14;
+    padding: 0.4rem;
   }
 
-  .action-buttons-box {
-    margin-top: 1.25rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.6rem;
+  .worker-config-summary {
+    font-family: var(--font-pixel);
+    font-size: 0.68rem;
+    color: var(--text-dim);
+    cursor: pointer;
+  }
+
+  .worker-config-summary:hover {
+    color: var(--ps1-gold);
+  }
+
+  .worker-config-box {
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+    border-top: 1px dashed var(--ps1-steel);
   }
 
   @media (max-width: 1024px) {
@@ -998,6 +1206,9 @@ gen.parameters.forEach((param: any) => {
     .configurator-card {
       position: static;
       max-height: none;
+    }
+    .capabilities-grid {
+      grid-template-columns: repeat(2, 1fr);
     }
   }
 </style>

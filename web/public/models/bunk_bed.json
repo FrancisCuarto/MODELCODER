@@ -1,0 +1,105 @@
+{
+  "generator": "ProceduralAssetGenerator",
+  "model_name": "bunk_bed",
+  "seed": 1337,
+  "timestamp": "2026-10-15T22:33:45.178465Z",
+  "mesh_metrics": {
+    "triangle_count": 444,
+    "vertex_count": 296,
+    "target_tri_budget": 480,
+    "budget_compliance_ratio": 0.93,
+    "dimensions_meters": {
+      "width": 1.0875,
+      "height": 2.05,
+      "depth": 2.05
+    },
+    "has_vertex_colors": true,
+    "materials_assigned": [
+      "mat_psx_industrial_hazard_casing_w50",
+      "mat_psx_industrial_hazard_btn_gray_w50",
+      "mat_psx_industrial_hazard_fluorescent_lit_w50",
+      "mat_psx_industrial_hazard_locker_gray_w50",
+      "mat_psx_industrial_hazard_wall_bulkhead_w50",
+      "mat_psx_industrial_hazard_wall_support_beam_w50"
+    ]
+  },
+  "config_parameters": {
+    "seed": 1337,
+    "target_tri_budget": 480,
+    "name": "bunk_bed",
+    "wear_level": 0.5,
+    "add_collision_mesh": false,
+    "collision_type": "box",
+    "collision_suffix": "-convcolonly",
+    "pivot_rule": "floor_center",
+    "export_subcomponents": false,
+    "palette_name": "industrial_hazard",
+    "emission_scale": 1.0,
+    "extra_params": {},
+    "frame_style": "tubular_metal",
+    "width": 1.05,
+    "length": 2.05,
+    "height": 2.05,
+    "ladder_position": "front_right",
+    "upper_guardrail": true,
+    "lower_bunk_state": "made",
+    "upper_bunk_state": "made",
+    "has_reading_lights": true,
+    "has_storage_lockers": true,
+    "has_curtains": false,
+    "blanket_color": "station_gray"
+  },
+  "sockets": [
+    {
+      "name": "socket_player_interact",
+      "position": [
+        0.0,
+        -1.575,
+        0.0
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "Standard player character interaction stand point"
+    },
+    {
+      "name": "socket_item_spawn",
+      "position": [
+        0.0,
+        0.0,
+        2.07
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "Prop or pickup spawn snap position (keycards, ammo, medical items)"
+    },
+    {
+      "name": "socket_light",
+      "position": [
+        0.0,
+        0.0,
+        1.743
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "OmniLight3D / SpotLight3D mount anchor point"
+    }
+  ],
+  "godot_4_compatibility": {
+    "format": "glTF 2.0 Binary (.glb)",
+    "unit": "meters (1.0 Blender unit = 1.0 Godot unit)",
+    "forward_axis": "-Z",
+    "up_axis": "+Y",
+    "collision_mesh_convention": "Child node with -col or -colonly creates Godot StaticBody3D collision shape",
+    "vertex_colors": "Exported in COLOR_0 accessor (usable with StandardMaterial3D or PSX shader)",
+    "pbr_materials": "Exported as glTF PBR metallic/roughness + emissive"
+  }
+}

@@ -1,0 +1,141 @@
+{
+  "generator": "ProceduralAssetGenerator",
+  "model_name": "station_corridor",
+  "seed": 1337,
+  "timestamp": "2026-10-15T22:33:46.390359Z",
+  "mesh_metrics": {
+    "triangle_count": 192,
+    "vertex_count": 128,
+    "target_tri_budget": 550,
+    "budget_compliance_ratio": 0.35,
+    "dimensions_meters": {
+      "width": 3.32,
+      "height": 4.0,
+      "depth": 3.16
+    },
+    "has_vertex_colors": true,
+    "materials_assigned": [
+      "mat_psx_industrial_hazard_fluorescent_lit_w50",
+      "mat_psx_industrial_hazard_rubber_tire_w50",
+      "mat_psx_industrial_hazard_floor_metal_w50",
+      "mat_psx_industrial_hazard_floor_hazard_w50",
+      "mat_psx_industrial_hazard_wall_bulkhead_w50",
+      "mat_psx_industrial_hazard_wall_support_beam_w50",
+      "mat_psx_industrial_hazard_ceiling_girder_w50"
+    ]
+  },
+  "config_parameters": {
+    "seed": 1337,
+    "target_tri_budget": 550,
+    "name": "station_corridor",
+    "wear_level": 0.5,
+    "add_collision_mesh": false,
+    "collision_type": "box",
+    "collision_suffix": "-convcolonly",
+    "pivot_rule": "floor_center",
+    "export_subcomponents": false,
+    "palette_name": "industrial_hazard",
+    "emission_scale": 1.0,
+    "extra_params": {},
+    "corridor_type": "straight",
+    "width": 3.0,
+    "length": 4.0,
+    "height": 3.0,
+    "floor_style": "tread_plate",
+    "wall_style": "structural_ribs",
+    "ceiling_style": "exposed_beams",
+    "has_integrated_lighting": true,
+    "lighting_state": "working",
+    "has_cable_runs": true,
+    "has_wall_alcove": true,
+    "has_hazard_stripes": true,
+    "damage_state": "pristine",
+    "doorway_width": 2.0,
+    "doorway_height": 2.4,
+    "connection_sockets": [
+      {
+        "name": "socket_south",
+        "pos": [
+          0.0,
+          -2.0,
+          0.0
+        ],
+        "forward": [
+          0.0,
+          -1.0,
+          0.0
+        ],
+        "width": 3.0,
+        "height": 3.0
+      },
+      {
+        "name": "socket_north",
+        "pos": [
+          0.0,
+          2.0,
+          0.0
+        ],
+        "forward": [
+          0.0,
+          1.0,
+          0.0
+        ],
+        "width": 3.0,
+        "height": 3.0
+      }
+    ]
+  },
+  "sockets": [
+    {
+      "name": "socket_player_interact",
+      "position": [
+        0.0,
+        -2.55,
+        0.0
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "Standard player character interaction stand point"
+    },
+    {
+      "name": "socket_item_spawn",
+      "position": [
+        0.0,
+        0.0,
+        3.18
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "Prop or pickup spawn snap position (keycards, ammo, medical items)"
+    },
+    {
+      "name": "socket_light",
+      "position": [
+        0.0,
+        0.0,
+        2.686
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "OmniLight3D / SpotLight3D mount anchor point"
+    }
+  ],
+  "godot_4_compatibility": {
+    "format": "glTF 2.0 Binary (.glb)",
+    "unit": "meters (1.0 Blender unit = 1.0 Godot unit)",
+    "forward_axis": "-Z",
+    "up_axis": "+Y",
+    "collision_mesh_convention": "Child node with -col or -colonly creates Godot StaticBody3D collision shape",
+    "vertex_colors": "Exported in COLOR_0 accessor (usable with StandardMaterial3D or PSX shader)",
+    "pbr_materials": "Exported as glTF PBR metallic/roughness + emissive"
+  }
+}

@@ -9,105 +9,122 @@ catalog.forEach((item) => {
 });
 
 const categories = [
-  { id: 'all', label: 'Todos', count: catalog.length },
-  { id: 'furniture', label: 'Mobiliario', count: categoryCounts['furniture'] || 0 },
-  { id: 'fixtures', label: 'Accesorios & Focos', count: categoryCounts['fixtures'] || 0 },
-  { id: 'infrastructure', label: 'Infraestructura', count: categoryCounts['infrastructure'] || 0 },
-  { id: 'medical', label: 'Médico & Lab', count: categoryCounts['medical'] || 0 },
-  { id: 'architecture', label: 'Arquitectura', count: categoryCounts['architecture'] || 0 },
+  { id: 'all', label: 'TODOS', count: catalog.length },
+  { id: 'furniture', label: 'MOBILIARIO', count: categoryCounts['furniture'] || 0 },
+  { id: 'fixtures', label: 'LUCES & DISPOSITIVOS', count: categoryCounts['fixtures'] || 0 },
+  { id: 'infrastructure', label: 'INFRAESTRUCTURA', count: categoryCounts['infrastructure'] || 0 },
+  { id: 'medical', label: 'MÉDICO & LAB', count: categoryCounts['medical'] || 0 },
+  { id: 'architecture', label: 'ARQUITECTURA', count: categoryCounts['architecture'] || 0 },
 ];
 ---
 
 <Layout title="Catálogo de Generadores 3D">
-  <!-- Hero Section -->
-  <section class="hero-section">
-    <div class="hero-badge">PLATAFORMA ABIERTA DE MODELOS 3D</div>
-    <h1 class="hero-title">Generadores Procedurales para Below Nominal</h1>
-    <p class="hero-description">
-      No sólo descargues modelos 3D estáticos. Personaliza el código que los construye,
-      inspecciona sus parámetros matemáticos en tiempo real y expórtalos optimizados para Godot y glTF.
-    </p>
+  <!-- PS1 Mission Briefing / Hero Window -->
+  <section class="ps1-window hero-window">
+    <div class="ps1-titlebar">
+      <span>// SYSTEM_BRIEFING: MODELCODER_PSX_ENGINE</span>
+      <span class="ps1-title-status">READY [OK]</span>
+    </div>
 
-    <!-- Metrics Bar -->
-    <div class="metrics-grid">
-      <div class="metric-card">
-        <span class="metric-val">{catalog.length}</span>
-        <span class="metric-lbl">Generadores</span>
+    <div class="hero-body">
+      <div class="hero-header-line">
+        <h1 class="hero-title">BIBLIOTECA COMUNITARIA DE MODELOS 3D</h1>
       </div>
-      <div class="metric-card">
-        <span class="metric-val">5</span>
-        <span class="metric-lbl">Sectores / Categorías</span>
-      </div>
-      <div class="metric-card">
-        <span class="metric-val">100%</span>
-        <span class="metric-lbl">Código Abierto</span>
-      </div>
-      <div class="metric-card">
-        <span class="metric-val">PSX</span>
-        <span class="metric-lbl">Estética Retro-SciFi</span>
+      <p class="hero-description">
+        No descargues simples archivos estáticos. Personaliza el código que genera los modelos,
+        inspecciona sus parámetros matemáticos en tiempo real y exporta directamente mallas optimizadas para Godot 4 y glTF.
+      </p>
+
+      <!-- Retro PS1 HUD Telemetry -->
+      <div class="metrics-grid">
+        <div class="ps1-inset metric-card">
+          <span class="metric-lbl">TOTAL_GENERATORS</span>
+          <span class="metric-val text-gold">{catalog.length}</span>
+        </div>
+        <div class="ps1-inset metric-card">
+          <span class="metric-lbl">ACTIVE_SECTORS</span>
+          <span class="metric-val text-cyan">5</span>
+        </div>
+        <div class="ps1-inset metric-card">
+          <span class="metric-lbl">CODE_LICENSING</span>
+          <span class="metric-val text-green">100% CC-BY</span>
+        </div>
+        <div class="ps1-inset metric-card">
+          <span class="metric-lbl">RENDER_PIPELINE</span>
+          <span class="metric-val text-gold">PS1 / LOW-POLY</span>
+        </div>
       </div>
     </div>
   </section>
 
-  <!-- Filter Controls -->
-  <section class="catalog-controls">
-    <div class="search-box">
-      <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="11" cy="11" r="8"></circle>
-        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-      </svg>
-      <input 
-        type="text" 
-        id="search-input" 
-        placeholder="Buscar por nombre, etiquetas, autor o familia (ej. mesa, medbay, crt, panel)..." 
-        autocomplete="off"
-      />
+  <!-- PS1 Tactical Filter Controls -->
+  <section class="ps1-window catalog-controls-window">
+    <div class="ps1-titlebar">
+      <span>// DATABASE_QUERY_FILTER</span>
+      <span id="results-count" class="results-telemetry">44 / 44 RECORDS</span>
     </div>
 
-    <div class="category-filters">
-      {categories.map((cat) => (
-        <button 
-          class={`filter-btn ${cat.id === 'all' ? 'active' : ''}`}
-          data-category={cat.id}
-        >
-          {cat.label} <span class="filter-count">({cat.count})</span>
-        </button>
-      ))}
+    <div class="controls-body">
+      <div class="search-row">
+        <span class="search-prompt">&gt; SEARCH:</span>
+        <div class="search-box">
+          <input 
+            type="text" 
+            id="search-input" 
+            placeholder="Escribe para filtrar (ej. mesa, medbay, crt, panel, tubería)..." 
+            autocomplete="off"
+          />
+        </div>
+      </div>
+
+      <div class="category-filters">
+        <span class="filter-prompt">&gt; SECTOR:</span>
+        <div class="filter-buttons-wrap">
+          {categories.map((cat) => (
+            <button 
+              class={`filter-btn ${cat.id === 'all' ? 'active' : ''}`}
+              data-category={cat.id}
+            >
+              [{cat.label}: {cat.count}]
+            </button>
+          ))}
+        </div>
+      </div>
     </div>
   </section>
-
-  <!-- Results count -->
-  <div class="results-header">
-    <span id="results-count">Mostrando {catalog.length} generadores</span>
-  </div>
 
   <!-- Generator Cards Grid -->
   <div class="generators-grid" id="generators-container">
     {catalog.map((gen) => (
       <article 
-        class="generator-card"
+        class="ps1-window generator-card"
         data-family={gen.family}
         data-category={gen.category}
         data-tags={gen.tags.join(' ')}
         data-name={gen.name.toLowerCase()}
         data-desc={gen.description.toLowerCase()}
       >
-        <div class="card-preview">
+        <div class="ps1-titlebar card-titlebar">
+          <span class="card-family-tag">[{gen.family}]</span>
+          <span class="card-license-tag">{gen.license}</span>
+        </div>
+
+        <div class="ps1-inset card-preview">
           {gen.has_model ? (
             <model-viewer
               src={gen.model_url}
               alt={gen.name}
               auto-rotate
-              rotation-per-second="20deg"
+              rotation-per-second="25deg"
               camera-controls
               interaction-prompt="none"
-              shadow-intensity="0.8"
+              shadow-intensity="1.0"
               loading="lazy"
               class="model-preview"
             ></model-viewer>
           ) : (
             <div class="placeholder-preview">
-              <span>Vista 3D disponible en local</span>
+              <span>[ VISTA 3D EN LOCAL ]</span>
             </div>
           )}
 
@@ -116,7 +133,7 @@ const categories = [
               {gen.category}
             </span>
             <span class="preset-badge">
-              {gen.presets.length} {gen.presets.length === 1 ? 'Preset' : 'Presets'}
+              {gen.presets.length} PRESET{gen.presets.length === 1 ? '' : 'S'}
             </span>
           </div>
         </div>
@@ -128,15 +145,15 @@ const categories = [
           <p class="card-description">{gen.description}</p>
 
           <div class="card-meta">
-            <span class="meta-tag">{gen.parameters.length} Parámetros</span>
-            <span class="meta-tag">{gen.license}</span>
-            <span class="meta-tag">v{gen.version}</span>
+            <span class="ps1-inset meta-tag">PARAMS: {gen.parameters.length}</span>
+            <span class="ps1-inset meta-tag">TRIS: {gen.export_capabilities?.target_tri_budget || 450}</span>
+            <span class="ps1-inset meta-tag">v{gen.version}</span>
           </div>
         </div>
 
         <div class="card-footer">
           <a href={`/generators/${gen.family}`} class="btn btn-primary" style="flex: 1;">
-            Personalizar & 3D &rarr;
+            CONFIGURAR & 3D &gt;&gt;
           </a>
           {gen.has_model && (
             <a 
@@ -153,11 +170,18 @@ const categories = [
     ))}
   </div>
 
-  <div id="no-results" class="no-results" style="display: none;">
-    <p>No se encontraron generadores que coincidan con los filtros seleccionados.</p>
-    <button id="reset-filters-btn" class="btn btn-outline" style="margin-top: 1rem;">
-      Restablecer Filtros
-    </button>
+  <div id="no-results" class="ps1-window no-results" style="display: none;">
+    <div class="ps1-titlebar">
+      <span>// NO_MATCH_FOUND</span>
+    </div>
+    <div style="padding: 2rem; text-align: center;">
+      <p style="color: var(--ps1-gold); font-family: var(--font-pixel); margin-bottom: 1rem;">
+        NO SE ENCONTRARON GENERADORES QUE COINCIDAN CON LOS FILTROS.
+      </p>
+      <button id="reset-filters-btn" class="btn btn-primary">
+        [ RESTABLECER FILTROS ]
+      </button>
+    </div>
   </div>
 </Layout>
 
@@ -201,7 +225,7 @@ const categories = [
     });
 
     if (resultsCount) {
-      resultsCount.textContent = `Mostrando ${visible} de ${cards.length} generadores`;
+      resultsCount.textContent = `${visible} / ${cards.length} RECORDS`;
     }
 
     if (noResults) {
@@ -236,156 +260,164 @@ const categories = [
 </script>
 
 <style>
-  .hero-section {
-    text-align: center;
-    padding: 3rem 1rem 2.5rem;
-    max-width: 900px;
-    margin: 0 auto;
+  /* Hero Briefing Window */
+  .hero-window {
+    margin-bottom: 2rem;
   }
 
-  .hero-badge {
-    display: inline-block;
-    font-family: var(--font-mono);
-    font-size: 0.8rem;
-    color: var(--accent-amber);
-    background: rgba(255, 176, 0, 0.1);
-    border: 1px solid rgba(255, 176, 0, 0.3);
-    padding: 0.3rem 0.8rem;
-    border-radius: 20px;
-    margin-bottom: 1.25rem;
-    letter-spacing: 0.08em;
+  .hero-body {
+    padding: 1.5rem;
+  }
+
+  .ps1-title-status {
+    color: var(--ps1-green);
+    font-family: var(--font-telemetry);
+    font-size: 1.1rem;
   }
 
   .hero-title {
-    font-size: 2.75rem;
-    font-weight: 800;
-    line-height: 1.15;
-    letter-spacing: -0.02em;
-    margin-bottom: 1rem;
-    background: linear-gradient(180deg, #ffffff 0%, #a0aec0 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+    font-family: var(--font-title);
+    font-size: 1.35rem;
+    line-height: 1.5;
+    color: var(--ps1-gold);
+    margin-bottom: 0.75rem;
+    letter-spacing: 0.04em;
+    text-shadow: 2px 2px 0px #000000;
   }
 
   .hero-description {
-    font-size: 1.15rem;
-    color: var(--text-muted);
+    font-size: 0.95rem;
+    color: #c0cde0;
     line-height: 1.6;
-    margin-bottom: 2.5rem;
+    margin-bottom: 1.5rem;
+    max-width: 1000px;
   }
 
+  /* Retro HUD Telemetry Metrics */
   .metrics-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 1rem;
-    margin-top: 1.5rem;
+    gap: 0.85rem;
   }
 
   .metric-card {
-    background: var(--bg-card);
-    border: 1px solid var(--border-subtle);
-    padding: 1.25rem 0.5rem;
-    border-radius: 6px;
+    padding: 0.85rem 0.75rem;
     display: flex;
     flex-direction: column;
     align-items: center;
-  }
-
-  .metric-val {
-    font-family: var(--font-mono);
-    font-size: 1.85rem;
-    font-weight: 800;
-    color: var(--accent-cyan);
+    text-align: center;
   }
 
   .metric-lbl {
-    font-size: 0.8rem;
-    color: var(--text-muted);
-    margin-top: 0.25rem;
+    font-family: var(--font-pixel);
+    font-size: 0.65rem;
+    color: var(--text-dim);
+    margin-bottom: 0.25rem;
+    letter-spacing: 0.05em;
   }
 
-  /* Catalog Controls */
-  .catalog-controls {
-    margin: 2rem 0 1rem;
+  .metric-val {
+    font-family: var(--font-telemetry);
+    font-size: 1.85rem;
+    line-height: 1;
+    font-weight: 700;
+  }
+
+  .text-gold { color: var(--ps1-gold); }
+  .text-cyan { color: var(--ps1-cyan); }
+  .text-green { color: var(--ps1-green); }
+
+  /* Tactical Catalog Controls Window */
+  .catalog-controls-window {
+    margin-bottom: 2rem;
+  }
+
+  .controls-body {
+    padding: 1.25rem;
     display: flex;
     flex-direction: column;
-    gap: 1.25rem;
+    gap: 1rem;
+  }
+
+  .results-telemetry {
+    color: var(--ps1-cyan);
+    font-family: var(--font-telemetry);
+    font-size: 1.15rem;
+  }
+
+  .search-row {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+  }
+
+  .search-prompt, .filter-prompt {
+    font-family: var(--font-pixel);
+    font-size: 0.75rem;
+    color: var(--ps1-gold);
+    min-width: 90px;
   }
 
   .search-box {
-    position: relative;
-    width: 100%;
-  }
-
-  .search-icon {
-    position: absolute;
-    left: 1rem;
-    top: 50%;
-    transform: translateY(-50%);
-    color: var(--text-muted);
+    flex: 1;
   }
 
   .search-box input {
     width: 100%;
-    background: var(--bg-input);
-    border: 1px solid var(--border-subtle);
-    color: var(--text-main);
-    font-family: var(--font-sans);
-    font-size: 1rem;
-    padding: 0.9rem 1rem 0.9rem 2.85rem;
-    border-radius: 6px;
+    background: #050810;
+    border: 2px inset var(--ps1-steel);
+    color: #ffffff;
+    font-family: var(--font-mono);
+    font-size: 0.95rem;
+    padding: 0.55rem 0.85rem;
     outline: none;
-    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    box-shadow: inset 2px 2px 0px #000000;
   }
 
   .search-box input:focus {
-    border-color: var(--accent-amber);
-    box-shadow: 0 0 0 3px rgba(255, 176, 0, 0.15);
+    border-color: var(--ps1-gold);
+    background: #090e1c;
   }
 
   .category-filters {
     display: flex;
+    align-items: flex-start;
+    gap: 0.85rem;
+  }
+
+  .filter-buttons-wrap {
+    display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;
+    flex: 1;
   }
 
   .filter-btn {
-    background: var(--bg-card);
-    border: 1px solid var(--border-subtle);
-    color: var(--text-muted);
-    font-family: var(--font-mono);
-    font-size: 0.85rem;
-    padding: 0.45rem 0.85rem;
-    border-radius: 4px;
+    background: #182030;
+    border: 2px outset var(--ps1-steel-light);
+    color: #c2cfdf;
+    font-family: var(--font-pixel);
+    font-size: 0.68rem;
+    padding: 0.4rem 0.65rem;
     cursor: pointer;
-    transition: all 0.15s ease;
+    box-shadow: 1px 1px 0px #000;
   }
 
   .filter-btn:hover {
-    border-color: #58a6ff;
-    color: var(--text-main);
+    background: #232f48;
+    color: var(--ps1-gold);
+    border-color: var(--ps1-gold);
   }
 
   .filter-btn.active {
-    background: rgba(255, 176, 0, 0.15);
-    border-color: var(--accent-amber);
-    color: var(--accent-amber);
+    background: #735b22;
+    border: 2px inset var(--ps1-gold-light);
+    color: #ffffff;
     font-weight: 700;
+    box-shadow: inset 1px 1px 0px #000;
   }
 
-  .filter-count {
-    opacity: 0.7;
-    font-size: 0.75rem;
-  }
-
-  .results-header {
-    margin-bottom: 1.25rem;
-    font-family: var(--font-mono);
-    font-size: 0.85rem;
-    color: var(--text-muted);
-  }
-
-  /* Grid */
+  /* Grid & Generator Cards */
   .generators-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -393,26 +425,31 @@ const categories = [
   }
 
   .generator-card {
-    background: var(--bg-card);
-    border: 1px solid var(--border-subtle);
-    border-radius: 8px;
-    overflow: hidden;
     display: flex;
     flex-direction: column;
-    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    overflow: hidden;
   }
 
-  .generator-card:hover {
-    transform: translateY(-3px);
-    border-color: #3b4563;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  .card-titlebar {
+    font-size: 0.7rem;
+    padding: 0.35rem 0.65rem;
+  }
+
+  .card-family-tag {
+    color: var(--ps1-cyan);
+    font-family: var(--font-mono);
+  }
+
+  .card-license-tag {
+    color: var(--text-dim);
+    font-size: 0.65rem;
   }
 
   .card-preview {
     position: relative;
     height: 220px;
-    background: radial-gradient(circle, #1a202c 0%, #0d0f14 100%);
-    border-bottom: 1px solid var(--border-subtle);
+    margin: 0.5rem;
+    background: radial-gradient(circle at center, #1b2640 0%, #060912 100%);
   }
 
   .model-preview {
@@ -426,58 +463,48 @@ const categories = [
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--text-muted);
-    font-family: var(--font-mono);
-    font-size: 0.85rem;
+    color: var(--text-dim);
+    font-family: var(--font-pixel);
+    font-size: 0.75rem;
   }
 
   .preview-badges {
     position: absolute;
-    top: 0.75rem;
-    left: 0.75rem;
-    right: 0.75rem;
+    top: 0.5rem;
+    left: 0.5rem;
+    right: 0.5rem;
     display: flex;
     justify-content: space-between;
     pointer-events: none;
   }
 
-  .preset-badge {
-    background: rgba(12, 14, 20, 0.75);
-    border: 1px solid var(--border-subtle);
-    font-family: var(--font-mono);
-    font-size: 0.7rem;
-    padding: 0.15rem 0.45rem;
-    border-radius: 3px;
-    color: var(--text-muted);
-  }
-
   .card-body {
-    padding: 1.25rem;
+    padding: 0.85rem 1rem;
     flex: 1;
     display: flex;
     flex-direction: column;
   }
 
   .card-title {
-    font-size: 1.15rem;
-    font-weight: 700;
+    font-family: var(--font-pixel);
+    font-size: 0.85rem;
     margin-bottom: 0.5rem;
   }
 
   .card-title a {
-    color: var(--text-main);
+    color: #ffffff;
     text-decoration: none;
   }
 
   .card-title a:hover {
-    color: var(--accent-amber);
-    text-decoration: none;
+    color: var(--ps1-gold);
+    text-decoration: underline;
   }
 
   .card-description {
     font-size: 0.85rem;
-    color: var(--text-muted);
-    line-height: 1.5;
+    color: #a0aec0;
+    line-height: 1.45;
     margin-bottom: 1rem;
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -495,26 +522,16 @@ const categories = [
   .meta-tag {
     font-family: var(--font-mono);
     font-size: 0.75rem;
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid var(--border-subtle);
-    padding: 0.15rem 0.4rem;
-    border-radius: 3px;
-    color: #8b949e;
+    padding: 0.15rem 0.45rem;
+    color: var(--ps1-cyan);
   }
 
   .card-footer {
-    padding: 0.9rem 1.25rem;
-    background: #0d1017;
-    border-top: 1px solid var(--border-subtle);
+    padding: 0.75rem 1rem;
+    background: #0a0e18;
+    border-top: 2px solid var(--ps1-steel);
     display: flex;
     gap: 0.5rem;
-  }
-
-  .no-results {
-    text-align: center;
-    padding: 4rem 1rem;
-    color: var(--text-muted);
-    font-family: var(--font-mono);
   }
 
   @media (max-width: 768px) {
@@ -522,7 +539,11 @@ const categories = [
       grid-template-columns: repeat(2, 1fr);
     }
     .hero-title {
-      font-size: 2rem;
+      font-size: 1.05rem;
+    }
+    .search-row, .category-filters {
+      flex-direction: column;
+      align-items: stretch;
     }
   }
 </style>

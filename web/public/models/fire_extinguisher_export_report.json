@@ -1,12 +1,12 @@
 {
   "export_metadata": {
-    "generator": "FireExtinguisherGenerator",
+    "generator": "ProceduralAssetGenerator",
     "asset_name": "fire_extinguisher",
-    "timestamp": "2026-10-15T19:13:34.723535Z",
+    "timestamp": "2026-10-15T22:33:45.710717Z",
     "format": "glTF 2.0 Binary (.glb)",
-    "output_file": "d:\\MODELCODER\\web\\public\\models\\fire_extinguisher.glb",
-    "file_size_bytes": 108228,
-    "file_size_kb": 105.69
+    "output_file": "D:\\MODELCODER\\web\\public\\models\\fire_extinguisher.glb",
+    "file_size_bytes": 106800,
+    "file_size_kb": 104.3
   },
   "normalization": {
     "units": "Meters (1 Blender unit = 1.0 Godot unit)",
@@ -34,7 +34,7 @@
     "total_vertices": 120,
     "target_tri_budget": 340,
     "budget_compliance_ratio": 0.58,
-    "object_count": 5,
+    "object_count": 4,
     "hierarchy": [
       {
         "name": "fire_extinguisher",
@@ -42,13 +42,6 @@
         "parent": null,
         "triangles": 172,
         "vertices": 120
-      },
-      {
-        "name": "fire_extinguisher-convcolonly",
-        "type": "MESH",
-        "parent": "fire_extinguisher",
-        "triangles": 12,
-        "vertices": 8
       },
       {
         "name": "socket_item_spawn",
@@ -78,49 +71,49 @@
     "compacted": true,
     "list": [
       {
-        "name": "mat_psx_industrial_hazard_casing_w65",
+        "name": "mat_psx_industrial_hazard_casing_w60",
         "roughness": 0.68,
         "metallic": 0.18,
         "emission": "None"
       },
       {
-        "name": "mat_psx_industrial_hazard_casing_red_w65",
+        "name": "mat_psx_industrial_hazard_casing_red_w60",
         "roughness": 0.65,
         "metallic": 0.12,
         "emission": "None"
       },
       {
-        "name": "mat_psx_industrial_hazard_mounting_w65",
+        "name": "mat_psx_industrial_hazard_mounting_w60",
         "roughness": 0.42,
         "metallic": 0.88,
         "emission": "None"
       },
       {
-        "name": "mat_psx_industrial_hazard_switch_metal_w65",
+        "name": "mat_psx_industrial_hazard_switch_metal_w60",
         "roughness": 0.3,
         "metallic": 0.92,
         "emission": "None"
       },
       {
-        "name": "mat_psx_industrial_hazard_switch_base_w65",
+        "name": "mat_psx_industrial_hazard_switch_base_w60",
         "roughness": 0.82,
         "metallic": 0.0,
         "emission": "None"
       },
       {
-        "name": "mat_psx_industrial_hazard_cable_black_w65",
+        "name": "mat_psx_industrial_hazard_cable_black_w60",
         "roughness": 0.88,
         "metallic": 0.0,
         "emission": "None"
       },
       {
-        "name": "mat_psx_industrial_hazard_door_emergency_red_w65",
+        "name": "mat_psx_industrial_hazard_door_emergency_red_w60",
         "roughness": 0.55,
         "metallic": 0.15,
         "emission": "None"
       },
       {
-        "name": "mat_psx_industrial_hazard_gauge_w65",
+        "name": "mat_psx_industrial_hazard_gauge_w60",
         "roughness": 0.4,
         "metallic": 0.15,
         "emission": "None"
@@ -128,8 +121,8 @@
     ]
   },
   "collision": {
-    "enabled": true,
-    "node_name": "fire_extinguisher-convcolonly",
+    "enabled": false,
+    "node_name": "None",
     "shape_type": "box",
     "godot_suffix": "-convcolonly",
     "extents": [
@@ -183,148 +176,8 @@
     }
   ],
   "godot_4_validation": {
-    "bounds_aabb": {
-      "position": [
-        0.0,
-        0.0,
-        0.0
-      ],
-      "size": [
-        0.0,
-        0.0,
-        0.0
-      ]
-    },
-    "collision_shape_count": 1,
-    "errors": [],
-    "file": "d:\\MODELCODER\\web\\public\\models\\fire_extinguisher.glb",
-    "materials": [
-      "mat_psx_industrial_hazard_casing_w65",
-      "mat_psx_industrial_hazard_casing_red_w65",
-      "mat_psx_industrial_hazard_mounting_w65",
-      "mat_psx_industrial_hazard_switch_metal_w65",
-      "mat_psx_industrial_hazard_switch_base_w65",
-      "mat_psx_industrial_hazard_cable_black_w65",
-      "mat_psx_industrial_hazard_door_emergency_red_w65",
-      "mat_psx_industrial_hazard_gauge_w65",
-      ""
-    ],
-    "mesh_count": 2,
-    "nodes": [
-      {
-        "class": "Node3D",
-        "depth": 0,
-        "name": "fire_extinguisher2"
-      },
-      {
-        "aabb": {
-          "position": [
-            -0.103,
-            0.0,
-            -0.35
-          ],
-          "size": [
-            0.206,
-            0.238,
-            0.7
-          ]
-        },
-        "class": "MeshInstance3D",
-        "depth": 1,
-        "has_uv": true,
-        "materials": [
-          "mat_psx_industrial_hazard_casing_w65",
-          "mat_psx_industrial_hazard_casing_red_w65",
-          "mat_psx_industrial_hazard_mounting_w65",
-          "mat_psx_industrial_hazard_switch_metal_w65",
-          "mat_psx_industrial_hazard_switch_base_w65",
-          "mat_psx_industrial_hazard_cable_black_w65",
-          "mat_psx_industrial_hazard_door_emergency_red_w65",
-          "mat_psx_industrial_hazard_gauge_w65"
-        ],
-        "name": "fire_extinguisher",
-        "surface_count": 8
-      },
-      {
-        "aabb": {
-          "position": [
-            -0.103,
-            0.0,
-            -0.35
-          ],
-          "size": [
-            0.206,
-            0.238,
-            0.7
-          ]
-        },
-        "class": "MeshInstance3D",
-        "depth": 2,
-        "godot_collision": {
-          "points": 8,
-          "shape": "ConvexPolygonShape3D",
-          "strips_visual_mesh": true
-        },
-        "has_uv": false,
-        "materials": [
-          ""
-        ],
-        "name": "fire_extinguisher-convcolonly",
-        "surface_count": 1
-      },
-      {
-        "class": "Node3D",
-        "depth": 2,
-        "name": "socket_item_spawn"
-      },
-      {
-        "class": "Node3D",
-        "depth": 2,
-        "name": "socket_light"
-      },
-      {
-        "class": "Node3D",
-        "depth": 2,
-        "name": "socket_player_interact"
-      }
-    ],
-    "root_class": "Node3D",
-    "root_name": "fire_extinguisher2",
-    "socket_count": 3,
-    "sockets": [
-      {
-        "name": "socket_item_spawn",
-        "position": [
-          0.013,
-          0.258,
-          0.125
-        ]
-      },
-      {
-        "name": "socket_light",
-        "position": [
-          0.013,
-          0.202,
-          0.125
-        ]
-      },
-      {
-        "name": "socket_player_interact",
-        "position": [
-          0.013,
-          0.0,
-          1.025
-        ]
-      }
-    ],
-    "static_body_count": 1,
-    "total_surfaces": 9,
-    "valid": true,
-    "warnings": [],
-    "tested_in_godot": true,
-    "success": true,
-    "exit_code": 0,
-    "godot_binary": "C:\\Users\\lopez\\Downloads\\Godot_v4.5.1-stable_win64.exe\\Godot_v4.5.1-stable_win64_console.exe"
+    "tested_in_godot": false,
+    "message": "Live Godot test not executed"
   },
   "warnings": []
 }

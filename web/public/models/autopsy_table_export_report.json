@@ -1,0 +1,165 @@
+{
+  "export_metadata": {
+    "generator": "ProceduralAssetGenerator",
+    "asset_name": "autopsy_table",
+    "timestamp": "2026-10-15T22:33:45.055409Z",
+    "format": "glTF 2.0 Binary (.glb)",
+    "output_file": "D:\\MODELCODER\\web\\public\\models\\autopsy_table.glb",
+    "file_size_bytes": 126008,
+    "file_size_kb": 123.05
+  },
+  "normalization": {
+    "units": "Meters (1 Blender unit = 1.0 Godot unit)",
+    "scale_applied": true,
+    "rotation_applied": true,
+    "location_applied": true,
+    "pivot_rule": "floor_center",
+    "pivot_offset_applied": [
+      -0.0,
+      -0.0,
+      -0.0
+    ],
+    "normals_shading": "Flat (poly.use_smooth = False, PS1 low-poly crisp)",
+    "normals_recalculated": true,
+    "uv_mapping": "TEXCOORD_0 (Component-mapped to PS1 Weathered Texture Atlas)",
+    "vertex_colors": "COLOR_0 (Col / PS1 Gouraud tinting and wear)"
+  },
+  "dimensions_meters": {
+    "x": 0.9,
+    "y": 2.1,
+    "z": 1.7192
+  },
+  "geometry_metrics": {
+    "total_triangles": 444,
+    "total_vertices": 272,
+    "target_tri_budget": 420,
+    "budget_compliance_ratio": 1.06,
+    "object_count": 4,
+    "hierarchy": [
+      {
+        "name": "autopsy_table",
+        "type": "MESH",
+        "parent": null,
+        "triangles": 372,
+        "vertices": 272
+      },
+      {
+        "name": "socket_item_spawn",
+        "type": "EMPTY",
+        "parent": "autopsy_table",
+        "triangles": 0,
+        "vertices": 0
+      },
+      {
+        "name": "socket_light",
+        "type": "EMPTY",
+        "parent": "autopsy_table",
+        "triangles": 0,
+        "vertices": 0
+      },
+      {
+        "name": "socket_player_interact",
+        "type": "EMPTY",
+        "parent": "autopsy_table",
+        "triangles": 0,
+        "vertices": 0
+      }
+    ]
+  },
+  "materials": {
+    "count": 5,
+    "compacted": true,
+    "list": [
+      {
+        "name": "mat_psx_industrial_hazard_casing_w50",
+        "roughness": 0.68,
+        "metallic": 0.18,
+        "emission": "None"
+      },
+      {
+        "name": "mat_psx_industrial_hazard_steel_brushed_w50",
+        "roughness": 0.38,
+        "metallic": 0.92,
+        "emission": "None"
+      },
+      {
+        "name": "mat_psx_industrial_hazard_cable_black_w50",
+        "roughness": 0.88,
+        "metallic": 0.0,
+        "emission": "None"
+      },
+      {
+        "name": "mat_psx_industrial_hazard_cable_hazard_w50",
+        "roughness": 0.85,
+        "metallic": 0.0,
+        "emission": "None"
+      },
+      {
+        "name": "mat_psx_industrial_hazard_gauge_w50",
+        "roughness": 0.4,
+        "metallic": 0.15,
+        "emission": "None"
+      }
+    ]
+  },
+  "collision": {
+    "enabled": false,
+    "node_name": "None",
+    "shape_type": "box",
+    "godot_suffix": "-convcolonly",
+    "extents": [
+      0.9,
+      2.1,
+      1.7192
+    ]
+  },
+  "sockets": [
+    {
+      "name": "socket_player_interact",
+      "position": [
+        0.0,
+        -1.6,
+        0.0
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "Standard player character interaction stand point"
+    },
+    {
+      "name": "socket_item_spawn",
+      "position": [
+        0.0,
+        0.0,
+        1.739
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "Prop or pickup spawn snap position (keycards, ammo, medical items)"
+    },
+    {
+      "name": "socket_light",
+      "position": [
+        0.0,
+        0.0,
+        1.461
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "OmniLight3D / SpotLight3D mount anchor point"
+    }
+  ],
+  "godot_4_validation": {
+    "tested_in_godot": false,
+    "message": "Live Godot test not executed"
+  },
+  "warnings": []
+}

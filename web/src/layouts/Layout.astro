@@ -16,24 +16,39 @@ import '../styles/global.css';
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="generator" content={Astro.generator} />
-    <title>{title} | ModelCoder Community</title>
+    <title>{title} | ModelCoder PS1 3D Platform</title>
+
+    <!-- Retro PS1 / Bitmap Typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Share+Tech+Mono&family=Silkscreen:wght@400;700&family=VT323&display=swap" rel="stylesheet">
 
     <!-- Google Model Viewer Web Component -->
     <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js"></script>
   </head>
   <body>
+    <!-- CRT Scanlines Overlay -->
+    <div class="ps1-scanlines" aria-hidden="true"></div>
+
     <header class="site-header">
       <div class="header-container">
         <a href="/" class="brand-logo">
-          <span>MODELCODER</span>
-          <span class="brand-badge">3D PLATFORM</span>
+          <span class="brand-bracket">[</span>
+          <span class="brand-name">MODELCODER</span>
+          <span class="brand-bracket">]</span>
+          <span class="brand-badge">PSX 3D ENGINE</span>
         </a>
 
+        <div class="system-status-indicator">
+          <span class="status-dot"></span>
+          <span class="status-text">SYS_ONLINE // 44 ASSETS</span>
+        </div>
+
         <nav class="nav-links">
-          <a href="/" class="nav-link">Catálogo</a>
-          <a href="/contribute" class="nav-link">Contribuir</a>
-          <a href="https://github.com/usuario/modelcoder-community" target="_blank" rel="noopener noreferrer" class="nav-link">
-            GitHub &rarr;
+          <a href="/" class="nav-link">&gt; CATÁLOGO</a>
+          <a href="/contribute" class="nav-link">&gt; CONTRIBUIR</a>
+          <a href="https://github.com/FrancisCuarto/MODELCODER" target="_blank" rel="noopener noreferrer" class="nav-link nav-link-gh">
+            &gt; GITHUB
           </a>
         </nav>
       </div>
@@ -46,14 +61,15 @@ import '../styles/global.css';
     <footer class="site-footer">
       <div class="footer-content">
         <div>
-          <strong>ModelCoder Community</strong> &mdash; Plataforma Abierta de Generadores Procedurales 3D.
-          <p style="margin-top: 0.25rem; font-size: 0.75rem; color: #6e7681;">
-            Modelos y código bajo licencias permisivas (CC-BY-4.0 / MIT). Diseñado para Below Nominal.
+          <span class="footer-title">[ MODELCODER PSX COMMUNITY PLATFORM ]</span>
+          <p class="footer-subtext">
+            Biblioteca abierta de código generativo 3D. Estética retro-sci-fi low-poly para Below Nominal.
           </p>
         </div>
-        <div>
-          <span>Motor: Blender 4.2+ / 5.0+</span> &bull; 
-          <span>Target: Godot 4 & glTF 2.0</span>
+        <div class="footer-meta">
+          <span class="footer-tag">BLENDER 5.0 CORE</span>
+          <span class="footer-tag">GLTF / GLB 2.0</span>
+          <span class="footer-tag">GODOT 4 TARGET</span>
         </div>
       </div>
     </footer>

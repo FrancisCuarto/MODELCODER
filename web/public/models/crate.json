@@ -1,0 +1,101 @@
+{
+  "generator": "ProceduralAssetGenerator",
+  "model_name": "crate",
+  "seed": 1337,
+  "timestamp": "2026-10-15T22:33:45.425056Z",
+  "mesh_metrics": {
+    "triangle_count": 168,
+    "vertex_count": 112,
+    "target_tri_budget": 340,
+    "budget_compliance_ratio": 0.49,
+    "dimensions_meters": {
+      "width": 0.88,
+      "height": 0.6545,
+      "depth": 0.6395
+    },
+    "has_vertex_colors": true,
+    "materials_assigned": [
+      "mat_psx_industrial_hazard_casing_w50",
+      "mat_psx_industrial_hazard_casing_inner_w50",
+      "mat_psx_industrial_hazard_mounting_w50",
+      "mat_psx_industrial_hazard_switch_metal_w50",
+      "mat_psx_industrial_hazard_screw_w50"
+    ]
+  },
+  "config_parameters": {
+    "seed": 1337,
+    "target_tri_budget": 340,
+    "name": "crate",
+    "wear_level": 0.5,
+    "add_collision_mesh": false,
+    "collision_type": "box",
+    "collision_suffix": "-convcolonly",
+    "pivot_rule": "floor_center",
+    "export_subcomponents": false,
+    "palette_name": "industrial_hazard",
+    "emission_scale": 1.0,
+    "extra_params": {},
+    "crate_type": "cargo_chest",
+    "lid_state": "closed",
+    "width": 0.8,
+    "height": 0.65,
+    "depth": 0.6,
+    "has_handles": true,
+    "has_reinforced_corners": true,
+    "has_latches": true,
+    "has_hazard_marking": true
+  },
+  "sockets": [
+    {
+      "name": "socket_player_interact",
+      "position": [
+        0.0,
+        -0.877,
+        0.0
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "Standard player character interaction stand point"
+    },
+    {
+      "name": "socket_item_spawn",
+      "position": [
+        0.0,
+        0.0,
+        0.66
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "Prop or pickup spawn snap position (keycards, ammo, medical items)"
+    },
+    {
+      "name": "socket_light",
+      "position": [
+        0.0,
+        0.0,
+        0.544
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "OmniLight3D / SpotLight3D mount anchor point"
+    }
+  ],
+  "godot_4_compatibility": {
+    "format": "glTF 2.0 Binary (.glb)",
+    "unit": "meters (1.0 Blender unit = 1.0 Godot unit)",
+    "forward_axis": "-Z",
+    "up_axis": "+Y",
+    "collision_mesh_convention": "Child node with -col or -colonly creates Godot StaticBody3D collision shape",
+    "vertex_colors": "Exported in COLOR_0 accessor (usable with StandardMaterial3D or PSX shader)",
+    "pbr_materials": "Exported as glTF PBR metallic/roughness + emissive"
+  }
+}

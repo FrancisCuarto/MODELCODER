@@ -1,0 +1,102 @@
+{
+  "generator": "ProceduralAssetGenerator",
+  "model_name": "office_door",
+  "seed": 1337,
+  "timestamp": "2026-10-15T22:33:45.988764Z",
+  "mesh_metrics": {
+    "triangle_count": 120,
+    "vertex_count": 80,
+    "target_tri_budget": 420,
+    "budget_compliance_ratio": 0.29,
+    "dimensions_meters": {
+      "width": 1.2,
+      "height": 0.22,
+      "depth": 2.4
+    },
+    "has_vertex_colors": true,
+    "materials_assigned": [
+      "mat_psx_industrial_hazard_mounting_w50",
+      "mat_psx_industrial_hazard_glass_observation_w50",
+      "mat_psx_industrial_hazard_door_frame_heavy_w50",
+      "mat_psx_industrial_hazard_locker_gray_w50",
+      "mat_psx_industrial_hazard_wall_support_beam_w50"
+    ]
+  },
+  "config_parameters": {
+    "seed": 1337,
+    "target_tri_budget": 420,
+    "name": "office_door",
+    "wear_level": 0.5,
+    "add_collision_mesh": false,
+    "collision_type": "box",
+    "collision_suffix": "-convcolonly",
+    "pivot_rule": "floor_center",
+    "export_subcomponents": false,
+    "palette_name": "industrial_hazard",
+    "emission_scale": 1.0,
+    "extra_params": {},
+    "door_style": "single_swing",
+    "glass_type": "wired_safety_glass",
+    "width": 1.2,
+    "height": 2.4,
+    "frame_depth": 0.22,
+    "open_angle_deg": 0.0,
+    "glass_damage": "intact",
+    "handle_type": "horizontal_push_bar",
+    "has_kickplate": true,
+    "has_transom": false
+  },
+  "sockets": [
+    {
+      "name": "socket_player_interact",
+      "position": [
+        0.0,
+        -0.66,
+        0.0
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "Standard player character interaction stand point"
+    },
+    {
+      "name": "socket_item_spawn",
+      "position": [
+        0.0,
+        0.0,
+        2.42
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "Prop or pickup spawn snap position (keycards, ammo, medical items)"
+    },
+    {
+      "name": "socket_light",
+      "position": [
+        0.0,
+        0.0,
+        2.04
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "OmniLight3D / SpotLight3D mount anchor point"
+    }
+  ],
+  "godot_4_compatibility": {
+    "format": "glTF 2.0 Binary (.glb)",
+    "unit": "meters (1.0 Blender unit = 1.0 Godot unit)",
+    "forward_axis": "-Z",
+    "up_axis": "+Y",
+    "collision_mesh_convention": "Child node with -col or -colonly creates Godot StaticBody3D collision shape",
+    "vertex_colors": "Exported in COLOR_0 accessor (usable with StandardMaterial3D or PSX shader)",
+    "pbr_materials": "Exported as glTF PBR metallic/roughness + emissive"
+  }
+}

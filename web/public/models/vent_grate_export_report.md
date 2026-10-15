@@ -1,12 +1,12 @@
 # Informe de Exportación a Godot 4 — vent_grate
-**Estado:** ✅ EXITOSA | **Fecha:** `2026-10-15T19:13:48.135080Z` | **Generador:** `VentGrateGenerator`
+**Estado:** ✅ EXITOSA | **Fecha:** `2026-10-15T22:33:46.657985Z` | **Generador:** `ProceduralAssetGenerator`
 
 ## 1. Archivo y Dimensiones
-- **Archivo GLB:** `d:\MODELCODER\web\public\models\vent_grate.glb`
-- **Tamaño:** `102.64 KB` (105104 bytes)
+- **Archivo GLB:** `D:\MODELCODER\web\public\models\vent_grate.glb`
+- **Tamaño:** `101.68 KB` (104120 bytes)
 - **Dimensiones:** `0.600m (W) × 0.600m (D) × 0.312m (H)`
 - **Polígonos:** `188 tris` (Objetivo: `280`, Ratio: `0.67`)
-- **Vértices:** `124 verts` en `5` objeto(s)
+- **Vértices:** `124 verts` en `4` objeto(s)
 
 ## 2. Normalización de Pipeline
 - **Unidades:** Meters (1 Blender unit = 1.0 Godot unit)
@@ -23,20 +23,19 @@
 | `socket_item_spawn` | `EMPTY` | 0 | 0 | `vent_grate` |
 | `socket_light` | `EMPTY` | 0 | 0 | `vent_grate` |
 | `socket_player_interact` | `EMPTY` | 0 | 0 | `vent_grate` |
-| `vent_grate-convcolonly` | `MESH` | 12 | 8 | `vent_grate` |
 
 ## 4. Materiales Compactados (glTF PBR)
 | Slot / Nombre | Categoría | Rugosidad | Metálico | Emisión |
 | :--- | :--- | :--- | :--- | :--- |
-| `mat_psx_industrial_hazard_casing_w65` | `PBR` | 0.68 | 0.18 | None |
-| `mat_psx_industrial_hazard_mounting_w65` | `PBR` | 0.42 | 0.88 | None |
-| `mat_psx_industrial_hazard_switch_base_w65` | `PBR` | 0.82 | 0.00 | None |
-| `mat_psx_industrial_hazard_screw_w65` | `PBR` | 0.35 | 0.88 | None |
-| `mat_psx_industrial_hazard_vent_w65` | `PBR` | 0.68 | 0.35 | None |
+| `mat_psx_industrial_hazard_casing_w70` | `PBR` | 0.68 | 0.18 | None |
+| `mat_psx_industrial_hazard_mounting_w70` | `PBR` | 0.42 | 0.88 | None |
+| `mat_psx_industrial_hazard_switch_base_w70` | `PBR` | 0.82 | 0.00 | None |
+| `mat_psx_industrial_hazard_screw_w70` | `PBR` | 0.35 | 0.88 | None |
+| `mat_psx_industrial_hazard_vent_w70` | `PBR` | 0.68 | 0.35 | None |
 
 ## 5. Colisión para Godot 4
-- **Habilitada:** Sí
-- **Nodo de Colisión:** `vent_grate-convcolonly`
+- **Habilitada:** No
+- **Nodo de Colisión:** `None`
 - **Tipo de Forma:** `box`
 - **Sufijo Godot:** `-convcolonly` (Crea StaticBody3D automáticamente)
 
@@ -48,11 +47,5 @@
 | `socket_light` | `[0.0, 0.0, 0.265]` | OmniLight3D / SpotLight3D mount anchor point |
 
 ## 7. Validación Real en Motor Godot 4
-- **Ejecutado en Godot:** Sí
-- **Resultado:** ✅ IMPORTACIÓN CORRECTA
-- **Binario Utilizado:** `C:\Users\lopez\Downloads\Godot_v4.5.1-stable_win64.exe\Godot_v4.5.1-stable_win64_console.exe`
-- **Mallas Reconocidas por Godot:** 2
-- **Superficies Totales:** 6
-- **StaticBody3D Generados:** 1
-- **CollisionShape3D Generados:** 1
-- **Materiales Mapeados:** 6
+- **Ejecutado en Godot:** No
+- **Resultado:** ❌ ERROR
