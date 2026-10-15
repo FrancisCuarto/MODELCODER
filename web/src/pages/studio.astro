@@ -656,26 +656,15 @@ Nuevo generador procedural creado con ModelCoder Web Studio.
 
     studioViewer.scale = `${Math.min(2.5, Math.max(0.4, sx))} ${Math.min(2.5, Math.max(0.4, sy))} ${Math.min(2.5, Math.max(0.4, sz))}`;
 
-    // Material & Palette
-    if (studioViewer.model && studioViewer.model.materials) {
-      const palSelect = (studioParamForm.elements.namedItem('palette_name') || studioParamForm.elements.namedItem('palette')) as HTMLSelectElement;
-      const pal = palSelect ? palSelect.value : 'industrial_hazard';
+    // Palette model swapping
+    const palSelect = (studioParamForm.elements.namedItem('palette_name') || studioParamForm.elements.namedItem('palette')) as HTMLSelectElement;
+    const pal = palSelect ? palSelect.value : 'industrial_hazard';
 
-      const colors: Record<string, number[]> = {
-        industrial_hazard: [0.92, 0.68, 0.08, 1.0],
-        medbay_clean: [0.88, 0.94, 0.98, 1.0],
-        command_bridge: [0.12, 0.16, 0.28, 1.0],
-        derelict_decay: [0.38, 0.22, 0.15, 1.0]
-      };
-
-      const primary = colors[pal] || colors['industrial_hazard'];
-
-      studioViewer.model.materials.forEach((mat: any) => {
-        const pbr = mat.pbrMetallicRoughness;
-        if (pbr) {
-          pbr.setBaseColorFactor(primary);
-        }
-      });
+    if (activeTemplate !== 'custom') {
+      const targetPaletteGlb = `/models/${activeTemplate}_${pal}.glb`;
+      if (!studioViewer.src || !studioViewer.src.endsWith(targetPaletteGlb)) {
+        studioViewer.src = targetPaletteGlb;
+      }
     }
   }
 

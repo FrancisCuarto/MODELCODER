@@ -356,6 +356,7 @@ gen.parameters.forEach((param: any) => {
   const resetCamBtn = document.getElementById('reset-cam-btn');
   const screenshotBtn = document.getElementById('screenshot-btn');
   const downloadCustomGlbBtn = document.getElementById('download-custom-glb-btn') as HTMLButtonElement;
+  const downloadGlbBtn = document.querySelector('a[download$=".glb"]') as HTMLAnchorElement;
   const liveGenBtn = document.getElementById('live-generate-btn') as HTMLButtonElement;
   const liveStatus = document.getElementById('live-generate-status');
   const workerUrlInput = document.getElementById('worker-url-input') as HTMLInputElement;
@@ -520,6 +521,24 @@ gen.parameters.forEach((param: any) => {
       viewer.scale = `${sx.toFixed(3)} ${sy.toFixed(3)} ${sz.toFixed(3)}`;
     }
 
+    // Dynamic Palette Model Swapping (Instant Authentic 3D Color/Texture Update)
+    if (viewer && form) {
+      let selectedPalette = 'industrial_hazard';
+      const palInput = (form.elements.namedItem('palette_name') || form.elements.namedItem('palette') || form.elements.namedItem('style_palette') || form.elements.namedItem('body_color_preset')) as HTMLSelectElement;
+      if (palInput && palInput.value) {
+        selectedPalette = palInput.value;
+      }
+
+      const targetPaletteGlb = `/models/${familyName}_${selectedPalette}.glb`;
+      if (!viewer.src || !viewer.src.endsWith(targetPaletteGlb)) {
+        viewer.src = targetPaletteGlb;
+        if (downloadGlbBtn) {
+          downloadGlbBtn.href = targetPaletteGlb;
+          downloadGlbBtn.download = `${familyName}_${selectedPalette}.glb`;
+        }
+      }
+    }
+
     // Update 3D viewport materials live in browser
     applyLiveMaterials();
   }
@@ -528,6 +547,32 @@ gen.parameters.forEach((param: any) => {
   form?.addEventListener('change', updateLiveValuesAndCLI);
 
   viewer?.addEventListener('load', () => {
+    // Re-apply scale on new palette model load
+    if (form && viewer) {
+      let sx = 1.0, sy = 1.0, sz = 1.0;
+      const widthInput = form.elements.namedItem('width') as HTMLInputElement;
+      if (widthInput && widthInput.value) {
+        const defW = parseFloat(widthInput.getAttribute('value') || '1.0');
+        const curW = parseFloat(widthInput.value);
+        if (defW > 0 && curW > 0) sx = curW / defW;
+      }
+      const lengthInput = (form.elements.namedItem('length') || form.elements.namedItem('depth')) as HTMLInputElement;
+      if (lengthInput && lengthInput.value) {
+        const defL = parseFloat(lengthInput.getAttribute('value') || '1.0');
+        const curL = parseFloat(lengthInput.value);
+        if (defL > 0 && curL > 0) sy = curL / defL;
+      }
+      const heightInput = form.elements.namedItem('height') as HTMLInputElement;
+      if (heightInput && heightInput.value) {
+        const defH = parseFloat(heightInput.getAttribute('value') || '1.0');
+        const curH = parseFloat(heightInput.value);
+        if (defH > 0 && curH > 0) sz = curH / defH;
+      }
+      sx = Math.min(2.5, Math.max(0.35, sx));
+      sy = Math.min(2.5, Math.max(0.35, sy));
+      sz = Math.min(2.5, Math.max(0.35, sz));
+      viewer.scale = `${sx.toFixed(3)} ${sy.toFixed(3)} ${sz.toFixed(3)}`;
+    }
     applyLiveMaterials();
   });
 
@@ -701,6 +746,9 @@ gen.parameters.forEach((param: any) => {
       liveStatus.className = 'live-status-box status-loading';
       liveStatus.textContent = '[ PROCESANDO ] Aplicando parámetros y conectando con el entorno de generación...';
     }
+
+    // Immediately apply palette and scale transforms in client viewport
+    updateLiveValuesAndCLI();
 
     // Determine API URL: user-configured -> window global -> localhost fallback
     const configuredUrl = localStorage.getItem('modelcoder_worker_url');
