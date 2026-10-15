@@ -244,6 +244,14 @@ gen.parameters.forEach((param: any) => {
           ))}
         </form>
 
+        <!-- Live Cloud/Local Generation Trigger -->
+        <div class="live-generate-container">
+          <button type="button" id="live-generate-btn" class="btn btn-cyan" style="width: 100%;">
+            ⚡ Generar Malla 3D en Vivo
+          </button>
+          <div id="live-generate-status" class="live-status-box" style="display: none;"></div>
+        </div>
+
         <!-- Dynamic CLI Command Generator Box -->
         <div class="cli-command-box">
           <div class="cli-header">
@@ -403,6 +411,91 @@ gen.parameters.forEach((param: any) => {
     if (viewer) {
       viewer.resetTurntable();
       viewer.cameraOrbit = '0deg 75deg 105%';
+    }
+  });
+
+  // Live generation trigger
+  const liveGenBtn = document.getElementById('live-generate-btn') as HTMLButtonElement;
+  const liveStatus = document.getElementById('live-generate-status');
+  const downloadGlbBtn = document.querySelector('a[download$=".glb"]') as HTMLAnchorElement;
+
+  liveGenBtn?.addEventListener('click', async () => {
+    if (!form) return;
+    
+    // Collect parameters
+    const params: Record<string, any> = {};
+    form.querySelectorAll('.input-row').forEach((rowEl) => {
+      const row = rowEl as HTMLElement;
+      const key = row.dataset.paramKey;
+      const type = row.dataset.paramType;
+      if (!key) return;
+
+      const input = form.elements.namedItem(key) as HTMLInputElement | HTMLSelectElement;
+      if (!input) return;
+
+      if (type === 'boolean') {
+        params[key] = (input as HTMLInputElement).checked;
+      } else if (type === 'float') {
+        params[key] = parseFloat(input.value);
+      } else if (type === 'int' || type === 'seed') {
+        params[key] = parseInt(input.value, 10);
+      } else {
+        params[key] = input.value;
+      }
+    });
+
+    const payload = {
+      family: familyName,
+      parameters: params,
+      preset: presetSelect?.value || undefined
+    };
+
+    liveGenBtn.disabled = true;
+    liveGenBtn.textContent = '⏳ Compilando Malla en Sandbox...';
+    if (liveStatus) {
+      liveStatus.style.display = 'block';
+      liveStatus.className = 'live-status-box status-loading';
+      liveStatus.textContent = 'Enviando parámetros al worker de generación de Blender...';
+    }
+
+    const apiUrl = (window as any).__MODELCODER_API_URL__ || 'http://localhost:8000/api/generate';
+
+    try {
+      const res = await fetch(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({ detail: 'Error en el servidor de generación.' }));
+        throw new Error(errJson.detail || `Error HTTP ${res.status}`);
+      }
+
+      const cacheStatus = res.headers.get('X-Cache') || 'MISS';
+      const blob = await res.blob();
+      const newGlbUrl = URL.createObjectURL(blob);
+
+      if (viewer) {
+        viewer.src = newGlbUrl;
+      }
+      if (downloadGlbBtn) {
+        downloadGlbBtn.href = newGlbUrl;
+        downloadGlbBtn.download = `${familyName}_custom.glb`;
+      }
+
+      if (liveStatus) {
+        liveStatus.className = 'live-status-box status-success';
+        liveStatus.textContent = `✅ ¡Malla 3D generada y cargada en el visor! (Cache: ${cacheStatus})`;
+      }
+    } catch (err: any) {
+      if (liveStatus) {
+        liveStatus.className = 'live-status-box status-error';
+        liveStatus.innerHTML = `⚠️ <strong>Fallo en la generación en vivo:</strong> ${err.message}<br><small style="color: #8b949e; margin-top: 4px; display: inline-block;">Asegúrate de tener corriendo el worker: <code>python server/main.py --port 8000</code></small>`;
+      }
+    } finally {
+      liveGenBtn.disabled = false;
+      liveGenBtn.textContent = '⚡ Generar Malla 3D en Vivo';
     }
   });
 
@@ -850,6 +943,45 @@ gen.parameters.forEach((param: any) => {
     word-break: break-all;
     line-height: 1.4;
     user-select: all;
+  }
+
+  .live-generate-container {
+    margin-top: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .live-status-box {
+    padding: 0.6rem 0.8rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-family: var(--font-mono);
+    line-height: 1.4;
+  }
+
+  .status-loading {
+    background: rgba(0, 229, 255, 0.1);
+    border: 1px solid rgba(0, 229, 255, 0.3);
+    color: var(--accent-cyan);
+    animation: pulse 1.5s infinite;
+  }
+
+  .status-success {
+    background: rgba(63, 185, 80, 0.1);
+    border: 1px solid rgba(63, 185, 80, 0.3);
+    color: var(--accent-green);
+  }
+
+  .status-error {
+    background: rgba(248, 81, 73, 0.1);
+    border: 1px solid rgba(248, 81, 73, 0.3);
+    color: var(--accent-red);
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 0.8; }
+    50% { opacity: 0.4; }
   }
 
   .action-buttons-box {
