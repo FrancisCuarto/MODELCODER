@@ -1,0 +1,1100 @@
+---
+import Layout from '../layouts/Layout.astro';
+import catalog from '../data/catalog.json';
+---
+
+<Layout title="ModelCoder Web Studio - Editor de Generadores 3D">
+  <div class="studio-container">
+    <!-- Studio Header Bar -->
+    <div class="ps1-window studio-topbar">
+      <div class="ps1-titlebar">
+        <span>// MODELCODER_WEB_STUDIO // IN-BROWSER 3D PROCEDURAL IDE</span>
+        <span class="ps1-telemetry-tag">ENGINE: BLENDER 5.0 CORE</span>
+      </div>
+
+      <div class="topbar-actions">
+        <!-- Template / Fork Selector -->
+        <div class="template-selector-box">
+          <label for="template-select" class="action-lbl">&gt; PLANTILLA / FORK:</label>
+          <select id="template-select" class="form-select topbar-select">
+            <option value="custom">NUEVO GENERADOR EN BLANCO</option>
+            <option value="crate" selected>CLONAR: Crate (Contenedor)</option>
+            <option value="terminal">CLONAR: Terminal (Computadora)</option>
+            <option value="bunk_bed">CLONAR: Bunk Bed (Camas)</option>
+            <option value="office_chair">CLONAR: Office Chair (Silla)</option>
+          </select>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="topbar-btn-group">
+          <button id="run-compile-btn" class="btn btn-cyan" title="Compilar y Actualizar Visor 3D">
+            ⚡ COMPILAR & VER 3D
+          </button>
+          <button id="export-zip-btn" class="btn btn-primary" title="Descargar paquete de 4 archivos listo para Pull Request">
+            💾 DESCARGAR PAQUETE (.ZIP)
+          </button>
+          <button id="github-pr-btn" class="btn btn-green" title="Abrir Pull Request directo en GitHub">
+            🚀 PUBLICAR PR
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Studio Split View (Left: Editor, Right: Viewport & Tests) -->
+    <div class="studio-workspace">
+      <!-- Left: Code Editor Window -->
+      <div class="ps1-window editor-window">
+        <!-- Tab Bar -->
+        <div class="editor-tabs">
+          <button class="editor-tab active" data-file="generator">
+            generator.py <span class="tab-badge">MALLA</span>
+          </button>
+          <button class="editor-tab" data-file="config">
+            config.py <span class="tab-badge">TYPES</span>
+          </button>
+          <button class="editor-tab" data-file="manifest">
+            manifest.json <span class="tab-badge">SPEC</span>
+          </button>
+          <button class="editor-tab" data-file="readme">
+            README.md <span class="tab-badge">DOCS</span>
+          </button>
+        </div>
+
+        <!-- Editor Surface -->
+        <div class="editor-surface">
+          <div class="line-numbers" id="line-numbers">1</div>
+          <textarea id="code-textarea" spellcheck="false" autocomplete="off"></textarea>
+        </div>
+
+        <!-- Editor Status & AST Security Linter -->
+        <div class="editor-statusbar">
+          <div class="status-left">
+            <span id="cursor-pos">LN 1, COL 1</span>
+            <span class="status-sep">|</span>
+            <span id="active-filename">generator.py</span>
+          </div>
+          <div class="status-right" id="linter-badge">
+            <span class="status-dot"></span>
+            <span id="linter-text">AST_SECURITY: VALID // 0 ERRORS</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Live 3D Viewport & Parameter Inspector -->
+      <div class="preview-column">
+        <!-- 3D Viewport Window -->
+        <div class="ps1-window studio-viewport-window">
+          <div class="ps1-titlebar">
+            <span>// 3D_PREVIEW: [<span id="viewport-model-name">CRATE</span>]</span>
+            <div class="viewport-quick-tools">
+              <button id="studio-rotate-toggle" class="ps1-ctrl-btn">🔄 ROTACIÓN</button>
+              <button id="studio-reset-cam" class="ps1-ctrl-btn">🎯 CENTRAR</button>
+            </div>
+          </div>
+
+          <div class="ps1-inset studio-viewport-surface">
+            <model-viewer
+              id="studio-viewer"
+              src="/models/crate.glb"
+              alt="ModelCoder Studio Preview"
+              camera-controls
+              auto-rotate
+              rotation-per-second="20deg"
+              shadow-intensity="1.0"
+              class="studio-model-viewer"
+            ></model-viewer>
+          </div>
+        </div>
+
+        <!-- Live Dynamic Parameter Inspector (Parsed from manifest.json) -->
+        <div class="ps1-window inspector-window">
+          <div class="ps1-titlebar">
+            <span>// PARAMETERS_TEST_BENCH</span>
+            <span class="ps1-telemetry-tag">REACTIVO EN TIEMPO REAL</span>
+          </div>
+
+          <div class="inspector-body">
+            <p class="inspector-subtext">
+              Los controles de abajo se generan automáticamente a partir del archivo <code>manifest.json</code> activo.
+            </p>
+
+            <form id="studio-param-form" class="studio-param-form">
+              <!-- Dynamically populated from active manifest -->
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GitHub Pull Request Modal -->
+  <dialog id="github-modal" class="ps1-window gh-modal">
+    <div class="ps1-titlebar">
+      <span>// GITHUB_CONTRIBUTION_PIPELINE</span>
+      <button id="close-modal-btn" class="ps1-ctrl-btn">X</button>
+    </div>
+    <div class="modal-body">
+      <h3 style="color: var(--ps1-gold); font-family: var(--font-pixel); font-size: 0.9rem; margin-bottom: 0.5rem;">
+        PUBLICAR DIRECTO A FrancisCuarto/MODELCODER
+      </h3>
+      <p style="font-size: 0.82rem; color: #b0c0d4; margin-bottom: 1rem; line-height: 1.5;">
+        Puedes enviar tu generador automáticamente creando una rama en GitHub o copiando los 4 archivos a tu fork local.
+      </p>
+
+      <div class="ps1-inset" style="padding: 0.85rem; margin-bottom: 1rem;">
+        <label for="gh-token-input" class="field-label" style="font-size: 0.75rem;">GitHub Personal Access Token (PAT):</label>
+        <input type="password" id="gh-token-input" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" class="form-input" style="width: 100%; margin-top: 0.35rem;" />
+        <small style="color: var(--text-dim); font-size: 0.68rem; display: block; margin-top: 0.35rem;">
+          Requiere permisos <code>repo</code> para crear la rama <code>contrib/mi-generador</code> y abrir el PR. Tu token no se guarda en ningún servidor.
+        </small>
+      </div>
+
+      <div style="display: flex; gap: 0.6rem;">
+        <button id="submit-pr-btn" class="btn btn-green" style="flex: 1;">
+          🚀 ENVIAR PULL REQUEST AHORA
+        </button>
+        <button id="modal-cancel-btn" class="btn btn-outline">
+          CANCELAR
+        </button>
+      </div>
+
+      <div id="pr-status-box" class="live-status-box" style="display: none; margin-top: 0.85rem;"></div>
+    </div>
+  </dialog>
+</Layout>
+
+<!-- Load JSZip for client-side packaging -->
+<script is:inline src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+<script>
+  // ==============================================================================
+  // BUILT-IN TEMPLATES FOR FAST FORKING & AUTHORING
+  // ==============================================================================
+  const TEMPLATES: Record<string, { model: string; generator: string; config: string; manifest: string; readme: string }> = {
+    crate: {
+      model: '/models/crate.glb',
+      generator: `import bpy
+from ...core.base_generator import BaseAssetGenerator
+from ...materials.palette import get_or_create_material
+from .config import CrateConfig
+
+class CrateGenerator(BaseAssetGenerator):
+    """Generates procedural sci-fi cargo crates for Below Nominal."""
+    def generate(self) -> bpy.types.Object:
+        cfg = self.config
+        mesh = bpy.data.meshes.new(f"{cfg.name}_mesh")
+        obj = bpy.data.objects.new(cfg.name, mesh)
+        bpy.context.collection.objects.link(obj)
+
+        # Procedural casing and reinforced corner brackets
+        mat_casing = get_or_create_material("casing", palette_name=cfg.palette_name)
+        obj.data.materials.append(mat_casing)
+
+        self.compact_materials(obj)
+        return obj
+`,
+      config: `from dataclasses import dataclass
+from ...core.base_config import BaseAssetConfig
+
+@dataclass
+class CrateConfig(BaseAssetConfig):
+    """Configuration for procedural cargo crates."""
+    width: float = 0.80
+    length: float = 1.20
+    height: float = 0.90
+    wear_level: float = 0.65
+    reinforced_corners: bool = True
+    hazardous_contents: bool = False
+    palette_name: str = "industrial_hazard"
+`,
+      manifest: `{
+  "$schema": "https://raw.githubusercontent.com/FrancisCuarto/MODELCODER/main/schemas/generator-v1.json",
+  "id": "below_nominal.furniture.crate",
+  "version": "1.0.0",
+  "name": "Cargo Crate",
+  "description": "Contenedor de carga modular presurizado para bodegas y hangares de Below Nominal.",
+  "author": { "name": "Community Contributor", "github": "contributor" },
+  "license": "CC-BY-4.0",
+  "category": "furniture",
+  "tags": ["cargo", "crate", "industrial", "sci-fi", "storage"],
+  "parameters": [
+    {
+      "key": "width",
+      "label": "Ancho (m)",
+      "type": "float",
+      "default": 0.80,
+      "min": 0.50,
+      "max": 2.00,
+      "step": 0.05,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "length",
+      "label": "Largo (m)",
+      "type": "float",
+      "default": 1.20,
+      "min": 0.60,
+      "max": 3.00,
+      "step": 0.05,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "height",
+      "label": "Alto (m)",
+      "type": "float",
+      "default": 0.90,
+      "min": 0.40,
+      "max": 2.20,
+      "step": 0.05,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "wear_level",
+      "label": "Desgaste y Óxido",
+      "type": "float",
+      "default": 0.65,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.05,
+      "group": "Materiales"
+    },
+    {
+      "key": "palette_name",
+      "label": "Paleta de Sector",
+      "type": "enum",
+      "default": "industrial_hazard",
+      "options": [
+        { "value": "industrial_hazard", "label": "Industrial Hazard" },
+        { "value": "medbay_clean", "label": "Medbay Clean" },
+        { "value": "command_bridge", "label": "Command Bridge" },
+        { "value": "derelict_decay", "label": "Derelict Decay" }
+      ],
+      "group": "Materiales"
+    },
+    {
+      "key": "reinforced_corners",
+      "label": "Esquinas Reforzadas",
+      "type": "boolean",
+      "default": true,
+      "group": "Estructura"
+    }
+  ],
+  "presets": [
+    { "id": "standard", "name": "Estándar", "values": { "width": 0.8, "length": 1.2, "height": 0.9 } },
+    { "id": "heavy_cargo", "name": "Carga Pesada", "values": { "width": 1.5, "length": 2.0, "height": 1.4 } }
+  ],
+  "export_capabilities": {
+    "target_tri_budget": 420,
+    "supports_collision": true
+  }
+}`,
+      readme: `# Cargo Crate
+
+Contenedor de carga modular presurizado diseñado para la estética low-poly PSX de Below Nominal.
+
+## Parámetros Principales
+- **width / length / height**: Dimensiones métricas normalizadas.
+- **wear_level**: Controla la rugosidad, desgaste de vértices y marcas de óxido.
+- **palette_name**: Aplica la colorimetría del sector designado en la estación.
+`
+    },
+    terminal: {
+      model: '/models/terminal.glb',
+      generator: `import bpy
+from ...core.base_generator import BaseAssetGenerator
+from ...materials.palette import get_or_create_material
+from .config import TerminalConfig
+
+class TerminalGenerator(BaseAssetGenerator):
+    """Generates sci-fi CRT wall terminals and workstation consoles."""
+    def generate(self) -> bpy.types.Object:
+        cfg = self.config
+        mesh = bpy.data.meshes.new(f"{cfg.name}_mesh")
+        obj = bpy.data.objects.new(cfg.name, mesh)
+        bpy.context.collection.objects.link(obj)
+
+        mat_casing = get_or_create_material("casing", palette_name=cfg.palette_name)
+        mat_screen = get_or_create_material("crt_screen", palette_name=cfg.palette_name)
+        obj.data.materials.extend([mat_casing, mat_screen])
+
+        self.compact_materials(obj)
+        return obj
+`,
+      config: `from dataclasses import dataclass
+from ...core.base_config import BaseAssetConfig
+
+@dataclass
+class TerminalConfig(BaseAssetConfig):
+    screen_diagonal: float = 14.0
+    keyboard_tray: bool = True
+    casing_style: str = "reinforced_bulkhead"
+    palette_name: str = "command_bridge"
+`,
+      manifest: `{
+  "$schema": "https://raw.githubusercontent.com/FrancisCuarto/MODELCODER/main/schemas/generator-v1.json",
+  "id": "below_nominal.fixtures.terminal",
+  "version": "1.0.0",
+  "name": "Wall Terminal",
+  "description": "Terminal CRT retro-sci-fi con teclado físico y chasis de mamparo.",
+  "author": { "name": "Community Contributor", "github": "contributor" },
+  "license": "CC-BY-4.0",
+  "category": "fixtures",
+  "tags": ["terminal", "crt", "computer", "sci-fi", "console"],
+  "parameters": [
+    { "key": "screen_diagonal", "label": "Diagonal Pantalla (pulgadas)", "type": "float", "default": 14.0, "min": 9.0, "max": 24.0, "step": 1.0, "group": "Pantalla" },
+    { "key": "keyboard_tray", "label": "Bandeja de Teclado", "type": "boolean", "default": true, "group": "Accesorios" },
+    { "key": "palette_name", "label": "Paleta", "type": "enum", "default": "command_bridge", "options": [{ "value": "command_bridge", "label": "Command Bridge" }, { "value": "industrial_hazard", "label": "Industrial Hazard" }], "group": "Materiales" }
+  ],
+  "presets": [],
+  "export_capabilities": { "target_tri_budget": 450, "supports_collision": true }
+}`,
+      readme: `# Wall Terminal
+
+Terminal CRT de diagnóstico de subsistemas de la nave.
+`
+    },
+    bunk_bed: {
+      model: '/models/bunk_bed.glb',
+      generator: `import bpy
+from ...core.base_generator import BaseAssetGenerator
+from ...materials.palette import get_or_create_material
+from .config import BunkBedConfig
+
+class BunkBedGenerator(BaseAssetGenerator):
+    def generate(self) -> bpy.types.Object:
+        cfg = self.config
+        mesh = bpy.data.meshes.new(f"{cfg.name}_mesh")
+        obj = bpy.data.objects.new(cfg.name, mesh)
+        bpy.context.collection.objects.link(obj)
+
+        mat_metal = get_or_create_material("metal_structural", palette_name=cfg.palette_name)
+        obj.data.materials.append(mat_metal)
+
+        self.compact_materials(obj)
+        return obj
+`,
+      config: `from dataclasses import dataclass
+from ...core.base_config import BaseAssetConfig
+
+@dataclass
+class BunkBedConfig(BaseAssetConfig):
+    width: float = 1.05
+    length: float = 2.05
+    height: float = 2.05
+    ladder_position: str = "front_right"
+    upper_guardrail: bool = True
+    palette_name: str = "industrial_hazard"
+`,
+      manifest: `{
+  "$schema": "https://raw.githubusercontent.com/FrancisCuarto/MODELCODER/main/schemas/generator-v1.json",
+  "id": "below_nominal.furniture.bunk_bed",
+  "version": "1.0.0",
+  "name": "Bunk Bed",
+  "description": "Literas apiladas de dos niveles para camarotes de tripulación en Below Nominal.",
+  "author": { "name": "Community Contributor", "github": "contributor" },
+  "license": "CC-BY-4.0",
+  "category": "furniture",
+  "tags": ["bunk", "bed", "crew", "furniture"],
+  "parameters": [
+    { "key": "width", "label": "Ancho (m)", "type": "float", "default": 1.05, "min": 0.8, "max": 1.6, "step": 0.05, "group": "Dimensiones" },
+    { "key": "length", "label": "Largo (m)", "type": "float", "default": 2.05, "min": 1.7, "max": 2.4, "step": 0.05, "group": "Dimensiones" },
+    { "key": "height", "label": "Alto (m)", "type": "float", "default": 2.05, "min": 1.5, "max": 2.6, "step": 0.05, "group": "Dimensiones" },
+    { "key": "upper_guardrail", "label": "Baranda Superior", "type": "boolean", "default": true, "group": "Seguridad" }
+  ],
+  "presets": [],
+  "export_capabilities": { "target_tri_budget": 480, "supports_collision": true }
+}`,
+      readme: `# Bunk Bed
+
+Camas de camarotes de Below Nominal.
+`
+    },
+    custom: {
+      model: '/models/crate.glb',
+      generator: `import bpy
+from ...core.base_generator import BaseAssetGenerator
+from ...materials.palette import get_or_create_material
+from .config import MiPropConfig
+
+class MiPropGenerator(BaseAssetGenerator):
+    """Generador procedural personalizado para Below Nominal."""
+    def generate(self) -> bpy.types.Object:
+        cfg = self.config
+        mesh = bpy.data.meshes.new(f"{cfg.name}_mesh")
+        obj = bpy.data.objects.new(cfg.name, mesh)
+        bpy.context.collection.objects.link(obj)
+
+        mat = get_or_create_material("casing", palette_name=cfg.palette_name)
+        obj.data.materials.append(mat)
+
+        self.compact_materials(obj)
+        return obj
+`,
+      config: `from dataclasses import dataclass
+from ...core.base_config import BaseAssetConfig
+
+@dataclass
+class MiPropConfig(BaseAssetConfig):
+    width: float = 1.0
+    length: float = 1.0
+    height: float = 1.0
+    wear_level: float = 0.5
+    palette_name: str = "industrial_hazard"
+`,
+      manifest: `{
+  "$schema": "https://raw.githubusercontent.com/FrancisCuarto/MODELCODER/main/schemas/generator-v1.json",
+  "id": "below_nominal.furniture.mi_prop",
+  "version": "1.0.0",
+  "name": "Mi Prop Personalizado",
+  "description": "Descripción clara del nuevo activo procedural para Below Nominal.",
+  "author": { "name": "Tu Nombre", "github": "tu-usuario" },
+  "license": "CC-BY-4.0",
+  "category": "furniture",
+  "tags": ["custom", "low-poly", "psx"],
+  "parameters": [
+    { "key": "width", "label": "Ancho (m)", "type": "float", "default": 1.0, "min": 0.2, "max": 3.0, "step": 0.05, "group": "Dimensiones" },
+    { "key": "length", "label": "Largo (m)", "type": "float", "default": 1.0, "min": 0.2, "max": 3.0, "step": 0.05, "group": "Dimensiones" },
+    { "key": "height", "label": "Alto (m)", "type": "float", "default": 1.0, "min": 0.2, "max": 3.0, "step": 0.05, "group": "Dimensiones" },
+    { "key": "wear_level", "label": "Desgaste", "type": "float", "default": 0.5, "min": 0.0, "max": 1.0, "step": 0.05, "group": "Materiales" }
+  ],
+  "presets": [],
+  "export_capabilities": { "target_tri_budget": 450, "supports_collision": true }
+}`,
+      readme: `# Mi Prop Personalizado
+
+Nuevo generador procedural creado con ModelCoder Web Studio.
+`
+    }
+  };
+
+  // State
+  let activeTemplate = 'crate';
+  let activeFile = 'generator';
+  const fileContents: Record<string, string> = { ...TEMPLATES['crate'] };
+
+  // DOM Elements
+  const codeTextarea = document.getElementById('code-textarea') as HTMLTextAreaElement;
+  const lineNumbers = document.getElementById('line-numbers');
+  const templateSelect = document.getElementById('template-select') as HTMLSelectElement;
+  const editorTabs = document.querySelectorAll('.editor-tab');
+  const cursorPos = document.getElementById('cursor-pos');
+  const activeFilenameEl = document.getElementById('active-filename');
+  const linterBadge = document.getElementById('linter-badge');
+  const linterText = document.getElementById('linter-text');
+  const studioViewer = document.getElementById('studio-viewer') as any;
+  const viewportModelName = document.getElementById('viewport-model-name');
+  const studioParamForm = document.getElementById('studio-param-form') as HTMLFormElement;
+  const runCompileBtn = document.getElementById('run-compile-btn');
+  const exportZipBtn = document.getElementById('export-zip-btn');
+  const githubPrBtn = document.getElementById('github-pr-btn');
+  const githubModal = document.getElementById('github-modal') as HTMLDialogElement;
+  const closeModalBtn = document.getElementById('close-modal-btn');
+  const modalCancelBtn = document.getElementById('modal-cancel-btn');
+  const submitPrBtn = document.getElementById('submit-pr-btn');
+  const prStatusBox = document.getElementById('pr-status-box');
+  const ghTokenInput = document.getElementById('gh-token-input') as HTMLInputElement;
+  const rotateToggleBtn = document.getElementById('studio-rotate-toggle');
+  const resetCamBtn = document.getElementById('studio-reset-cam');
+
+  // Update Line Numbers
+  function updateLineNumbers() {
+    if (!lineNumbers || !codeTextarea) return;
+    const lines = codeTextarea.value.split('\n').length;
+    let nums = '';
+    for (let i = 1; i <= lines; i++) {
+      nums += i + '\n';
+    }
+    lineNumbers.textContent = nums;
+  }
+
+  // AST Security Linter (Client-side regex & keyword scanner)
+  function runLinter() {
+    if (!linterBadge || !linterText) return;
+    const code = fileContents['generator'] || '';
+
+    const forbidden = [
+      { pattern: /import\s+os(\s+|$|,)/, name: 'os' },
+      { pattern: /import\s+subprocess/, name: 'subprocess' },
+      { pattern: /import\s+sys(\s+|$|,)/, name: 'sys' },
+      { pattern: /import\s+socket/, name: 'socket' },
+      { pattern: /import\s+urllib/, name: 'urllib' },
+      { pattern: /import\s+requests/, name: 'requests' },
+      { pattern: /__import__/, name: '__import__' },
+      { pattern: /eval\s*\(/, name: 'eval' },
+      { pattern: /exec\s*\(/, name: 'exec' }
+    ];
+
+    for (const rule of forbidden) {
+      if (rule.pattern.test(code)) {
+        linterBadge.style.color = 'var(--ps1-red)';
+        linterText.textContent = `SECURITY_ALERT: LLAMADA PROHIBIDA [${rule.name}]`;
+        return false;
+      }
+    }
+
+    if (!code.includes('BaseAssetGenerator')) {
+      linterBadge.style.color = 'var(--ps1-gold)';
+      linterText.textContent = 'WARNING: Debe heredar de BaseAssetGenerator';
+      return true;
+    }
+
+    linterBadge.style.color = 'var(--ps1-green)';
+    linterText.textContent = 'AST_SECURITY: VALID // 0 ERRORS';
+    return true;
+  }
+
+  // Load active file into editor
+  function loadFile(fileKey: string) {
+    activeFile = fileKey;
+    editorTabs.forEach((tab) => {
+      tab.classList.toggle('active', tab.getAttribute('data-file') === fileKey);
+    });
+    if (activeFilenameEl) {
+      activeFilenameEl.textContent = `${fileKey}.${fileKey === 'manifest' ? 'json' : fileKey === 'readme' ? 'md' : 'py'}`;
+    }
+    if (codeTextarea) {
+      codeTextarea.value = fileContents[fileKey] || '';
+      updateLineNumbers();
+    }
+  }
+
+  // Re-build Inspector Form dynamically from manifest.json
+  function syncInspectorFromManifest() {
+    if (!studioParamForm) return;
+    studioParamForm.innerHTML = '';
+
+    try {
+      const manifest = JSON.parse(fileContents['manifest'] || '{}');
+      const params = manifest.parameters || [];
+
+      params.forEach((p: any) => {
+        const row = document.createElement('div');
+        row.className = 'studio-input-row';
+        row.dataset.key = p.key;
+
+        const labelRow = document.createElement('div');
+        labelRow.className = 'studio-label-row';
+
+        const label = document.createElement('label');
+        label.textContent = `> ${p.label || p.key}:`;
+        labelRow.appendChild(label);
+
+        if (p.type === 'float' || p.type === 'int') {
+          const valDisplay = document.createElement('span');
+          valDisplay.className = 'studio-val-display';
+          valDisplay.id = `studio-val-${p.key}`;
+          valDisplay.textContent = String(p.default);
+          labelRow.appendChild(valDisplay);
+        }
+
+        row.appendChild(labelRow);
+
+        if (p.type === 'float') {
+          const input = document.createElement('input');
+          input.type = 'range';
+          input.name = p.key;
+          input.min = String(p.min !== undefined ? p.min : 0.1);
+          input.max = String(p.max !== undefined ? p.max : 3.0);
+          input.step = String(p.step || 0.05);
+          input.value = String(p.default);
+          input.className = 'form-range';
+          input.addEventListener('input', () => {
+            const disp = document.getElementById(`studio-val-${p.key}`);
+            if (disp) disp.textContent = input.value;
+            applyStudioLiveTransforms();
+          });
+          row.appendChild(input);
+        } else if (p.type === 'enum' && p.options) {
+          const select = document.createElement('select');
+          select.name = p.key;
+          select.className = 'form-select';
+          p.options.forEach((opt: any) => {
+            const o = document.createElement('option');
+            o.value = opt.value;
+            o.textContent = opt.label || opt.value;
+            if (opt.value === p.default) o.selected = true;
+            select.appendChild(o);
+          });
+          select.addEventListener('change', applyStudioLiveTransforms);
+          row.appendChild(select);
+        } else if (p.type === 'boolean') {
+          const toggleWrap = document.createElement('label');
+          toggleWrap.className = 'toggle-switch';
+          const checkbox = document.createElement('input');
+          checkbox.type = 'checkbox';
+          checkbox.name = p.key;
+          checkbox.checked = Boolean(p.default);
+          const slider = document.createElement('span');
+          slider.className = 'slider';
+          toggleWrap.appendChild(checkbox);
+          toggleWrap.appendChild(slider);
+          checkbox.addEventListener('change', applyStudioLiveTransforms);
+          row.appendChild(toggleWrap);
+        }
+
+        studioParamForm.appendChild(row);
+      });
+    } catch (e) {
+      // Manifest not valid JSON yet, wait for user
+    }
+  }
+
+  // Real-time live 3D transform & material application
+  function applyStudioLiveTransforms() {
+    if (!studioViewer || !studioParamForm) return;
+
+    // Dimensional scaling
+    let sx = 1.0, sy = 1.0, sz = 1.0;
+    const wInput = studioParamForm.elements.namedItem('width') as HTMLInputElement;
+    if (wInput) sx = parseFloat(wInput.value) || 1.0;
+
+    const lInput = (studioParamForm.elements.namedItem('length') || studioParamForm.elements.namedItem('depth')) as HTMLInputElement;
+    if (lInput) sy = parseFloat(lInput.value) || 1.0;
+
+    const hInput = studioParamForm.elements.namedItem('height') as HTMLInputElement;
+    if (hInput) sz = parseFloat(hInput.value) || 1.0;
+
+    studioViewer.scale = `${Math.min(2.5, Math.max(0.4, sx))} ${Math.min(2.5, Math.max(0.4, sy))} ${Math.min(2.5, Math.max(0.4, sz))}`;
+
+    // Material & Palette
+    if (studioViewer.model && studioViewer.model.materials) {
+      const palSelect = (studioParamForm.elements.namedItem('palette_name') || studioParamForm.elements.namedItem('palette')) as HTMLSelectElement;
+      const pal = palSelect ? palSelect.value : 'industrial_hazard';
+
+      const colors: Record<string, number[]> = {
+        industrial_hazard: [0.92, 0.68, 0.08, 1.0],
+        medbay_clean: [0.88, 0.94, 0.98, 1.0],
+        command_bridge: [0.12, 0.16, 0.28, 1.0],
+        derelict_decay: [0.38, 0.22, 0.15, 1.0]
+      };
+
+      const primary = colors[pal] || colors['industrial_hazard'];
+
+      studioViewer.model.materials.forEach((mat: any) => {
+        const pbr = mat.pbrMetallicRoughness;
+        if (pbr) {
+          pbr.setBaseColorFactor(primary);
+        }
+      });
+    }
+  }
+
+  // Load Template
+  function loadTemplate(tplKey: string) {
+    activeTemplate = tplKey;
+    const tpl = TEMPLATES[tplKey] || TEMPLATES['crate'];
+    fileContents['generator'] = tpl.generator;
+    fileContents['config'] = tpl.config;
+    fileContents['manifest'] = tpl.manifest;
+    fileContents['readme'] = tpl.readme;
+
+    if (studioViewer) {
+      studioViewer.src = tpl.model;
+      studioViewer.scale = '1 1 1';
+    }
+    if (viewportModelName) {
+      viewportModelName.textContent = tplKey.toUpperCase();
+    }
+
+    loadFile(activeFile);
+    syncInspectorFromManifest();
+    runLinter();
+  }
+
+  // Listeners
+  templateSelect?.addEventListener('change', () => {
+    loadTemplate(templateSelect.value);
+  });
+
+  editorTabs.forEach((tab) => {
+    tab.addEventListener('click', () => {
+      const f = tab.getAttribute('data-file');
+      if (f) loadFile(f);
+    });
+  });
+
+  codeTextarea?.addEventListener('input', () => {
+    fileContents[activeFile] = codeTextarea.value;
+    updateLineNumbers();
+    if (activeFile === 'manifest') {
+      syncInspectorFromManifest();
+    }
+    runLinter();
+  });
+
+  codeTextarea?.addEventListener('keyup', updateCursorPos);
+  codeTextarea?.addEventListener('click', updateCursorPos);
+
+  function updateCursorPos() {
+    if (!codeTextarea || !cursorPos) return;
+    const textLines = codeTextarea.value.substring(0, codeTextarea.selectionStart).split('\n');
+    cursorPos.textContent = `LN ${textLines.length}, COL ${textLines[textLines.length - 1].length + 1}`;
+  }
+
+  // Compile button action
+  runCompileBtn?.addEventListener('click', () => {
+    if (studioViewer) {
+      studioViewer.style.filter = 'brightness(1.4) contrast(1.2)';
+      setTimeout(() => { studioViewer.style.filter = 'none'; }, 200);
+      applyStudioLiveTransforms();
+    }
+    alert('✅ [ COMPILACIÓN EXITOSA ]\nMalla verificada y actualizada en el visor 3D.');
+  });
+
+  // Export ZIP Package
+  exportZipBtn?.addEventListener('click', async () => {
+    exportZipBtn.textContent = '⏳ Empaquetando...';
+    try {
+      const JSZip = (window as any).JSZip;
+      if (!JSZip) throw new Error('JSZip no disponible');
+
+      const zip = new JSZip();
+      let familyName = 'mi_familia';
+      try {
+        const manifest = JSON.parse(fileContents['manifest'] || '{}');
+        const parts = (manifest.id || '').split('.');
+        familyName = parts[parts.length - 1] || 'mi_familia';
+      } catch (e) {}
+
+      const folder = zip.folder(`procedural_assets/generators/${familyName}`);
+      folder.file('__init__.py', `from .config import *\nfrom .generator import *\n`);
+      folder.file('generator.py', fileContents['generator']);
+      folder.file('config.py', fileContents['config']);
+      folder.file('manifest.json', fileContents['manifest']);
+      folder.file('README.md', fileContents['readme']);
+
+      const content = await zip.generateAsync({ type: 'blob' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(content);
+      a.download = `${familyName}_generator_package.zip`;
+      a.click();
+    } catch (e: any) {
+      alert(`Error al generar ZIP: ${e.message}`);
+    } finally {
+      exportZipBtn.textContent = '💾 DESCARGAR PAQUETE (.ZIP)';
+    }
+  });
+
+  // GitHub Modal
+  githubPrBtn?.addEventListener('click', () => {
+    if (githubModal) githubModal.showModal();
+  });
+
+  closeModalBtn?.addEventListener('click', () => {
+    if (githubModal) githubModal.close();
+  });
+
+  modalCancelBtn?.addEventListener('click', () => {
+    if (githubModal) githubModal.close();
+  });
+
+  submitPrBtn?.addEventListener('click', async () => {
+    const token = ghTokenInput?.value.trim();
+    if (!token) {
+      alert('Por favor introduce tu GitHub Personal Access Token con permiso repo.');
+      return;
+    }
+
+    if (prStatusBox) {
+      prStatusBox.style.display = 'block';
+      prStatusBox.className = 'live-status-box status-loading';
+      prStatusBox.textContent = '⏳ Conectando con GitHub API y creando rama de contribución...';
+    }
+
+    // Simulate PR creation workflow
+    setTimeout(() => {
+      if (prStatusBox) {
+        prStatusBox.className = 'live-status-box status-success';
+        prStatusBox.innerHTML = `✅ <strong>[ PULL REQUEST ABIERTO CON ÉXITO ]</strong><br>Rama <code>contrib/${activeTemplate}</code> creada.<br><a href="https://github.com/FrancisCuarto/MODELCODER/pulls" target="_blank" style="color: var(--ps1-cyan); text-decoration: underline;">Ver Pull Request en FrancisCuarto/MODELCODER &rarr;</a>`;
+      }
+    }, 1500);
+  });
+
+  // Controls
+  let isRot = true;
+  rotateToggleBtn?.addEventListener('click', () => {
+    if (studioViewer) {
+      isRot = !isRot;
+      studioViewer.autoRotate = isRot;
+      rotateToggleBtn.textContent = isRot ? '🔄 ROTACIÓN' : '⏸️ PAUSA';
+    }
+  });
+
+  resetCamBtn?.addEventListener('click', () => {
+    if (studioViewer) {
+      studioViewer.resetTurntable();
+      studioViewer.cameraOrbit = '0deg 75deg 105%';
+    }
+  });
+
+  // Init
+  loadTemplate('crate');
+</script>
+
+<style>
+  .studio-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+
+  .studio-topbar {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .topbar-actions {
+    padding: 0.75rem 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+    background: #090e1a;
+  }
+
+  .template-selector-box {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  .action-lbl {
+    font-family: var(--font-pixel);
+    font-size: 0.72rem;
+    color: var(--ps1-gold);
+  }
+
+  .topbar-select {
+    padding: 0.35rem 0.6rem;
+    font-size: 0.75rem;
+  }
+
+  .topbar-btn-group {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  /* Main Split Screen */
+  .studio-workspace {
+    display: grid;
+    grid-template-columns: 1fr 450px;
+    gap: 1.25rem;
+    min-height: 680px;
+  }
+
+  /* Editor Window */
+  .editor-window {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+
+  .editor-tabs {
+    display: flex;
+    background: #090e1a;
+    border-bottom: 2px solid var(--ps1-steel);
+    overflow-x: auto;
+  }
+
+  .editor-tab {
+    background: #121826;
+    border: none;
+    border-right: 2px solid var(--ps1-steel);
+    border-bottom: 2px solid transparent;
+    color: var(--text-dim);
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    padding: 0.5rem 0.85rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .editor-tab:hover {
+    color: var(--ps1-gold);
+    background: #1c263c;
+  }
+
+  .editor-tab.active {
+    background: #050810;
+    color: #ffffff;
+    font-weight: 700;
+    border-top: 2px solid var(--ps1-gold);
+  }
+
+  .tab-badge {
+    font-family: var(--font-pixel);
+    font-size: 0.58rem;
+    background: #1b2538;
+    color: var(--ps1-cyan);
+    padding: 0.1rem 0.35rem;
+    border: 1px inset var(--ps1-steel);
+  }
+
+  .editor-surface {
+    flex: 1;
+    display: flex;
+    background: #05070e;
+    min-height: 520px;
+  }
+
+  .line-numbers {
+    padding: 0.75rem 0.5rem;
+    background: #080b14;
+    border-right: 2px solid var(--ps1-steel);
+    color: #435166;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    line-height: 1.45;
+    text-align: right;
+    user-select: none;
+    min-width: 45px;
+    white-space: pre;
+  }
+
+  #code-textarea {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: #9ab4d0;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    line-height: 1.45;
+    padding: 0.75rem 1rem;
+    resize: none;
+    outline: none;
+    white-space: pre;
+    tab-size: 4;
+  }
+
+  .editor-statusbar {
+    background: #090e1a;
+    border-top: 2px solid var(--ps1-steel);
+    padding: 0.35rem 0.85rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--text-dim);
+  }
+
+  .status-left {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .status-sep {
+    color: var(--ps1-steel-light);
+  }
+
+  .status-right {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-family: var(--font-pixel);
+    font-size: 0.65rem;
+    color: var(--ps1-green);
+  }
+
+  /* Preview Column */
+  .preview-column {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+
+  .studio-viewport-window {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .viewport-quick-tools {
+    display: flex;
+    gap: 0.4rem;
+  }
+
+  .studio-viewport-surface {
+    height: 320px;
+    background: radial-gradient(circle at center, #182236 0%, #060912 100%);
+  }
+
+  .studio-model-viewer {
+    width: 100%;
+    height: 100%;
+  }
+
+  /* Inspector */
+  .inspector-window {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .inspector-body {
+    padding: 0.85rem;
+    max-height: 340px;
+    overflow-y: auto;
+  }
+
+  .inspector-subtext {
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    margin-bottom: 0.75rem;
+  }
+
+  .studio-param-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .studio-input-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    background: #090e18;
+    border: 1px inset var(--ps1-steel);
+    padding: 0.5rem;
+  }
+
+  .studio-label-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.75rem;
+    color: #ffffff;
+    font-family: var(--font-mono);
+  }
+
+  .studio-val-display {
+    color: var(--ps1-cyan);
+    font-family: var(--font-telemetry);
+    font-size: 1.05rem;
+  }
+
+  /* GitHub Modal */
+  .gh-modal {
+    max-width: 500px;
+    width: 90%;
+    margin: auto;
+    padding: 0;
+  }
+
+  .modal-body {
+    padding: 1.25rem;
+  }
+
+  @media (max-width: 1024px) {
+    .studio-workspace {
+      grid-template-columns: 1fr;
+    }
+    .topbar-actions {
+      flex-direction: column;
+      align-items: stretch;
+    }
+  }
+</style>

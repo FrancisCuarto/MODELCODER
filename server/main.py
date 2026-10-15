@@ -72,8 +72,11 @@ def execute_generation(family: str, params: Dict[str, Any], preset: Optional[str
         cmd = [
             BLENDER_EXE, "-b", "--python", generate_script,
             "--", "--family", family, "--output-dir", work_dir,
-            "--name", f"gen_{family}_{req_id}", "--collision"
+            "--name", f"gen_{family}_{req_id}"
         ]
+
+        if params.get("collision") or params.get("add_collision_mesh"):
+            cmd.append("--collision")
 
         if preset:
             cmd.extend(["--preset", preset])
