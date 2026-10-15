@@ -1,0 +1,871 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import catalog from '../../data/catalog.json';
+
+export async function getStaticPaths() {
+  return catalog.map((gen) => ({
+    params: { family: gen.family },
+    props: { gen },
+  }));
+}
+
+const { gen } = Astro.props;
+
+// Group parameters by parameter.group
+const groupedParams: Record<string, any[]> = {};
+gen.parameters.forEach((param: any) => {
+  const g = param.group || 'General';
+  if (!groupedParams[g]) groupedParams[g] = [];
+  groupedParams[g].push(param);
+});
+---
+
+<Layout title={`${gen.name} - Generador 3D Procedural`}>
+  <!-- Breadcrumbs -->
+  <nav class="breadcrumb-nav">
+    <a href="/">Catálogo</a> &rsaquo; 
+    <span class={`category-badge category-${gen.category}`} style="margin: 0 0.5rem;">{gen.category}</span> &rsaquo; 
+    <span class="active-crumb">{gen.name}</span>
+  </nav>
+
+  <div class="generator-workspace">
+    <!-- Left Column: 3D Viewport & Metadata -->
+    <div class="viewport-column">
+      <div class="viewport-container">
+        {gen.has_model ? (
+          <model-viewer
+            id="main-viewer"
+            src={gen.model_url}
+            alt={gen.name}
+            camera-controls
+            auto-rotate
+            shadow-intensity="1.2"
+            exposure="1.0"
+            ar
+            class="interactive-viewer"
+          >
+            <div slot="poster" class="viewer-loading">Cargando Modelo 3D...</div>
+          </model-viewer>
+        ) : (
+          <div class="no-preview-box">
+            <p>Modelo GLB generado bajo demanda en consola local.</p>
+          </div>
+        )}
+
+        <!-- 3D Controls Overlay -->
+        <div class="viewport-overlay-controls">
+          <button id="toggle-rotate-btn" class="viewport-btn" title="Pausar / Reanudar Rotación">
+            🔄 Auto-rotación
+          </button>
+          <button id="reset-cam-btn" class="viewport-btn" title="Restablecer Cámara">
+            🎯 Centrar
+          </button>
+        </div>
+
+        <!-- Preset quick pills -->
+        {gen.presets.length > 0 && (
+          <div class="preset-pill-bar">
+            <span class="preset-pill-label">Presets:</span>
+            {gen.presets.map((pr: any, idx: number) => (
+              <button 
+                class={`preset-pill ${idx === 0 ? 'active' : ''}`}
+                data-preset-id={pr.id}
+                data-preset-values={JSON.stringify(pr.values)}
+                title={pr.description}
+              >
+                {pr.name}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <!-- Generator Summary Info -->
+      <div class="generator-summary-panel">
+        <div class="summary-header">
+          <div>
+            <h1 class="generator-title">{gen.name}</h1>
+            <code class="family-tag">family: {gen.family}</code>
+          </div>
+          <div class="license-badge-box">
+            <span class="meta-pill">{gen.license}</span>
+            <span class="meta-pill">v{gen.version}</span>
+          </div>
+        </div>
+
+        <p class="summary-desc">{gen.description}</p>
+
+        <!-- Technical Capabilities Grid -->
+        <div class="capabilities-grid">
+          <div class="cap-card">
+            <span class="cap-label">Tri Budget</span>
+            <span class="cap-val">{gen.export_capabilities?.target_tri_budget || '400~500'} tris</span>
+          </div>
+          <div class="cap-card">
+            <span class="cap-label">Colisión Godot 4</span>
+            <span class="cap-val text-green">
+              {gen.export_capabilities?.supports_collision ? 'Activa (-convcolonly)' : 'Visual Only'}
+            </span>
+          </div>
+          <div class="cap-card">
+            <span class="cap-label">Pivote / Origen</span>
+            <span class="cap-val">Base / Z=0.0 (Floor)</span>
+          </div>
+          <div class="cap-card">
+            <span class="cap-label">Sockets / Snap</span>
+            <span class="cap-val text-cyan">
+              {gen.export_capabilities?.supports_sockets ? 'Interact + Item + Light' : 'Estándar'}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Source Code Inspection Accordion -->
+      <div class="code-inspection-panel">
+        <div class="panel-tab-header">
+          <h3 class="panel-heading">Código Fuente Python del Generador</h3>
+          <button id="copy-code-btn" class="btn btn-outline" style="padding: 0.25rem 0.6rem; font-size: 0.75rem;">
+            Copiar Código
+          </button>
+        </div>
+        <pre class="code-block"><code id="python-source">{gen.source_code}</code></pre>
+      </div>
+    </div>
+
+    <!-- Right Column: Interactive Parameter Configurator -->
+    <div class="configurator-column">
+      <div class="configurator-card">
+        <div class="config-header">
+          <h2>Parámetros del Generador</h2>
+          <span class="param-count-badge">{gen.parameters.length} expuestos</span>
+        </div>
+        <p class="config-subtext">
+          Ajusta los valores para simular variantes procedurales y obtener el comando CLI listo para ejecutar.
+        </p>
+
+        <!-- Presets Dropdown Selector -->
+        {gen.presets.length > 0 && (
+          <div class="preset-select-group">
+            <label for="preset-select">Cargar Preset Curado:</label>
+            <select id="preset-select" class="form-select">
+              {gen.presets.map((pr: any) => (
+                <option value={pr.id} data-values={JSON.stringify(pr.values)}>
+                  {pr.name} ({pr.id})
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        <!-- Dynamic Parameter Inputs by Group -->
+        <form id="generator-form" class="parameter-form">
+          {Object.entries(groupedParams).map(([groupName, params]) => (
+            <fieldset class="parameter-group">
+              <legend class="group-legend">{groupName}</legend>
+              <div class="group-inputs">
+                {params.map((p: any) => (
+                  <div class="input-row" data-param-key={p.key} data-param-type={p.type}>
+                    <div class="input-label-row">
+                      <label for={`param-${p.key}`} class="input-label">
+                        {p.label}
+                      </label>
+                      {(p.type === 'float' || p.type === 'int' || p.type === 'seed') && (
+                        <span class="live-val" id={`val-${p.key}`}>{p.default}</span>
+                      )}
+                    </div>
+
+                    {p.type === 'float' && (
+                      <input 
+                        type="range"
+                        id={`param-${p.key}`}
+                        name={p.key}
+                        min={p.min !== undefined && p.min !== null ? p.min : 0.0}
+                        max={p.max !== undefined && p.max !== null ? p.max : 5.0}
+                        step={p.step || 0.05}
+                        value={p.default}
+                        class="form-range"
+                      />
+                    )}
+
+                    {(p.type === 'int' || p.type === 'seed') && (
+                      <input 
+                        type="number"
+                        id={`param-${p.key}`}
+                        name={p.key}
+                        min={p.min !== undefined && p.min !== null ? p.min : 0}
+                        max={p.max !== undefined && p.max !== null ? p.max : 100}
+                        step={p.step || 1}
+                        value={p.default}
+                        class="form-input"
+                      />
+                    )}
+
+                    {p.type === 'boolean' && (
+                      <label class="toggle-switch">
+                        <input 
+                          type="checkbox"
+                          id={`param-${p.key}`}
+                          name={p.key}
+                          checked={p.default === true}
+                        />
+                        <span class="slider round"></span>
+                      </label>
+                    )}
+
+                    {p.type === 'enum' && (
+                      <select id={`param-${p.key}`} name={p.key} class="form-select">
+                        {p.options ? p.options.map((opt: any) => (
+                          <option value={opt.value} selected={opt.value === p.default}>
+                            {opt.label || opt.value}
+                          </option>
+                        )) : (
+                          <option value={p.default}>{p.default}</option>
+                        )}
+                      </select>
+                    )}
+
+                    {p.type === 'string' && (
+                      <input 
+                        type="text"
+                        id={`param-${p.key}`}
+                        name={p.key}
+                        value={p.default || ''}
+                        class="form-input"
+                      />
+                    )}
+
+                    {p.description && (
+                      <p class="param-help">{p.description}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </fieldset>
+          ))}
+        </form>
+
+        <!-- Dynamic CLI Command Generator Box -->
+        <div class="cli-command-box">
+          <div class="cli-header">
+            <span>Comando CLI para Generar en Blender:</span>
+            <button id="copy-cli-btn" class="btn btn-outline" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;">
+              Copiar
+            </button>
+          </div>
+          <code id="cli-command-output" class="cli-code">
+            blender -b --python generate.py -- --family {gen.family}
+          </code>
+        </div>
+
+        <!-- Action Downloads -->
+        <div class="action-buttons-box">
+          {gen.has_model && (
+            <a href={gen.model_url} download={`${gen.family}.glb`} class="btn btn-primary" style="width: 100%;">
+              Descargar Archivo 3D (.GLB)
+            </a>
+          )}
+          <a 
+            href={`data:text/json;charset=utf-8,${encodeURIComponent(JSON.stringify(gen, null, 2))}`}
+            download={`${gen.family}_manifest.json`}
+            class="btn btn-outline" 
+            style="width: 100%;"
+          >
+            Descargar Manifiesto (.JSON)
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</Layout>
+
+<script>
+  // Interactive parameter and CLI sync script
+  const form = document.getElementById('generator-form') as HTMLFormElement;
+  const cliOutput = document.getElementById('cli-command-output');
+  const copyCliBtn = document.getElementById('copy-cli-btn');
+  const copyCodeBtn = document.getElementById('copy-code-btn');
+  const pythonSource = document.getElementById('python-source');
+  const presetSelect = document.getElementById('preset-select') as HTMLSelectElement;
+  const presetPills = document.querySelectorAll('.preset-pill');
+  const viewer = document.getElementById('main-viewer') as any;
+  const toggleRotateBtn = document.getElementById('toggle-rotate-btn');
+  const resetCamBtn = document.getElementById('reset-cam-btn');
+
+  // URL family from path
+  const pathParts = window.location.pathname.split('/').filter(Boolean);
+  const familyName = pathParts[pathParts.length - 1] || 'model';
+
+  function updateLiveValuesAndCLI() {
+    if (!form || !cliOutput) return;
+
+    const formData = new FormData(form);
+    const cliArgs: string[] = [`--family ${familyName}`];
+
+    form.querySelectorAll('.input-row').forEach((rowEl) => {
+      const row = rowEl as HTMLElement;
+      const key = row.dataset.paramKey;
+      const type = row.dataset.paramType;
+      if (!key) return;
+
+      const input = form.elements.namedItem(key) as HTMLInputElement | HTMLSelectElement;
+      if (!input) return;
+
+      const liveValEl = document.getElementById(`val-${key}`);
+
+      if (type === 'boolean') {
+        const checked = (input as HTMLInputElement).checked;
+        if (checked) cliArgs.push(`--${key.replace(/_/g, '-')}`);
+        else cliArgs.push(`--no-${key.replace(/_/g, '-')}`);
+      } else {
+        const val = input.value;
+        if (liveValEl) liveValEl.textContent = val;
+        if (val !== undefined && val !== '') {
+          cliArgs.push(`--${key.replace(/_/g, '-')} ${val}`);
+        }
+      }
+    });
+
+    cliOutput.textContent = `blender -b --python generate.py -- ${cliArgs.join(' ')} --collision`;
+  }
+
+  form?.addEventListener('input', updateLiveValuesAndCLI);
+  form?.addEventListener('change', updateLiveValuesAndCLI);
+
+  // Preset selector handler
+  function applyPreset(values: Record<string, any>) {
+    if (!form) return;
+    Object.entries(values).forEach(([k, val]) => {
+      const input = form.elements.namedItem(k) as HTMLInputElement | HTMLSelectElement;
+      if (input) {
+        if (input.type === 'checkbox') {
+          (input as HTMLInputElement).checked = Boolean(val);
+        } else {
+          input.value = String(val);
+        }
+        const liveValEl = document.getElementById(`val-${k}`);
+        if (liveValEl) liveValEl.textContent = String(val);
+      }
+    });
+    updateLiveValuesAndCLI();
+  }
+
+  presetSelect?.addEventListener('change', () => {
+    const selectedOpt = presetSelect.options[presetSelect.selectedIndex];
+    const dataValues = selectedOpt.getAttribute('data-values');
+    if (dataValues) {
+      applyPreset(JSON.parse(dataValues));
+    }
+  });
+
+  presetPills.forEach((pill) => {
+    pill.addEventListener('click', () => {
+      presetPills.forEach((p) => p.classList.remove('active'));
+      pill.classList.add('active');
+      const dataValues = pill.getAttribute('data-preset-values');
+      const presetId = pill.getAttribute('data-preset-id');
+      if (presetSelect && presetId) {
+        presetSelect.value = presetId;
+      }
+      if (dataValues) {
+        applyPreset(JSON.parse(dataValues));
+      }
+    });
+  });
+
+  // Copy buttons
+  copyCliBtn?.addEventListener('click', () => {
+    if (cliOutput) {
+      navigator.clipboard.writeText(cliOutput.textContent?.trim() || '');
+      copyCliBtn.textContent = '¡Copiado!';
+      setTimeout(() => { copyCliBtn.textContent = 'Copiar'; }, 2000);
+    }
+  });
+
+  copyCodeBtn?.addEventListener('click', () => {
+    if (pythonSource) {
+      navigator.clipboard.writeText(pythonSource.textContent || '');
+      copyCodeBtn.textContent = '¡Copiado!';
+      setTimeout(() => { copyCodeBtn.textContent = 'Copiar Código'; }, 2000);
+    }
+  });
+
+  // Viewer controls
+  let isRotating = true;
+  toggleRotateBtn?.addEventListener('click', () => {
+    if (viewer) {
+      isRotating = !isRotating;
+      viewer.autoRotate = isRotating;
+      toggleRotateBtn.textContent = isRotating ? '🔄 Auto-rotación' : '⏸️ Pausado';
+    }
+  });
+
+  resetCamBtn?.addEventListener('click', () => {
+    if (viewer) {
+      viewer.resetTurntable();
+      viewer.cameraOrbit = '0deg 75deg 105%';
+    }
+  });
+
+  // Initial update
+  updateLiveValuesAndCLI();
+</script>
+
+<style>
+  .breadcrumb-nav {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+  }
+
+  .active-crumb {
+    color: var(--text-main);
+    font-weight: 600;
+  }
+
+  .generator-workspace {
+    display: grid;
+    grid-template-columns: 1fr 420px;
+    gap: 2rem;
+    align-items: start;
+  }
+
+  /* Viewport Column */
+  .viewport-column {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .viewport-container {
+    position: relative;
+    width: 100%;
+    height: 480px;
+    background: radial-gradient(circle, #1a2233 0%, #0a0d14 100%);
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .interactive-viewer {
+    width: 100%;
+    height: 100%;
+    --poster-color: transparent;
+  }
+
+  .viewer-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--accent-cyan);
+    font-family: var(--font-mono);
+  }
+
+  .viewport-overlay-controls {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    display: flex;
+    gap: 0.5rem;
+    z-index: 10;
+  }
+
+  .viewport-btn {
+    background: rgba(12, 14, 20, 0.8);
+    backdrop-filter: blur(4px);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-main);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    padding: 0.35rem 0.65rem;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .viewport-btn:hover {
+    border-color: var(--accent-amber);
+    color: var(--accent-amber);
+  }
+
+  .preset-pill-bar {
+    position: absolute;
+    bottom: 1rem;
+    left: 1rem;
+    right: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(12, 14, 20, 0.85);
+    backdrop-filter: blur(4px);
+    padding: 0.4rem 0.8rem;
+    border-radius: 6px;
+    border: 1px solid var(--border-subtle);
+    overflow-x: auto;
+  }
+
+  .preset-pill-label {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-weight: 700;
+  }
+
+  .preset-pill {
+    background: transparent;
+    border: 1px solid var(--border-subtle);
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    padding: 0.25rem 0.6rem;
+    border-radius: 4px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s ease;
+  }
+
+  .preset-pill:hover, .preset-pill.active {
+    background: rgba(255, 176, 0, 0.15);
+    border-color: var(--accent-amber);
+    color: var(--accent-amber);
+    font-weight: 700;
+  }
+
+  /* Summary Panel */
+  .generator-summary-panel {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    padding: 1.5rem;
+  }
+
+  .summary-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.75rem;
+  }
+
+  .generator-title {
+    font-size: 1.6rem;
+    font-weight: 800;
+    line-height: 1.2;
+  }
+
+  .family-tag {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--accent-cyan);
+    background: rgba(0, 229, 255, 0.08);
+    padding: 0.15rem 0.4rem;
+    border-radius: 3px;
+  }
+
+  .license-badge-box {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .meta-pill {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-subtle);
+    padding: 0.2rem 0.5rem;
+    border-radius: 3px;
+    color: var(--text-muted);
+  }
+
+  .summary-desc {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    line-height: 1.6;
+    margin-bottom: 1.5rem;
+  }
+
+  .capabilities-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.75rem;
+    background: #0d1017;
+    padding: 1rem;
+    border-radius: 6px;
+    border: 1px solid var(--border-subtle);
+  }
+
+  .cap-card {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .cap-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+  }
+
+  .cap-val {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    font-weight: 700;
+    margin-top: 0.2rem;
+  }
+
+  .text-green { color: var(--accent-green); }
+  .text-cyan { color: var(--accent-cyan); }
+
+  /* Code panel */
+  .code-inspection-panel {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    padding: 1.25rem;
+  }
+
+  .panel-tab-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+
+  .panel-heading {
+    font-size: 1rem;
+    font-weight: 700;
+  }
+
+  .code-block {
+    background: #090b10;
+    border: 1px solid var(--border-subtle);
+    border-radius: 6px;
+    padding: 1rem;
+    max-height: 400px;
+    overflow: auto;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: #adbac7;
+    line-height: 1.45;
+  }
+
+  /* Right Column: Configurator */
+  .configurator-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    padding: 1.5rem;
+    position: sticky;
+    top: 5rem;
+    max-height: calc(100vh - 6rem);
+    overflow-y: auto;
+  }
+
+  .config-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.25rem;
+  }
+
+  .config-header h2 {
+    font-size: 1.25rem;
+    font-weight: 700;
+  }
+
+  .param-count-badge {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    background: rgba(255, 176, 0, 0.1);
+    color: var(--accent-amber);
+    padding: 0.15rem 0.45rem;
+    border-radius: 3px;
+  }
+
+  .config-subtext {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-bottom: 1.25rem;
+  }
+
+  .preset-select-group {
+    margin-bottom: 1.25rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .preset-select-group label {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-bottom: 0.4rem;
+  }
+
+  .parameter-group {
+    border: 1px solid var(--border-subtle);
+    border-radius: 6px;
+    padding: 0.85rem;
+    margin-bottom: 1rem;
+    background: rgba(0, 0, 0, 0.15);
+  }
+
+  .group-legend {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--accent-amber);
+    padding: 0 0.5rem;
+  }
+
+  .group-inputs {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-top: 0.5rem;
+  }
+
+  .input-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  .input-label-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .input-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-main);
+  }
+
+  .live-val {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--accent-cyan);
+    font-weight: 700;
+  }
+
+  .form-range {
+    width: 100%;
+    accent-color: var(--accent-amber);
+    cursor: pointer;
+  }
+
+  .form-input, .form-select {
+    background: var(--bg-input);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-main);
+    padding: 0.5rem 0.75rem;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    font-family: var(--font-mono);
+    outline: none;
+  }
+
+  .form-input:focus, .form-select:focus {
+    border-color: var(--accent-amber);
+  }
+
+  /* Toggle Switch */
+  .toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+  }
+
+  .toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+
+  .slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #232a3d;
+    transition: .2s;
+    border-radius: 24px;
+  }
+
+  .slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: .2s;
+    border-radius: 50%;
+  }
+
+  input:checked + .slider {
+    background-color: var(--accent-amber);
+  }
+
+  input:checked + .slider:before {
+    transform: translateX(20px);
+  }
+
+  .param-help {
+    font-size: 0.75rem;
+    color: #6e7681;
+    line-height: 1.3;
+  }
+
+  /* CLI Box */
+  .cli-command-box {
+    margin-top: 1.5rem;
+    background: #090b10;
+    border: 1px solid var(--border-subtle);
+    border-radius: 6px;
+    padding: 0.85rem;
+  }
+
+  .cli-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-bottom: 0.4rem;
+  }
+
+  .cli-code {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--accent-cyan);
+    word-break: break-all;
+    line-height: 1.4;
+    user-select: all;
+  }
+
+  .action-buttons-box {
+    margin-top: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+
+  @media (max-width: 1024px) {
+    .generator-workspace {
+      grid-template-columns: 1fr;
+    }
+    .configurator-card {
+      position: static;
+      max-height: none;
+    }
+  }
+</style>

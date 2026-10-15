@@ -1,0 +1,298 @@
+{
+  "export_metadata": {
+    "generator": "OfficeChairGenerator",
+    "asset_name": "office_chair",
+    "timestamp": "2026-10-15T19:13:37.444537Z",
+    "format": "glTF 2.0 Binary (.glb)",
+    "output_file": "d:\\MODELCODER\\web\\public\\models\\office_chair.glb",
+    "file_size_bytes": 111472,
+    "file_size_kb": 108.86
+  },
+  "normalization": {
+    "units": "Meters (1 Blender unit = 1.0 Godot unit)",
+    "scale_applied": true,
+    "rotation_applied": true,
+    "location_applied": true,
+    "pivot_rule": "floor_center",
+    "pivot_offset_applied": [
+      -0.005,
+      -0.475,
+      0.3303
+    ],
+    "normals_shading": "Flat (poly.use_smooth = False, PS1 low-poly crisp)",
+    "normals_recalculated": true,
+    "uv_mapping": "TEXCOORD_0 (Component-mapped to PS1 Weathered Texture Atlas)",
+    "vertex_colors": "COLOR_0 (Col / PS1 Gouraud tinting and wear)"
+  },
+  "dimensions_meters": {
+    "x": 0.6651,
+    "y": 0.95,
+    "z": 0.6607
+  },
+  "geometry_metrics": {
+    "total_triangles": 272,
+    "total_vertices": 178,
+    "target_tri_budget": 380,
+    "budget_compliance_ratio": 0.72,
+    "object_count": 5,
+    "hierarchy": [
+      {
+        "name": "office_chair",
+        "type": "MESH",
+        "parent": null,
+        "triangles": 266,
+        "vertices": 178
+      },
+      {
+        "name": "office_chair-convcolonly",
+        "type": "MESH",
+        "parent": "office_chair",
+        "triangles": 12,
+        "vertices": 8
+      },
+      {
+        "name": "socket_item_spawn",
+        "type": "EMPTY",
+        "parent": "office_chair",
+        "triangles": 0,
+        "vertices": 0
+      },
+      {
+        "name": "socket_light",
+        "type": "EMPTY",
+        "parent": "office_chair",
+        "triangles": 0,
+        "vertices": 0
+      },
+      {
+        "name": "socket_player_interact",
+        "type": "EMPTY",
+        "parent": "office_chair",
+        "triangles": 0,
+        "vertices": 0
+      }
+    ]
+  },
+  "materials": {
+    "count": 4,
+    "compacted": true,
+    "list": [
+      {
+        "name": "mat_psx_industrial_hazard_casing_w65",
+        "roughness": 0.68,
+        "metallic": 0.18,
+        "emission": "None"
+      },
+      {
+        "name": "mat_psx_industrial_hazard_mounting_w65",
+        "roughness": 0.42,
+        "metallic": 0.88,
+        "emission": "None"
+      },
+      {
+        "name": "mat_psx_industrial_hazard_rubber_tire_w65",
+        "roughness": 0.9,
+        "metallic": 0.0,
+        "emission": "None"
+      },
+      {
+        "name": "mat_psx_industrial_hazard_chair_vinyl_w65",
+        "roughness": 0.62,
+        "metallic": 0.04,
+        "emission": "None"
+      }
+    ]
+  },
+  "collision": {
+    "enabled": true,
+    "node_name": "office_chair-convcolonly",
+    "shape_type": "box",
+    "godot_suffix": "-convcolonly",
+    "extents": [
+      0.6651,
+      0.95,
+      0.6607
+    ]
+  },
+  "sockets": [
+    {
+      "name": "socket_player_interact",
+      "position": [
+        0.0,
+        -1.025,
+        0.0
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "Standard player character interaction stand point"
+    },
+    {
+      "name": "socket_item_spawn",
+      "position": [
+        0.0,
+        0.0,
+        0.681
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "Prop or pickup spawn snap position (keycards, ammo, medical items)"
+    },
+    {
+      "name": "socket_light",
+      "position": [
+        0.0,
+        0.0,
+        0.562
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "OmniLight3D / SpotLight3D mount anchor point"
+    }
+  ],
+  "godot_4_validation": {
+    "bounds_aabb": {
+      "position": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "size": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "collision_shape_count": 1,
+    "errors": [],
+    "file": "d:\\MODELCODER\\web\\public\\models\\office_chair.glb",
+    "materials": [
+      "mat_psx_industrial_hazard_casing_w65",
+      "mat_psx_industrial_hazard_mounting_w65",
+      "mat_psx_industrial_hazard_rubber_tire_w65",
+      "mat_psx_industrial_hazard_chair_vinyl_w65",
+      ""
+    ],
+    "mesh_count": 2,
+    "nodes": [
+      {
+        "class": "Node3D",
+        "depth": 0,
+        "name": "office_chair2"
+      },
+      {
+        "aabb": {
+          "position": [
+            -0.333,
+            0.0,
+            -0.475
+          ],
+          "size": [
+            0.665,
+            0.661,
+            0.95
+          ]
+        },
+        "class": "MeshInstance3D",
+        "depth": 1,
+        "has_uv": true,
+        "materials": [
+          "mat_psx_industrial_hazard_casing_w65",
+          "mat_psx_industrial_hazard_mounting_w65",
+          "mat_psx_industrial_hazard_rubber_tire_w65",
+          "mat_psx_industrial_hazard_chair_vinyl_w65"
+        ],
+        "name": "office_chair",
+        "surface_count": 4
+      },
+      {
+        "aabb": {
+          "position": [
+            -0.333,
+            0.0,
+            -0.475
+          ],
+          "size": [
+            0.665,
+            0.661,
+            0.95
+          ]
+        },
+        "class": "MeshInstance3D",
+        "depth": 2,
+        "godot_collision": {
+          "points": 8,
+          "shape": "ConvexPolygonShape3D",
+          "strips_visual_mesh": true
+        },
+        "has_uv": false,
+        "materials": [
+          ""
+        ],
+        "name": "office_chair-convcolonly",
+        "surface_count": 1
+      },
+      {
+        "class": "Node3D",
+        "depth": 2,
+        "name": "socket_item_spawn"
+      },
+      {
+        "class": "Node3D",
+        "depth": 2,
+        "name": "socket_light"
+      },
+      {
+        "class": "Node3D",
+        "depth": 2,
+        "name": "socket_player_interact"
+      }
+    ],
+    "root_class": "Node3D",
+    "root_name": "office_chair2",
+    "socket_count": 3,
+    "sockets": [
+      {
+        "name": "socket_item_spawn",
+        "position": [
+          -0.005,
+          1.011,
+          0.475
+        ]
+      },
+      {
+        "name": "socket_light",
+        "position": [
+          -0.005,
+          0.892,
+          0.475
+        ]
+      },
+      {
+        "name": "socket_player_interact",
+        "position": [
+          -0.005,
+          0.33,
+          1.5
+        ]
+      }
+    ],
+    "static_body_count": 1,
+    "total_surfaces": 5,
+    "valid": true,
+    "warnings": [],
+    "tested_in_godot": true,
+    "success": true,
+    "exit_code": 0,
+    "godot_binary": "C:\\Users\\lopez\\Downloads\\Godot_v4.5.1-stable_win64.exe\\Godot_v4.5.1-stable_win64_console.exe"
+  },
+  "warnings": []
+}

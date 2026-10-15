@@ -1,0 +1,197 @@
+{
+  "$schema": "https://raw.githubusercontent.com/usuario/modelcoder-community/main/schemas/generator-v1.json",
+  "id": "below_nominal.medical.autopsy_table",
+  "version": "1.0.0",
+  "name": "Mesa de Autopsia y Disección",
+  "description": "Mesa quirúrgica mortuoria para autopsias y cuarentena con canaleta de drenaje de fluidos, lámpara cenital articulada, correas de contención y frascos de especímenes biológicos.",
+  "author": {
+    "name": "Below Nominal Team",
+    "github": "below-nominal",
+    "url": "https://belownominal.com"
+  },
+  "license": "CC-BY-4.0",
+  "category": "medical",
+  "tags": ["medical", "autopsy", "morgue", "surgical", "quarantine", "sci-fi", "psx", "low-poly"],
+  "compatibility": {
+    "engine_version": ">=1.5.0",
+    "blender_version": ">=4.2"
+  },
+  "parameters": [
+    {
+      "key": "table_type",
+      "label": "Tipo de Mesa",
+      "type": "enum",
+      "default": "standard_autopsy",
+      "description": "Variante morfológica principal de la mesa mortuoria",
+      "options": [
+        {"value": "standard_autopsy", "label": "Autopsia Estándar"},
+        {"value": "dissection_station", "label": "Estación de Disección"},
+        {"value": "quarantine_slab", "label": "Plancha de Cuarentena"}
+      ],
+      "group": "Morfología"
+    },
+    {
+      "key": "width",
+      "label": "Ancho (m)",
+      "type": "float",
+      "default": 0.90,
+      "min": 0.60,
+      "max": 1.50,
+      "step": 0.05,
+      "description": "Ancho transversal de la mesa en metros",
+      "group": "Dimensiones"
+    },
+    {
+      "key": "length",
+      "label": "Largo (m)",
+      "type": "float",
+      "default": 2.10,
+      "min": 1.50,
+      "max": 3.00,
+      "step": 0.10,
+      "description": "Longitud de la mesa en metros",
+      "group": "Dimensiones"
+    },
+    {
+      "key": "height",
+      "label": "Altura (m)",
+      "type": "float",
+      "default": 0.85,
+      "min": 0.60,
+      "max": 1.20,
+      "step": 0.05,
+      "description": "Altura del plano de trabajo sobre el suelo",
+      "group": "Dimensiones"
+    },
+    {
+      "key": "drainage_channel",
+      "label": "Canal de Drenaje Perimetral",
+      "type": "boolean",
+      "default": true,
+      "description": "Canaleta perimetral de recolección de fluidos y orificio de desagüe central",
+      "group": "Quirúrgico"
+    },
+    {
+      "key": "overhead_lamp",
+      "label": "Lámpara Quirúrgica Cenital",
+      "type": "boolean",
+      "default": true,
+      "description": "Foco quirúrgico superior articulado con luz emisiva blanca",
+      "group": "Quirúrgico"
+    },
+    {
+      "key": "restraint_straps",
+      "label": "Correas de Sujeción",
+      "type": "enum",
+      "default": "none",
+      "description": "Estado de las cinchas de inmovilización del sujeto",
+      "options": [
+        {"value": "none", "label": "Sin Correas"},
+        {"value": "buckled", "label": "Abrochadas"},
+        {"value": "torn", "label": "Rasgadas / Sueltas"}
+      ],
+      "group": "Contención"
+    },
+    {
+      "key": "fluid_stain",
+      "label": "Manchas de Fluidos y Óxido",
+      "type": "boolean",
+      "default": true,
+      "description": "Residuos biológicos secos y oxidación en la chapa",
+      "group": "Estética"
+    },
+    {
+      "key": "has_instrument_tray",
+      "label": "Bandeja de Instrumental",
+      "type": "boolean",
+      "default": false,
+      "description": "Bandeja giratoria voladiza con sierra ósea y bisturí",
+      "group": "Accesorios"
+    },
+    {
+      "key": "specimen_jar_count",
+      "label": "Frascos de Especímenes",
+      "type": "int",
+      "default": 0,
+      "min": 0,
+      "max": 3,
+      "step": 1,
+      "description": "Frascos de vidrio con muestras biológicas en formol",
+      "group": "Accesorios"
+    },
+    {
+      "key": "palette_name",
+      "label": "Paleta de Sector",
+      "type": "enum",
+      "default": "medbay_clean",
+      "description": "Esquema de color y desgaste de la estación",
+      "options": [
+        {"value": "industrial_hazard", "label": "Industrial Hazard (Gris/Amarillo)"},
+        {"value": "medbay_clean", "label": "Medbay Clean (Blanco Clínico)"},
+        {"value": "command_bridge", "label": "Command Bridge (Azul/Ámbar)"},
+        {"value": "habitation_worn", "label": "Habitation Worn (Beige/Marrón)"},
+        {"value": "derelict_decay", "label": "Derelict Decay (Óxido/Corrosión)"}
+      ],
+      "group": "Materiales"
+    },
+    {
+      "key": "wear_level",
+      "label": "Nivel de Desgaste (0 a 1)",
+      "type": "float",
+      "default": 0.65,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.05,
+      "description": "Intensidad de herrumbre y suciedad del atlas PS1",
+      "group": "Materiales"
+    },
+    {
+      "key": "seed",
+      "label": "Semilla Aleatoria",
+      "type": "seed",
+      "default": 1337,
+      "description": "Semilla generadora determinista",
+      "group": "Aleatoriedad"
+    }
+  ],
+  "presets": [
+    {
+      "id": "sterile_autopsy",
+      "name": "Sala de Autopsias Estéril",
+      "description": "Configuración médica limpia para examen forense inicial.",
+      "values": {
+        "table_type": "standard_autopsy",
+        "overhead_lamp": true,
+        "drainage_channel": true,
+        "restraint_straps": "none",
+        "fluid_stain": false,
+        "has_instrument_tray": true,
+        "specimen_jar_count": 0,
+        "palette_name": "medbay_clean",
+        "wear_level": 0.20
+      }
+    },
+    {
+      "id": "quarantine_incident",
+      "name": "Brote de Cuarentena",
+      "description": "Plancha con correas arrancadas, frascos de muestras y manchas de fluidos.",
+      "values": {
+        "table_type": "quarantine_slab",
+        "overhead_lamp": true,
+        "drainage_channel": true,
+        "restraint_straps": "torn",
+        "fluid_stain": true,
+        "has_instrument_tray": true,
+        "specimen_jar_count": 2,
+        "palette_name": "derelict_decay",
+        "wear_level": 0.85
+      }
+    }
+  ],
+  "export_capabilities": {
+    "target_tri_budget": 420,
+    "supports_collision": true,
+    "default_collision_suffix": "-convcolonly",
+    "supports_sockets": true
+  }
+}

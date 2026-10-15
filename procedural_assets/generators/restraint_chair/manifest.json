@@ -1,0 +1,246 @@
+{
+  "$schema": "https://raw.githubusercontent.com/usuario/modelcoder-community/main/schemas/generator-v1.json",
+  "id": "below_nominal.medical.restraint_chair",
+  "version": "1.0.0",
+  "name": "Restraint Chair",
+  "description": "Generador procedural paramétrico de restraint chair para Below Nominal.",
+  "author": {
+    "name": "Below Nominal Team",
+    "github": "below-nominal",
+    "url": "https://belownominal.com"
+  },
+  "license": "CC-BY-4.0",
+  "category": "medical",
+  "tags": [
+    "medical",
+    "restraint_chair",
+    "psx",
+    "low-poly",
+    "retro-sci-fi"
+  ],
+  "compatibility": {
+    "engine_version": ">=1.5.0",
+    "blender_version": ">=4.2"
+  },
+  "parameters": [
+    {
+      "key": "seed",
+      "label": "Seed",
+      "type": "seed",
+      "default": 42,
+      "group": "Rendimiento",
+      "min": 0,
+      "max": 2147483647,
+      "step": 1
+    },
+    {
+      "key": "target_tri_budget",
+      "label": "Target Tri Budget",
+      "type": "int",
+      "default": 380,
+      "group": "Rendimiento",
+      "min": 0,
+      "step": 1
+    },
+    {
+      "key": "name",
+      "label": "Name",
+      "type": "string",
+      "default": "asset",
+      "group": "General"
+    },
+    {
+      "key": "wear_level",
+      "label": "Wear Level",
+      "type": "float",
+      "default": 0.5,
+      "group": "Materiales",
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.05
+    },
+    {
+      "key": "add_collision_mesh",
+      "label": "Add Collision Mesh",
+      "type": "boolean",
+      "default": false,
+      "group": "General"
+    },
+    {
+      "key": "collision_type",
+      "label": "Collision Type",
+      "type": "string",
+      "default": "box",
+      "group": "General"
+    },
+    {
+      "key": "collision_suffix",
+      "label": "Collision Suffix",
+      "type": "string",
+      "default": "-convcolonly",
+      "group": "General"
+    },
+    {
+      "key": "pivot_rule",
+      "label": "Pivot Rule",
+      "type": "string",
+      "default": "floor_center",
+      "group": "General"
+    },
+    {
+      "key": "export_subcomponents",
+      "label": "Export Subcomponents",
+      "type": "boolean",
+      "default": false,
+      "group": "General"
+    },
+    {
+      "key": "palette_name",
+      "label": "Palette Name",
+      "type": "enum",
+      "default": "industrial_hazard",
+      "group": "Materiales",
+      "options": [
+        {
+          "value": "industrial_hazard",
+          "label": "Industrial Hazard"
+        },
+        {
+          "value": "medbay_clean",
+          "label": "Medbay Clean"
+        },
+        {
+          "value": "command_bridge",
+          "label": "Command Bridge"
+        },
+        {
+          "value": "habitation_worn",
+          "label": "Habitation Worn"
+        },
+        {
+          "value": "derelict_decay",
+          "label": "Derelict Decay"
+        }
+      ]
+    },
+    {
+      "key": "emission_scale",
+      "label": "Emission Scale",
+      "type": "float",
+      "default": 1.0,
+      "group": "General",
+      "min": 0.0,
+      "step": 0.05
+    },
+    {
+      "key": "extra_params",
+      "label": "Extra Params",
+      "type": "string",
+      "default": null,
+      "group": "General"
+    },
+    {
+      "key": "chair_type",
+      "label": "Chair Type",
+      "type": "string",
+      "default": "bolted_steel_chair",
+      "group": "General"
+    },
+    {
+      "key": "width",
+      "label": "Width",
+      "type": "float",
+      "default": 0.7,
+      "group": "Dimensiones",
+      "min": 0.0,
+      "step": 0.05
+    },
+    {
+      "key": "depth",
+      "label": "Depth",
+      "type": "float",
+      "default": 0.75,
+      "group": "Dimensiones",
+      "min": 0.0,
+      "step": 0.05
+    },
+    {
+      "key": "height",
+      "label": "Height",
+      "type": "float",
+      "default": 1.1,
+      "group": "Dimensiones",
+      "min": 0.0,
+      "step": 0.05
+    },
+    {
+      "key": "headrest_restraint",
+      "label": "Headrest Restraint",
+      "type": "boolean",
+      "default": true,
+      "group": "General"
+    },
+    {
+      "key": "arm_straps",
+      "label": "Arm Straps",
+      "type": "string",
+      "default": "buckled",
+      "group": "General"
+    },
+    {
+      "key": "leg_shackles",
+      "label": "Leg Shackles",
+      "type": "boolean",
+      "default": true,
+      "group": "General"
+    },
+    {
+      "key": "iv_pole",
+      "label": "Iv Pole",
+      "type": "boolean",
+      "default": true,
+      "group": "General"
+    },
+    {
+      "key": "floor_mounting_plate",
+      "label": "Floor Mounting Plate",
+      "type": "boolean",
+      "default": true,
+      "group": "General"
+    }
+  ],
+  "presets": [
+    {
+      "id": "default",
+      "name": "Estándar / Por Defecto",
+      "description": "Configuración base del generador",
+      "values": {
+        "seed": 42,
+        "target_tri_budget": 380,
+        "name": "asset",
+        "wear_level": 0.5,
+        "add_collision_mesh": false,
+        "collision_type": "box",
+        "collision_suffix": "-convcolonly",
+        "pivot_rule": "floor_center",
+        "export_subcomponents": false,
+        "palette_name": "industrial_hazard",
+        "emission_scale": 1.0,
+        "chair_type": "bolted_steel_chair",
+        "width": 0.7,
+        "depth": 0.75,
+        "height": 1.1,
+        "headrest_restraint": true,
+        "arm_straps": "buckled",
+        "leg_shackles": true,
+        "iv_pole": true,
+        "floor_mounting_plate": true
+      }
+    }
+  ],
+  "export_capabilities": {
+    "supports_collision": true,
+    "default_collision_suffix": "-convcolonly",
+    "supports_sockets": false
+  }
+}

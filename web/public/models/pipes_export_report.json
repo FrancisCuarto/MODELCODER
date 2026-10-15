@@ -1,0 +1,314 @@
+{
+  "export_metadata": {
+    "generator": "PipeGenerator",
+    "asset_name": "pipes",
+    "timestamp": "2026-10-15T19:13:40.141631Z",
+    "format": "glTF 2.0 Binary (.glb)",
+    "output_file": "d:\\MODELCODER\\web\\public\\models\\pipes.glb",
+    "file_size_bytes": 105228,
+    "file_size_kb": 102.76
+  },
+  "normalization": {
+    "units": "Meters (1 Blender unit = 1.0 Godot unit)",
+    "scale_applied": true,
+    "rotation_applied": true,
+    "location_applied": true,
+    "pivot_rule": "floor_center",
+    "pivot_offset_applied": [
+      -0.0,
+      -0.1023,
+      0.1665
+    ],
+    "normals_shading": "Flat (poly.use_smooth = False, PS1 low-poly crisp)",
+    "normals_recalculated": true,
+    "uv_mapping": "TEXCOORD_0 (Component-mapped to PS1 Weathered Texture Atlas)",
+    "vertex_colors": "COLOR_0 (Col / PS1 Gouraud tinting and wear)"
+  },
+  "dimensions_meters": {
+    "x": 1.8,
+    "y": 0.4835,
+    "z": 0.333
+  },
+  "geometry_metrics": {
+    "total_triangles": 184,
+    "total_vertices": 118,
+    "target_tri_budget": 400,
+    "budget_compliance_ratio": 0.46,
+    "object_count": 5,
+    "hierarchy": [
+      {
+        "name": "pipes",
+        "type": "MESH",
+        "parent": null,
+        "triangles": 158,
+        "vertices": 118
+      },
+      {
+        "name": "pipes-convcolonly",
+        "type": "MESH",
+        "parent": "pipes",
+        "triangles": 12,
+        "vertices": 8
+      },
+      {
+        "name": "socket_item_spawn",
+        "type": "EMPTY",
+        "parent": "pipes",
+        "triangles": 0,
+        "vertices": 0
+      },
+      {
+        "name": "socket_light",
+        "type": "EMPTY",
+        "parent": "pipes",
+        "triangles": 0,
+        "vertices": 0
+      },
+      {
+        "name": "socket_player_interact",
+        "type": "EMPTY",
+        "parent": "pipes",
+        "triangles": 0,
+        "vertices": 0
+      }
+    ]
+  },
+  "materials": {
+    "count": 6,
+    "compacted": true,
+    "list": [
+      {
+        "name": "mat_psx_industrial_hazard_casing_w65",
+        "roughness": 0.68,
+        "metallic": 0.18,
+        "emission": "None"
+      },
+      {
+        "name": "mat_psx_industrial_hazard_casing_inner_w65",
+        "roughness": 0.75,
+        "metallic": 0.15,
+        "emission": "None"
+      },
+      {
+        "name": "mat_psx_industrial_hazard_switch_metal_w65",
+        "roughness": 0.3,
+        "metallic": 0.92,
+        "emission": "None"
+      },
+      {
+        "name": "mat_psx_industrial_hazard_screw_w65",
+        "roughness": 0.35,
+        "metallic": 0.88,
+        "emission": "None"
+      },
+      {
+        "name": "mat_psx_industrial_hazard_pipe_industrial_w65",
+        "roughness": 0.48,
+        "metallic": 0.75,
+        "emission": "None"
+      },
+      {
+        "name": "mat_psx_industrial_hazard_valve_red_w65",
+        "roughness": 0.45,
+        "metallic": 0.25,
+        "emission": "None"
+      }
+    ]
+  },
+  "collision": {
+    "enabled": true,
+    "node_name": "pipes-convcolonly",
+    "shape_type": "box",
+    "godot_suffix": "-convcolonly",
+    "extents": [
+      1.8,
+      0.4835,
+      0.333
+    ]
+  },
+  "sockets": [
+    {
+      "name": "socket_player_interact",
+      "position": [
+        0.0,
+        -0.792,
+        0.0
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "Standard player character interaction stand point"
+    },
+    {
+      "name": "socket_item_spawn",
+      "position": [
+        0.0,
+        0.0,
+        0.353
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "Prop or pickup spawn snap position (keycards, ammo, medical items)"
+    },
+    {
+      "name": "socket_light",
+      "position": [
+        0.0,
+        0.0,
+        0.283
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "OmniLight3D / SpotLight3D mount anchor point"
+    }
+  ],
+  "godot_4_validation": {
+    "bounds_aabb": {
+      "position": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "size": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "collision_shape_count": 1,
+    "errors": [],
+    "file": "d:\\MODELCODER\\web\\public\\models\\pipes.glb",
+    "materials": [
+      "mat_psx_industrial_hazard_casing_w65",
+      "mat_psx_industrial_hazard_casing_inner_w65",
+      "mat_psx_industrial_hazard_switch_metal_w65",
+      "mat_psx_industrial_hazard_screw_w65",
+      "mat_psx_industrial_hazard_pipe_industrial_w65",
+      "mat_psx_industrial_hazard_valve_red_w65",
+      ""
+    ],
+    "mesh_count": 2,
+    "nodes": [
+      {
+        "class": "Node3D",
+        "depth": 0,
+        "name": "pipes2"
+      },
+      {
+        "aabb": {
+          "position": [
+            -0.9,
+            0.0,
+            -0.242
+          ],
+          "size": [
+            1.8,
+            0.333,
+            0.484
+          ]
+        },
+        "class": "MeshInstance3D",
+        "depth": 1,
+        "has_uv": true,
+        "materials": [
+          "mat_psx_industrial_hazard_casing_w65",
+          "mat_psx_industrial_hazard_casing_inner_w65",
+          "mat_psx_industrial_hazard_switch_metal_w65",
+          "mat_psx_industrial_hazard_screw_w65",
+          "mat_psx_industrial_hazard_pipe_industrial_w65",
+          "mat_psx_industrial_hazard_valve_red_w65"
+        ],
+        "name": "pipes",
+        "surface_count": 6
+      },
+      {
+        "aabb": {
+          "position": [
+            -0.9,
+            0.0,
+            -0.242
+          ],
+          "size": [
+            1.8,
+            0.333,
+            0.484
+          ]
+        },
+        "class": "MeshInstance3D",
+        "depth": 2,
+        "godot_collision": {
+          "points": 8,
+          "shape": "ConvexPolygonShape3D",
+          "strips_visual_mesh": true
+        },
+        "has_uv": false,
+        "materials": [
+          ""
+        ],
+        "name": "pipes-convcolonly",
+        "surface_count": 1
+      },
+      {
+        "class": "Node3D",
+        "depth": 2,
+        "name": "socket_item_spawn"
+      },
+      {
+        "class": "Node3D",
+        "depth": 2,
+        "name": "socket_light"
+      },
+      {
+        "class": "Node3D",
+        "depth": 2,
+        "name": "socket_player_interact"
+      }
+    ],
+    "root_class": "Node3D",
+    "root_name": "pipes2",
+    "socket_count": 3,
+    "sockets": [
+      {
+        "name": "socket_item_spawn",
+        "position": [
+          0.0,
+          0.52,
+          0.102
+        ]
+      },
+      {
+        "name": "socket_light",
+        "position": [
+          0.0,
+          0.449,
+          0.102
+        ]
+      },
+      {
+        "name": "socket_player_interact",
+        "position": [
+          0.0,
+          0.167,
+          0.894
+        ]
+      }
+    ],
+    "static_body_count": 1,
+    "total_surfaces": 7,
+    "valid": true,
+    "warnings": [],
+    "tested_in_godot": true,
+    "success": true,
+    "exit_code": 0,
+    "godot_binary": "C:\\Users\\lopez\\Downloads\\Godot_v4.5.1-stable_win64.exe\\Godot_v4.5.1-stable_win64_console.exe"
+  },
+  "warnings": []
+}

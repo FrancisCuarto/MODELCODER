@@ -1,0 +1,258 @@
+{
+  "$schema": "https://raw.githubusercontent.com/usuario/modelcoder-community/main/schemas/generator-v1.json",
+  "id": "below_nominal.furniture.nightstand",
+  "version": "1.0.0",
+  "name": "Nightstand",
+  "description": "Generador procedural paramétrico de nightstand para Below Nominal.",
+  "author": {
+    "name": "Below Nominal Team",
+    "github": "below-nominal",
+    "url": "https://belownominal.com"
+  },
+  "license": "CC-BY-4.0",
+  "category": "furniture",
+  "tags": [
+    "furniture",
+    "nightstand",
+    "psx",
+    "low-poly",
+    "retro-sci-fi"
+  ],
+  "compatibility": {
+    "engine_version": ">=1.5.0",
+    "blender_version": ">=4.2"
+  },
+  "parameters": [
+    {
+      "key": "seed",
+      "label": "Seed",
+      "type": "seed",
+      "default": 42,
+      "group": "Rendimiento",
+      "min": 0,
+      "max": 2147483647,
+      "step": 1
+    },
+    {
+      "key": "target_tri_budget",
+      "label": "Target Tri Budget",
+      "type": "int",
+      "default": 340,
+      "group": "Rendimiento",
+      "min": 0,
+      "step": 1
+    },
+    {
+      "key": "name",
+      "label": "Name",
+      "type": "string",
+      "default": "asset",
+      "group": "General"
+    },
+    {
+      "key": "wear_level",
+      "label": "Wear Level",
+      "type": "float",
+      "default": 0.5,
+      "group": "Materiales",
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.05
+    },
+    {
+      "key": "add_collision_mesh",
+      "label": "Add Collision Mesh",
+      "type": "boolean",
+      "default": false,
+      "group": "General"
+    },
+    {
+      "key": "collision_type",
+      "label": "Collision Type",
+      "type": "string",
+      "default": "box",
+      "group": "General"
+    },
+    {
+      "key": "collision_suffix",
+      "label": "Collision Suffix",
+      "type": "string",
+      "default": "-convcolonly",
+      "group": "General"
+    },
+    {
+      "key": "pivot_rule",
+      "label": "Pivot Rule",
+      "type": "string",
+      "default": "floor_center",
+      "group": "General"
+    },
+    {
+      "key": "export_subcomponents",
+      "label": "Export Subcomponents",
+      "type": "boolean",
+      "default": false,
+      "group": "General"
+    },
+    {
+      "key": "palette_name",
+      "label": "Palette Name",
+      "type": "enum",
+      "default": "industrial_hazard",
+      "group": "Materiales",
+      "options": [
+        {
+          "value": "industrial_hazard",
+          "label": "Industrial Hazard"
+        },
+        {
+          "value": "medbay_clean",
+          "label": "Medbay Clean"
+        },
+        {
+          "value": "command_bridge",
+          "label": "Command Bridge"
+        },
+        {
+          "value": "habitation_worn",
+          "label": "Habitation Worn"
+        },
+        {
+          "value": "derelict_decay",
+          "label": "Derelict Decay"
+        }
+      ]
+    },
+    {
+      "key": "emission_scale",
+      "label": "Emission Scale",
+      "type": "float",
+      "default": 1.0,
+      "group": "General",
+      "min": 0.0,
+      "step": 0.05
+    },
+    {
+      "key": "extra_params",
+      "label": "Extra Params",
+      "type": "string",
+      "default": null,
+      "group": "General"
+    },
+    {
+      "key": "stand_type",
+      "label": "Stand Type",
+      "type": "string",
+      "default": "crew_locker_cubby",
+      "group": "General"
+    },
+    {
+      "key": "width",
+      "label": "Width",
+      "type": "float",
+      "default": 0.48,
+      "group": "Dimensiones",
+      "min": 0.0,
+      "step": 0.05
+    },
+    {
+      "key": "depth",
+      "label": "Depth",
+      "type": "float",
+      "default": 0.44,
+      "group": "Dimensiones",
+      "min": 0.0,
+      "step": 0.05
+    },
+    {
+      "key": "height",
+      "label": "Height",
+      "type": "float",
+      "default": 0.68,
+      "group": "Dimensiones",
+      "min": 0.0,
+      "step": 0.05
+    },
+    {
+      "key": "drawer_count",
+      "label": "Drawer Count",
+      "type": "int",
+      "default": 2,
+      "group": "General",
+      "min": 0,
+      "step": 1
+    },
+    {
+      "key": "drawer_open_ratio",
+      "label": "Drawer Open Ratio",
+      "type": "float",
+      "default": 0.0,
+      "group": "General",
+      "min": 0.0,
+      "step": 0.05
+    },
+    {
+      "key": "has_raised_rim",
+      "label": "Has Raised Rim",
+      "type": "boolean",
+      "default": true,
+      "group": "General"
+    },
+    {
+      "key": "has_bedside_lamp",
+      "label": "Has Bedside Lamp",
+      "type": "boolean",
+      "default": true,
+      "group": "General"
+    },
+    {
+      "key": "lamp_state",
+      "label": "Lamp State",
+      "type": "string",
+      "default": "on",
+      "group": "General"
+    },
+    {
+      "key": "has_swivel_tray",
+      "label": "Has Swivel Tray",
+      "type": "boolean",
+      "default": false,
+      "group": "General"
+    }
+  ],
+  "presets": [
+    {
+      "id": "default",
+      "name": "Estándar / Por Defecto",
+      "description": "Configuración base del generador",
+      "values": {
+        "seed": 42,
+        "target_tri_budget": 340,
+        "name": "asset",
+        "wear_level": 0.5,
+        "add_collision_mesh": false,
+        "collision_type": "box",
+        "collision_suffix": "-convcolonly",
+        "pivot_rule": "floor_center",
+        "export_subcomponents": false,
+        "palette_name": "industrial_hazard",
+        "emission_scale": 1.0,
+        "stand_type": "crew_locker_cubby",
+        "width": 0.48,
+        "depth": 0.44,
+        "height": 0.68,
+        "drawer_count": 2,
+        "drawer_open_ratio": 0.0,
+        "has_raised_rim": true,
+        "has_bedside_lamp": true,
+        "lamp_state": "on",
+        "has_swivel_tray": false
+      }
+    }
+  ],
+  "export_capabilities": {
+    "supports_collision": true,
+    "default_collision_suffix": "-convcolonly",
+    "supports_sockets": false
+  }
+}

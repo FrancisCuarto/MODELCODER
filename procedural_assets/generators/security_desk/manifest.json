@@ -1,0 +1,246 @@
+{
+  "$schema": "https://raw.githubusercontent.com/usuario/modelcoder-community/main/schemas/generator-v1.json",
+  "id": "below_nominal.furniture.security_desk",
+  "version": "1.0.0",
+  "name": "Security Desk",
+  "description": "Generador procedural paramétrico de security desk para Below Nominal.",
+  "author": {
+    "name": "Below Nominal Team",
+    "github": "below-nominal",
+    "url": "https://belownominal.com"
+  },
+  "license": "CC-BY-4.0",
+  "category": "furniture",
+  "tags": [
+    "furniture",
+    "security_desk",
+    "psx",
+    "low-poly",
+    "retro-sci-fi"
+  ],
+  "compatibility": {
+    "engine_version": ">=1.5.0",
+    "blender_version": ">=4.2"
+  },
+  "parameters": [
+    {
+      "key": "seed",
+      "label": "Seed",
+      "type": "seed",
+      "default": 42,
+      "group": "Rendimiento",
+      "min": 0,
+      "max": 2147483647,
+      "step": 1
+    },
+    {
+      "key": "target_tri_budget",
+      "label": "Target Tri Budget",
+      "type": "int",
+      "default": 340,
+      "group": "Rendimiento",
+      "min": 0,
+      "step": 1
+    },
+    {
+      "key": "name",
+      "label": "Name",
+      "type": "string",
+      "default": "asset",
+      "group": "General"
+    },
+    {
+      "key": "wear_level",
+      "label": "Wear Level",
+      "type": "float",
+      "default": 0.5,
+      "group": "Materiales",
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.05
+    },
+    {
+      "key": "add_collision_mesh",
+      "label": "Add Collision Mesh",
+      "type": "boolean",
+      "default": false,
+      "group": "General"
+    },
+    {
+      "key": "collision_type",
+      "label": "Collision Type",
+      "type": "string",
+      "default": "box",
+      "group": "General"
+    },
+    {
+      "key": "collision_suffix",
+      "label": "Collision Suffix",
+      "type": "string",
+      "default": "-convcolonly",
+      "group": "General"
+    },
+    {
+      "key": "pivot_rule",
+      "label": "Pivot Rule",
+      "type": "string",
+      "default": "floor_center",
+      "group": "General"
+    },
+    {
+      "key": "export_subcomponents",
+      "label": "Export Subcomponents",
+      "type": "boolean",
+      "default": false,
+      "group": "General"
+    },
+    {
+      "key": "palette_name",
+      "label": "Palette Name",
+      "type": "enum",
+      "default": "industrial_hazard",
+      "group": "Materiales",
+      "options": [
+        {
+          "value": "industrial_hazard",
+          "label": "Industrial Hazard"
+        },
+        {
+          "value": "medbay_clean",
+          "label": "Medbay Clean"
+        },
+        {
+          "value": "command_bridge",
+          "label": "Command Bridge"
+        },
+        {
+          "value": "habitation_worn",
+          "label": "Habitation Worn"
+        },
+        {
+          "value": "derelict_decay",
+          "label": "Derelict Decay"
+        }
+      ]
+    },
+    {
+      "key": "emission_scale",
+      "label": "Emission Scale",
+      "type": "float",
+      "default": 1.0,
+      "group": "General",
+      "min": 0.0,
+      "step": 0.05
+    },
+    {
+      "key": "extra_params",
+      "label": "Extra Params",
+      "type": "string",
+      "default": null,
+      "group": "General"
+    },
+    {
+      "key": "desk_style",
+      "label": "Desk Style",
+      "type": "string",
+      "default": "corner_checkpoint",
+      "group": "General"
+    },
+    {
+      "key": "width",
+      "label": "Width",
+      "type": "float",
+      "default": 1.8,
+      "group": "Dimensiones",
+      "min": 0.0,
+      "step": 0.05
+    },
+    {
+      "key": "depth",
+      "label": "Depth",
+      "type": "float",
+      "default": 0.9,
+      "group": "Dimensiones",
+      "min": 0.0,
+      "step": 0.05
+    },
+    {
+      "key": "height",
+      "label": "Height",
+      "type": "float",
+      "default": 1.15,
+      "group": "Dimensiones",
+      "min": 0.0,
+      "step": 0.05
+    },
+    {
+      "key": "bulletproof_glass",
+      "label": "Bulletproof Glass",
+      "type": "boolean",
+      "default": true,
+      "group": "General"
+    },
+    {
+      "key": "has_intercom_grille",
+      "label": "Has Intercom Grille",
+      "type": "boolean",
+      "default": true,
+      "group": "General"
+    },
+    {
+      "key": "has_cctv_monitor",
+      "label": "Has Cctv Monitor",
+      "type": "boolean",
+      "default": true,
+      "group": "General"
+    },
+    {
+      "key": "has_under_counter_shelf",
+      "label": "Has Under Counter Shelf",
+      "type": "boolean",
+      "default": true,
+      "group": "General"
+    },
+    {
+      "key": "glass_damage",
+      "label": "Glass Damage",
+      "type": "string",
+      "default": "intact",
+      "group": "General"
+    }
+  ],
+  "presets": [
+    {
+      "id": "default",
+      "name": "Estándar / Por Defecto",
+      "description": "Configuración base del generador",
+      "values": {
+        "seed": 42,
+        "target_tri_budget": 340,
+        "name": "asset",
+        "wear_level": 0.5,
+        "add_collision_mesh": false,
+        "collision_type": "box",
+        "collision_suffix": "-convcolonly",
+        "pivot_rule": "floor_center",
+        "export_subcomponents": false,
+        "palette_name": "industrial_hazard",
+        "emission_scale": 1.0,
+        "desk_style": "corner_checkpoint",
+        "width": 1.8,
+        "depth": 0.9,
+        "height": 1.15,
+        "bulletproof_glass": true,
+        "has_intercom_grille": true,
+        "has_cctv_monitor": true,
+        "has_under_counter_shelf": true,
+        "glass_damage": "intact"
+      }
+    }
+  ],
+  "export_capabilities": {
+    "supports_collision": true,
+    "default_collision_suffix": "-convcolonly",
+    "supports_sockets": false
+  }
+}

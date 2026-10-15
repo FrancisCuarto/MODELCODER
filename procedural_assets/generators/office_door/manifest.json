@@ -1,0 +1,256 @@
+{
+  "$schema": "https://raw.githubusercontent.com/usuario/modelcoder-community/main/schemas/generator-v1.json",
+  "id": "below_nominal.architecture.office_door",
+  "version": "1.0.0",
+  "name": "Office Door",
+  "description": "Generador procedural paramétrico de office door para Below Nominal.",
+  "author": {
+    "name": "Below Nominal Team",
+    "github": "below-nominal",
+    "url": "https://belownominal.com"
+  },
+  "license": "CC-BY-4.0",
+  "category": "architecture",
+  "tags": [
+    "architecture",
+    "office_door",
+    "psx",
+    "low-poly",
+    "retro-sci-fi"
+  ],
+  "compatibility": {
+    "engine_version": ">=1.5.0",
+    "blender_version": ">=4.2"
+  },
+  "parameters": [
+    {
+      "key": "seed",
+      "label": "Seed",
+      "type": "seed",
+      "default": 42,
+      "group": "Rendimiento",
+      "min": 0,
+      "max": 2147483647,
+      "step": 1
+    },
+    {
+      "key": "target_tri_budget",
+      "label": "Target Tri Budget",
+      "type": "int",
+      "default": 420,
+      "group": "Rendimiento",
+      "min": 0,
+      "step": 1
+    },
+    {
+      "key": "name",
+      "label": "Name",
+      "type": "string",
+      "default": "asset",
+      "group": "General"
+    },
+    {
+      "key": "wear_level",
+      "label": "Wear Level",
+      "type": "float",
+      "default": 0.5,
+      "group": "Materiales",
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.05
+    },
+    {
+      "key": "add_collision_mesh",
+      "label": "Add Collision Mesh",
+      "type": "boolean",
+      "default": false,
+      "group": "General"
+    },
+    {
+      "key": "collision_type",
+      "label": "Collision Type",
+      "type": "string",
+      "default": "box",
+      "group": "General"
+    },
+    {
+      "key": "collision_suffix",
+      "label": "Collision Suffix",
+      "type": "string",
+      "default": "-convcolonly",
+      "group": "General"
+    },
+    {
+      "key": "pivot_rule",
+      "label": "Pivot Rule",
+      "type": "string",
+      "default": "floor_center",
+      "group": "General"
+    },
+    {
+      "key": "export_subcomponents",
+      "label": "Export Subcomponents",
+      "type": "boolean",
+      "default": false,
+      "group": "General"
+    },
+    {
+      "key": "palette_name",
+      "label": "Palette Name",
+      "type": "enum",
+      "default": "industrial_hazard",
+      "group": "Materiales",
+      "options": [
+        {
+          "value": "industrial_hazard",
+          "label": "Industrial Hazard"
+        },
+        {
+          "value": "medbay_clean",
+          "label": "Medbay Clean"
+        },
+        {
+          "value": "command_bridge",
+          "label": "Command Bridge"
+        },
+        {
+          "value": "habitation_worn",
+          "label": "Habitation Worn"
+        },
+        {
+          "value": "derelict_decay",
+          "label": "Derelict Decay"
+        }
+      ]
+    },
+    {
+      "key": "emission_scale",
+      "label": "Emission Scale",
+      "type": "float",
+      "default": 1.0,
+      "group": "General",
+      "min": 0.0,
+      "step": 0.05
+    },
+    {
+      "key": "extra_params",
+      "label": "Extra Params",
+      "type": "string",
+      "default": null,
+      "group": "General"
+    },
+    {
+      "key": "door_style",
+      "label": "Door Style",
+      "type": "string",
+      "default": "single_swing",
+      "group": "General"
+    },
+    {
+      "key": "glass_type",
+      "label": "Glass Type",
+      "type": "string",
+      "default": "wired_safety_glass",
+      "group": "General"
+    },
+    {
+      "key": "width",
+      "label": "Width",
+      "type": "float",
+      "default": 1.2,
+      "group": "Dimensiones",
+      "min": 0.0,
+      "step": 0.05
+    },
+    {
+      "key": "height",
+      "label": "Height",
+      "type": "float",
+      "default": 2.4,
+      "group": "Dimensiones",
+      "min": 0.0,
+      "step": 0.05
+    },
+    {
+      "key": "frame_depth",
+      "label": "Frame Depth",
+      "type": "float",
+      "default": 0.22,
+      "group": "General",
+      "min": 0.0,
+      "step": 0.05
+    },
+    {
+      "key": "open_angle_deg",
+      "label": "Open Angle Deg",
+      "type": "float",
+      "default": 0.0,
+      "group": "General",
+      "min": 0.0,
+      "step": 0.05
+    },
+    {
+      "key": "glass_damage",
+      "label": "Glass Damage",
+      "type": "string",
+      "default": "intact",
+      "group": "General"
+    },
+    {
+      "key": "handle_type",
+      "label": "Handle Type",
+      "type": "string",
+      "default": "horizontal_push_bar",
+      "group": "General"
+    },
+    {
+      "key": "has_kickplate",
+      "label": "Has Kickplate",
+      "type": "boolean",
+      "default": true,
+      "group": "General"
+    },
+    {
+      "key": "has_transom",
+      "label": "Has Transom",
+      "type": "boolean",
+      "default": false,
+      "group": "General"
+    }
+  ],
+  "presets": [
+    {
+      "id": "default",
+      "name": "Estándar / Por Defecto",
+      "description": "Configuración base del generador",
+      "values": {
+        "seed": 42,
+        "target_tri_budget": 420,
+        "name": "asset",
+        "wear_level": 0.5,
+        "add_collision_mesh": false,
+        "collision_type": "box",
+        "collision_suffix": "-convcolonly",
+        "pivot_rule": "floor_center",
+        "export_subcomponents": false,
+        "palette_name": "industrial_hazard",
+        "emission_scale": 1.0,
+        "door_style": "single_swing",
+        "glass_type": "wired_safety_glass",
+        "width": 1.2,
+        "height": 2.4,
+        "frame_depth": 0.22,
+        "open_angle_deg": 0.0,
+        "glass_damage": "intact",
+        "handle_type": "horizontal_push_bar",
+        "has_kickplate": true,
+        "has_transom": false
+      }
+    }
+  ],
+  "export_capabilities": {
+    "supports_collision": true,
+    "default_collision_suffix": "-convcolonly",
+    "supports_sockets": false
+  }
+}

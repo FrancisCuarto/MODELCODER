@@ -1,0 +1,230 @@
+{
+  "$schema": "https://raw.githubusercontent.com/usuario/modelcoder-community/main/schemas/generator-v1.json",
+  "id": "below_nominal.furniture.locker_bench",
+  "version": "1.0.0",
+  "name": "Locker Bench",
+  "description": "Generador procedural paramétrico de locker bench para Below Nominal.",
+  "author": {
+    "name": "Below Nominal Team",
+    "github": "below-nominal",
+    "url": "https://belownominal.com"
+  },
+  "license": "CC-BY-4.0",
+  "category": "furniture",
+  "tags": [
+    "furniture",
+    "locker_bench",
+    "psx",
+    "low-poly",
+    "retro-sci-fi"
+  ],
+  "compatibility": {
+    "engine_version": ">=1.5.0",
+    "blender_version": ">=4.2"
+  },
+  "parameters": [
+    {
+      "key": "seed",
+      "label": "Seed",
+      "type": "seed",
+      "default": 42,
+      "group": "Rendimiento",
+      "min": 0,
+      "max": 2147483647,
+      "step": 1
+    },
+    {
+      "key": "target_tri_budget",
+      "label": "Target Tri Budget",
+      "type": "int",
+      "default": 300,
+      "group": "Rendimiento",
+      "min": 0,
+      "step": 1
+    },
+    {
+      "key": "name",
+      "label": "Name",
+      "type": "string",
+      "default": "asset",
+      "group": "General"
+    },
+    {
+      "key": "wear_level",
+      "label": "Wear Level",
+      "type": "float",
+      "default": 0.5,
+      "group": "Materiales",
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.05
+    },
+    {
+      "key": "add_collision_mesh",
+      "label": "Add Collision Mesh",
+      "type": "boolean",
+      "default": false,
+      "group": "General"
+    },
+    {
+      "key": "collision_type",
+      "label": "Collision Type",
+      "type": "string",
+      "default": "box",
+      "group": "General"
+    },
+    {
+      "key": "collision_suffix",
+      "label": "Collision Suffix",
+      "type": "string",
+      "default": "-convcolonly",
+      "group": "General"
+    },
+    {
+      "key": "pivot_rule",
+      "label": "Pivot Rule",
+      "type": "string",
+      "default": "floor_center",
+      "group": "General"
+    },
+    {
+      "key": "export_subcomponents",
+      "label": "Export Subcomponents",
+      "type": "boolean",
+      "default": false,
+      "group": "General"
+    },
+    {
+      "key": "palette_name",
+      "label": "Palette Name",
+      "type": "enum",
+      "default": "industrial_hazard",
+      "group": "Materiales",
+      "options": [
+        {
+          "value": "industrial_hazard",
+          "label": "Industrial Hazard"
+        },
+        {
+          "value": "medbay_clean",
+          "label": "Medbay Clean"
+        },
+        {
+          "value": "command_bridge",
+          "label": "Command Bridge"
+        },
+        {
+          "value": "habitation_worn",
+          "label": "Habitation Worn"
+        },
+        {
+          "value": "derelict_decay",
+          "label": "Derelict Decay"
+        }
+      ]
+    },
+    {
+      "key": "emission_scale",
+      "label": "Emission Scale",
+      "type": "float",
+      "default": 1.0,
+      "group": "General",
+      "min": 0.0,
+      "step": 0.05
+    },
+    {
+      "key": "extra_params",
+      "label": "Extra Params",
+      "type": "string",
+      "default": null,
+      "group": "General"
+    },
+    {
+      "key": "bench_type",
+      "label": "Bench Type",
+      "type": "string",
+      "default": "perforated_metal",
+      "group": "General"
+    },
+    {
+      "key": "length",
+      "label": "Length",
+      "type": "float",
+      "default": 1.6,
+      "group": "Dimensiones",
+      "min": 0.0,
+      "step": 0.05
+    },
+    {
+      "key": "width",
+      "label": "Width",
+      "type": "float",
+      "default": 0.45,
+      "group": "Dimensiones",
+      "min": 0.0,
+      "step": 0.05
+    },
+    {
+      "key": "height",
+      "label": "Height",
+      "type": "float",
+      "default": 0.48,
+      "group": "Dimensiones",
+      "min": 0.0,
+      "step": 0.05
+    },
+    {
+      "key": "has_shoe_shelf",
+      "label": "Has Shoe Shelf",
+      "type": "boolean",
+      "default": true,
+      "group": "General"
+    },
+    {
+      "key": "leg_style",
+      "label": "Leg Style",
+      "type": "string",
+      "default": "tubular_flanged",
+      "group": "General"
+    },
+    {
+      "key": "has_forgotten_gear",
+      "label": "Has Forgotten Gear",
+      "type": "boolean",
+      "default": true,
+      "group": "General"
+    }
+  ],
+  "presets": [
+    {
+      "id": "default",
+      "name": "Estándar / Por Defecto",
+      "description": "Configuración base del generador",
+      "values": {
+        "seed": 42,
+        "target_tri_budget": 300,
+        "name": "asset",
+        "wear_level": 0.5,
+        "add_collision_mesh": false,
+        "collision_type": "box",
+        "collision_suffix": "-convcolonly",
+        "pivot_rule": "floor_center",
+        "export_subcomponents": false,
+        "palette_name": "industrial_hazard",
+        "emission_scale": 1.0,
+        "bench_type": "perforated_metal",
+        "length": 1.6,
+        "width": 0.45,
+        "height": 0.48,
+        "has_shoe_shelf": true,
+        "leg_style": "tubular_flanged",
+        "has_forgotten_gear": true
+      }
+    }
+  ],
+  "export_capabilities": {
+    "supports_collision": true,
+    "default_collision_suffix": "-convcolonly",
+    "supports_sockets": false
+  }
+}

@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+.pytest_cache/
+
+# Blender temporary saves
+*.blend1
+*.blend2
+*.blend@*
+*.crash.txt
+
+# Local generation and export outputs
+output/
+exports/
+tmp/
+*.log
+
+# Web & Node.js
+web/node_modules/
+web/dist/
+web/.astro/
+node_modules/
+dist/
+.astro/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Local personal configs
+.export_config.json
+
+# Operating System
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*.swo

@@ -1,0 +1,75 @@
+name: Verify Community Generator PR
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'procedural_assets/**'
+      - 'schemas/**'
+      - 'tests/**'
+      - 'tools/**'
+      - 'web/**'
+
+jobs:
+  security-and-manifest-check:
+    name: AST Security & Manifest Contract
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Verify Manifest System & JSON Schema
+        run: |
+          python -m unittest discover -s tests -p "test_manifest_system.py"
+
+      - name: AST Security Audit on Modified Generators
+        run: |
+          python -c "
+          import os, sys
+          from tools.verify_community_generator import verify_manifest, audit_source_code
+          
+          gen_dir = 'procedural_assets/generators'
+          failed = False
+          for family in os.listdir(gen_dir):
+              fpath = os.path.join(gen_dir, family)
+              if os.path.isdir(fpath) and not family.startswith('_'):
+                  mpath = os.path.join(fpath, 'manifest.json')
+                  m_ok, m_errs = verify_manifest(mpath)
+                  if not m_ok:
+                      print(f'[FAIL] Manifest error in {family}: {m_errs}')
+                      failed = True
+                  for pyf in os.listdir(fpath):
+                      if pyf.endswith('.py'):
+                          a_ok, a_errs = audit_source_code(os.path.join(fpath, pyf))
+                          if not a_ok:
+                              print(f'[FAIL] AST error in {family}/{pyf}: {a_errs}')
+                              failed = True
+          if failed:
+              sys.exit(1)
+          print('[SUCCESS] All generator manifests and source files passed security checks.')
+          "
+
+  web-catalog-build:
+    name: Astro Web Platform Static Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Web Dependencies
+        working-directory: web
+        run: npm ci || npm install
+
+      - name: Build Astro Static Site
+        working-directory: web
+        run: npm run build

@@ -1,0 +1,299 @@
+---
+import Layout from '../layouts/Layout.astro';
+
+const manifestTemplate = `{
+  "$schema": "https://raw.githubusercontent.com/usuario/modelcoder-community/main/schemas/generator-v1.json",
+  "id": "below_nominal.furniture.mi_familia",
+  "version": "1.0.0",
+  "name": "Mi Mueble Procedural",
+  "description": "Descripción clara del objeto y su propósito en la estación.",
+  "author": { "name": "Tu Nombre o Alias", "github": "tu-usuario" },
+  "license": "CC-BY-4.0",
+  "category": "furniture",
+  "tags": ["furniture", "sci-fi", "psx", "low-poly"],
+  "parameters": [
+    {
+      "key": "width",
+      "label": "Ancho (m)",
+      "type": "float",
+      "default": 1.20,
+      "min": 0.80,
+      "max": 2.50,
+      "step": 0.05,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "has_drawer",
+      "label": "Incluir Gaveta",
+      "type": "boolean",
+      "default": true,
+      "group": "Accesorios"
+    }
+  ],
+  "presets": [
+    {
+      "id": "standard",
+      "name": "Estándar",
+      "values": { "width": 1.20, "has_drawer": true }
+    }
+  ],
+  "export_capabilities": {
+    "target_tri_budget": 450,
+    "supports_collision": true,
+    "default_collision_suffix": "-convcolonly"
+  }
+}`;
+
+const generatorTemplate = `import bpy
+from ...core.base_generator import BaseAssetGenerator
+from ...materials.palette import get_or_create_material
+from .config import MiFamiliaConfig
+
+class MiFamiliaGenerator(BaseAssetGenerator):
+    def generate(self) -> bpy.types.Object:
+        cfg = self.config  # Instancia de MiFamiliaConfig
+        # 1. Crear geometría base
+        mesh = bpy.data.meshes.new(f"{cfg.name}_mesh")
+        obj = bpy.data.objects.new(cfg.name, mesh)
+        bpy.context.collection.objects.link(obj)
+
+        # 2. Asignar material PS1 usando paleta de sector
+        mat = get_or_create_material("casing", palette_name=cfg.palette_name)
+        obj.data.materials.append(mat)
+
+        # 3. Compactar ranuras y retornar
+        self.compact_materials(obj)
+        return obj`;
+---
+
+<Layout title="Guía de Contribución - Crear un Generador 3D">
+  <div class="guide-container">
+    <div class="guide-header">
+      <span class="guide-badge">COMMUNITY OPEN SPEC</span>
+      <h1 class="guide-title">Cómo Contribuir un Generador 3D</h1>
+      <p class="guide-lead">
+        En ModelCoder el centro es el código generativo. Si sabes modelar con Python en Blender
+        o te apasiona la estética retro-sci-fi low-poly, puedes aportar generadores a la biblioteca.
+      </p>
+    </div>
+
+    <!-- Stepper Grid -->
+    <div class="steps-flow">
+      <!-- Step 1 -->
+      <section class="step-card">
+        <div class="step-number">01</div>
+        <div class="step-content">
+          <h2>Estructura de la Nueva Familia</h2>
+          <p>
+            Crea una carpeta dentro de <code>procedural_assets/generators/&lt;nombre_familia&gt;/</code>
+            con los siguientes 4 archivos estandarizados:
+          </p>
+
+          <pre class="file-tree"><code>procedural_assets/generators/mi_familia/
+├── __init__.py     # Exporta Config y Generator
+├── config.py       # Dataclass con parámetros tipados
+├── generator.py    # Lógica de malla procedural (hereda de BaseAssetGenerator)
+└── manifest.json   # Contrato declarativo y presets curados</code></pre>
+        </div>
+      </section>
+
+      <!-- Step 2 -->
+      <section class="step-card">
+        <div class="step-number">02</div>
+        <div class="step-content">
+          <h2>El Contrato Declarativo: <code>manifest.json</code></h2>
+          <p>
+            El manifiesto permite a la plataforma web generar automáticamente los controles interactivos
+            y a la consola inyectar los flags de CLI sin código manual. Debe validar contra <code>schemas/generator-v1.json</code>.
+          </p>
+
+          <pre class="code-box"><code>{manifestTemplate}</code></pre>
+        </div>
+      </section>
+
+      <!-- Step 3 -->
+      <section class="step-card">
+        <div class="step-number">03</div>
+        <div class="step-content">
+          <h2>Lógica de Malla: <code>generator.py</code></h2>
+          <p>
+            Hereda de <code>BaseAssetGenerator</code>. Utiliza operaciones primitivas (cubos, biseles, extrusiones)
+            y asigna materiales semánticos desde la paleta PS1 reutilizable:
+          </p>
+
+          <pre class="code-box"><code>{generatorTemplate}</code></pre>
+        </div>
+      </section>
+
+      <!-- Step 4 -->
+      <section class="step-card">
+        <div class="step-number">04</div>
+        <div class="step-content">
+          <h2>Verificación Local y Tests</h2>
+          <p>
+            Antes de enviar un Pull Request, verifica la generación local y la suite completa de pruebas:
+          </p>
+
+          <div class="terminal-command-card">
+            <span class="terminal-cmd-label">1. Probar generación y exportación GLB:</span>
+            <code>blender -b --python generate.py -- --family mi_familia --collision</code>
+          </div>
+
+          <div class="terminal-command-card" style="margin-top: 0.75rem;">
+            <span class="terminal-cmd-label">2. Ejecutar la suite de pruebas unitarias:</span>
+            <code>blender -b --python run_tests.py</code>
+          </div>
+        </div>
+      </section>
+
+      <!-- Step 5 -->
+      <section class="step-card">
+        <div class="step-number">05</div>
+        <div class="step-content">
+          <h2>Seguridad y Criterios de Aceptación (CI)</h2>
+          <p>
+            Cada aporte enviado vía GitHub Pull Request pasa por una batería automatizada en runner aislado:
+          </p>
+          <ul class="guidelines-list">
+            <li><strong>Presupuesto de polígonos:</strong> Mallas low-poly optimizadas (menos de 1,200 triángulos).</li>
+            <li><strong>Estricta seguridad AST:</strong> Prohibido el uso de llamadas a sistema (<code>subprocess</code>, <code>os.system</code>), red (<code>socket</code>, <code>urllib</code>) o acceso a archivos fuera del sandbox.</li>
+            <li><strong>Pivote normalizado:</strong> La base del modelo debe apoyarse exactamente en <code>Z = 0.0</code> (Floor Contact).</li>
+            <li><strong>Materiales exportables:</strong> Materiales calibrados compatibles con glTF 2.0 y Godot 4.</li>
+            <li><strong>Licencia abierta:</strong> Declaración explícita bajo licencia CC-BY-4.0 o MIT.</li>
+          </ul>
+        </div>
+      </section>
+    </div>
+  </div>
+</Layout>
+
+<style>
+  .guide-container {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 1rem 0 3rem;
+  }
+
+  .guide-header {
+    text-align: center;
+    margin-bottom: 3rem;
+  }
+
+  .guide-badge {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--accent-cyan);
+    background: rgba(0, 229, 255, 0.1);
+    border: 1px solid rgba(0, 229, 255, 0.3);
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    letter-spacing: 0.05em;
+  }
+
+  .guide-title {
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin: 1rem 0 0.75rem;
+  }
+
+  .guide-lead {
+    font-size: 1.15rem;
+    color: var(--text-muted);
+    line-height: 1.6;
+  }
+
+  .steps-flow {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+  }
+
+  .step-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    padding: 2rem;
+    display: flex;
+    gap: 1.5rem;
+  }
+
+  .step-number {
+    font-family: var(--font-mono);
+    font-size: 2rem;
+    font-weight: 900;
+    color: var(--accent-amber);
+    opacity: 0.8;
+    line-height: 1;
+    min-width: 48px;
+  }
+
+  .step-content {
+    flex: 1;
+  }
+
+  .step-content h2 {
+    font-size: 1.35rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .step-content p {
+    color: var(--text-muted);
+    margin-bottom: 1rem;
+    line-height: 1.6;
+  }
+
+  .file-tree, .code-box {
+    background: #090b10;
+    border: 1px solid var(--border-subtle);
+    border-radius: 6px;
+    padding: 1.25rem;
+    overflow-x: auto;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    color: #adbac7;
+    line-height: 1.5;
+    margin-top: 0.75rem;
+  }
+
+  .terminal-command-card {
+    background: #090b10;
+    border: 1px solid var(--border-subtle);
+    border-radius: 6px;
+    padding: 0.85rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  .terminal-cmd-label {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+  }
+
+  .terminal-command-card code {
+    color: var(--accent-cyan);
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+  }
+
+  .guidelines-list {
+    margin-left: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    color: var(--text-muted);
+  }
+
+  .guidelines-list strong {
+    color: var(--text-main);
+  }
+
+  @media (max-width: 640px) {
+    .step-card {
+      flex-direction: column;
+      gap: 0.75rem;
+      padding: 1.25rem;
+    }
+  }
+</style>

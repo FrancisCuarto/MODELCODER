@@ -1,0 +1,105 @@
+{
+  "generator": "FireExtinguisherGenerator",
+  "model_name": "fire_extinguisher",
+  "seed": 1337,
+  "timestamp": "2026-10-15T19:13:34.483793Z",
+  "mesh_metrics": {
+    "triangle_count": 196,
+    "vertex_count": 120,
+    "target_tri_budget": 340,
+    "budget_compliance_ratio": 0.58,
+    "dimensions_meters": {
+      "width": 0.2057,
+      "height": 0.7,
+      "depth": 0.238
+    },
+    "has_vertex_colors": true,
+    "materials_assigned": [
+      "mat_psx_industrial_hazard_casing_w65",
+      "mat_psx_industrial_hazard_casing_red_w65",
+      "mat_psx_industrial_hazard_mounting_w65",
+      "mat_psx_industrial_hazard_switch_metal_w65",
+      "mat_psx_industrial_hazard_switch_base_w65",
+      "mat_psx_industrial_hazard_cable_black_w65",
+      "mat_psx_industrial_hazard_door_emergency_red_w65",
+      "mat_psx_industrial_hazard_gauge_w65"
+    ]
+  },
+  "config_parameters": {
+    "seed": 1337,
+    "target_tri_budget": 340,
+    "name": "fire_extinguisher",
+    "wear_level": 0.65,
+    "add_collision_mesh": true,
+    "collision_type": "box",
+    "collision_suffix": "-convcolonly",
+    "pivot_rule": "floor_center",
+    "export_subcomponents": false,
+    "palette_name": "industrial_hazard",
+    "emission_scale": 1.0,
+    "extra_params": null,
+    "tank_radius": 0.08,
+    "tank_height": 0.45,
+    "mount_style": "wall_bracket",
+    "cabinet_width": 0.36,
+    "cabinet_height": 0.75,
+    "cabinet_depth": 0.22,
+    "cabinet_glass_state": "intact",
+    "has_pressure_gauge": true,
+    "has_hose_nozzle": true,
+    "has_wall_sign": true
+  },
+  "sockets": [
+    {
+      "name": "socket_player_interact",
+      "position": [
+        0.0,
+        -0.9,
+        0.0
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "Standard player character interaction stand point"
+    },
+    {
+      "name": "socket_item_spawn",
+      "position": [
+        0.0,
+        0.0,
+        0.258
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "Prop or pickup spawn snap position (keycards, ammo, medical items)"
+    },
+    {
+      "name": "socket_light",
+      "position": [
+        0.0,
+        0.0,
+        0.202
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "OmniLight3D / SpotLight3D mount anchor point"
+    }
+  ],
+  "godot_4_compatibility": {
+    "format": "glTF 2.0 Binary (.glb)",
+    "unit": "meters (1.0 Blender unit = 1.0 Godot unit)",
+    "forward_axis": "-Z",
+    "up_axis": "+Y",
+    "collision_mesh_convention": "Child node with -col or -colonly creates Godot StaticBody3D collision shape",
+    "vertex_colors": "Exported in COLOR_0 accessor (usable with StandardMaterial3D or PSX shader)",
+    "pbr_materials": "Exported as glTF PBR metallic/roughness + emissive"
+  }
+}

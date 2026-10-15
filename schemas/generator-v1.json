@@ -1,0 +1,140 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/usuario/modelcoder-community/main/schemas/generator-v1.json",
+  "title": "Procedural 3D Generator Manifest",
+  "description": "Schema definition for community and official 3D procedural generator packages.",
+  "type": "object",
+  "required": ["id", "name", "version", "parameters"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9_-]+(\\.[a-zA-Z0-9_-]+)+$",
+      "description": "Unique identifier for the generator, e.g. 'below_nominal.medical.autopsy_table'."
+    },
+    "name": {
+      "type": "string",
+      "description": "Human-readable display name of the 3D model generator."
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Semantic versioning string (e.g. 1.0.0)."
+    },
+    "description": {
+      "type": "string",
+      "description": "Detailed explanation of what the generator produces and its primary features."
+    },
+    "author": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": { "type": "string" },
+        "github": { "type": "string" },
+        "url": { "type": "string", "format": "uri" }
+      }
+    },
+    "license": {
+      "type": "string",
+      "default": "CC-BY-4.0",
+      "description": "SPDX license identifier (e.g. MIT, CC0-1.0, CC-BY-4.0)."
+    },
+    "category": {
+      "type": "string",
+      "enum": ["medical", "furniture", "fixtures", "architecture", "infrastructure", "props"],
+      "default": "props"
+    },
+    "tags": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "compatibility": {
+      "type": "object",
+      "properties": {
+        "engine_version": { "type": "string" },
+        "blender_version": { "type": "string" }
+      }
+    },
+    "parameters": {
+      "type": "array",
+      "description": "List of tunable parameters exposed by the generator for UI and CLI.",
+      "items": {
+        "type": "object",
+        "required": ["key", "label", "type", "default"],
+        "properties": {
+          "key": {
+            "type": "string",
+            "pattern": "^[a-z0-9_]+$",
+            "description": "Parameter identifier corresponding to the generator config attribute."
+          },
+          "label": {
+            "type": "string",
+            "description": "UI label displayed to the user."
+          },
+          "description": {
+            "type": "string",
+            "description": "Detailed tooltip or help text for this parameter."
+          },
+          "type": {
+            "type": "string",
+            "enum": ["float", "int", "boolean", "enum", "color_rgba", "seed", "string"]
+          },
+          "default": {
+            "description": "Default value for the parameter, matching its type."
+          },
+          "min": {
+            "type": "number",
+            "description": "Minimum allowed value (for float/int)."
+          },
+          "max": {
+            "type": "number",
+            "description": "Maximum allowed value (for float/int)."
+          },
+          "step": {
+            "type": "number",
+            "description": "Slider / input step increment (for float/int)."
+          },
+          "options": {
+            "type": "array",
+            "description": "Allowed options when type is 'enum'.",
+            "items": {
+              "type": "object",
+              "required": ["value", "label"],
+              "properties": {
+                "value": { "type": "string" },
+                "label": { "type": "string" }
+              }
+            }
+          },
+          "group": {
+            "type": "string",
+            "default": "General",
+            "description": "UI grouping tab or accordion section (e.g. Dimensions, Styling, Mechanical)."
+          }
+        }
+      }
+    },
+    "presets": {
+      "type": "array",
+      "description": "Curated parameter presets demonstrating thematic or functional variations.",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "values"],
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "values": { "type": "object" }
+        }
+      }
+    },
+    "export_capabilities": {
+      "type": "object",
+      "properties": {
+        "target_tri_budget": { "type": "integer" },
+        "supports_collision": { "type": "boolean", "default": true },
+        "default_collision_suffix": { "type": "string", "default": "-convcolonly" },
+        "supports_sockets": { "type": "boolean", "default": true }
+      }
+    }
+  }
+}

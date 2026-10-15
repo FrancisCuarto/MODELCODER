@@ -1,0 +1,312 @@
+{
+  "$schema": "https://raw.githubusercontent.com/usuario/modelcoder-community/main/schemas/generator-v1.json",
+  "id": "below_nominal.furniture.office_desk",
+  "version": "1.0.0",
+  "name": "Office Desk",
+  "description": "Generador procedural paramétrico de office desk para Below Nominal.",
+  "author": {
+    "name": "Below Nominal Team",
+    "github": "below-nominal",
+    "url": "https://belownominal.com"
+  },
+  "license": "CC-BY-4.0",
+  "category": "furniture",
+  "tags": [
+    "furniture",
+    "office_desk",
+    "psx",
+    "low-poly",
+    "retro-sci-fi"
+  ],
+  "compatibility": {
+    "engine_version": ">=1.5.0",
+    "blender_version": ">=4.2"
+  },
+  "parameters": [
+    {
+      "key": "seed",
+      "label": "Seed",
+      "type": "seed",
+      "default": 42,
+      "group": "Rendimiento",
+      "min": 0,
+      "max": 2147483647,
+      "step": 1
+    },
+    {
+      "key": "target_tri_budget",
+      "label": "Target Tri Budget",
+      "type": "int",
+      "default": 420,
+      "group": "Rendimiento",
+      "min": 0,
+      "step": 1
+    },
+    {
+      "key": "name",
+      "label": "Name",
+      "type": "string",
+      "default": "office_desk",
+      "group": "General"
+    },
+    {
+      "key": "wear_level",
+      "label": "Wear Level",
+      "type": "float",
+      "default": 0.6,
+      "group": "Materiales",
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.05
+    },
+    {
+      "key": "add_collision_mesh",
+      "label": "Add Collision Mesh",
+      "type": "boolean",
+      "default": false,
+      "group": "General"
+    },
+    {
+      "key": "collision_type",
+      "label": "Collision Type",
+      "type": "string",
+      "default": "box",
+      "group": "General"
+    },
+    {
+      "key": "collision_suffix",
+      "label": "Collision Suffix",
+      "type": "string",
+      "default": "-convcolonly",
+      "group": "General"
+    },
+    {
+      "key": "pivot_rule",
+      "label": "Pivot Rule",
+      "type": "string",
+      "default": "floor_center",
+      "group": "General"
+    },
+    {
+      "key": "export_subcomponents",
+      "label": "Export Subcomponents",
+      "type": "boolean",
+      "default": false,
+      "group": "General"
+    },
+    {
+      "key": "palette_name",
+      "label": "Palette Name",
+      "type": "enum",
+      "default": "industrial_hazard",
+      "group": "Materiales",
+      "options": [
+        {
+          "value": "industrial_hazard",
+          "label": "Industrial Hazard"
+        },
+        {
+          "value": "medbay_clean",
+          "label": "Medbay Clean"
+        },
+        {
+          "value": "command_bridge",
+          "label": "Command Bridge"
+        },
+        {
+          "value": "habitation_worn",
+          "label": "Habitation Worn"
+        },
+        {
+          "value": "derelict_decay",
+          "label": "Derelict Decay"
+        }
+      ]
+    },
+    {
+      "key": "emission_scale",
+      "label": "Emission Scale",
+      "type": "float",
+      "default": 1.0,
+      "group": "General",
+      "min": 0.0,
+      "step": 0.05
+    },
+    {
+      "key": "extra_params",
+      "label": "Extra Params",
+      "type": "string",
+      "default": null,
+      "group": "General"
+    },
+    {
+      "key": "width",
+      "label": "Width",
+      "type": "float",
+      "default": 1.4,
+      "group": "Dimensiones",
+      "min": 0.0,
+      "step": 0.05
+    },
+    {
+      "key": "height",
+      "label": "Height",
+      "type": "float",
+      "default": 0.76,
+      "group": "Dimensiones",
+      "min": 0.0,
+      "step": 0.05
+    },
+    {
+      "key": "depth",
+      "label": "Depth",
+      "type": "float",
+      "default": 0.75,
+      "group": "Dimensiones",
+      "min": 0.0,
+      "step": 0.05
+    },
+    {
+      "key": "desktop_thickness",
+      "label": "Desktop Thickness",
+      "type": "float",
+      "default": 0.04,
+      "group": "General",
+      "min": 0.0,
+      "step": 0.05
+    },
+    {
+      "key": "leg_style",
+      "label": "Leg Style",
+      "type": "string",
+      "default": "tubular_four_legs",
+      "group": "General"
+    },
+    {
+      "key": "leg_thickness",
+      "label": "Leg Thickness",
+      "type": "float",
+      "default": 0.045,
+      "group": "General",
+      "min": 0.0,
+      "step": 0.05
+    },
+    {
+      "key": "pedestal_layout",
+      "label": "Pedestal Layout",
+      "type": "string",
+      "default": "right_only",
+      "group": "General"
+    },
+    {
+      "key": "drawer_count_per_pedestal",
+      "label": "Drawer Count Per Pedestal",
+      "type": "int",
+      "default": 3,
+      "group": "General",
+      "min": 0,
+      "step": 1
+    },
+    {
+      "key": "drawer_open_style",
+      "label": "Drawer Open Style",
+      "type": "string",
+      "default": "top_open",
+      "group": "General"
+    },
+    {
+      "key": "drawer_slide_max",
+      "label": "Drawer Slide Max",
+      "type": "float",
+      "default": 0.2,
+      "group": "General",
+      "min": 0.0,
+      "step": 0.05
+    },
+    {
+      "key": "has_cable_grommet",
+      "label": "Has Cable Grommet",
+      "type": "boolean",
+      "default": true,
+      "group": "General"
+    },
+    {
+      "key": "has_partition_screen",
+      "label": "Has Partition Screen",
+      "type": "boolean",
+      "default": false,
+      "group": "General"
+    },
+    {
+      "key": "partition_height",
+      "label": "Partition Height",
+      "type": "float",
+      "default": 0.35,
+      "group": "General",
+      "min": 0.0,
+      "step": 0.05
+    },
+    {
+      "key": "has_under_shelf",
+      "label": "Has Under Shelf",
+      "type": "boolean",
+      "default": true,
+      "group": "General"
+    },
+    {
+      "key": "has_rear_cable_raceway",
+      "label": "Has Rear Cable Raceway",
+      "type": "boolean",
+      "default": true,
+      "group": "General"
+    },
+    {
+      "key": "surface_material",
+      "label": "Surface Material",
+      "type": "string",
+      "default": "metal_dark",
+      "group": "General"
+    }
+  ],
+  "presets": [
+    {
+      "id": "default",
+      "name": "Estándar / Por Defecto",
+      "description": "Configuración base del generador",
+      "values": {
+        "seed": 42,
+        "target_tri_budget": 420,
+        "name": "office_desk",
+        "wear_level": 0.6,
+        "add_collision_mesh": false,
+        "collision_type": "box",
+        "collision_suffix": "-convcolonly",
+        "pivot_rule": "floor_center",
+        "export_subcomponents": false,
+        "palette_name": "industrial_hazard",
+        "emission_scale": 1.0,
+        "width": 1.4,
+        "height": 0.76,
+        "depth": 0.75,
+        "desktop_thickness": 0.04,
+        "leg_style": "tubular_four_legs",
+        "leg_thickness": 0.045,
+        "pedestal_layout": "right_only",
+        "drawer_count_per_pedestal": 3,
+        "drawer_open_style": "top_open",
+        "drawer_slide_max": 0.2,
+        "has_cable_grommet": true,
+        "has_partition_screen": false,
+        "partition_height": 0.35,
+        "has_under_shelf": true,
+        "has_rear_cable_raceway": true,
+        "surface_material": "metal_dark"
+      }
+    }
+  ],
+  "export_capabilities": {
+    "supports_collision": true,
+    "default_collision_suffix": "-convcolonly",
+    "supports_sockets": false
+  }
+}

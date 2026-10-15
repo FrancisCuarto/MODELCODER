@@ -1,0 +1,100 @@
+{
+  "generator": "PipeGenerator",
+  "model_name": "pipes",
+  "seed": 1337,
+  "timestamp": "2026-10-15T19:13:39.944658Z",
+  "mesh_metrics": {
+    "triangle_count": 184,
+    "vertex_count": 118,
+    "target_tri_budget": 400,
+    "budget_compliance_ratio": 0.46,
+    "dimensions_meters": {
+      "width": 1.8,
+      "height": 0.4835,
+      "depth": 0.333
+    },
+    "has_vertex_colors": true,
+    "materials_assigned": [
+      "mat_psx_industrial_hazard_casing_w65",
+      "mat_psx_industrial_hazard_casing_inner_w65",
+      "mat_psx_industrial_hazard_switch_metal_w65",
+      "mat_psx_industrial_hazard_screw_w65",
+      "mat_psx_industrial_hazard_pipe_industrial_w65",
+      "mat_psx_industrial_hazard_valve_red_w65"
+    ]
+  },
+  "config_parameters": {
+    "seed": 1337,
+    "target_tri_budget": 400,
+    "name": "pipes",
+    "wear_level": 0.65,
+    "add_collision_mesh": true,
+    "collision_type": "box",
+    "collision_suffix": "-convcolonly",
+    "pivot_rule": "floor_center",
+    "export_subcomponents": false,
+    "palette_name": "industrial_hazard",
+    "emission_scale": 1.0,
+    "extra_params": null,
+    "pipe_type": "valve_assembly",
+    "radius": 0.09,
+    "length": 1.8,
+    "valve_type": "handwheel_red",
+    "has_pressure_gauge": true,
+    "has_insulation_layer": false,
+    "has_flange_couplings": true
+  },
+  "sockets": [
+    {
+      "name": "socket_player_interact",
+      "position": [
+        0.0,
+        -0.792,
+        0.0
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "Standard player character interaction stand point"
+    },
+    {
+      "name": "socket_item_spawn",
+      "position": [
+        0.0,
+        0.0,
+        0.353
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "Prop or pickup spawn snap position (keycards, ammo, medical items)"
+    },
+    {
+      "name": "socket_light",
+      "position": [
+        0.0,
+        0.0,
+        0.283
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "OmniLight3D / SpotLight3D mount anchor point"
+    }
+  ],
+  "godot_4_compatibility": {
+    "format": "glTF 2.0 Binary (.glb)",
+    "unit": "meters (1.0 Blender unit = 1.0 Godot unit)",
+    "forward_axis": "-Z",
+    "up_axis": "+Y",
+    "collision_mesh_convention": "Child node with -col or -colonly creates Godot StaticBody3D collision shape",
+    "vertex_colors": "Exported in COLOR_0 accessor (usable with StandardMaterial3D or PSX shader)",
+    "pbr_materials": "Exported as glTF PBR metallic/roughness + emissive"
+  }
+}

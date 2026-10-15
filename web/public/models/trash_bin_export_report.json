@@ -1,0 +1,298 @@
+{
+  "export_metadata": {
+    "generator": "TrashBinGenerator",
+    "asset_name": "trash_bin",
+    "timestamp": "2026-10-15T19:13:45.509000Z",
+    "format": "glTF 2.0 Binary (.glb)",
+    "output_file": "d:\\MODELCODER\\web\\public\\models\\trash_bin.glb",
+    "file_size_bytes": 97588,
+    "file_size_kb": 95.3
+  },
+  "normalization": {
+    "units": "Meters (1 Blender unit = 1.0 Godot unit)",
+    "scale_applied": true,
+    "rotation_applied": true,
+    "location_applied": true,
+    "pivot_rule": "floor_center",
+    "pivot_offset_applied": [
+      -0.0,
+      -0.468,
+      0.21
+    ],
+    "normals_shading": "Flat (poly.use_smooth = False, PS1 low-poly crisp)",
+    "normals_recalculated": true,
+    "uv_mapping": "TEXCOORD_0 (Component-mapped to PS1 Weathered Texture Atlas)",
+    "vertex_colors": "COLOR_0 (Col / PS1 Gouraud tinting and wear)"
+  },
+  "dimensions_meters": {
+    "x": 0.424,
+    "y": 0.936,
+    "z": 0.47
+  },
+  "geometry_metrics": {
+    "total_triangles": 120,
+    "total_vertices": 72,
+    "target_tri_budget": 320,
+    "budget_compliance_ratio": 0.38,
+    "object_count": 5,
+    "hierarchy": [
+      {
+        "name": "trash_bin",
+        "type": "MESH",
+        "parent": null,
+        "triangles": 96,
+        "vertices": 72
+      },
+      {
+        "name": "socket_item_spawn",
+        "type": "EMPTY",
+        "parent": "trash_bin",
+        "triangles": 0,
+        "vertices": 0
+      },
+      {
+        "name": "socket_light",
+        "type": "EMPTY",
+        "parent": "trash_bin",
+        "triangles": 0,
+        "vertices": 0
+      },
+      {
+        "name": "socket_player_interact",
+        "type": "EMPTY",
+        "parent": "trash_bin",
+        "triangles": 0,
+        "vertices": 0
+      },
+      {
+        "name": "trash_bin-convcolonly",
+        "type": "MESH",
+        "parent": "trash_bin",
+        "triangles": 12,
+        "vertices": 8
+      }
+    ]
+  },
+  "materials": {
+    "count": 4,
+    "compacted": true,
+    "list": [
+      {
+        "name": "mat_psx_industrial_hazard_casing_w65",
+        "roughness": 0.68,
+        "metallic": 0.18,
+        "emission": "None"
+      },
+      {
+        "name": "mat_psx_industrial_hazard_casing_inner_w65",
+        "roughness": 0.75,
+        "metallic": 0.15,
+        "emission": "None"
+      },
+      {
+        "name": "mat_psx_industrial_hazard_mounting_w65",
+        "roughness": 0.42,
+        "metallic": 0.88,
+        "emission": "None"
+      },
+      {
+        "name": "mat_psx_industrial_hazard_switch_base_w65",
+        "roughness": 0.82,
+        "metallic": 0.0,
+        "emission": "None"
+      }
+    ]
+  },
+  "collision": {
+    "enabled": true,
+    "node_name": "trash_bin-convcolonly",
+    "shape_type": "box",
+    "godot_suffix": "-convcolonly",
+    "extents": [
+      0.424,
+      0.936,
+      0.47
+    ]
+  },
+  "sockets": [
+    {
+      "name": "socket_player_interact",
+      "position": [
+        0.0,
+        -1.018,
+        0.0
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "Standard player character interaction stand point"
+    },
+    {
+      "name": "socket_item_spawn",
+      "position": [
+        0.0,
+        0.0,
+        0.49
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "Prop or pickup spawn snap position (keycards, ammo, medical items)"
+    },
+    {
+      "name": "socket_light",
+      "position": [
+        0.0,
+        0.0,
+        0.399
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "OmniLight3D / SpotLight3D mount anchor point"
+    }
+  ],
+  "godot_4_validation": {
+    "bounds_aabb": {
+      "position": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "size": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "collision_shape_count": 1,
+    "errors": [],
+    "file": "d:\\MODELCODER\\web\\public\\models\\trash_bin.glb",
+    "materials": [
+      "mat_psx_industrial_hazard_casing_w65",
+      "mat_psx_industrial_hazard_casing_inner_w65",
+      "mat_psx_industrial_hazard_mounting_w65",
+      "mat_psx_industrial_hazard_switch_base_w65",
+      ""
+    ],
+    "mesh_count": 2,
+    "nodes": [
+      {
+        "class": "Node3D",
+        "depth": 0,
+        "name": "trash_bin2"
+      },
+      {
+        "aabb": {
+          "position": [
+            -0.212,
+            0.0,
+            -0.468
+          ],
+          "size": [
+            0.424,
+            0.47,
+            0.936
+          ]
+        },
+        "class": "MeshInstance3D",
+        "depth": 1,
+        "has_uv": true,
+        "materials": [
+          "mat_psx_industrial_hazard_casing_w65",
+          "mat_psx_industrial_hazard_casing_inner_w65",
+          "mat_psx_industrial_hazard_mounting_w65",
+          "mat_psx_industrial_hazard_switch_base_w65"
+        ],
+        "name": "trash_bin",
+        "surface_count": 4
+      },
+      {
+        "class": "Node3D",
+        "depth": 2,
+        "name": "socket_item_spawn"
+      },
+      {
+        "class": "Node3D",
+        "depth": 2,
+        "name": "socket_light"
+      },
+      {
+        "class": "Node3D",
+        "depth": 2,
+        "name": "socket_player_interact"
+      },
+      {
+        "aabb": {
+          "position": [
+            -0.212,
+            0.0,
+            -0.468
+          ],
+          "size": [
+            0.424,
+            0.47,
+            0.936
+          ]
+        },
+        "class": "MeshInstance3D",
+        "depth": 2,
+        "godot_collision": {
+          "points": 8,
+          "shape": "ConvexPolygonShape3D",
+          "strips_visual_mesh": true
+        },
+        "has_uv": false,
+        "materials": [
+          ""
+        ],
+        "name": "trash_bin-convcolonly",
+        "surface_count": 1
+      }
+    ],
+    "root_class": "Node3D",
+    "root_name": "trash_bin2",
+    "socket_count": 3,
+    "sockets": [
+      {
+        "name": "socket_item_spawn",
+        "position": [
+          0.0,
+          0.7,
+          0.468
+        ]
+      },
+      {
+        "name": "socket_light",
+        "position": [
+          0.0,
+          0.609,
+          0.468
+        ]
+      },
+      {
+        "name": "socket_player_interact",
+        "position": [
+          0.0,
+          0.21,
+          1.486
+        ]
+      }
+    ],
+    "static_body_count": 1,
+    "total_surfaces": 5,
+    "valid": true,
+    "warnings": [],
+    "tested_in_godot": true,
+    "success": true,
+    "exit_code": 0,
+    "godot_binary": "C:\\Users\\lopez\\Downloads\\Godot_v4.5.1-stable_win64.exe\\Godot_v4.5.1-stable_win64_console.exe"
+  },
+  "warnings": []
+}

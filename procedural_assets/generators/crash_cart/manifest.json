@@ -1,0 +1,192 @@
+{
+  "$schema": "https://raw.githubusercontent.com/usuario/modelcoder-community/main/schemas/generator-v1.json",
+  "id": "below_nominal.medical.crash_cart",
+  "version": "1.0.0",
+  "name": "Carro de Paro / Emergencia Médica",
+  "description": "Carro de reanimación hospitalario industrial con cajones extensibles escalonados, monitor desfibrilador CRT superior abombado, ruedas pivotantes y bastidor para cilindros de oxígeno.",
+  "author": {
+    "name": "Below Nominal Team",
+    "github": "below-nominal",
+    "url": "https://belownominal.com"
+  },
+  "license": "CC-BY-4.0",
+  "category": "medical",
+  "tags": ["medical", "emergency", "crash_cart", "defibrillator", "crt", "oxygen", "sci-fi", "psx", "low-poly"],
+  "compatibility": {
+    "engine_version": ">=1.5.0",
+    "blender_version": ">=4.2"
+  },
+  "parameters": [
+    {
+      "key": "drawer_count",
+      "label": "Cantidad de Cajones",
+      "type": "int",
+      "default": 4,
+      "min": 1,
+      "max": 6,
+      "step": 1,
+      "description": "Número de gavetas frontales",
+      "group": "Cajonera"
+    },
+    {
+      "key": "drawer_open_mode",
+      "label": "Modo de Apertura",
+      "type": "enum",
+      "default": "staggered",
+      "description": "Patrón de apertura de los cajones",
+      "options": [
+        {"value": "staggered", "label": "Escalonado (procedural dinámico)"},
+        {"value": "all_closed", "label": "Todos Cerrados"},
+        {"value": "top_open", "label": "Solo Superior Abierto"},
+        {"value": "all_open", "label": "Todos Abiertos"}
+      ],
+      "group": "Cajonera"
+    },
+    {
+      "key": "drawer_handle_style",
+      "label": "Estilo de Tiradores",
+      "type": "enum",
+      "default": "metal_bar",
+      "description": "Tipo de manija o tirador de las gavetas",
+      "options": [
+        {"value": "metal_bar", "label": "Barra Cilíndrica de Acero"},
+        {"value": "recessed_lip", "label": "Uñero / Ranura Embutida"},
+        {"value": "industrial_latch", "label": "Cierre Industrial"}
+      ],
+      "group": "Cajonera"
+    },
+    {
+      "key": "has_top_monitor",
+      "label": "Monitor CRT / Desfibrilador",
+      "type": "boolean",
+      "default": true,
+      "description": "Unidad de telemetría superior con pantalla CRT emisiva y perillas",
+      "group": "Monitor"
+    },
+    {
+      "key": "monitor_phosphor_color",
+      "label": "Fósforo de Pantalla CRT",
+      "type": "enum",
+      "default": "green",
+      "description": "Color de emisión del monitor",
+      "options": [
+        {"value": "green", "label": "Fósforo Verde Médico"},
+        {"value": "amber", "label": "Fósforo Ámbar Táctico"},
+        {"value": "off", "label": "Pantalla Apagada"}
+      ],
+      "group": "Monitor"
+    },
+    {
+      "key": "has_push_handle",
+      "label": "Barral de Empuje",
+      "type": "boolean",
+      "default": true,
+      "description": "Asa tubular lateral para maniobrar el carro",
+      "group": "Ergonomía"
+    },
+    {
+      "key": "has_oxygen_rack",
+      "label": "Soporte de Tubos O2",
+      "type": "boolean",
+      "default": true,
+      "description": "Bastidor lateral con cilindros de oxígeno presurizados",
+      "group": "Accesorios"
+    },
+    {
+      "key": "oxygen_tank_count",
+      "label": "Tubos de Oxígeno",
+      "type": "int",
+      "default": 1,
+      "min": 1,
+      "max": 2,
+      "step": 1,
+      "description": "Cantidad de cilindros de oxígeno en el soporte lateral",
+      "group": "Accesorios"
+    },
+    {
+      "key": "body_color_preset",
+      "label": "Pintura de Chasis",
+      "type": "enum",
+      "default": "red_emergency",
+      "description": "Color base del cuerpo metálico",
+      "options": [
+        {"value": "red_emergency", "label": "Rojo Emergencia Sanitaria"},
+        {"value": "dirty_beige", "label": "Beige Desgastado de Laboratorio"},
+        {"value": "hazard_yellow", "label": "Amarillo Hazard de Taller"}
+      ],
+      "group": "Materiales"
+    },
+    {
+      "key": "palette_name",
+      "label": "Paleta de Sector",
+      "type": "enum",
+      "default": "medbay_clean",
+      "description": "Esquema cromático y de herrumbre sectorial",
+      "options": [
+        {"value": "industrial_hazard", "label": "Industrial Hazard"},
+        {"value": "medbay_clean", "label": "Medbay Clean"},
+        {"value": "command_bridge", "label": "Command Bridge"},
+        {"value": "habitation_worn", "label": "Habitation Worn"},
+        {"value": "derelict_decay", "label": "Derelict Decay"}
+      ],
+      "group": "Materiales"
+    },
+    {
+      "key": "wear_level",
+      "label": "Nivel de Desgaste (0 a 1)",
+      "type": "float",
+      "default": 0.65,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.05,
+      "description": "Corrosión y raspaduras en la pintura",
+      "group": "Materiales"
+    },
+    {
+      "key": "seed",
+      "label": "Semilla Aleatoria",
+      "type": "seed",
+      "default": 1337,
+      "description": "Semilla generadora determinista",
+      "group": "Aleatoriedad"
+    }
+  ],
+  "presets": [
+    {
+      "id": "code_blue_trauma",
+      "name": "Código Azul (Trauma)",
+      "description": "Carro rojo equipado al máximo con monitor encendido y tubos de oxígeno.",
+      "values": {
+        "drawer_count": 4,
+        "drawer_open_mode": "staggered",
+        "has_top_monitor": true,
+        "monitor_phosphor_color": "green",
+        "has_oxygen_rack": true,
+        "oxygen_tank_count": 2,
+        "body_color_preset": "red_emergency",
+        "palette_name": "medbay_clean",
+        "wear_level": 0.40
+      }
+    },
+    {
+      "id": "salvage_engineering",
+      "name": "Carro de Herramientas de Salvamento",
+      "description": "Amarillo industrial, sin monitor, con herrumbre pesada.",
+      "values": {
+        "drawer_count": 5,
+        "drawer_open_mode": "all_open",
+        "has_top_monitor": false,
+        "has_oxygen_rack": false,
+        "body_color_preset": "hazard_yellow",
+        "palette_name": "derelict_decay",
+        "wear_level": 0.85
+      }
+    }
+  ],
+  "export_capabilities": {
+    "target_tri_budget": 580,
+    "supports_collision": true,
+    "default_collision_suffix": "-convcolonly",
+    "supports_sockets": true
+  }
+}
