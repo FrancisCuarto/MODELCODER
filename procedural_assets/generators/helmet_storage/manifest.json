@@ -1,0 +1,141 @@
+{
+  "id": "below_nominal.furniture.helmet_storage",
+  "name": "Armario para Cascos EVA",
+  "version": "1.0.0",
+  "description": "Mueble compartimentado para almacenamiento y recarga de cascos EVA, con bases de carga inductiva, leds de estado y visores de policarbonato. Podés configurar filas, columnas, cascos almacenados y estilo de puerta en GLB.",
+  "author": {
+    "name": "ModelCoder Core Team",
+    "github": "FrancisCuarto"
+  },
+  "license": "CC-BY-4.0",
+  "category": "furniture",
+  "tags": [
+    "psx",
+    "low-poly",
+    "helmet",
+    "eva",
+    "storage",
+    "locker",
+    "below-nominal"
+  ],
+  "parameters": [
+    {
+      "key": "height",
+      "label": "Altura del Armario (m)",
+      "type": "float",
+      "default": 1.85,
+      "min": 1.4,
+      "max": 2.2,
+      "step": 0.05,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "width",
+      "label": "Ancho del Armario (m)",
+      "type": "float",
+      "default": 1.0,
+      "min": 0.7,
+      "max": 1.4,
+      "step": 0.05,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "depth",
+      "label": "Profundidad (m)",
+      "type": "float",
+      "default": 0.55,
+      "min": 0.45,
+      "max": 0.7,
+      "step": 0.05,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "grid_rows",
+      "label": "Niveles Verticales (Filas)",
+      "type": "int",
+      "default": 3,
+      "min": 2,
+      "max": 4,
+      "step": 1,
+      "group": "Estructura"
+    },
+    {
+      "key": "grid_cols",
+      "label": "Columnas de Nichos",
+      "type": "int",
+      "default": 2,
+      "min": 1,
+      "max": 3,
+      "step": 1,
+      "group": "Estructura"
+    },
+    {
+      "key": "helmet_density",
+      "label": "Densidad de Cascos",
+      "type": "float",
+      "default": 0.65,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.05,
+      "group": "Estado"
+    },
+    {
+      "key": "door_style",
+      "label": "Estilo de Puerta Frontal",
+      "type": "enum",
+      "default": "open",
+      "options": [
+        { "value": "open", "label": "Abierto / Sin Puerta" },
+        { "value": "glass_door", "label": "Panel Acrílico Transparente" },
+        { "value": "mesh_grate", "label": "Reja de Ventilación Metálica" }
+      ],
+      "group": "Acabado"
+    },
+    {
+      "key": "has_status_leds",
+      "label": "Leds de Carga Inductiva",
+      "type": "bool",
+      "default": true,
+      "group": "Detalles"
+    }
+  ],
+  "presets": [
+    {
+      "id": "full_armory",
+      "label": "Armería EVA Completa",
+      "values": {
+        "grid_rows": 3,
+        "grid_cols": 2,
+        "helmet_density": 1.0,
+        "door_style": "open",
+        "has_status_leds": true
+      }
+    },
+    {
+      "id": "shift_active",
+      "label": "Salida de Turno (Uso Parcial)",
+      "values": {
+        "grid_rows": 3,
+        "grid_cols": 2,
+        "helmet_density": 0.4,
+        "door_style": "glass_door",
+        "has_status_leds": true
+      }
+    },
+    {
+      "id": "derelict_depleted",
+      "label": "Armario Abandonado",
+      "values": {
+        "grid_rows": 3,
+        "grid_cols": 2,
+        "helmet_density": 0.0,
+        "door_style": "mesh_grate",
+        "has_status_leds": false
+      }
+    }
+  ],
+  "export_capabilities": {
+    "supports_collision": true,
+    "default_collision_suffix": "-convcolonly"
+  }
+}

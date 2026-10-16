@@ -56,6 +56,17 @@ from .pressure_door_control import PressureDoorControlConfig, PressureDoorContro
 from .airlock_chamber import AirlockChamberConfig, AirlockChamberGenerator
 from .pressure_indicator import PressureIndicatorConfig, PressureIndicatorGenerator
 
+# Lote C: Médico, Bioseguridad y Laboratorio (Familias 54-62)
+from .suit_rack import SuitRackConfig, SuitRackGenerator
+from .eva_suit_stand import EvaSuitStandConfig, EvaSuitStandGenerator
+from .helmet_storage import HelmetStorageConfig, HelmetStorageGenerator
+from .decon_chamber import DeconChamberConfig, DeconChamberGenerator
+from .quarantine_bed import QuarantineBedConfig, QuarantineBedGenerator
+from .specimen_freezer import SpecimenFreezerConfig, SpecimenFreezerGenerator
+from .biohazard_bin import BiohazardBinConfig, BiohazardBinGenerator
+from .surgical_light import SurgicalLightConfig, SurgicalLightGenerator
+from .microscope import MicroscopeConfig, MicroscopeGenerator
+
 GENERATOR_REGISTRY = {
     # Environment & Architectural Tiles
     "station_corridor": (StationCorridorConfig, StationCorridorGenerator),
@@ -125,6 +136,17 @@ GENERATOR_REGISTRY = {
     "pressure_door_control": (PressureDoorControlConfig, PressureDoorControlGenerator),
     "airlock_chamber": (AirlockChamberConfig, AirlockChamberGenerator),
     "pressure_indicator": (PressureIndicatorConfig, PressureIndicatorGenerator),
+
+    # Lote C: Médico, Bioseguridad y Laboratorio (Familias 54-62)
+    "suit_rack": (SuitRackConfig, SuitRackGenerator),
+    "eva_suit_stand": (EvaSuitStandConfig, EvaSuitStandGenerator),
+    "helmet_storage": (HelmetStorageConfig, HelmetStorageGenerator),
+    "decon_chamber": (DeconChamberConfig, DeconChamberGenerator),
+    "quarantine_bed": (QuarantineBedConfig, QuarantineBedGenerator),
+    "specimen_freezer": (SpecimenFreezerConfig, SpecimenFreezerGenerator),
+    "biohazard_bin": (BiohazardBinConfig, BiohazardBinGenerator),
+    "surgical_light": (SurgicalLightConfig, SurgicalLightGenerator),
+    "microscope": (MicroscopeConfig, MicroscopeGenerator),
 }
 
 # Dynamic auto-discovery for community-contributed generator families
@@ -204,5 +226,14 @@ __all__ = [
     "PressureDoorControlConfig", "PressureDoorControlGenerator",
     "AirlockChamberConfig", "AirlockChamberGenerator",
     "PressureIndicatorConfig", "PressureIndicatorGenerator",
+    "SuitRackConfig", "SuitRackGenerator",
+    "EvaSuitStandConfig", "EvaSuitStandGenerator",
+    "HelmetStorageConfig", "HelmetStorageGenerator",
+    "DeconChamberConfig", "DeconChamberGenerator",
+    "QuarantineBedConfig", "QuarantineBedGenerator",
+    "SpecimenFreezerConfig", "SpecimenFreezerGenerator",
+    "BiohazardBinConfig", "BiohazardBinGenerator",
+    "SurgicalLightConfig", "SurgicalLightGenerator",
+    "MicroscopeConfig", "MicroscopeGenerator",
 ]
 

@@ -1,0 +1,118 @@
+{
+  "id": "below_nominal.laboratory.microscope",
+  "name": "Microscopio de Laboratorio Óptico",
+  "version": "1.0.0",
+  "description": "Microscopio compuesto óptico para análisis histológico, patológico y citológico de muestras biológicas y xenomorfas. Consta de base pesada de fundición con patas de amortiguación, fuente de luz halógena inferior, platina mecánica con pinzas y portaobjetos, torreta revólver con objetivos de magnificación codificados por color, mandos coaxiales de enfoque macrométrico/micrométrico y cabezal binocular inclinado.",
+  "author": {
+    "name": "ModelCoder Core Team",
+    "github": "FrancisCuarto"
+  },
+  "license": "CC-BY-4.0",
+  "category": "laboratory",
+  "tags": [
+    "psx",
+    "low-poly",
+    "microscope",
+    "laboratory",
+    "optics",
+    "research",
+    "science",
+    "below-nominal"
+  ],
+  "parameters": [
+    {
+      "key": "total_height",
+      "label": "Altura Total (m)",
+      "type": "float",
+      "default": 0.48,
+      "min": 0.38,
+      "max": 0.60,
+      "step": 0.02,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "objective_count",
+      "label": "Objetivos en Torreta",
+      "type": "int",
+      "default": 3,
+      "min": 3,
+      "max": 4,
+      "step": 1,
+      "group": "Óptica"
+    },
+    {
+      "key": "eyepiece_type",
+      "label": "Tipo de Cabezal",
+      "type": "enum",
+      "default": "binocular",
+      "options": [
+        { "value": "binocular", "label": "Binocular (Doble Ocular)" },
+        { "value": "monocular", "label": "Monocular (Ocular Simple)" }
+      ],
+      "group": "Óptica"
+    },
+    {
+      "key": "has_slide_on_stage",
+      "label": "Portaobjetos en Platina",
+      "type": "bool",
+      "default": true,
+      "group": "Detalles"
+    },
+    {
+      "key": "is_illuminator_on",
+      "label": "Foco Halógeno Encendido",
+      "type": "bool",
+      "default": true,
+      "group": "Estado"
+    },
+    {
+      "key": "stage_elevation",
+      "label": "Elevación de Platina (Enfoque)",
+      "type": "float",
+      "default": 0.55,
+      "min": 0.2,
+      "max": 0.8,
+      "step": 0.05,
+      "group": "Articulación"
+    }
+  ],
+  "presets": [
+    {
+      "id": "active_analysis",
+      "label": "Análisis Clínico Activo",
+      "values": {
+        "objective_count": 3,
+        "eyepiece_type": "binocular",
+        "has_slide_on_stage": true,
+        "is_illuminator_on": true,
+        "stage_elevation": 0.55
+      }
+    },
+    {
+      "id": "high_power_turret",
+      "label": "Torreta Cuádruple 100x",
+      "values": {
+        "objective_count": 4,
+        "eyepiece_type": "binocular",
+        "has_slide_on_stage": true,
+        "is_illuminator_on": true,
+        "stage_elevation": 0.70
+      }
+    },
+    {
+      "id": "inactive_stored",
+      "label": "Microscopio Guardado",
+      "values": {
+        "objective_count": 3,
+        "eyepiece_type": "monocular",
+        "has_slide_on_stage": false,
+        "is_illuminator_on": false,
+        "stage_elevation": 0.30
+      }
+    }
+  ],
+  "export_capabilities": {
+    "supports_collision": true,
+    "default_collision_suffix": "-convcolonly"
+  }
+}

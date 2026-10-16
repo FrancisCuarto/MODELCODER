@@ -1,0 +1,138 @@
+{
+  "id": "below_nominal.laboratory.specimen_freezer",
+  "name": "Congelador Criogénico de Muestras",
+  "version": "1.0.0",
+  "description": "Congelador de ultra-baja temperatura (-80°C) para conservación y aislamiento de muestras biológicas y agentes patógenos. Incluye zócalo de ventilación de compresor, bandejas deslizantes de acero con gradillas criogénicas, puerta aislada con palanca de vacío, visor térmico triple y panel digital de temperatura con alerta de ruptura de cadena de frío.",
+  "author": {
+    "name": "ModelCoder Core Team",
+    "github": "FrancisCuarto"
+  },
+  "license": "CC-BY-4.0",
+  "category": "laboratory",
+  "tags": [
+    "psx",
+    "low-poly",
+    "cryo",
+    "freezer",
+    "specimen",
+    "laboratory",
+    "biohazard",
+    "cold-storage",
+    "below-nominal"
+  ],
+  "parameters": [
+    {
+      "key": "freezer_width",
+      "label": "Ancho de Gabinete (m)",
+      "type": "float",
+      "default": 0.9,
+      "min": 0.7,
+      "max": 1.3,
+      "step": 0.05,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "freezer_depth",
+      "label": "Profundidad de Gabinete (m)",
+      "type": "float",
+      "default": 0.8,
+      "min": 0.6,
+      "max": 1.1,
+      "step": 0.05,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "freezer_height",
+      "label": "Altura de Gabinete (m)",
+      "type": "float",
+      "default": 1.9,
+      "min": 1.5,
+      "max": 2.2,
+      "step": 0.05,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "door_open_angle",
+      "label": "Apertura de Puerta (grados)",
+      "type": "float",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 90.0,
+      "step": 5.0,
+      "group": "Estado"
+    },
+    {
+      "key": "tray_count",
+      "label": "Bandejas Interiores",
+      "type": "int",
+      "default": 4,
+      "min": 2,
+      "max": 6,
+      "step": 1,
+      "group": "Estructura"
+    },
+    {
+      "key": "temperature_celsius",
+      "label": "Temperatura (°C)",
+      "type": "float",
+      "default": -80.0,
+      "min": -90.0,
+      "max": 25.0,
+      "step": 1.0,
+      "group": "Estado"
+    },
+    {
+      "key": "has_alarm_beacon",
+      "label": "Baliza Superior de Alarma",
+      "type": "bool",
+      "default": false,
+      "group": "Seguridad"
+    },
+    {
+      "key": "has_window",
+      "label": "Ventana de Inspección",
+      "type": "bool",
+      "default": true,
+      "group": "Detalles"
+    }
+  ],
+  "presets": [
+    {
+      "id": "cryo_stable",
+      "label": "Muestras Estables (-80°C)",
+      "values": {
+        "door_open_angle": 0.0,
+        "temperature_celsius": -80.0,
+        "tray_count": 4,
+        "has_alarm_beacon": false,
+        "has_window": true
+      }
+    },
+    {
+      "id": "open_inspection",
+      "label": "Inspección de Bandejas (Abierto)",
+      "values": {
+        "door_open_angle": 80.0,
+        "temperature_celsius": -72.0,
+        "tray_count": 4,
+        "has_alarm_beacon": false,
+        "has_window": true
+      }
+    },
+    {
+      "id": "cold_chain_breach",
+      "label": "Ruptura de Cadena de Frío",
+      "values": {
+        "door_open_angle": 30.0,
+        "temperature_celsius": 14.0,
+        "tray_count": 3,
+        "has_alarm_beacon": true,
+        "has_window": true
+      }
+    }
+  ],
+  "export_capabilities": {
+    "supports_collision": true,
+    "default_collision_suffix": "-convcolonly"
+  }
+}

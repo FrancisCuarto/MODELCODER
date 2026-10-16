@@ -1,0 +1,112 @@
+{
+  "id": "below_nominal.medical.biohazard_bin",
+  "name": "Contenedor de Residuos Biológicos",
+  "version": "1.0.0",
+  "description": "Cubo contenedor de seguridad biológica con apertura por pedal mecánico para enfermería, quirófano o laboratorios de investigación. Construido en chapa esmaltada de alta visibilidad con reborde de bolsa de bioseguridad, pedal estriado de acero inoxidable, varillaje dorsal de elevación, asas laterales y placa frontal de advertencia de riesgo patógeno.",
+  "author": {
+    "name": "ModelCoder Core Team",
+    "github": "FrancisCuarto"
+  },
+  "license": "CC-BY-4.0",
+  "category": "medical",
+  "tags": [
+    "psx",
+    "low-poly",
+    "biohazard",
+    "bin",
+    "waste",
+    "trash",
+    "medical",
+    "hazard",
+    "below-nominal"
+  ],
+  "parameters": [
+    {
+      "key": "bin_diameter",
+      "label": "Diámetro de Contenedor (m)",
+      "type": "float",
+      "default": 0.45,
+      "min": 0.35,
+      "max": 0.65,
+      "step": 0.05,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "bin_height",
+      "label": "Altura del Contenedor (m)",
+      "type": "float",
+      "default": 0.72,
+      "min": 0.5,
+      "max": 0.95,
+      "step": 0.05,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "lid_open_angle",
+      "label": "Apertura de Tapa (grados)",
+      "type": "float",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 75.0,
+      "step": 5.0,
+      "group": "Estado"
+    },
+    {
+      "key": "has_foot_pedal",
+      "label": "Pedal Mecánico de Pie",
+      "type": "bool",
+      "default": true,
+      "group": "Mecanismo"
+    },
+    {
+      "key": "has_inner_bag_lip",
+      "label": "Reborde de Bolsa Visible",
+      "type": "bool",
+      "default": true,
+      "group": "Detalles"
+    },
+    {
+      "key": "has_side_handles",
+      "label": "Asas Laterales de Transporte",
+      "type": "bool",
+      "default": true,
+      "group": "Detalles"
+    }
+  ],
+  "presets": [
+    {
+      "id": "sealed_idle",
+      "label": "Cerrado y Sellado",
+      "values": {
+        "lid_open_angle": 0.0,
+        "has_foot_pedal": true,
+        "has_inner_bag_lip": true,
+        "has_side_handles": true
+      }
+    },
+    {
+      "id": "pedal_depressed",
+      "label": "Pedal Accionado (Abierto)",
+      "values": {
+        "lid_open_angle": 60.0,
+        "has_foot_pedal": true,
+        "has_inner_bag_lip": true,
+        "has_side_handles": true
+      }
+    },
+    {
+      "id": "derelict_damaged",
+      "label": "Contenedor Deteriorado",
+      "values": {
+        "lid_open_angle": 25.0,
+        "has_foot_pedal": true,
+        "has_inner_bag_lip": false,
+        "has_side_handles": false
+      }
+    }
+  ],
+  "export_capabilities": {
+    "supports_collision": true,
+    "default_collision_suffix": "-convcolonly"
+  }
+}

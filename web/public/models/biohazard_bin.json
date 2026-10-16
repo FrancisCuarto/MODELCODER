@@ -1,0 +1,95 @@
+{
+  "generator": "BiohazardBinGenerator",
+  "model_name": "biohazard_bin",
+  "seed": 42,
+  "timestamp": "2026-10-16T04:59:10.866324Z",
+  "mesh_metrics": {
+    "triangle_count": 208,
+    "vertex_count": 128,
+    "target_tri_budget": 450,
+    "budget_compliance_ratio": 0.46,
+    "dimensions_meters": {
+      "width": 0.515,
+      "height": 0.625,
+      "depth": 0.7636
+    },
+    "has_vertex_colors": true,
+    "materials_assigned": [
+      "mat_psx_industrial_hazard_casing_w40"
+    ]
+  },
+  "config_parameters": {
+    "seed": 42,
+    "target_tri_budget": 450,
+    "name": "biohazard_bin",
+    "wear_level": 0.4,
+    "add_collision_mesh": false,
+    "collision_type": "box",
+    "collision_suffix": "-convcolonly",
+    "pivot_rule": "floor_center",
+    "export_subcomponents": false,
+    "palette_name": "industrial_hazard",
+    "emission_scale": 1.0,
+    "extra_params": {},
+    "bin_diameter": 0.45,
+    "bin_height": 0.72,
+    "lid_open_angle": 0.0,
+    "has_foot_pedal": true,
+    "has_inner_bag_lip": true,
+    "has_side_handles": true,
+    "hazard_symbol": "biohazard"
+  },
+  "sockets": [
+    {
+      "name": "socket_player_interact",
+      "position": [
+        0.0,
+        -0.863,
+        0.0
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "Standard player character interaction stand point"
+    },
+    {
+      "name": "socket_item_spawn",
+      "position": [
+        0.0,
+        0.0,
+        0.784
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "Prop or pickup spawn snap position (keycards, ammo, medical items)"
+    },
+    {
+      "name": "socket_light",
+      "position": [
+        0.0,
+        0.0,
+        0.649
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "OmniLight3D / SpotLight3D mount anchor point"
+    }
+  ],
+  "godot_4_compatibility": {
+    "format": "glTF 2.0 Binary (.glb)",
+    "unit": "meters (1.0 Blender unit = 1.0 Godot unit)",
+    "forward_axis": "-Z",
+    "up_axis": "+Y",
+    "collision_mesh_convention": "Child node with -col or -colonly creates Godot StaticBody3D collision shape",
+    "vertex_colors": "Exported in COLOR_0 accessor (usable with StandardMaterial3D or PSX shader)",
+    "pbr_materials": "Exported as glTF PBR metallic/roughness + emissive"
+  }
+}

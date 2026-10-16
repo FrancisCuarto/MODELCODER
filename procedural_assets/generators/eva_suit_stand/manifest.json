@@ -1,0 +1,112 @@
+{
+  "id": "below_nominal.fixtures.eva_suit_stand",
+  "name": "Soporte de Traje EVA",
+  "version": "1.0.0",
+  "description": "Soporte técnico independiente para revisión, mantenimiento y colocación de trajes espaciales exteriores, con pylon telescópico, mochila PLSS, collar de bloqueo y tableta de telemetría. Podés configurar si tiene traje montado, postura de brazos y accesorios en GLB.",
+  "author": {
+    "name": "ModelCoder Core Team",
+    "github": "FrancisCuarto"
+  },
+  "license": "CC-BY-4.0",
+  "category": "fixtures",
+  "tags": [
+    "psx",
+    "low-poly",
+    "suit",
+    "eva",
+    "stand",
+    "mannequin",
+    "below-nominal"
+  ],
+  "parameters": [
+    {
+      "key": "height",
+      "label": "Altura del Soporte (m)",
+      "type": "float",
+      "default": 1.95,
+      "min": 1.7,
+      "max": 2.2,
+      "step": 0.05,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "base_width",
+      "label": "Ancho Base Cruz (m)",
+      "type": "float",
+      "default": 0.8,
+      "min": 0.6,
+      "max": 1.1,
+      "step": 0.05,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "has_suit_mounted",
+      "label": "Traje EVA Montado",
+      "type": "bool",
+      "default": true,
+      "group": "Estado"
+    },
+    {
+      "key": "arm_pose",
+      "label": "Postura de Brazos",
+      "type": "enum",
+      "default": "relaxed",
+      "options": [
+        { "value": "relaxed", "label": "Brazos Relajados (Vertical)" },
+        { "value": "extended", "label": "Brazos Adelantados (Inspección)" },
+        { "value": "t_pose", "label": "Postura en T (Calibración)" }
+      ],
+      "group": "Mecanismo"
+    },
+    {
+      "key": "has_diagnostic_tablet",
+      "label": "Pantalla de Diagnóstico Articulada",
+      "type": "bool",
+      "default": true,
+      "group": "Detalles"
+    },
+    {
+      "key": "has_service_umbilical",
+      "label": "Cordón Umbilical de Servicio",
+      "type": "bool",
+      "default": true,
+      "group": "Detalles"
+    }
+  ],
+  "presets": [
+    {
+      "id": "inspection_ready",
+      "label": "Inspección EVA Completa",
+      "values": {
+        "has_suit_mounted": true,
+        "arm_pose": "relaxed",
+        "has_diagnostic_tablet": true,
+        "has_service_umbilical": true
+      }
+    },
+    {
+      "id": "calibration_pose",
+      "label": "Calibración de Sensores",
+      "values": {
+        "has_suit_mounted": true,
+        "arm_pose": "extended",
+        "has_diagnostic_tablet": true,
+        "has_service_umbilical": true
+      }
+    },
+    {
+      "id": "bare_rig",
+      "label": "Soporte Vacío en Espera",
+      "values": {
+        "has_suit_mounted": false,
+        "arm_pose": "relaxed",
+        "has_diagnostic_tablet": false,
+        "has_service_umbilical": true
+      }
+    }
+  ],
+  "export_capabilities": {
+    "supports_collision": true,
+    "default_collision_suffix": "-convcolonly"
+  }
+}

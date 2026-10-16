@@ -458,6 +458,125 @@
     "config_code": "from dataclasses import dataclass\nfrom ...core.base_config import BaseAssetConfig\n\n@dataclass\nclass AutopsyTableConfig(BaseAssetConfig):\n    \"\"\"Configuration for surgical autopsy, dissection slabs, and quarantine examination tables.\"\"\"\n    table_type: str = \"standard_autopsy\"    # \"standard_autopsy\", \"dissection_station\", \"quarantine_slab\"\n    width: float = 0.90                     # Table width in meters\n    length: float = 2.10                    # Table length in meters\n    height: float = 0.85                    # Table surface height in meters\n    drainage_channel: bool = True           # Perimeter fluid trough and central drain\n    overhead_lamp: bool = True              # Articulated surgical examination spotlight\n    restraint_straps: str = \"none\"          # \"none\", \"buckled\", \"torn\"\n    fluid_stain: bool = True                # Dried fluid staining and oxidation\n    has_instrument_tray: bool = False       # Swivel cantilever surgical tray with bone saw & tools\n    specimen_jar_count: int = 0             # Glass quarantine specimen jars with formaldehyde (0 to 3)\n    palette_name: str = \"industrial_hazard\"\n    target_tri_budget: int = 420\n"
   },
   {
+    "id": "below_nominal.medical.biohazard_bin",
+    "family": "biohazard_bin",
+    "name": "Contenedor de Residuos Biológicos",
+    "version": "1.0.0",
+    "description": "Cubo contenedor de seguridad biológica con apertura por pedal mecánico para enfermería, quirófano o laboratorios de investigación. Construido en chapa esmaltada de alta visibilidad con reborde de bolsa de bioseguridad, pedal estriado de acero inoxidable, varillaje dorsal de elevación, asas laterales y placa frontal de advertencia de riesgo patógeno.",
+    "category": "medical",
+    "tags": [
+      "psx",
+      "low-poly",
+      "biohazard",
+      "bin",
+      "waste",
+      "trash",
+      "medical",
+      "hazard",
+      "below-nominal"
+    ],
+    "author": {
+      "name": "ModelCoder Core Team",
+      "github": "FrancisCuarto"
+    },
+    "license": "CC-BY-4.0",
+    "compatibility": {},
+    "parameters": [
+      {
+        "key": "bin_diameter",
+        "label": "Diámetro de Contenedor (m)",
+        "type": "float",
+        "default": 0.45,
+        "group": "Dimensiones",
+        "min": 0.35,
+        "max": 0.65,
+        "step": 0.05
+      },
+      {
+        "key": "bin_height",
+        "label": "Altura del Contenedor (m)",
+        "type": "float",
+        "default": 0.72,
+        "group": "Dimensiones",
+        "min": 0.5,
+        "max": 0.95,
+        "step": 0.05
+      },
+      {
+        "key": "lid_open_angle",
+        "label": "Apertura de Tapa (grados)",
+        "type": "float",
+        "default": 0.0,
+        "group": "Estado",
+        "min": 0.0,
+        "max": 75.0,
+        "step": 5.0
+      },
+      {
+        "key": "has_foot_pedal",
+        "label": "Pedal Mecánico de Pie",
+        "type": "bool",
+        "default": true,
+        "group": "Mecanismo"
+      },
+      {
+        "key": "has_inner_bag_lip",
+        "label": "Reborde de Bolsa Visible",
+        "type": "bool",
+        "default": true,
+        "group": "Detalles"
+      },
+      {
+        "key": "has_side_handles",
+        "label": "Asas Laterales de Transporte",
+        "type": "bool",
+        "default": true,
+        "group": "Detalles"
+      }
+    ],
+    "presets": [
+      {
+        "id": "sealed_idle",
+        "name": "sealed_idle",
+        "values": {
+          "lid_open_angle": 0.0,
+          "has_foot_pedal": true,
+          "has_inner_bag_lip": true,
+          "has_side_handles": true
+        }
+      },
+      {
+        "id": "pedal_depressed",
+        "name": "pedal_depressed",
+        "values": {
+          "lid_open_angle": 60.0,
+          "has_foot_pedal": true,
+          "has_inner_bag_lip": true,
+          "has_side_handles": true
+        }
+      },
+      {
+        "id": "derelict_damaged",
+        "name": "derelict_damaged",
+        "values": {
+          "lid_open_angle": 25.0,
+          "has_foot_pedal": true,
+          "has_inner_bag_lip": false,
+          "has_side_handles": false
+        }
+      }
+    ],
+    "export_capabilities": {
+      "supports_collision": true,
+      "default_collision_suffix": "-convcolonly"
+    },
+    "has_model": true,
+    "model_url": "/models/biohazard_bin.glb",
+    "file_size_bytes": 100360,
+    "source_code": "import bpy\nimport bmesh\nimport math\nfrom mathutils import Vector\nfrom typing import Dict, Any\n\nfrom ...core.base_generator import BaseAssetGenerator\nfrom ...core.mesh_builder import MeshBuilder\nfrom ...core.texture_atlas import PS1TextureAtlas\nfrom .config import BiohazardBinConfig\n\nclass BiohazardBinGenerator(BaseAssetGenerator):\n    \"\"\"\n    Procedural PSX generator for clinical biohazard waste bins with foot-pedal lid.\n    Features octagonal stamped canister, mechanical pedal linkage, biohazard liner bag,\n    hinged lid with grip handle, side carrying handles, and warning placards.\n    \"\"\"\n\n    def generate(self, config: BiohazardBinConfig = None) -> bpy.types.Object:\n        if config is not None:\n            self.config = config\n        elif not hasattr(self, \"config\") or self.config is None:\n            self.config = BiohazardBinConfig()\n\n        self.clean_context()\n        self.material_manager = self.get_material_manager(self.config)\n        MeshBuilder.set_active_material_manager(self.material_manager)\n\n        obj, bm = self.create_mesh_object(self.config.name)\n        self.material_manager.assign_to_mesh(obj)\n        m_idx = self.material_manager.material_indices\n\n        radius = self.config.bin_diameter * 0.5\n        h = self.config.bin_height\n        body_h = h * 0.88\n        segments = 8\n\n        casing_mat = m_idx.get(\"casing\", 0)\n        metal_mat = m_idx.get(\"dark_metal\", m_idx.get(\"casing\", 0))\n        accent_mat = m_idx.get(\"accent\", m_idx.get(\"casing\", 0))\n\n        casing_rgba = self.material_manager.get_rgba(\"casing\")\n        metal_rgba = self.material_manager.get_rgba(\"dark_metal\")\n        accent_rgba = self.material_manager.get_rgba(\"accent\")\n        rubber_rgba = (0.15, 0.15, 0.16, 1.0)\n\n        # -------------------------------------------------------------\n        # 1. Base Ring & Non-slip Rubber Collar\n        # -------------------------------------------------------------\n        base_h = 0.05\n        MeshBuilder.add_cylinder(\n            bm,\n            radius=radius * 1.05,\n            depth=base_h,\n            segments=segments,\n            offset=(0.0, 0.0, base_h * 0.5),\n            axis='Z',\n            mat_idx=metal_mat,\n            rgba=rubber_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"rubber_black\")\n        )\n\n        # -------------------------------------------------------------\n        # 2. Main Octagonal Bin Body\n        # -------------------------------------------------------------\n        body_center_z = base_h + body_h * 0.5\n        MeshBuilder.add_cylinder(\n            bm,\n            radius=radius,\n            depth=body_h,\n            segments=segments,\n            offset=(0.0, 0.0, body_center_z),\n            axis='Z',\n            mat_idx=casing_mat,\n            rgba=casing_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"red_paint_worn\")\n        )\n\n        # -------------------------------------------------------------\n        # 3. Foot Pedal Mechanism & Rear Linkage\n        # -------------------------------------------------------------\n        if self.config.has_foot_pedal:\n            pedal_y = -radius - 0.08\n            pedal_z = 0.035\n            # Foot lever\n            MeshBuilder.add_box(\n                bm,\n                size=(0.14, 0.12, 0.02),\n                offset=(0.0, pedal_y, pedal_z),\n                mat_idx=metal_mat,\n                rgba=metal_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"metal_light_brushed\")\n            )\n            # Rubber pad on pedal\n            MeshBuilder.add_box(\n                bm,\n                size=(0.10, 0.06, 0.01),\n                offset=(0.0, pedal_y, pedal_z + 0.012),\n                mat_idx=metal_mat,\n                rgba=rubber_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"rubber_black\")\n            )\n\n            # Rear vertical rod\n            rod_h = body_h + 0.04\n            MeshBuilder.add_box(\n                bm,\n                size=(0.02, 0.02, rod_h),\n                offset=(0.0, radius + 0.015, base_h + rod_h * 0.5),\n                mat_idx=metal_mat,\n                rgba=metal_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n            )\n            # Hinge bracket\n            MeshBuilder.add_box(\n                bm,\n                size=(0.08, 0.04, 0.05),\n                offset=(0.0, radius + 0.015, base_h + body_h),\n                mat_idx=metal_mat,\n                rgba=metal_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n            )\n\n        # -------------------------------------------------------------\n        # 4. Inner Bag Lip / Liner\n        # -------------------------------------------------------------\n        rim_top_z = base_h + body_h\n        if self.config.has_inner_bag_lip:\n            bag_lip_h = 0.04\n            MeshBuilder.add_cylinder(\n                bm,\n                radius=radius * 1.03,\n                depth=bag_lip_h,\n                segments=segments,\n                offset=(0.0, 0.0, rim_top_z - bag_lip_h * 0.5),\n                axis='Z',\n                mat_idx=accent_mat,\n                rgba=accent_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"hazard_stripes\")\n            )\n\n        # -------------------------------------------------------------\n        # 5. Hinged Lid & Handle\n        # -------------------------------------------------------------\n        lid_th = 0.04\n        lid_radius = radius * 1.06\n        hinge_pivot_y = radius\n        hinge_pivot_z = rim_top_z + 0.01\n\n        lid_angle_rad = math.radians(max(0.0, min(self.config.lid_open_angle, 75.0)))\n        cos_l = math.cos(lid_angle_rad)\n        sin_l = math.sin(lid_angle_rad)\n\n        # Lid center position rotated around rear hinge\n        # In unrotated space, lid center is at (0.0, 0.0, rim_top_z + 0.01 + lid_th*0.5)\n        # Offset from hinge: dy = -hinge_pivot_y, dz = lid_th*0.5\n        dy_rot = -hinge_pivot_y * cos_l - (lid_th * 0.5) * sin_l\n        dz_rot = -hinge_pivot_y * (-sin_l) + (lid_th * 0.5) * cos_l\n        lid_cx = 0.0\n        lid_cy = hinge_pivot_y + dy_rot\n        lid_cz = hinge_pivot_z + dz_rot\n\n        MeshBuilder.add_cylinder(\n            bm,\n            radius=lid_radius,\n            depth=lid_th,\n            segments=segments,\n            offset=(lid_cx, lid_cy, lid_cz),\n            axis='Z',\n            mat_idx=casing_mat,\n            rgba=casing_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"red_paint_worn\")\n        )\n\n        # Grip handle on lid\n        h_dy_rot = -hinge_pivot_y * cos_l - (lid_th + 0.015) * sin_l\n        h_dz_rot = -hinge_pivot_y * (-sin_l) + (lid_th + 0.015) * cos_l\n        MeshBuilder.add_box(\n            bm,\n            size=(0.14, 0.035, 0.03),\n            offset=(0.0, hinge_pivot_y + h_dy_rot, hinge_pivot_z + h_dz_rot),\n            mat_idx=metal_mat,\n            rgba=rubber_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"rubber_black\")\n        )\n\n        # -------------------------------------------------------------\n        # 6. Side Carrying Handles\n        # -------------------------------------------------------------\n        if self.config.has_side_handles:\n            handle_z = body_center_z + 0.08\n            for side in (-1.0, 1.0):\n                MeshBuilder.add_box(\n                    bm,\n                    size=(0.025, 0.12, 0.035),\n                    offset=(side * (radius + 0.02), 0.0, handle_z),\n                    mat_idx=metal_mat,\n                    rgba=metal_rgba,\n                    uv_rect=PS1TextureAtlas.get_rect(\"metal_light_brushed\")\n                )\n\n        # -------------------------------------------------------------\n        # 7. Front Hazard Placard\n        # -------------------------------------------------------------\n        MeshBuilder.add_box(\n            bm,\n            size=(0.18, 0.015, 0.18),\n            offset=(0.0, -radius - 0.005, body_center_z),\n            mat_idx=accent_mat,\n            rgba=(0.95, 0.85, 0.1, 1.0),\n            uv_rect=PS1TextureAtlas.get_rect(\"caution_label\")\n        )\n\n        self.finalize_mesh(obj, bm)\n        self.compact_materials(obj)\n        return obj\n",
+    "config_code": "from dataclasses import dataclass\nfrom ...core.base_config import BaseAssetConfig\n\n@dataclass\nclass BiohazardBinConfig(BaseAssetConfig):\n    \"\"\"Configuration for Clinical Biohazard Waste Step-Can with Foot Pedal.\"\"\"\n    bin_diameter: float = 0.45\n    bin_height: float = 0.72\n    lid_open_angle: float = 0.0          # 0.0 = closed/sealed, 65.0 = fully open via pedal\n    has_foot_pedal: bool = True          # Stamped steel foot lever at front base\n    has_inner_bag_lip: bool = True       # Visible yellow/orange biohazard bag draped over rim\n    has_side_handles: bool = True        # Folding carrying handles on left and right\n    hazard_symbol: str = \"biohazard\"     # \"biohazard\", \"radiation\", \"chemical\"\n\n    name: str = \"biohazard_bin\"\n    palette_name: str = \"industrial_hazard\"\n    wear_level: float = 0.40\n    target_tri_budget: int = 450\n"
+  },
+  {
     "id": "below_nominal.furniture.bridge_console_desk",
     "family": "bridge_console_desk",
     "name": "Consola de Mando y Navegación",
@@ -2753,6 +2872,161 @@
     "config_code": "from dataclasses import dataclass\nfrom ...core.base_config import BaseAssetConfig\n\n@dataclass\nclass CryoStasisPodConfig(BaseAssetConfig):\n    \"\"\"Configuration for Cryo Stasis Pod vertical cryo-preservation chamber.\"\"\"\n    height: float = 2.1\n    width: float = 0.85\n    depth: float = 0.85\n    door_open_angle: float = 0.0  # Degrees open (0.0 = sealed, 90.0 = fully open)\n    frost_level: float = 0.45     # 0.0 = clear, 1.0 = heavy cryo frost\n    pod_state: str = \"occupied\"   # \"empty\", \"occupied\", \"offline\"\n    has_cryo_pipes: bool = True\n    has_status_monitor: bool = True\n\n    name: str = \"cryo_stasis_pod\"\n    palette_name: str = \"medbay_clean\"\n    wear_level: float = 0.35\n    target_tri_budget: int = 950\n"
   },
   {
+    "id": "below_nominal.medical.decon_chamber",
+    "family": "decon_chamber",
+    "name": "Cabina de Descontaminación",
+    "version": "1.0.0",
+    "description": "Cabina vertical estanca para descontaminación biológica y química de personal de superficie o tripulación expuesta a patógenos. Cuenta con rociadores perimetrales en varios niveles, alcachofa de techo, rejilla de drenaje inferior, puerta con ventana de inspección y panel exterior con indicadores de estado de ciclo.",
+    "category": "medical",
+    "tags": [
+      "psx",
+      "low-poly",
+      "decon",
+      "chamber",
+      "medical",
+      "biosecurity",
+      "shower",
+      "below-nominal"
+    ],
+    "author": {
+      "name": "ModelCoder Core Team",
+      "github": "FrancisCuarto"
+    },
+    "license": "CC-BY-4.0",
+    "compatibility": {},
+    "parameters": [
+      {
+        "key": "chamber_width",
+        "label": "Ancho de Cabina (m)",
+        "type": "float",
+        "default": 1.2,
+        "group": "Dimensiones",
+        "min": 1.0,
+        "max": 1.6,
+        "step": 0.05
+      },
+      {
+        "key": "chamber_depth",
+        "label": "Profundidad de Cabina (m)",
+        "type": "float",
+        "default": 1.2,
+        "group": "Dimensiones",
+        "min": 1.0,
+        "max": 1.6,
+        "step": 0.05
+      },
+      {
+        "key": "chamber_height",
+        "label": "Altura de Cabina (m)",
+        "type": "float",
+        "default": 2.2,
+        "group": "Dimensiones",
+        "min": 2.0,
+        "max": 2.6,
+        "step": 0.05
+      },
+      {
+        "key": "door_open_angle",
+        "label": "Apertura de Puerta (grados)",
+        "type": "float",
+        "default": 0.0,
+        "group": "Estado",
+        "min": 0.0,
+        "max": 90.0,
+        "step": 5.0
+      },
+      {
+        "key": "nozzle_tiers",
+        "label": "Niveles de Rociadores",
+        "type": "int",
+        "default": 3,
+        "group": "Detalles",
+        "min": 2.0,
+        "max": 4.0,
+        "step": 1.0
+      },
+      {
+        "key": "has_ceiling_shower_head",
+        "label": "Ducha de Techo",
+        "type": "bool",
+        "default": true,
+        "group": "Detalles"
+      },
+      {
+        "key": "has_external_cycle_panel",
+        "label": "Panel de Control de Ciclo",
+        "type": "bool",
+        "default": true,
+        "group": "Detalles"
+      },
+      {
+        "key": "cycle_state",
+        "label": "Estado de Ciclo",
+        "type": "enum",
+        "default": "idle",
+        "group": "Estado",
+        "options": [
+          {
+            "value": "idle",
+            "label": "Reposo (Luz Verde / Neutra)"
+          },
+          {
+            "value": "active",
+            "label": "Descontaminando (Luz Ámbar)"
+          },
+          {
+            "value": "alarm",
+            "label": "Alarma / Infección (Luz Roja)"
+          }
+        ]
+      }
+    ],
+    "presets": [
+      {
+        "id": "sealed_idle",
+        "name": "sealed_idle",
+        "values": {
+          "door_open_angle": 0.0,
+          "cycle_state": "idle",
+          "nozzle_tiers": 3,
+          "has_ceiling_shower_head": true,
+          "has_external_cycle_panel": true
+        }
+      },
+      {
+        "id": "active_purge",
+        "name": "active_purge",
+        "values": {
+          "door_open_angle": 0.0,
+          "cycle_state": "active",
+          "nozzle_tiers": 4,
+          "has_ceiling_shower_head": true,
+          "has_external_cycle_panel": true
+        }
+      },
+      {
+        "id": "breached_alarm",
+        "name": "breached_alarm",
+        "values": {
+          "door_open_angle": 75.0,
+          "cycle_state": "alarm",
+          "nozzle_tiers": 3,
+          "has_ceiling_shower_head": true,
+          "has_external_cycle_panel": true
+        }
+      }
+    ],
+    "export_capabilities": {
+      "supports_collision": true,
+      "default_collision_suffix": "-convcolonly"
+    },
+    "has_model": true,
+    "model_url": "/models/decon_chamber.glb",
+    "file_size_bytes": 105992,
+    "source_code": "import math\nimport mathutils\nimport bpy\nimport bmesh\nfrom ...core.base_generator import BaseAssetGenerator\nfrom ...core.mesh_builder import MeshBuilder\nfrom ...core.texture_atlas import PS1TextureAtlas\nfrom .config import DeconChamberConfig\n\nclass DeconChamberGenerator(BaseAssetGenerator[DeconChamberConfig]):\n    \"\"\"\n    Procedural generator for Decon Chamber:\n    Chemical decontamination shower booth with multiple spray nozzle tiers,\n    deluge ceiling head, floor sump grate, and external cycle status console.\n    \"\"\"\n\n    def generate(self, config: DeconChamberConfig = None) -> bpy.types.Object:\n        if config is not None:\n            self.config = config\n        self.clean_context()\n        self.material_manager = self.get_material_manager(self.config)\n        MeshBuilder.set_active_material_manager(self.material_manager)\n\n        obj, bm = self.create_mesh_object(self.config.name)\n        self.material_manager.assign_to_mesh(obj)\n        m_idx = self.material_manager.material_indices\n\n        uv_layer = MeshBuilder.get_or_create_uv_layer(bm)\n        col_layer = MeshBuilder.get_or_create_color_layer(bm)\n\n        w = self.config.chamber_width\n        d = self.config.chamber_depth\n        h = self.config.chamber_height\n\n        casing_mat = m_idx.get(\"casing\", 0)\n        metal_mat = m_idx.get(\"dark_metal\", m_idx.get(\"casing\", 0))\n        glass_mat = m_idx.get(\"glass\", m_idx.get(\"casing\", 0))\n        pipe_mat = m_idx.get(\"pipe\", m_idx.get(\"casing\", 0))\n        brass_mat = m_idx.get(\"brass\", m_idx.get(\"casing\", 0))\n        screen_mat = m_idx.get(\"screen\", m_idx.get(\"casing\", 0))\n\n        casing_rgba = self.material_manager.get_rgba(\"casing\")\n        metal_rgba = self.material_manager.get_rgba(\"dark_metal\")\n        glass_rgba = (0.35, 0.65, 0.75, 0.75)\n\n        wall_t = 0.08\n        base_h = 0.14\n\n        # 1. Base drainage sump & walking grating\n        MeshBuilder.add_box(\n            bm,\n            size=(w, d, base_h),\n            offset=(0.0, 0.0, base_h / 2.0),\n            mat_idx=metal_mat,\n            rgba=metal_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n        )\n        MeshBuilder.add_box(\n            bm,\n            size=(w * 0.75, d * 0.75, 0.02),\n            offset=(0.0, 0.0, base_h + 0.01),\n            mat_idx=metal_mat,\n            rgba=(0.25, 0.25, 0.28, 1.0),\n            uv_rect=PS1TextureAtlas.get_rect(\"vent_grill\")\n        )\n\n        cabin_h = h - base_h - 0.16\n        cabin_z = base_h + cabin_h / 2.0\n\n        # 2. Back and side walls\n        # Back wall\n        MeshBuilder.add_box(\n            bm,\n            size=(w, wall_t, cabin_h),\n            offset=(0.0, -d / 2.0 + wall_t / 2.0, cabin_z),\n            mat_idx=casing_mat,\n            rgba=casing_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"ceramic_tile_white\")\n        )\n\n        # Left and Right walls\n        for sx in (-1, 1):\n            MeshBuilder.add_box(\n                bm,\n                size=(wall_t, d - wall_t, cabin_h),\n                offset=(sx * (w / 2.0 - wall_t / 2.0), wall_t / 2.0, cabin_z),\n                mat_idx=casing_mat,\n                rgba=casing_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"ceramic_tile_white\")\n            )\n\n        # 3. Top roof ceiling slab & deluge shower head\n        roof_h = 0.16\n        roof_z = base_h + cabin_h + roof_h / 2.0\n        MeshBuilder.add_box(\n            bm,\n            size=(w * 1.04, d * 1.04, roof_h),\n            offset=(0.0, 0.0, roof_z),\n            mat_idx=metal_mat,\n            rgba=metal_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n        )\n\n        if self.config.has_ceiling_shower_head:\n            # Ceiling shower rose head\n            MeshBuilder.add_cylinder(\n                bm,\n                radius=0.14,\n                depth=0.06,\n                segments=8,\n                offset=(0.0, 0.0, base_h + cabin_h - 0.03),\n                axis='Z',\n                mat_idx=metal_mat,\n                rgba=(0.8, 0.82, 0.85, 1.0),\n                uv_rect=PS1TextureAtlas.get_rect(\"metal_light_brushed\")\n            )\n\n        # 4. Vertical corner chemical pipes & spray nozzles\n        tiers = max(2, min(4, int(self.config.nozzle_tiers)))\n        for sx in (-1, 1):\n            pipe_x = sx * (w / 2.0 - wall_t - 0.06)\n            pipe_y = -d / 2.0 + wall_t + 0.06\n            # Vertical manifold pipe\n            MeshBuilder.add_cylinder(\n                bm,\n                radius=0.02,\n                depth=cabin_h * 0.9,\n                segments=6,\n                offset=(pipe_x, pipe_y, cabin_z),\n                axis='Z',\n                mat_idx=pipe_mat,\n                rgba=(0.4, 0.45, 0.5, 1.0),\n                uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n            )\n\n            # Spray nozzles at each height tier\n            for t in range(tiers):\n                nz_z = base_h + 0.35 + t * (cabin_h * 0.75 / float(tiers))\n                MeshBuilder.add_cylinder(\n                    bm,\n                    radius=0.015,\n                    depth=0.06,\n                    segments=4,\n                    offset=(pipe_x - sx * 0.03, pipe_y + 0.03, nz_z),\n                    axis='X',\n                    mat_idx=brass_mat,\n                    rgba=(0.85, 0.68, 0.22, 1.0),\n                    uv_rect=PS1TextureAtlas.get_rect(\"cartridge_amber\")\n                )\n\n        # 5. Front door hatch with hinge rotation\n        angle_rad = math.radians(self.config.door_open_angle)\n        door_w = w * 0.88\n        door_h = cabin_h * 0.96\n        door_t = 0.06\n        hinge_x = -w / 2.0 + wall_t\n        hinge_y = d / 2.0 - door_t / 2.0\n\n        door_rot = mathutils.Euler((0.0, 0.0, -angle_rad), 'XYZ')\n        local_door_offset = mathutils.Vector((door_w / 2.0, 0.0, 0.0))\n        rotated_door_offset = door_rot.to_matrix() @ local_door_offset\n        door_center = mathutils.Vector((hinge_x, hinge_y, cabin_z)) + rotated_door_offset\n\n        # Door frame\n        door_geom = bmesh.ops.create_cube(bm, size=1.0)\n        d_verts = [v for v in door_geom[\"verts\"] if isinstance(v, bmesh.types.BMVert)]\n        for v in d_verts:\n            v.co.x *= door_w\n            v.co.y *= door_t\n            v.co.z *= door_h\n            v.co = door_rot.to_matrix() @ v.co\n            v.co += door_center\n\n        for f in bm.faces:\n            if all(v in d_verts for v in f.verts):\n                MeshBuilder.apply_face_attributes(f, casing_mat, casing_rgba, col_layer)\n                MeshBuilder.apply_box_face_uv(f, uv_layer, PS1TextureAtlas.get_rect(\"painted_metal_white\"))\n\n        # Door observation window\n        win_w = door_w * 0.45\n        win_h = door_h * 0.50\n        win_geom = bmesh.ops.create_cube(bm, size=1.0)\n        w_verts = [v for v in win_geom[\"verts\"] if isinstance(v, bmesh.types.BMVert)]\n        for v in w_verts:\n            v.co.x *= win_w\n            v.co.y *= door_t * 1.2\n            v.co.z *= win_h\n            v.co = door_rot.to_matrix() @ v.co\n            v.co += door_center + door_rot.to_matrix() @ mathutils.Vector((0.0, 0.0, cabin_h * 0.08))\n\n        for f in bm.faces:\n            if all(v in w_verts for v in f.verts):\n                MeshBuilder.apply_face_attributes(f, glass_mat, glass_rgba, col_layer)\n                MeshBuilder.apply_face_uv_rect(f, uv_layer, PS1TextureAtlas.get_rect(\"glass_reinforced\"))\n\n        # 6. External cycle control panel on side wall\n        if self.config.has_external_cycle_panel:\n            panel_x = w / 2.0 + 0.03\n            panel_z = cabin_z + 0.10\n            MeshBuilder.add_box(\n                bm,\n                size=(0.06, 0.22, 0.32),\n                offset=(panel_x, 0.15, panel_z),\n                mat_idx=metal_mat,\n                rgba=metal_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n            )\n            # Cycle status screen\n            if self.config.cycle_state == \"active\":\n                scr_rect = PS1TextureAtlas.get_rect(\"oxygen_cyan_glow\")\n                scr_rgba = (0.2, 0.8, 0.9, 1.0)\n            elif self.config.cycle_state == \"alarm\":\n                scr_rect = PS1TextureAtlas.get_rect(\"led_red\")\n                scr_rgba = (0.9, 0.15, 0.15, 1.0)\n            else:\n                scr_rect = PS1TextureAtlas.get_rect(\"crt_screen_green\")\n                scr_rgba = (0.1, 0.85, 0.25, 1.0)\n\n            MeshBuilder.add_box(\n                bm,\n                size=(0.01, 0.16, 0.12),\n                offset=(panel_x + 0.031, 0.15, panel_z + 0.06),\n                mat_idx=screen_mat,\n                rgba=scr_rgba,\n                uv_rect=scr_rect\n            )\n\n        self.finalize_mesh(obj, bm)\n        self.compact_materials(obj)\n        return obj\n",
+    "config_code": "from dataclasses import dataclass\nfrom ...core.base_config import BaseAssetConfig\n\n@dataclass\nclass DeconChamberConfig(BaseAssetConfig):\n    \"\"\"Configuration for Decon Chamber chemical decontamination shower booth.\"\"\"\n    chamber_width: float = 1.2\n    chamber_depth: float = 1.2\n    chamber_height: float = 2.2\n    door_open_angle: float = 0.0       # 0.0 = sealed door, 90.0 = fully open\n    nozzle_tiers: int = 3             # 2 to 4 vertical spray rings\n    has_ceiling_shower_head: bool = True\n    has_external_cycle_panel: bool = True\n    cycle_state: str = \"idle\"         # \"idle\", \"active\", \"alarm\"\n\n    name: str = \"decon_chamber\"\n    palette_name: str = \"medbay_clean\"\n    wear_level: float = 0.35\n    target_tri_budget: int = 950\n"
+  },
+  {
     "id": "below_nominal.architecture.door",
     "family": "door",
     "name": "Puerta Corrediza Industrial",
@@ -3379,6 +3653,134 @@
     "file_size_bytes": 139988,
     "source_code": "import math\nimport mathutils\nimport bmesh\nimport bpy\nimport random\nfrom typing import Optional\n\nfrom ...core.base_generator import BaseAssetGenerator\nfrom ...core.materials import MaterialManager\nfrom ...core.mesh_builder import MeshBuilder\nfrom ...core.texture_atlas import PS1TextureAtlas\nfrom .config import ElectricalPanelConfig\nfrom .components.casing import CasingComponent\nfrom .components.fasteners import FastenersComponent\nfrom .components.crt import CRTComponent\nfrom .components.controls import ControlsComponent\nfrom .components.indicators import IndicatorsComponent\nfrom .components.cables import CablesComponent\n\nclass ElectricalPanelGenerator(BaseAssetGenerator[ElectricalPanelConfig]):\n    \"\"\"Procedural generator for industrial electrical panels (PSX low-poly aesthetic).\"\"\"\n\n    def __init__(self, material_manager: Optional[MaterialManager] = None):\n        super().__init__(material_manager)\n\n    def generate(self, config: ElectricalPanelConfig) -> bpy.types.Object:\n        \"\"\"Procedurally generate complete electrical panel geometry.\"\"\"\n        self.clean_context()\n\n        # Seeded deterministic RNG\n        rng = random.Random(config.seed)\n\n        # 1. Prepare material manager and scene object\n        self.material_manager = self.get_material_manager(config)\n        mesh_name = f\"{config.name}_mesh\"\n        obj_name = config.name\n\n        # Clean existing meshes/objects with same name\n        if obj_name in bpy.data.objects:\n            old_obj = bpy.data.objects[obj_name]\n            bpy.data.objects.remove(old_obj, do_unlink=True)\n        if mesh_name in bpy.data.meshes:\n            old_mesh = bpy.data.meshes[mesh_name]\n            bpy.data.meshes.remove(old_mesh, do_unlink=True)\n\n        mesh = bpy.data.meshes.new(mesh_name)\n        obj = bpy.data.objects.new(obj_name, mesh)\n        bpy.context.collection.objects.link(obj)\n\n        # Assign material slots\n        self.material_manager.assign_to_mesh(obj)\n        mat_indices = self.material_manager.material_indices\n        rgba_map = {k: self.material_manager.get_rgba(k) for k in self.material_manager.palette.keys()}\n\n        # 2. Budget-adaptive resolution allocation\n        budget = config.target_tri_budget\n        if budget < 320:\n            bolt_sides = 4\n            add_side_bolts = False\n            control_sides = 4\n            indicator_sides = 3\n            cable_sides = 3\n            cable_segments = 3\n            vent_count = 0\n        elif budget < 440:\n            bolt_sides = 4\n            add_side_bolts = False\n            control_sides = 4\n            indicator_sides = 4\n            cable_sides = 3\n            cable_segments = 3\n            vent_count = 0\n        elif budget < 550:\n            bolt_sides = 4\n            add_side_bolts = False\n            control_sides = 4\n            indicator_sides = 4\n            cable_sides = 3\n            cable_segments = 4\n            vent_count = 1 if config.has_side_vents else 0\n        elif budget < 700:\n            bolt_sides = 5\n            add_side_bolts = False\n            control_sides = 5\n            indicator_sides = 5\n            cable_sides = 4\n            cable_segments = 4\n            vent_count = 2 if config.has_side_vents else 0\n        else:\n            bolt_sides = 6\n            add_side_bolts = True\n            control_sides = 6\n            indicator_sides = 6\n            cable_sides = 4\n            cable_segments = 5\n            vent_count = 3 if config.has_side_vents else 0\n\n        # 3. Create BMesh and attribute layers\n        bm = bmesh.new()\n        color_layer = bm.loops.layers.color.new(\"Color\")\n        uv_layer = bm.loops.layers.uv.new(\"UVMap\")\n\n        # 4. Enclosure Casing\n        CasingComponent.build(\n            bm=bm,\n            width=config.width,\n            height=config.height,\n            depth=config.depth,\n            wall_thickness=config.wall_thickness,\n            has_mounting_flanges=config.has_mounting_flanges,\n            has_side_vents=config.has_side_vents,\n            vent_count=vent_count,\n            mat_indices=mat_indices,\n            color_layer=color_layer,\n            rgba_map=rgba_map\n        )\n\n        # 5. Fasteners / Corner Screws\n        FastenersComponent.build(\n            bm=bm,\n            width=config.width,\n            height=config.height,\n            depth=config.depth,\n            margin=config.wall_thickness * 0.7,\n            sides=bolt_sides,\n            add_side_bolts=add_side_bolts,\n            mat_indices=mat_indices,\n            color_layer=color_layer,\n            rgba_map=rgba_map\n        )\n\n        # 6. Front panel layout partitioning\n        # Inner plate sits at Z = depth\n        front_z = config.depth + 0.002\n        usable_w = config.width - (2.0 * config.wall_thickness) - 0.04\n        usable_h = config.height - (2.0 * config.wall_thickness) - 0.04\n\n        upper_ratio = config.crt_size_ratio if config.has_crt else 0.32\n        upper_h = usable_h * upper_ratio\n        lower_h = usable_h * 0.18\n        middle_h = usable_h - upper_h - lower_h\n\n        # Y-centers of regions (relative to center 0,0)\n        upper_y = (usable_h / 2.0) - (upper_h / 2.0)\n        lower_y = -(usable_h / 2.0) + (lower_h / 2.0)\n        middle_y = lower_y + (lower_h / 2.0) + (middle_h / 2.0)\n\n        # --- UPPER SECTION: CRT Screen or Analog Gauges ---\n        if config.has_crt:\n            screen_w = min(usable_w * 0.85, upper_h * 1.35)\n            screen_h = min(upper_h * 0.75, usable_w * 0.65)\n            crt_center = mathutils.Vector((0.0, upper_y, front_z))\n            CRTComponent.build(\n                bm=bm,\n                screen_w=screen_w,\n                screen_h=screen_h,\n                bulge=config.crt_bulge,\n                center_pos=crt_center,\n                phosphor_color=config.crt_phosphor_color,\n                mat_indices=mat_indices,\n                color_layer=color_layer,\n                rgba_map=rgba_map\n            )\n        else:\n            # Dual analog gauges instead of CRT\n            gauge_rad = min(usable_w * 0.22, upper_h * 0.38)\n            gauge_spacing = usable_w * 0.45\n            for side in (-1, 1):\n                gauge_pos = mathutils.Vector((side * (gauge_spacing / 2.0), upper_y, front_z))\n                IndicatorsComponent.add_analog_gauge(\n                    bm=bm,\n                    pos=gauge_pos,\n                    radius=gauge_rad,\n                    sides=control_sides,\n                    mat_indices=mat_indices,\n                    color_layer=color_layer,\n                    rgba_map=rgba_map\n                )\n\n        # --- MIDDLE SECTION: Controls & Indicator LEDs ---\n        # Status LED strip at top of middle region\n        led_y = middle_y + (middle_h / 2.0) - 0.035\n        if config.indicator_count > 0:\n            led_spacing = min(usable_w / max(1, config.indicator_count), 0.055)\n            led_start_x = -((config.indicator_count - 1) * led_spacing) / 2.0\n            IndicatorsComponent.build_strip(\n                bm=bm,\n                start_pos=mathutils.Vector((led_start_x, led_y, front_z)),\n                count=config.indicator_count,\n                spacing=led_spacing,\n                sides=indicator_sides,\n                rng=rng,\n                mat_indices=mat_indices,\n                color_layer=color_layer,\n                rgba_map=rgba_map\n            )\n\n        # Digital LED Segment Readout (Right beside LED strip)\n        if config.has_digital_readout:\n            readout_x = (usable_w / 2.0) - 0.06\n            MeshBuilder.add_box(\n                bm=bm,\n                size=mathutils.Vector((0.08, 0.03, 0.015)),\n                offset=mathutils.Vector((readout_x, led_y, front_z + 0.01)),\n                mat_idx=mat_indices.get(\"led_green\", 0),\n                rgba=rgba_map.get(\"led_green\", (0.1, 0.9, 0.2, 1.0)),\n                color_layer=color_layer\n            )\n\n        # Heavy Industrial Knife Breaker Switch\n        if config.has_knife_switch:\n            knife_x = -(usable_w / 2.0) + 0.06\n            knife_y = middle_y - 0.03\n            # Knife switch base block\n            MeshBuilder.add_box(\n                bm=bm,\n                size=mathutils.Vector((0.05, 0.12, 0.02)),\n                offset=mathutils.Vector((knife_x, knife_y, front_z + 0.01)),\n                mat_idx=mat_indices.get(\"switch_base\", 0),\n                rgba=rgba_map.get(\"switch_base\", (0.1, 0.1, 0.1, 1.0)),\n                color_layer=color_layer\n            )\n            # Tilted copper knife lever\n            MeshBuilder.add_box(\n                bm=bm,\n                size=mathutils.Vector((0.015, 0.10, 0.05)),\n                offset=mathutils.Vector((knife_x, knife_y + 0.02, front_z + 0.035)),\n                mat_idx=mat_indices.get(\"switch_metal\", 0),\n                rgba=rgba_map.get(\"switch_metal\", (0.8, 0.5, 0.1, 1.0)),\n                color_layer=color_layer\n            )\n\n        # Hinged Maintenance Door (Swung open if door_ajar is True)\n        if config.door_ajar:\n            door_angle = math.radians(config.door_open_angle)\n            door_w = config.width * 0.95\n            door_h = config.height * 0.95\n            hinge_x = -(config.width / 2.0)\n            door_center_x = hinge_x - math.cos(door_angle) * (door_w / 2.0)\n            door_center_z = front_z + math.sin(door_angle) * (door_w / 2.0)\n            MeshBuilder.add_box(\n                bm=bm,\n                size=mathutils.Vector((door_w * 0.85, door_h, 0.02)),\n                offset=mathutils.Vector((door_center_x, 0.0, door_center_z)),\n                mat_idx=mat_indices.get(\"casing\", 0),\n                rgba=rgba_map.get(\"casing\", (0.2, 0.2, 0.2, 1.0)),\n                color_layer=color_layer,\n                uv_layer=uv_layer,\n                uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n            )\n\n        # Control grid (buttons, switches, knobs)\n        ctrl_h = middle_h - 0.08\n        ctrl_y = middle_y - 0.025\n        ControlsComponent.build_grid(\n            bm=bm,\n            center=mathutils.Vector((0.0, ctrl_y, front_z)),\n            width=usable_w * 0.88,\n            height=ctrl_h,\n            rows=config.button_rows,\n            cols=config.button_cols,\n            switch_count=config.switch_count,\n            sides=control_sides,\n            rng=rng,\n            mat_indices=mat_indices,\n            color_layer=color_layer,\n            rgba_map=rgba_map\n        )\n\n        # --- LOWER SECTION: Hanging Umbilical Cables ---\n        bottom_edge_pos = mathutils.Vector((0.0, -(config.height / 2.0), config.depth * 0.5))\n        CablesComponent.build(\n            bm=bm,\n            bottom_pos=bottom_edge_pos,\n            count=config.cable_count,\n            panel_w=config.width,\n            panel_h=config.height,\n            cable_sides=cable_sides,\n            curve_segments=cable_segments,\n            rng=rng,\n            mat_indices=mat_indices,\n            color_layer=color_layer,\n            rgba_map=rgba_map\n        )\n\n        # 7. Finalize BMesh and transfer to Blender Mesh\n        bm.to_mesh(mesh)\n        bm.free()\n\n        mesh.update()\n        return obj\n",
     "config_code": "from dataclasses import dataclass\nfrom typing import Optional\nfrom ...core.base_config import BaseAssetConfig\n\n@dataclass\nclass ElectricalPanelConfig(BaseAssetConfig):\n    \"\"\"Configuration specific to the Industrial Electrical Panel asset family.\"\"\"\n    # Physical dimensions in meters (calibrated for 1st person scale)\n    width: float = 0.70\n    height: float = 0.90\n    depth: float = 0.22\n    wall_thickness: float = 0.035\n\n    # Features & Components\n    has_crt: bool = True\n    crt_size_ratio: float = 0.38\n    crt_phosphor_color: str = \"green\"  # \"green\" or \"amber\"\n    crt_bulge: float = 0.025\n\n    button_rows: int = 2\n    button_cols: int = 3\n    switch_count: int = 2\n    indicator_count: int = 3\n    cable_count: int = 2\n\n    has_knife_switch: bool = False  # Heavy dual-pole knife breaker\n    door_ajar: bool = False  # Swung open maintenance door\n    door_open_angle: float = 35.0  # Degrees swung open (0 to 90)\n    has_digital_readout: bool = True  # Segmented LED digital readout\n    has_side_vents: bool = True\n    has_mounting_flanges: bool = True\n    style_palette: str = \"industrial_hazard\"\n\n    # Default asset naming and budget\n    name: str = \"electrical_panel\"\n    target_tri_budget: int = 450\n"
+  },
+  {
+    "id": "below_nominal.fixtures.eva_suit_stand",
+    "family": "eva_suit_stand",
+    "name": "Soporte de Traje EVA",
+    "version": "1.0.0",
+    "description": "Soporte técnico independiente para revisión, mantenimiento y colocación de trajes espaciales exteriores, con pylon telescópico, mochila PLSS, collar de bloqueo y tableta de telemetría. Podés configurar si tiene traje montado, postura de brazos y accesorios en GLB.",
+    "category": "fixtures",
+    "tags": [
+      "psx",
+      "low-poly",
+      "suit",
+      "eva",
+      "stand",
+      "mannequin",
+      "below-nominal"
+    ],
+    "author": {
+      "name": "ModelCoder Core Team",
+      "github": "FrancisCuarto"
+    },
+    "license": "CC-BY-4.0",
+    "compatibility": {},
+    "parameters": [
+      {
+        "key": "height",
+        "label": "Altura del Soporte (m)",
+        "type": "float",
+        "default": 1.95,
+        "group": "Dimensiones",
+        "min": 1.7,
+        "max": 2.2,
+        "step": 0.05
+      },
+      {
+        "key": "base_width",
+        "label": "Ancho Base Cruz (m)",
+        "type": "float",
+        "default": 0.8,
+        "group": "Dimensiones",
+        "min": 0.6,
+        "max": 1.1,
+        "step": 0.05
+      },
+      {
+        "key": "has_suit_mounted",
+        "label": "Traje EVA Montado",
+        "type": "bool",
+        "default": true,
+        "group": "Estado"
+      },
+      {
+        "key": "arm_pose",
+        "label": "Postura de Brazos",
+        "type": "enum",
+        "default": "relaxed",
+        "group": "Mecanismo",
+        "options": [
+          {
+            "value": "relaxed",
+            "label": "Brazos Relajados (Vertical)"
+          },
+          {
+            "value": "extended",
+            "label": "Brazos Adelantados (Inspección)"
+          },
+          {
+            "value": "t_pose",
+            "label": "Postura en T (Calibración)"
+          }
+        ]
+      },
+      {
+        "key": "has_diagnostic_tablet",
+        "label": "Pantalla de Diagnóstico Articulada",
+        "type": "bool",
+        "default": true,
+        "group": "Detalles"
+      },
+      {
+        "key": "has_service_umbilical",
+        "label": "Cordón Umbilical de Servicio",
+        "type": "bool",
+        "default": true,
+        "group": "Detalles"
+      }
+    ],
+    "presets": [
+      {
+        "id": "inspection_ready",
+        "name": "inspection_ready",
+        "values": {
+          "has_suit_mounted": true,
+          "arm_pose": "relaxed",
+          "has_diagnostic_tablet": true,
+          "has_service_umbilical": true
+        }
+      },
+      {
+        "id": "calibration_pose",
+        "name": "calibration_pose",
+        "values": {
+          "has_suit_mounted": true,
+          "arm_pose": "extended",
+          "has_diagnostic_tablet": true,
+          "has_service_umbilical": true
+        }
+      },
+      {
+        "id": "bare_rig",
+        "name": "bare_rig",
+        "values": {
+          "has_suit_mounted": false,
+          "arm_pose": "relaxed",
+          "has_diagnostic_tablet": false,
+          "has_service_umbilical": true
+        }
+      }
+    ],
+    "export_capabilities": {
+      "supports_collision": true,
+      "default_collision_suffix": "-convcolonly"
+    },
+    "has_model": true,
+    "model_url": "/models/eva_suit_stand.glb",
+    "file_size_bytes": 113392,
+    "source_code": "import math\nimport mathutils\nimport bpy\nimport bmesh\nfrom ...core.base_generator import BaseAssetGenerator\nfrom ...core.mesh_builder import MeshBuilder\nfrom ...core.texture_atlas import PS1TextureAtlas\nfrom .config import EvaSuitStandConfig\n\nclass EvaSuitStandGenerator(BaseAssetGenerator[EvaSuitStandConfig]):\n    \"\"\"\n    Procedural generator for EVA Suit Stand:\n    Standalone maintenance and inspection rig with telescoping central pylon,\n    articulated telemetry screen, and full pressurized EVA suit mannequin.\n    \"\"\"\n\n    def generate(self, config: EvaSuitStandConfig = None) -> bpy.types.Object:\n        if config is not None:\n            self.config = config\n        self.clean_context()\n        self.material_manager = self.get_material_manager(self.config)\n        MeshBuilder.set_active_material_manager(self.material_manager)\n\n        obj, bm = self.create_mesh_object(self.config.name)\n        self.material_manager.assign_to_mesh(obj)\n        m_idx = self.material_manager.material_indices\n\n        uv_layer = MeshBuilder.get_or_create_uv_layer(bm)\n        col_layer = MeshBuilder.get_or_create_color_layer(bm)\n\n        h = self.config.height\n        bw = self.config.base_width\n\n        casing_mat = m_idx.get(\"casing\", 0)\n        metal_mat = m_idx.get(\"dark_metal\", m_idx.get(\"casing\", 0))\n        brass_mat = m_idx.get(\"brass\", m_idx.get(\"casing\", 0))\n        screen_mat = m_idx.get(\"screen\", m_idx.get(\"casing\", 0))\n\n        casing_rgba = self.material_manager.get_rgba(\"casing\")\n        metal_rgba = self.material_manager.get_rgba(\"dark_metal\")\n        brass_rgba = (0.85, 0.68, 0.22, 1.0)\n\n        # 1. Heavy cross-shaped base plate\n        base_h = 0.06\n        for ang in (0.0, math.pi / 2.0):\n            MeshBuilder.add_box(\n                bm,\n                size=(bw, 0.16, base_h),\n                offset=(0.0, 0.0, base_h / 2.0),\n                mat_idx=metal_mat,\n                rgba=metal_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n            )\n\n        # Central base collar\n        MeshBuilder.add_cylinder(\n            bm,\n            radius=0.12,\n            depth=0.12,\n            segments=8,\n            offset=(0.0, 0.0, base_h + 0.06),\n            axis='Z',\n            mat_idx=metal_mat,\n            rgba=metal_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n        )\n\n        # 2. Central vertical support column (telescoping steel pylon)\n        col_h = h * 0.88\n        MeshBuilder.add_cylinder(\n            bm,\n            radius=0.045,\n            depth=col_h,\n            segments=6,\n            offset=(0.0, -0.05, col_h / 2.0 + base_h),\n            axis='Z',\n            mat_idx=metal_mat,\n            rgba=(0.7, 0.72, 0.75, 1.0),\n            uv_rect=PS1TextureAtlas.get_rect(\"metal_light_brushed\")\n        )\n\n        # 3. Shoulder yoke crossbar\n        yoke_z = h * 0.78\n        yoke_w = 0.52\n        MeshBuilder.add_box(\n            bm,\n            size=(yoke_w, 0.10, 0.05),\n            offset=(0.0, -0.05, yoke_z),\n            mat_idx=metal_mat,\n            rgba=metal_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n        )\n\n        # Neck mounting collar ring\n        MeshBuilder.add_cylinder(\n            bm,\n            radius=0.14,\n            depth=0.06,\n            segments=8,\n            offset=(0.0, 0.0, yoke_z + 0.08),\n            axis='Z',\n            mat_idx=brass_mat,\n            rgba=brass_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"cartridge_amber\")\n        )\n\n        # 4. Mounted EVA Suit (if present)\n        if self.config.has_suit_mounted:\n            torso_h = 0.65\n            torso_w = 0.44\n            torso_d = 0.34\n            torso_z = yoke_z - torso_h / 2.0 + 0.02\n\n            # Main torso body\n            MeshBuilder.add_box(\n                bm,\n                size=(torso_w, torso_d, torso_h),\n                offset=(0.0, 0.0, torso_z),\n                mat_idx=casing_mat,\n                rgba=(0.90, 0.92, 0.94, 1.0),\n                uv_rect=PS1TextureAtlas.get_rect(\"painted_metal_white\")\n            )\n\n            # Chest telemetry & valve box\n            MeshBuilder.add_box(\n                bm,\n                size=(0.20, 0.08, 0.22),\n                offset=(0.0, torso_d / 2.0 + 0.04, torso_z + 0.05),\n                mat_idx=metal_mat,\n                rgba=(0.2, 0.22, 0.25, 1.0),\n                uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n            )\n            # Chest status dial\n            MeshBuilder.add_cylinder(\n                bm,\n                radius=0.035,\n                depth=0.015,\n                segments=6,\n                offset=(0.0, torso_d / 2.0 + 0.085, torso_z + 0.05),\n                axis='Y',\n                mat_idx=screen_mat,\n                rgba=(0.95, 0.95, 0.95, 1.0),\n                uv_rect=PS1TextureAtlas.get_rect(\"gauge_meter\")\n            )\n\n            # Back Primary Life Support System (PLSS backpack)\n            plss_w = torso_w * 0.85\n            plss_h = torso_h * 0.90\n            plss_d = 0.18\n            MeshBuilder.add_box(\n                bm,\n                size=(plss_w, plss_d, plss_h),\n                offset=(0.0, -torso_d / 2.0 - plss_d / 2.0 - 0.02, torso_z),\n                mat_idx=metal_mat,\n                rgba=metal_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n            )\n\n            # Dual O2 tanks on backpack\n            for sx in (-0.10, 0.10):\n                MeshBuilder.add_cylinder(\n                    bm,\n                    radius=0.045,\n                    depth=plss_h * 0.8,\n                    segments=6,\n                    offset=(sx, -torso_d / 2.0 - plss_d - 0.04, torso_z),\n                    axis='Z',\n                    mat_idx=screen_mat,\n                    rgba=(0.2, 0.75, 0.85, 1.0),\n                    uv_rect=PS1TextureAtlas.get_rect(\"oxygen_cyan_glow\")\n                )\n\n            # Arms\n            arm_len = 0.55\n            arm_r = 0.065\n            pose = self.config.arm_pose\n            for sx in (-1, 1):\n                sh_x = sx * (torso_w / 2.0 + arm_r)\n                if pose == \"t_pose\":\n                    # Arms extended horizontal\n                    MeshBuilder.add_cylinder(\n                        bm,\n                        radius=arm_r,\n                        depth=arm_len,\n                        segments=6,\n                        offset=(sx * (torso_w / 2.0 + arm_len / 2.0), 0.0, yoke_z - 0.05),\n                        axis='X',\n                        mat_idx=casing_mat,\n                        rgba=(0.88, 0.9, 0.92, 1.0),\n                        uv_rect=PS1TextureAtlas.get_rect(\"painted_metal_white\")\n                    )\n                elif pose == \"extended\":\n                    # Arms angled 45 forward\n                    MeshBuilder.add_cylinder(\n                        bm,\n                        radius=arm_r,\n                        depth=arm_len,\n                        segments=6,\n                        offset=(sh_x, arm_len * 0.35, yoke_z - arm_len * 0.35),\n                        axis='Z',\n                        mat_idx=casing_mat,\n                        rgba=(0.88, 0.9, 0.92, 1.0),\n                        uv_rect=PS1TextureAtlas.get_rect(\"painted_metal_white\")\n                    )\n                else:\n                    # Relaxed hanging vertically\n                    MeshBuilder.add_cylinder(\n                        bm,\n                        radius=arm_r,\n                        depth=arm_len,\n                        segments=6,\n                        offset=(sh_x, 0.0, yoke_z - arm_len / 2.0 - 0.05),\n                        axis='Z',\n                        mat_idx=casing_mat,\n                        rgba=(0.88, 0.9, 0.92, 1.0),\n                        uv_rect=PS1TextureAtlas.get_rect(\"painted_metal_white\")\n                    )\n\n            # Legs and Boots clamped to base\n            leg_h = torso_z - torso_h / 2.0 - base_h\n            for sx in (-0.12, 0.12):\n                MeshBuilder.add_box(\n                    bm,\n                    size=(0.16, 0.22, leg_h),\n                    offset=(sx, 0.0, base_h + leg_h / 2.0),\n                    mat_idx=casing_mat,\n                    rgba=(0.85, 0.87, 0.90, 1.0),\n                    uv_rect=PS1TextureAtlas.get_rect(\"rubber_black\")\n                )\n                # Boot foot clamp\n                MeshBuilder.add_box(\n                    bm,\n                    size=(0.18, 0.28, 0.10),\n                    offset=(sx, 0.04, base_h + 0.05),\n                    mat_idx=metal_mat,\n                    rgba=(0.12, 0.12, 0.14, 1.0),\n                    uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n                )\n\n        # 5. Diagnostic terminal tablet mounted on articulated arm\n        if self.config.has_diagnostic_tablet:\n            arm_x = bw * 0.40\n            arm_z = h * 0.55\n            # Articulated arm tube\n            MeshBuilder.add_cylinder(\n                bm,\n                radius=0.015,\n                depth=0.35,\n                segments=4,\n                offset=(arm_x * 0.6, 0.15, arm_z),\n                axis='X',\n                mat_idx=metal_mat,\n                rgba=metal_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"metal_light_brushed\")\n            )\n            # Tablet screen box\n            MeshBuilder.add_box(\n                bm,\n                size=(0.04, 0.24, 0.18),\n                offset=(arm_x, 0.22, arm_z + 0.05),\n                mat_idx=casing_mat,\n                rgba=(0.8, 0.8, 0.82, 1.0),\n                uv_rect=PS1TextureAtlas.get_rect(\"beige_plastic_worn\")\n            )\n            # Screen face\n            MeshBuilder.add_box(\n                bm,\n                size=(0.005, 0.20, 0.14),\n                offset=(arm_x - 0.021, 0.22, arm_z + 0.05),\n                mat_idx=screen_mat,\n                rgba=(0.1, 0.85, 0.3, 1.0),\n                uv_rect=PS1TextureAtlas.get_rect(\"crt_screen_green\")\n            )\n\n        # 6. Service umbilical conduit snaking to floor\n        if self.config.has_service_umbilical:\n            umb_x = -bw * 0.30\n            MeshBuilder.add_cylinder(\n                bm,\n                radius=0.025,\n                depth=h * 0.65,\n                segments=6,\n                offset=(umb_x, -0.15, (h * 0.65) / 2.0 + base_h),\n                axis='Z',\n                mat_idx=metal_mat,\n                rgba=(0.08, 0.08, 0.08, 1.0),\n                uv_rect=PS1TextureAtlas.get_rect(\"rubber_black\")\n            )\n\n        self.finalize_mesh(obj, bm)\n        self.compact_materials(obj)\n        return obj\n",
+    "config_code": "from dataclasses import dataclass\nfrom ...core.base_config import BaseAssetConfig\n\n@dataclass\nclass EvaSuitStandConfig(BaseAssetConfig):\n    \"\"\"Configuration for EVA Suit Stand standalone maintenance and donning rig.\"\"\"\n    height: float = 1.95\n    base_width: float = 0.8\n    has_suit_mounted: bool = True       # Whether an EVA suit is currently on the stand\n    arm_pose: str = \"relaxed\"          # \"relaxed\", \"extended\", \"t_pose\"\n    has_service_umbilical: bool = True # Floor data and oxygen hookup umbilical\n    has_diagnostic_tablet: bool = True # Articulated telemetry console tablet\n\n    name: str = \"eva_suit_stand\"\n    palette_name: str = \"medbay_clean\"\n    wear_level: float = 0.35\n    target_tri_budget: int = 700\n"
   },
   {
     "id": "below_nominal.furniture.file_cabinet",
@@ -4126,6 +4528,163 @@
     "file_size_bytes": 123612,
     "source_code": "import random\nimport math\nimport bpy\nimport bmesh\nfrom mathutils import Vector\n\nfrom ...core.base_generator import BaseGenerator\nfrom ...core.mesh_builder import MeshBuilder\nfrom ...core.materials import MaterialManager\nfrom .config import HeavyShelvingConfig\n\nclass HeavyShelvingGenerator(BaseGenerator):\n    \"\"\"Generates industrial slotted angle-iron warehouse shelving racks with cargo boxes and canisters.\"\"\"\n\n    def generate(self, config: HeavyShelvingConfig) -> bpy.types.Object:\n        random.seed(config.seed)\n\n        obj, bm = self.create_mesh_object(config.name)\n        mat_mgr = self.get_material_manager(config)\n\n        w = config.width\n        d = config.depth\n        h = config.height\n\n        m_frame = mat_mgr.get_material_index(\"casing\")\n        m_steel = mat_mgr.get_material_index(\"mounting\")\n        m_shelf = mat_mgr.get_material_index(\"locker_gray\")\n        m_crate = mat_mgr.get_material_index(\"hazard_yellow\")\n        m_drum = mat_mgr.get_material_index(\"chemical_barrel_blue\")\n\n        # 1. Four Upright Slotted Angle-Iron Corner Posts\n        post_th = 0.045\n        post_x = (w / 2) - post_th / 2\n        post_y = (d / 2) - post_th / 2\n\n        for px in (-post_x, post_x):\n            for py in (-post_y, post_y):\n                MeshBuilder.add_box(bm, (px, py, h / 2), (post_th, post_th, h), m_frame, \"corner_post\")\n                # Base foot bracket\n                MeshBuilder.add_box(bm, (px, py, 0.015), (post_th + 0.03, post_th + 0.03, 0.03), m_steel, \"post_foot\")\n\n        # Side horizontal tie-bars\n        for py in (-post_y, post_y):\n            pass # (covered by shelf beams)\n\n        # 2. Horizontal Shelf Tiers\n        levels = config.levels\n        bottom_gap = 0.15\n        shelf_spacing = (h - bottom_gap - 0.10) / max(1, levels - 1)\n\n        shelf_z_list = []\n        for lv in range(levels):\n            sz = bottom_gap + (lv * shelf_spacing)\n            shelf_z_list.append(sz)\n\n            # Check if this shelf is warped/bent\n            is_bent = (config.bent_shelf_index == lv)\n\n            # Front & rear support beams\n            MeshBuilder.add_box(bm, (0, -post_y, sz - 0.02), (w, 0.03, 0.04), m_frame, f\"shelf_beam_front_{lv}\")\n            MeshBuilder.add_box(bm, (0, post_y, sz - 0.02), (w, 0.03, 0.04), m_frame, f\"shelf_beam_rear_{lv}\")\n            # Left & right side beams\n            MeshBuilder.add_box(bm, (-post_x, 0, sz - 0.02), (0.03, d - post_th * 2, 0.04), m_frame, f\"shelf_beam_L_{lv}\")\n            MeshBuilder.add_box(bm, (post_x, 0, sz - 0.02), (0.03, d - post_th * 2, 0.04), m_frame, f\"shelf_beam_R_{lv}\")\n\n            # Shelf board plank\n            board_th = 0.025\n            if is_bent:\n                # Drooping bent shelf in center\n                MeshBuilder.add_box(bm, (0, 0, sz - 0.03), (w - 0.06, d - 0.06, board_th), m_shelf, f\"shelf_board_bent_{lv}\")\n            else:\n                MeshBuilder.add_box(bm, (0, 0, sz + board_th / 2), (w - 0.06, d - 0.06, board_th), m_shelf, f\"shelf_board_{lv}\")\n\n            # Front retaining crossbar (seismic / zero-G retainer)\n            if config.has_retaining_bars and lv > 0:\n                MeshBuilder.add_cylinder(bm, (0, post_y + 0.01, sz + 0.10), 0.008, w - 0.04, sides=4, axis='X', mat_idx=m_steel, name=f\"retainer_{lv}\")\n\n            # 3. Cargo items placed on shelves\n            if config.shelf_type == \"cargo_storage\" and lv < levels - 1:\n                # Add supply boxes on shelf\n                if random.random() < 0.75:\n                    bx1_w, bx1_h, bx1_d = 0.28, 0.24, 0.35\n                    MeshBuilder.add_box(bm, (-w * 0.24, 0, sz + board_th + bx1_h / 2), (bx1_w, bx1_d, bx1_h), m_crate, \"cargo_box_1\")\n                if random.random() < 0.70:\n                    bx2_w, bx2_h, bx2_d = 0.22, 0.20, 0.30\n                    MeshBuilder.add_box(bm, (w * 0.20, 0, sz + board_th + bx2_h / 2), (bx2_w, bx2_d, bx2_h), m_steel, \"cargo_box_2\")\n\n            elif config.shelf_type == \"chemical_drums_rack\" and lv == 0:\n                # Heavy drums on lowest reinforced shelf\n                for dx in (-w * 0.25, w * 0.25):\n                    drum_r = 0.16\n                    drum_h = 0.42\n                    MeshBuilder.add_cylinder(bm, (dx, 0, sz + board_th + drum_h / 2), drum_r, drum_h, sides=8, mat_idx=m_drum, name=\"chem_drum\")\n\n        # 4. Rear Diagonal X-Bracing Wire Struts\n        if config.has_x_bracing:\n            rear_y = -post_y\n            wire_r = 0.008\n            p_bot_L = Vector((-post_x, rear_y, bottom_gap))\n            p_top_R = Vector((post_x, rear_y, h - 0.10))\n            p_bot_R = Vector((post_x, rear_y, bottom_gap))\n            p_top_L = Vector((-post_x, rear_y, h - 0.10))\n\n            MeshBuilder.add_extruded_cable(bm, [p_bot_L, p_top_R], radius=wire_r, sides=4, mat_idx=m_steel, name=\"x_brace_1\")\n            MeshBuilder.add_extruded_cable(bm, [p_bot_R, p_top_L], radius=wire_r, sides=4, mat_idx=m_steel, name=\"x_brace_2\")\n\n        mat_mgr.assign_to_mesh(obj)\n        self.finalize_mesh(obj, bm)\n        return obj\n",
     "config_code": "from dataclasses import dataclass\nfrom ...core.base_config import BaseAssetConfig\n\n@dataclass\nclass HeavyShelvingConfig(BaseAssetConfig):\n    \"\"\"Configuration for slotted angle-iron warehouse shelving racks, cargo depot tiers, and drum stands.\"\"\"\n    shelf_type: str = \"cargo_storage\"       # \"cargo_storage\", \"chemical_drums_rack\", \"empty_looted\"\n    width: float = 1.20                     # Shelf bay width in meters\n    depth: float = 0.55                     # Shelf bay depth in meters\n    height: float = 2.00                    # Total upright height in meters\n    levels: int = 4                         # Number of horizontal shelf tiers (3 to 5)\n    has_x_bracing: bool = True              # Rear diagonal tension wire cross-braces\n    has_retaining_bars: bool = True         # Front retaining crossbars against zero-g / seismic dislodging\n    bent_shelf_index: int = -1              # -1 for none, or tier index (0..levels-1) for a warped sagging shelf\n    palette_name: str = \"industrial_hazard\"\n    target_tri_budget: int = 420\n"
+  },
+  {
+    "id": "below_nominal.furniture.helmet_storage",
+    "family": "helmet_storage",
+    "name": "Armario para Cascos EVA",
+    "version": "1.0.0",
+    "description": "Mueble compartimentado para almacenamiento y recarga de cascos EVA, con bases de carga inductiva, leds de estado y visores de policarbonato. Podés configurar filas, columnas, cascos almacenados y estilo de puerta en GLB.",
+    "category": "furniture",
+    "tags": [
+      "psx",
+      "low-poly",
+      "helmet",
+      "eva",
+      "storage",
+      "locker",
+      "below-nominal"
+    ],
+    "author": {
+      "name": "ModelCoder Core Team",
+      "github": "FrancisCuarto"
+    },
+    "license": "CC-BY-4.0",
+    "compatibility": {},
+    "parameters": [
+      {
+        "key": "height",
+        "label": "Altura del Armario (m)",
+        "type": "float",
+        "default": 1.85,
+        "group": "Dimensiones",
+        "min": 1.4,
+        "max": 2.2,
+        "step": 0.05
+      },
+      {
+        "key": "width",
+        "label": "Ancho del Armario (m)",
+        "type": "float",
+        "default": 1.0,
+        "group": "Dimensiones",
+        "min": 0.7,
+        "max": 1.4,
+        "step": 0.05
+      },
+      {
+        "key": "depth",
+        "label": "Profundidad (m)",
+        "type": "float",
+        "default": 0.55,
+        "group": "Dimensiones",
+        "min": 0.45,
+        "max": 0.7,
+        "step": 0.05
+      },
+      {
+        "key": "grid_rows",
+        "label": "Niveles Verticales (Filas)",
+        "type": "int",
+        "default": 3,
+        "group": "Estructura",
+        "min": 2.0,
+        "max": 4.0,
+        "step": 1.0
+      },
+      {
+        "key": "grid_cols",
+        "label": "Columnas de Nichos",
+        "type": "int",
+        "default": 2,
+        "group": "Estructura",
+        "min": 1.0,
+        "max": 3.0,
+        "step": 1.0
+      },
+      {
+        "key": "helmet_density",
+        "label": "Densidad de Cascos",
+        "type": "float",
+        "default": 0.65,
+        "group": "Estado",
+        "min": 0.0,
+        "max": 1.0,
+        "step": 0.05
+      },
+      {
+        "key": "door_style",
+        "label": "Estilo de Puerta Frontal",
+        "type": "enum",
+        "default": "open",
+        "group": "Acabado",
+        "options": [
+          {
+            "value": "open",
+            "label": "Abierto / Sin Puerta"
+          },
+          {
+            "value": "glass_door",
+            "label": "Panel Acrílico Transparente"
+          },
+          {
+            "value": "mesh_grate",
+            "label": "Reja de Ventilación Metálica"
+          }
+        ]
+      },
+      {
+        "key": "has_status_leds",
+        "label": "Leds de Carga Inductiva",
+        "type": "bool",
+        "default": true,
+        "group": "Detalles"
+      }
+    ],
+    "presets": [
+      {
+        "id": "full_armory",
+        "name": "full_armory",
+        "values": {
+          "grid_rows": 3,
+          "grid_cols": 2,
+          "helmet_density": 1.0,
+          "door_style": "open",
+          "has_status_leds": true
+        }
+      },
+      {
+        "id": "shift_active",
+        "name": "shift_active",
+        "values": {
+          "grid_rows": 3,
+          "grid_cols": 2,
+          "helmet_density": 0.4,
+          "door_style": "glass_door",
+          "has_status_leds": true
+        }
+      },
+      {
+        "id": "derelict_depleted",
+        "name": "derelict_depleted",
+        "values": {
+          "grid_rows": 3,
+          "grid_cols": 2,
+          "helmet_density": 0.0,
+          "door_style": "mesh_grate",
+          "has_status_leds": false
+        }
+      }
+    ],
+    "export_capabilities": {
+      "supports_collision": true,
+      "default_collision_suffix": "-convcolonly"
+    },
+    "has_model": true,
+    "model_url": "/models/helmet_storage.glb",
+    "file_size_bytes": 139012,
+    "source_code": "import math\nimport hashlib\nimport bpy\nimport bmesh\nfrom ...core.base_generator import BaseAssetGenerator\nfrom ...core.mesh_builder import MeshBuilder\nfrom ...core.texture_atlas import PS1TextureAtlas\nfrom .config import HelmetStorageConfig\n\nclass HelmetStorageGenerator(BaseAssetGenerator[HelmetStorageConfig]):\n    \"\"\"\n    Procedural generator for Helmet Storage:\n    Modular compartmentalized locker unit for EVA spacesuit helmets,\n    with charging stations, status LEDs, and locking latch cubbies.\n    \"\"\"\n\n    def generate(self, config: HelmetStorageConfig = None) -> bpy.types.Object:\n        if config is not None:\n            self.config = config\n        self.clean_context()\n        self.material_manager = self.get_material_manager(self.config)\n        MeshBuilder.set_active_material_manager(self.material_manager)\n\n        obj, bm = self.create_mesh_object(self.config.name)\n        self.material_manager.assign_to_mesh(obj)\n        m_idx = self.material_manager.material_indices\n\n        w = self.config.width\n        h = self.config.height\n        d = self.config.depth\n\n        casing_mat = m_idx.get(\"casing\", 0)\n        metal_mat = m_idx.get(\"dark_metal\", m_idx.get(\"casing\", 0))\n        brass_mat = m_idx.get(\"brass\", m_idx.get(\"casing\", 0))\n        screen_mat = m_idx.get(\"screen\", m_idx.get(\"casing\", 0))\n        glass_mat = m_idx.get(\"glass\", m_idx.get(\"casing\", 0))\n\n        casing_rgba = self.material_manager.get_rgba(\"casing\")\n        metal_rgba = self.material_manager.get_rgba(\"dark_metal\")\n        brass_rgba = (0.85, 0.68, 0.22, 1.0)\n\n        # 1. Main outer cabinet shell\n        wall_t = 0.05\n        base_h = 0.10\n\n        # Base plinth\n        MeshBuilder.add_box(\n            bm,\n            size=(w, d, base_h),\n            offset=(0.0, 0.0, base_h / 2.0),\n            mat_idx=metal_mat,\n            rgba=metal_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n        )\n\n        inner_h = h - base_h - wall_t\n        inner_z = base_h + inner_h / 2.0\n\n        # Rear back wall\n        MeshBuilder.add_box(\n            bm,\n            size=(w, wall_t, inner_h),\n            offset=(0.0, -d / 2.0 + wall_t / 2.0, inner_z),\n            mat_idx=casing_mat,\n            rgba=casing_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"painted_metal_white\")\n        )\n\n        # Top cap\n        MeshBuilder.add_box(\n            bm,\n            size=(w, d, wall_t),\n            offset=(0.0, 0.0, h - wall_t / 2.0),\n            mat_idx=casing_mat,\n            rgba=casing_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n        )\n\n        # Left and Right side panels\n        for sx in (-1, 1):\n            MeshBuilder.add_box(\n                bm,\n                size=(wall_t, d - wall_t, inner_h),\n                offset=(sx * (w / 2.0 - wall_t / 2.0), wall_t / 2.0, inner_z),\n                mat_idx=casing_mat,\n                rgba=casing_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"painted_metal_white\")\n            )\n\n        # 2. Grid compartments (rows and columns)\n        rows = max(2, min(4, int(self.config.grid_rows)))\n        cols = max(1, min(3, int(self.config.grid_cols)))\n\n        inner_w = w - 2.0 * wall_t\n        inner_d = d - wall_t\n\n        col_w = inner_w / float(cols)\n        row_h = inner_h / float(rows)\n\n        # Vertical dividers\n        for c in range(1, cols):\n            div_x = -inner_w / 2.0 + c * col_w\n            MeshBuilder.add_box(\n                bm,\n                size=(wall_t * 0.6, inner_d, inner_h),\n                offset=(div_x, wall_t / 2.0, inner_z),\n                mat_idx=metal_mat,\n                rgba=metal_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n            )\n\n        # Horizontal shelf dividers\n        for r in range(1, rows):\n            div_z = base_h + r * row_h\n            MeshBuilder.add_box(\n                bm,\n                size=(inner_w, inner_d, wall_t * 0.6),\n                offset=(0.0, wall_t / 2.0, div_z),\n                mat_idx=metal_mat,\n                rgba=metal_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n            )\n\n        # 3. Cubby contents (Helmet and charging dock)\n        for r in range(rows):\n            cubby_z = base_h + r * row_h + row_h / 2.0\n            shelf_floor_z = base_h + r * row_h\n\n            for c in range(cols):\n                cubby_x = -inner_w / 2.0 + c * col_w + col_w / 2.0\n                slot_key = f\"{self.config.seed}_{r}_{c}\"\n                h_val = int(hashlib.md5(slot_key.encode()).hexdigest()[:4], 16) / 65535.0\n                has_helmet = h_val <= self.config.helmet_density\n\n                # Charging ring dock on the shelf\n                MeshBuilder.add_cylinder(\n                    bm,\n                    radius=min(col_w, inner_d) * 0.28,\n                    depth=0.03,\n                    segments=8,\n                    offset=(cubby_x, 0.05, shelf_floor_z + 0.02),\n                    axis='Z',\n                    mat_idx=metal_mat,\n                    rgba=(0.15, 0.15, 0.18, 1.0),\n                    uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n                )\n\n                # Status LED indicator above each cubby\n                if self.config.has_status_leds:\n                    led_rect = PS1TextureAtlas.get_rect(\"led_green\" if has_helmet else \"led_yellow\")\n                    MeshBuilder.add_box(\n                        bm,\n                        size=(0.02, 0.01, 0.02),\n                        offset=(cubby_x, d / 2.0 - 0.02, shelf_floor_z + row_h - 0.03),\n                        mat_idx=screen_mat,\n                        rgba=(0.2, 0.85, 0.2, 1.0) if has_helmet else (0.9, 0.75, 0.1, 1.0),\n                        uv_rect=led_rect\n                    )\n\n                if has_helmet:\n                    # Low-poly EVA helmet dome\n                    h_rad = min(col_w, row_h) * 0.32\n                    h_center_z = shelf_floor_z + 0.03 + h_rad\n                    MeshBuilder.add_cylinder(\n                        bm,\n                        radius=h_rad,\n                        depth=h_rad * 1.6,\n                        segments=8,\n                        offset=(cubby_x, 0.04, h_center_z),\n                        axis='Z',\n                        mat_idx=casing_mat,\n                        rgba=(0.92, 0.94, 0.96, 1.0),\n                        uv_rect=PS1TextureAtlas.get_rect(\"painted_metal_white\")\n                    )\n\n                    # Gold amber reflective bubble visor\n                    MeshBuilder.add_cylinder(\n                        bm,\n                        radius=h_rad * 0.75,\n                        depth=0.06,\n                        segments=8,\n                        offset=(cubby_x, 0.04 + h_rad * 0.65, h_center_z + h_rad * 0.1),\n                        axis='Y',\n                        mat_idx=screen_mat,\n                        rgba=(0.88, 0.68, 0.2, 1.0),\n                        uv_rect=PS1TextureAtlas.get_rect(\"cartridge_amber\")\n                    )\n\n                    # Neck locking collar\n                    MeshBuilder.add_cylinder(\n                        bm,\n                        radius=h_rad * 0.92,\n                        depth=0.035,\n                        segments=8,\n                        offset=(cubby_x, 0.04, shelf_floor_z + 0.04),\n                        axis='Z',\n                        mat_idx=brass_mat,\n                        rgba=brass_rgba,\n                        uv_rect=PS1TextureAtlas.get_rect(\"cartridge_amber\")\n                    )\n\n        # 4. Optional door mesh or glass\n        if self.config.door_style == \"glass_door\":\n            MeshBuilder.add_box(\n                bm,\n                size=(inner_w, 0.015, inner_h),\n                offset=(0.0, d / 2.0 - 0.01, inner_z),\n                mat_idx=glass_mat,\n                rgba=(0.35, 0.65, 0.75, 0.4),\n                uv_rect=PS1TextureAtlas.get_rect(\"glass_reinforced\")\n            )\n        elif self.config.door_style == \"mesh_grate\":\n            MeshBuilder.add_box(\n                bm,\n                size=(inner_w, 0.015, inner_h),\n                offset=(0.0, d / 2.0 - 0.01, inner_z),\n                mat_idx=metal_mat,\n                rgba=(0.3, 0.3, 0.35, 1.0),\n                uv_rect=PS1TextureAtlas.get_rect(\"vent_grill\")\n            )\n\n        self.finalize_mesh(obj, bm)\n        self.compact_materials(obj)\n        return obj\n",
+    "config_code": "from dataclasses import dataclass\nfrom ...core.base_config import BaseAssetConfig\n\n@dataclass\nclass HelmetStorageConfig(BaseAssetConfig):\n    \"\"\"Configuration for Helmet Storage compartmentalized EVA locker.\"\"\"\n    height: float = 1.85\n    width: float = 1.0\n    depth: float = 0.55\n    grid_rows: int = 3                # 2 to 4 vertical shelf tiers\n    grid_cols: int = 2                # 1 to 3 horizontal columns\n    helmet_density: float = 0.65      # Ratio of cubbies storing helmets\n    door_style: str = \"open\"          # \"open\", \"glass_door\", \"mesh_grate\"\n    has_charging_cables: bool = True\n    has_status_leds: bool = True\n\n    name: str = \"helmet_storage\"\n    palette_name: str = \"industrial_hazard\"\n    wear_level: float = 0.4\n    target_tri_budget: int = 800\n"
   },
   {
     "id": "below_nominal.fixtures.hydroponic_tray_bed",
@@ -5721,6 +6280,137 @@
     "file_size_bytes": 123528,
     "source_code": "import random\nimport math\nimport bpy\nimport bmesh\nfrom mathutils import Vector\n\nfrom ...core.base_generator import BaseGenerator\nfrom ...core.mesh_builder import MeshBuilder\nfrom ...core.materials import MaterialManager\nfrom .config import MessTableConfig\n\nclass MessTableGenerator(BaseGenerator):\n    \"\"\"Generates space station mess hall tables with attached swivel stools and food trays.\"\"\"\n\n    def generate(self, config: MessTableConfig) -> bpy.types.Object:\n        random.seed(config.seed)\n\n        obj, bm = self.create_mesh_object(config.name)\n        mat_mgr = self.get_material_manager(config)\n\n        w = config.table_width\n        length = config.table_length\n        h = config.table_height\n\n        m_steel = mat_mgr.get_material_index(\"mounting\")\n        m_top = mat_mgr.get_material_index(\"locker_gray\")\n        m_frame = mat_mgr.get_material_index(\"casing\")\n        m_stool = mat_mgr.get_material_index(\"chair_vinyl\")\n        m_tray = mat_mgr.get_material_index(\"metal_dark_grime\") if \"metal_dark_grime\" in mat_mgr.palette else m_steel\n\n        # 1. Central Support Pedestals & Floor Flanges\n        ped_r = 0.05\n        ped_y_offset = length * 0.28\n        for py in (-ped_y_offset, ped_y_offset):\n            # Vertical column\n            MeshBuilder.add_cylinder(bm, (0, py, h / 2), ped_r, h - 0.05, sides=6, mat_idx=m_frame, name=\"pedestal_col\")\n            # Floor flange\n            if config.has_floor_bolts:\n                MeshBuilder.add_cylinder(bm, (0, py, 0.02), ped_r + 0.05, 0.04, sides=6, mat_idx=m_steel, name=\"floor_flange\")\n                MeshBuilder.add_cylinder(bm, (0, py + 0.06, 0.04), 0.012, 0.02, sides=4, mat_idx=m_steel, name=\"bolt\")\n\n        # Longitudinal frame beam under tabletop connecting pedestals\n        MeshBuilder.add_box(bm, (0, 0, h - 0.05), (0.08, length * 0.85, 0.06), m_frame, \"center_spine\")\n\n        # 2. Tabletop Slab\n        top_th = 0.04\n        MeshBuilder.add_box(bm, (0, 0, h - top_th / 2), (w, length, top_th), m_top, \"tabletop\")\n        # Beveled edge rim\n        MeshBuilder.add_box(bm, (0, 0, h - top_th / 2 - 0.01), (w + 0.02, length + 0.02, 0.015), m_steel, \"table_edge_trim\")\n\n        # 3. Swivel Stools attached via curved swing arms\n        stools_count = config.stool_count\n        pairs = stools_count // 2\n        y_step = length / (pairs + 1)\n        stool_r = 0.16\n        stool_h = 0.46\n\n        for i in range(pairs):\n            sy = -length / 2 + (i + 1) * y_step\n            # Left and right side\n            for side_sign in (-1, 1):\n                # Swing arm angle\n                arm_angle = 0.0\n                if config.stool_swing_state == \"random_pulled\":\n                    arm_angle = random.uniform(-0.35, 0.35)\n                elif config.stool_swing_state == \"scattered\":\n                    arm_angle = random.uniform(-0.65, 0.65)\n\n                dist_out = (w / 2) + 0.22\n                stool_x = dist_out * side_sign\n                stool_y = sy + (arm_angle * 0.25)\n\n                # Swing arm pipe from pedestal spine to stool base\n                arm_start = Vector((0, sy, 0.22))\n                arm_elbow = Vector((stool_x * 0.6, sy, 0.22))\n                arm_end = Vector((stool_x, stool_y, 0.22))\n                MeshBuilder.add_extruded_cable(bm, [arm_start, arm_elbow, arm_end], radius=0.022, sides=4, mat_idx=m_steel, name=\"stool_arm\")\n\n                # Vertical stool pedestal stem\n                MeshBuilder.add_cylinder(bm, (stool_x, stool_y, stool_h / 2), 0.025, stool_h, sides=6, mat_idx=m_steel, name=\"stool_stem\")\n                # Round stool seat disc\n                MeshBuilder.add_cylinder(bm, (stool_x, stool_y, stool_h + 0.025), stool_r, 0.05, sides=8, mat_idx=m_stool, name=\"stool_seat\")\n\n        # 4. Abandoned Mess Hall Food Trays & Cups\n        if config.has_mess_trays:\n            tray_positions = [(-w * 0.22, -0.30), (w * 0.22, 0.35)]\n            for tx, ty in tray_positions:\n                MeshBuilder.add_box(bm, (tx, ty, h + 0.015), (0.28, 0.38, 0.02), m_tray, \"mess_tray\")\n                # Tin mug\n                MeshBuilder.add_cylinder(bm, (tx + 0.08, ty + 0.10, h + 0.06), 0.035, 0.09, sides=6, mat_idx=m_steel, name=\"tin_mug\")\n\n        mat_mgr.assign_to_mesh(obj)\n        self.finalize_mesh(obj, bm)\n        return obj\n",
     "config_code": "from dataclasses import dataclass\nfrom ...core.base_config import BaseAssetConfig\n\n@dataclass\nclass MessTableConfig(BaseAssetConfig):\n    \"\"\"Configuration for crew canteen tables with bolted-to-floor swivel stools.\"\"\"\n    table_type: str = \"bolted_stools_4\"      # \"bolted_stools_4\", \"bolted_stools_6\", \"free_standing_bench\"\n    stool_count: int = 4                    # Number of attached stools (2, 4, 6)\n    table_width: float = 0.90               # Tabletop width in meters\n    table_length: float = 1.80              # Tabletop length in meters\n    table_height: float = 0.78              # Surface height in meters\n    stool_swing_state: str = \"random_pulled\"# \"all_tucked\", \"random_pulled\", \"scattered\"\n    has_mess_trays: bool = True             # Abandoned food trays and tin cups\n    has_floor_bolts: bool = True            # Heavy floor anchoring flanges\n    palette_name: str = \"industrial_hazard\"\n    target_tri_budget: int = 450\n"
+  },
+  {
+    "id": "below_nominal.laboratory.microscope",
+    "family": "microscope",
+    "name": "Microscopio de Laboratorio Óptico",
+    "version": "1.0.0",
+    "description": "Microscopio compuesto óptico para análisis histológico, patológico y citológico de muestras biológicas y xenomorfas. Consta de base pesada de fundición con patas de amortiguación, fuente de luz halógena inferior, platina mecánica con pinzas y portaobjetos, torreta revólver con objetivos de magnificación codificados por color, mandos coaxiales de enfoque macrométrico/micrométrico y cabezal binocular inclinado.",
+    "category": "laboratory",
+    "tags": [
+      "psx",
+      "low-poly",
+      "microscope",
+      "laboratory",
+      "optics",
+      "research",
+      "science",
+      "below-nominal"
+    ],
+    "author": {
+      "name": "ModelCoder Core Team",
+      "github": "FrancisCuarto"
+    },
+    "license": "CC-BY-4.0",
+    "compatibility": {},
+    "parameters": [
+      {
+        "key": "total_height",
+        "label": "Altura Total (m)",
+        "type": "float",
+        "default": 0.48,
+        "group": "Dimensiones",
+        "min": 0.38,
+        "max": 0.6,
+        "step": 0.02
+      },
+      {
+        "key": "objective_count",
+        "label": "Objetivos en Torreta",
+        "type": "int",
+        "default": 3,
+        "group": "Óptica",
+        "min": 3.0,
+        "max": 4.0,
+        "step": 1.0
+      },
+      {
+        "key": "eyepiece_type",
+        "label": "Tipo de Cabezal",
+        "type": "enum",
+        "default": "binocular",
+        "group": "Óptica",
+        "options": [
+          {
+            "value": "binocular",
+            "label": "Binocular (Doble Ocular)"
+          },
+          {
+            "value": "monocular",
+            "label": "Monocular (Ocular Simple)"
+          }
+        ]
+      },
+      {
+        "key": "has_slide_on_stage",
+        "label": "Portaobjetos en Platina",
+        "type": "bool",
+        "default": true,
+        "group": "Detalles"
+      },
+      {
+        "key": "is_illuminator_on",
+        "label": "Foco Halógeno Encendido",
+        "type": "bool",
+        "default": true,
+        "group": "Estado"
+      },
+      {
+        "key": "stage_elevation",
+        "label": "Elevación de Platina (Enfoque)",
+        "type": "float",
+        "default": 0.55,
+        "group": "Articulación",
+        "min": 0.2,
+        "max": 0.8,
+        "step": 0.05
+      }
+    ],
+    "presets": [
+      {
+        "id": "active_analysis",
+        "name": "active_analysis",
+        "values": {
+          "objective_count": 3,
+          "eyepiece_type": "binocular",
+          "has_slide_on_stage": true,
+          "is_illuminator_on": true,
+          "stage_elevation": 0.55
+        }
+      },
+      {
+        "id": "high_power_turret",
+        "name": "high_power_turret",
+        "values": {
+          "objective_count": 4,
+          "eyepiece_type": "binocular",
+          "has_slide_on_stage": true,
+          "is_illuminator_on": true,
+          "stage_elevation": 0.7
+        }
+      },
+      {
+        "id": "inactive_stored",
+        "name": "inactive_stored",
+        "values": {
+          "objective_count": 3,
+          "eyepiece_type": "monocular",
+          "has_slide_on_stage": false,
+          "is_illuminator_on": false,
+          "stage_elevation": 0.3
+        }
+      }
+    ],
+    "export_capabilities": {
+      "supports_collision": true,
+      "default_collision_suffix": "-convcolonly"
+    },
+    "has_model": true,
+    "model_url": "/models/microscope.glb",
+    "file_size_bytes": 127852,
+    "source_code": "import bpy\nimport bmesh\nimport math\nfrom mathutils import Vector\nfrom typing import Dict, Any\n\nfrom ...core.base_generator import BaseAssetGenerator\nfrom ...core.mesh_builder import MeshBuilder\nfrom ...core.texture_atlas import PS1TextureAtlas\nfrom .config import MicroscopeConfig\n\nclass MicroscopeGenerator(BaseAssetGenerator):\n    \"\"\"\n    Procedural PSX generator for clinical laboratory optical microscopes.\n    Features heavy horseshoe base, sub-stage halogen illuminator, mechanical stage\n    with slide clips, rotating objective nosepiece, focus knobs, and inclined binocular head.\n    \"\"\"\n\n    def generate(self, config: MicroscopeConfig = None) -> bpy.types.Object:\n        if config is not None:\n            self.config = config\n        elif not hasattr(self, \"config\") or self.config is None:\n            self.config = MicroscopeConfig()\n\n        self.clean_context()\n        self.material_manager = self.get_material_manager(self.config)\n        MeshBuilder.set_active_material_manager(self.material_manager)\n\n        obj, bm = self.create_mesh_object(self.config.name)\n        self.material_manager.assign_to_mesh(obj)\n        m_idx = self.material_manager.material_indices\n\n        h = self.config.total_height\n        scale = h / 0.48\n\n        casing_mat = m_idx.get(\"casing\", 0)\n        metal_mat = m_idx.get(\"dark_metal\", m_idx.get(\"casing\", 0))\n        glass_mat = m_idx.get(\"glass\", m_idx.get(\"casing\", 0))\n        screen_mat = m_idx.get(\"screen\", m_idx.get(\"casing\", 0))\n\n        casing_rgba = self.material_manager.get_rgba(\"casing\")\n        metal_rgba = self.material_manager.get_rgba(\"dark_metal\")\n        rubber_rgba = (0.15, 0.15, 0.16, 1.0)\n        lens_rgba = (0.9, 0.95, 1.0, 1.0) if self.config.is_illuminator_on else (0.4, 0.5, 0.55, 0.8)\n\n        # -------------------------------------------------------------\n        # 1. Cast Horseshoe Base & Feet\n        # -------------------------------------------------------------\n        base_w = 0.22 * scale\n        base_l = 0.28 * scale\n        base_h = 0.05 * scale\n\n        MeshBuilder.add_box(\n            bm,\n            size=(base_w, base_l, base_h),\n            offset=(0.0, 0.02 * scale, base_h * 0.5),\n            mat_idx=casing_mat,\n            rgba=casing_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"painted_metal_white\")\n        )\n\n        # Rubber support feet (4 pads)\n        foot_r = 0.025 * scale\n        foot_h = 0.015 * scale\n        for fx in (-base_w * 0.4, base_w * 0.4):\n            for fy in (-base_l * 0.38 + 0.02 * scale, base_l * 0.38 + 0.02 * scale):\n                MeshBuilder.add_cylinder(\n                    bm,\n                    radius=foot_r,\n                    depth=foot_h,\n                    segments=6,\n                    offset=(fx, fy, foot_h * 0.5),\n                    axis='Z',\n                    mat_idx=metal_mat,\n                    rgba=rubber_rgba,\n                    uv_rect=PS1TextureAtlas.get_rect(\"rubber_black\")\n                )\n\n        # Sub-stage light source housing\n        lamp_r = 0.04 * scale\n        lamp_h = 0.035 * scale\n        lamp_pos = (0.0, -0.04 * scale, base_h + lamp_h * 0.5)\n        MeshBuilder.add_cylinder(\n            bm,\n            radius=lamp_r,\n            depth=lamp_h,\n            segments=6,\n            offset=lamp_pos,\n            axis='Z',\n            mat_idx=metal_mat,\n            rgba=metal_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n        )\n\n        # Illuminator lens\n        lens_uv = \"fluorescent_lit\" if self.config.is_illuminator_on else \"glass_reinforced\"\n        MeshBuilder.add_cylinder(\n            bm,\n            radius=lamp_r * 0.75,\n            depth=0.01 * scale,\n            segments=6,\n            offset=(0.0, -0.04 * scale, base_h + lamp_h),\n            axis='Z',\n            mat_idx=screen_mat,\n            rgba=lens_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(lens_uv)\n        )\n\n        # -------------------------------------------------------------\n        # 2. Upright Curved Arm & Focus Adjustment Knobs\n        # -------------------------------------------------------------\n        arm_w = 0.07 * scale\n        arm_d = 0.08 * scale\n        arm_h = 0.30 * scale\n        arm_y = 0.08 * scale\n        arm_z = base_h + arm_h * 0.5\n\n        # Vertical pillar\n        MeshBuilder.add_box(\n            bm,\n            size=(arm_w, arm_d, arm_h),\n            offset=(0.0, arm_y, arm_z),\n            mat_idx=casing_mat,\n            rgba=casing_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"painted_metal_white\")\n        )\n\n        # Upper neck forward over stage\n        neck_len = 0.14 * scale\n        MeshBuilder.add_box(\n            bm,\n            size=(arm_w, neck_len, 0.06 * scale),\n            offset=(0.0, arm_y - neck_len * 0.35, base_h + arm_h - 0.03 * scale),\n            mat_idx=casing_mat,\n            rgba=casing_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"painted_metal_white\")\n        )\n\n        # Focus Adjustment Knobs\n        knob_z = base_h + 0.12 * scale\n        for side in (-1.0, 1.0):\n            # Coarse focus wheel\n            MeshBuilder.add_cylinder(\n                bm,\n                radius=0.035 * scale,\n                depth=0.025 * scale,\n                segments=6,\n                offset=(side * (arm_w * 0.5 + 0.02 * scale), arm_y, knob_z),\n                axis='X',\n                mat_idx=metal_mat,\n                rgba=rubber_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"rubber_black\")\n            )\n            # Fine focus wheel\n            MeshBuilder.add_cylinder(\n                bm,\n                radius=0.020 * scale,\n                depth=0.020 * scale,\n                segments=6,\n                offset=(side * (arm_w * 0.5 + 0.04 * scale), arm_y, knob_z),\n                axis='X',\n                mat_idx=metal_mat,\n                rgba=metal_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"metal_light_brushed\")\n            )\n\n        # -------------------------------------------------------------\n        # 3. Mechanical Stage & Slide\n        # -------------------------------------------------------------\n        stage_z = base_h + 0.14 * scale + (self.config.stage_elevation - 0.5) * 0.04 * scale\n        stage_w = 0.16 * scale\n        stage_d = 0.15 * scale\n        stage_th = 0.015 * scale\n\n        MeshBuilder.add_box(\n            bm,\n            size=(stage_w, stage_d, stage_th),\n            offset=(0.0, -0.02 * scale, stage_z),\n            mat_idx=metal_mat,\n            rgba=metal_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n        )\n\n        # Stage support bracket\n        MeshBuilder.add_box(\n            bm,\n            size=(0.05 * scale, arm_y - (-0.02 * scale), 0.05 * scale),\n            offset=(0.0, (arm_y - 0.02 * scale) * 0.5, stage_z - 0.03 * scale),\n            mat_idx=metal_mat,\n            rgba=metal_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n        )\n\n        # Glass specimen slide\n        if self.config.has_slide_on_stage:\n            MeshBuilder.add_box(\n                bm,\n                size=(0.09 * scale, 0.04 * scale, 0.005 * scale),\n                offset=(0.0, -0.03 * scale, stage_z + stage_th * 0.5 + 0.003 * scale),\n                mat_idx=glass_mat,\n                rgba=(0.5, 0.7, 0.8, 0.7),\n                uv_rect=PS1TextureAtlas.get_rect(\"glass_reinforced\")\n            )\n            # Specimen cover slip smear\n            MeshBuilder.add_box(\n                bm,\n                size=(0.03 * scale, 0.03 * scale, 0.002 * scale),\n                offset=(0.0, -0.03 * scale, stage_z + stage_th * 0.5 + 0.007 * scale),\n                mat_idx=screen_mat,\n                rgba=(0.8, 0.6, 0.2, 1.0),\n                uv_rect=PS1TextureAtlas.get_rect(\"cartridge_amber\")\n            )\n            # Stage clip\n            MeshBuilder.add_box(\n                bm,\n                size=(0.015 * scale, 0.05 * scale, 0.005 * scale),\n                offset=(-0.035 * scale, -0.01 * scale, stage_z + stage_th * 0.5 + 0.006 * scale),\n                mat_idx=metal_mat,\n                rgba=metal_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"metal_light_brushed\")\n            )\n\n        # -------------------------------------------------------------\n        # 4. Revolving Nosepiece Turret & Objectives\n        # -------------------------------------------------------------\n        turret_pos = (0.0, -0.03 * scale, base_h + arm_h - 0.07 * scale)\n        MeshBuilder.add_cylinder(\n            bm,\n            radius=0.055 * scale,\n            depth=0.03 * scale,\n            segments=6,\n            offset=turret_pos,\n            axis='Z',\n            mat_idx=metal_mat,\n            rgba=metal_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"metal_light_brushed\")\n        )\n\n        obj_count = max(3, min(self.config.objective_count, 4))\n        obj_lens_r = 0.014 * scale\n        obj_lens_len = 0.055 * scale\n        turret_ring_r = 0.035 * scale\n\n        band_colors = [\n            (\"button_red\", (0.85, 0.15, 0.15, 1.0)),\n            (\"button_yellow\", (0.9, 0.85, 0.15, 1.0)),\n            (\"button_blue\", (0.15, 0.45, 0.85, 1.0)),\n            (\"button_white\", (0.9, 0.9, 0.9, 1.0))\n        ]\n\n        for i in range(obj_count):\n            theta = (2.0 * math.pi * i) / obj_count\n            ox = math.cos(theta) * turret_ring_r\n            oy = math.sin(theta) * turret_ring_r\n\n            lens_mid = (turret_pos[0] + ox, turret_pos[1] + oy, turret_pos[2] - obj_lens_len * 0.5)\n            MeshBuilder.add_cylinder(\n                bm,\n                radius=obj_lens_r,\n                depth=obj_lens_len,\n                segments=6,\n                offset=lens_mid,\n                axis='Z',\n                mat_idx=metal_mat,\n                rgba=metal_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n            )\n\n            # Color band\n            band_uv, band_rgba = band_colors[i % len(band_colors)]\n            MeshBuilder.add_cylinder(\n                bm,\n                radius=obj_lens_r * 1.08,\n                depth=0.012 * scale,\n                segments=6,\n                offset=(lens_mid[0], lens_mid[1], lens_mid[2] + obj_lens_len * 0.2),\n                axis='Z',\n                mat_idx=metal_mat,\n                rgba=band_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(band_uv)\n            )\n\n        # -------------------------------------------------------------\n        # 5. Inclined Head & Eyepieces\n        # -------------------------------------------------------------\n        head_pos = (0.0, arm_y - 0.02 * scale, base_h + arm_h + 0.02 * scale)\n\n        MeshBuilder.add_box(\n            bm,\n            size=(0.11 * scale, 0.10 * scale, 0.08 * scale),\n            offset=head_pos,\n            mat_idx=casing_mat,\n            rgba=casing_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"painted_metal_white\")\n        )\n\n        is_binocular = (self.config.eyepiece_type == \"binocular\")\n        ocular_offsets = [-0.032 * scale, 0.032 * scale] if is_binocular else [0.0]\n\n        for oc_x in ocular_offsets:\n            oc_tube_len = 0.08 * scale\n            oc_pos = (head_pos[0] + oc_x, head_pos[1] - 0.04 * scale, head_pos[2] + 0.05 * scale)\n\n            MeshBuilder.add_cylinder(\n                bm,\n                radius=0.018 * scale,\n                depth=oc_tube_len,\n                segments=6,\n                offset=oc_pos,\n                axis='Z',\n                mat_idx=metal_mat,\n                rgba=metal_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"metal_light_brushed\")\n            )\n\n            # Eyecup\n            MeshBuilder.add_cylinder(\n                bm,\n                radius=0.024 * scale,\n                depth=0.02 * scale,\n                segments=6,\n                offset=(oc_pos[0], oc_pos[1], oc_pos[2] + oc_tube_len * 0.5),\n                axis='Z',\n                mat_idx=metal_mat,\n                rgba=rubber_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"rubber_black\")\n            )\n\n        self.finalize_mesh(obj, bm)\n        self.compact_materials(obj)\n        return obj\n",
+    "config_code": "from dataclasses import dataclass\nfrom ...core.base_config import BaseAssetConfig\n\n@dataclass\nclass MicroscopeConfig(BaseAssetConfig):\n    \"\"\"Configuration for Clinical Laboratory Optical Compound Microscope.\"\"\"\n    total_height: float = 0.48\n    objective_count: int = 3            # 3 or 4 rotating turret objectives\n    eyepiece_type: str = \"binocular\"    # \"monocular\", \"binocular\"\n    has_slide_on_stage: bool = True     # Glass specimen slide clipped onto mechanical stage\n    is_illuminator_on: bool = True      # Sub-stage condenser lamp beam illuminated\n    stage_elevation: float = 0.55       # Relative vertical position of stage (focus adjustment)\n\n    name: str = \"microscope\"\n    palette_name: str = \"medbay_clean\"\n    wear_level: float = 0.25\n    target_tri_budget: int = 620\n"
   },
   {
     "id": "below_nominal.medical.morgue_gurney",
@@ -8206,6 +8896,154 @@
     "config_code": "from dataclasses import dataclass\nfrom ...core.base_config import BaseAssetConfig\n\n@dataclass\nclass PressureIndicatorConfig(BaseAssetConfig):\n    \"\"\"Configuration for Pressure Indicator large mural dial gauge.\"\"\"\n    diameter: float = 0.45\n    depth: float = 0.12\n    needle_angle: float = 35.0         # Degrees (-120.0 to 120.0)\n    has_warning_zones: bool = True     # Colored arc zones (green/yellow/red)\n    has_protective_glass: bool = True\n    has_bottom_pipe_fitting: bool = True\n\n    name: str = \"pressure_indicator\"\n    palette_name: str = \"industrial_hazard\"\n    wear_level: float = 0.35\n    target_tri_budget: int = 280\n"
   },
   {
+    "id": "below_nominal.medical.quarantine_bed",
+    "family": "quarantine_bed",
+    "name": "Cama de Aislamiento Clínico",
+    "version": "1.0.0",
+    "description": "Cama médica de contención biológica y cuidados intensivos para enfermería de estación espacial. Equipada con barandillas perimetrales de seguridad, soporte telescópico de suero IV, panel monitor de constantes vitales sobre brazo articulado, correas de sujeción para pacientes agitados e inclinación de cabecero configurable.",
+    "category": "medical",
+    "tags": [
+      "psx",
+      "low-poly",
+      "quarantine",
+      "bed",
+      "medical",
+      "hospital",
+      "stretcher",
+      "below-nominal"
+    ],
+    "author": {
+      "name": "ModelCoder Core Team",
+      "github": "FrancisCuarto"
+    },
+    "license": "CC-BY-4.0",
+    "compatibility": {},
+    "parameters": [
+      {
+        "key": "bed_length",
+        "label": "Largo de Cama (m)",
+        "type": "float",
+        "default": 2.1,
+        "group": "Dimensiones",
+        "min": 1.8,
+        "max": 2.3,
+        "step": 0.05
+      },
+      {
+        "key": "bed_width",
+        "label": "Ancho de Cama (m)",
+        "type": "float",
+        "default": 0.95,
+        "group": "Dimensiones",
+        "min": 0.8,
+        "max": 1.2,
+        "step": 0.05
+      },
+      {
+        "key": "bed_height",
+        "label": "Altura del Bastidor (m)",
+        "type": "float",
+        "default": 0.85,
+        "group": "Dimensiones",
+        "min": 0.7,
+        "max": 1.0,
+        "step": 0.05
+      },
+      {
+        "key": "headrest_angle",
+        "label": "Inclinación de Cabecero (grados)",
+        "type": "float",
+        "default": 15.0,
+        "group": "Articulación",
+        "min": 0.0,
+        "max": 45.0,
+        "step": 5.0
+      },
+      {
+        "key": "rails_raised",
+        "label": "Barandillas Elevadas",
+        "type": "bool",
+        "default": true,
+        "group": "Seguridad"
+      },
+      {
+        "key": "has_iv_pole",
+        "label": "Soporte de Suero IV",
+        "type": "bool",
+        "default": true,
+        "group": "Equipamiento"
+      },
+      {
+        "key": "has_restraint_straps",
+        "label": "Correas de Inmovilización",
+        "type": "bool",
+        "default": true,
+        "group": "Seguridad"
+      },
+      {
+        "key": "has_patient_bulk",
+        "label": "Bulto Cubierto por Sábana",
+        "type": "bool",
+        "default": false,
+        "group": "Ambiente"
+      },
+      {
+        "key": "has_monitor_arm",
+        "label": "Monitor de Signos Vitales",
+        "type": "bool",
+        "default": true,
+        "group": "Equipamiento"
+      }
+    ],
+    "presets": [
+      {
+        "id": "sterile_ready",
+        "name": "sterile_ready",
+        "values": {
+          "headrest_angle": 15.0,
+          "rails_raised": true,
+          "has_iv_pole": true,
+          "has_restraint_straps": false,
+          "has_patient_bulk": false,
+          "has_monitor_arm": true
+        }
+      },
+      {
+        "id": "quarantine_contained",
+        "name": "quarantine_contained",
+        "values": {
+          "headrest_angle": 25.0,
+          "rails_raised": true,
+          "has_iv_pole": true,
+          "has_restraint_straps": true,
+          "has_patient_bulk": true,
+          "has_monitor_arm": true
+        }
+      },
+      {
+        "id": "abandoned_empty",
+        "name": "abandoned_empty",
+        "values": {
+          "headrest_angle": 0.0,
+          "rails_raised": false,
+          "has_iv_pole": true,
+          "has_restraint_straps": true,
+          "has_patient_bulk": false,
+          "has_monitor_arm": false
+        }
+      }
+    ],
+    "export_capabilities": {
+      "supports_collision": true,
+      "default_collision_suffix": "-convcolonly"
+    },
+    "has_model": true,
+    "model_url": "/models/quarantine_bed.glb",
+    "file_size_bytes": 128612,
+    "source_code": "import bpy\nimport bmesh\nimport math\nfrom mathutils import Vector\nfrom typing import Dict, Any\n\nfrom ...core.base_generator import BaseAssetGenerator\nfrom ...core.mesh_builder import MeshBuilder\nfrom ...core.texture_atlas import PS1TextureAtlas\nfrom .config import QuarantineBedConfig\n\nclass QuarantineBedGenerator(BaseAssetGenerator):\n    \"\"\"\n    Procedural PSX generator for clinical quarantine and isolation beds.\n    Features heavy hospital frame, articulated mattress deck, restraint straps,\n    collapsible safety rails, IV drip pole, and vital signs terminal.\n    \"\"\"\n\n    def generate(self, config: QuarantineBedConfig = None) -> bpy.types.Object:\n        if config is not None:\n            self.config = config\n        elif not hasattr(self, \"config\") or self.config is None:\n            self.config = QuarantineBedConfig()\n\n        self.clean_context()\n        self.material_manager = self.get_material_manager(self.config)\n        MeshBuilder.set_active_material_manager(self.material_manager)\n\n        obj, bm = self.create_mesh_object(self.config.name)\n        self.material_manager.assign_to_mesh(obj)\n        m_idx = self.material_manager.material_indices\n\n        uv_layer = MeshBuilder.get_or_create_uv_layer(bm)\n        col_layer = MeshBuilder.get_or_create_color_layer(bm)\n\n        length = self.config.bed_length\n        width = self.config.bed_width\n        height = self.config.bed_height\n        half_l = length * 0.5\n        half_w = width * 0.5\n\n        casing_mat = m_idx.get(\"casing\", 0)\n        metal_mat = m_idx.get(\"dark_metal\", m_idx.get(\"casing\", 0))\n        accent_mat = m_idx.get(\"accent\", m_idx.get(\"casing\", 0))\n        screen_mat = m_idx.get(\"screen\", m_idx.get(\"casing\", 0))\n\n        casing_rgba = self.material_manager.get_rgba(\"casing\")\n        metal_rgba = self.material_manager.get_rgba(\"dark_metal\")\n        accent_rgba = self.material_manager.get_rgba(\"accent\")\n        screen_rgba = (0.2, 0.85, 0.45, 1.0)\n        rubber_rgba = (0.15, 0.15, 0.16, 1.0)\n\n        # -------------------------------------------------------------\n        # 1. Lower Chassis & Wheels\n        # -------------------------------------------------------------\n        wheel_radius = 0.06\n        wheel_width = 0.04\n        leg_inset_x = half_w - 0.08\n        leg_inset_y = half_l - 0.12\n        leg_top_z = height * 0.45\n\n        # 4 Caster legs\n        for lx in (-leg_inset_x, leg_inset_x):\n            for ly in (-leg_inset_y, leg_inset_y):\n                # Wheel\n                MeshBuilder.add_cylinder(\n                    bm,\n                    radius=wheel_radius,\n                    depth=wheel_width,\n                    segments=6,\n                    offset=(lx, ly, wheel_radius),\n                    axis='X',\n                    mat_idx=metal_mat,\n                    rgba=rubber_rgba,\n                    uv_rect=PS1TextureAtlas.get_rect(\"rubber_black\")\n                )\n\n                # Leg vertical strut\n                leg_h = leg_top_z - (wheel_radius * 1.5)\n                MeshBuilder.add_box(\n                    bm,\n                    size=(0.05, 0.05, leg_h),\n                    offset=(lx, ly, wheel_radius * 1.5 + leg_h * 0.5),\n                    mat_idx=metal_mat,\n                    rgba=metal_rgba,\n                    uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n                )\n\n        # Lower Equipment Shelf / Tray\n        tray_w = width - 0.22\n        tray_l = length - 0.32\n        MeshBuilder.add_box(\n            bm,\n            size=(tray_w, tray_l, 0.02),\n            offset=(0.0, 0.0, leg_top_z * 0.5),\n            mat_idx=metal_mat,\n            rgba=metal_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"metal_light_brushed\")\n        )\n\n        # Frame longitudinal tubes\n        tube_th = 0.04\n        deck_frame_z = height * 0.55\n        for sx in (-1, 1):\n            MeshBuilder.add_box(\n                bm,\n                size=(tube_th, length - 0.1, tube_th),\n                offset=(sx * (half_w - 0.04), 0.0, deck_frame_z),\n                mat_idx=casing_mat,\n                rgba=casing_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"painted_metal_white\")\n            )\n\n        # -------------------------------------------------------------\n        # 2. Headboard & Footboard\n        # -------------------------------------------------------------\n        # Headboard (+Y)\n        hb_h = height * 0.55\n        hb_z = deck_frame_z + hb_h * 0.5\n        MeshBuilder.add_box(\n            bm,\n            size=(width - 0.06, 0.04, hb_h),\n            offset=(0.0, half_l - 0.03, hb_z),\n            mat_idx=casing_mat,\n            rgba=casing_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"painted_metal_white\")\n        )\n\n        # Headboard push bar\n        MeshBuilder.add_box(\n            bm,\n            size=(width - 0.16, 0.03, 0.03),\n            offset=(0.0, half_l + 0.01, deck_frame_z + hb_h),\n            mat_idx=metal_mat,\n            rgba=metal_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"metal_light_brushed\")\n        )\n\n        # Footboard (-Y)\n        fb_h = height * 0.35\n        fb_z = deck_frame_z + fb_h * 0.5\n        MeshBuilder.add_box(\n            bm,\n            size=(width - 0.06, 0.04, fb_h),\n            offset=(0.0, -half_l + 0.03, fb_z),\n            mat_idx=casing_mat,\n            rgba=casing_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"painted_metal_white\")\n        )\n\n        # Chart clipboard\n        MeshBuilder.add_box(\n            bm,\n            size=(0.24, 0.015, 0.28),\n            offset=(0.0, -half_l + 0.005, fb_z + 0.05),\n            mat_idx=metal_mat,\n            rgba=metal_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"metal_light_brushed\")\n        )\n\n        # -------------------------------------------------------------\n        # 3. Mattress Deck & Foam Mattress\n        # -------------------------------------------------------------\n        mat_th = 0.12\n        mat_w = width - 0.12\n        mat_z = deck_frame_z + tube_th * 0.5 + mat_th * 0.5\n\n        head_ratio = 0.35\n        body_len = (length - 0.12) * (1.0 - head_ratio)\n        head_len = (length - 0.12) * head_ratio\n\n        # Main flat body section\n        body_center_y = -half_l + 0.06 + body_len * 0.5\n        MeshBuilder.add_box(\n            bm,\n            size=(mat_w, body_len, mat_th),\n            offset=(0.0, body_center_y, mat_z),\n            mat_idx=accent_mat,\n            rgba=accent_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"oxygen_cyan_glow\")\n        )\n\n        # Headrest section\n        head_z_boost = math.sin(math.radians(max(0.0, min(self.config.headrest_angle, 45.0)))) * 0.15\n        head_center_y = body_center_y + body_len * 0.5 + head_len * 0.5\n        MeshBuilder.add_box(\n            bm,\n            size=(mat_w, head_len, mat_th),\n            offset=(0.0, head_center_y, mat_z + head_z_boost * 0.5),\n            mat_idx=accent_mat,\n            rgba=accent_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"oxygen_cyan_glow\")\n        )\n\n        # Pillow\n        MeshBuilder.add_box(\n            bm,\n            size=(mat_w - 0.15, 0.28, 0.06),\n            offset=(0.0, head_center_y + head_len * 0.25, mat_z + mat_th * 0.5 + 0.03 + head_z_boost),\n            mat_idx=casing_mat,\n            rgba=(0.90, 0.92, 0.94, 1.0),\n            uv_rect=PS1TextureAtlas.get_rect(\"ceramic_tile_white\")\n        )\n\n        # Patient covered bulk\n        if self.config.has_patient_bulk:\n            MeshBuilder.add_box(\n                bm,\n                size=(mat_w * 0.65, body_len * 0.75, 0.22),\n                offset=(0.0, body_center_y, mat_z + mat_th * 0.5 + 0.11),\n                mat_idx=casing_mat,\n                rgba=(0.88, 0.90, 0.92, 1.0),\n                uv_rect=PS1TextureAtlas.get_rect(\"ceramic_tile_white\")\n            )\n\n        # -------------------------------------------------------------\n        # 4. Restraint Containment Straps\n        # -------------------------------------------------------------\n        if self.config.has_restraint_straps:\n            strap_ys = [body_center_y - body_len * 0.25, body_center_y + body_len * 0.15]\n            for sy in strap_ys:\n                sz = mat_z + mat_th * 0.5 + (0.22 if self.config.has_patient_bulk else 0.01)\n                MeshBuilder.add_box(\n                    bm,\n                    size=(mat_w + 0.02, 0.06, 0.015),\n                    offset=(0.0, sy, sz),\n                    mat_idx=metal_mat,\n                    rgba=rubber_rgba,\n                    uv_rect=PS1TextureAtlas.get_rect(\"rubber_black\")\n                )\n                MeshBuilder.add_box(\n                    bm,\n                    size=(0.09, 0.08, 0.02),\n                    offset=(0.0, sy, sz + 0.01),\n                    mat_idx=metal_mat,\n                    rgba=metal_rgba,\n                    uv_rect=PS1TextureAtlas.get_rect(\"metal_light_brushed\")\n                )\n\n        # -------------------------------------------------------------\n        # 5. Safety Containment Rails\n        # -------------------------------------------------------------\n        rail_z_offset = 0.24 if self.config.rails_raised else -0.12\n        rail_base_z = deck_frame_z + tube_th * 0.5 + rail_z_offset\n        rail_len = length * 0.55\n        rail_h = 0.28\n\n        for side in (-1.0, 1.0):\n            rx = side * (half_w - 0.02)\n            # Top rail bar\n            MeshBuilder.add_box(\n                bm,\n                size=(0.02, rail_len, 0.025),\n                offset=(rx, -0.05, rail_base_z + rail_h),\n                mat_idx=metal_mat,\n                rgba=metal_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"metal_light_brushed\")\n            )\n            # Bottom rail bar\n            MeshBuilder.add_box(\n                bm,\n                size=(0.02, rail_len, 0.02),\n                offset=(rx, -0.05, rail_base_z),\n                mat_idx=metal_mat,\n                rgba=metal_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"metal_light_brushed\")\n            )\n            # 3 Vertical rungs\n            for rung_i in range(3):\n                rung_y = -0.05 - rail_len * 0.4 + rung_i * (rail_len * 0.4)\n                MeshBuilder.add_box(\n                    bm,\n                    size=(0.018, 0.018, rail_h),\n                    offset=(rx, rung_y, rail_base_z + rail_h * 0.5),\n                    mat_idx=metal_mat,\n                    rgba=metal_rgba,\n                    uv_rect=PS1TextureAtlas.get_rect(\"metal_light_brushed\")\n                )\n\n        # -------------------------------------------------------------\n        # 6. IV Drip Pole\n        # -------------------------------------------------------------\n        if self.config.has_iv_pole:\n            pole_x = -half_w + 0.05\n            pole_y = half_l - 0.12\n            pole_h = 1.35\n            pole_z = deck_frame_z + pole_h * 0.5\n\n            MeshBuilder.add_box(\n                bm,\n                size=(0.025, 0.025, pole_h),\n                offset=(pole_x, pole_y, pole_z),\n                mat_idx=metal_mat,\n                rgba=metal_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"metal_light_brushed\")\n            )\n            # T-hanger\n            MeshBuilder.add_box(\n                bm,\n                size=(0.22, 0.02, 0.02),\n                offset=(pole_x, pole_y, deck_frame_z + pole_h),\n                mat_idx=metal_mat,\n                rgba=metal_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"metal_light_brushed\")\n            )\n            # IV Bag\n            MeshBuilder.add_box(\n                bm,\n                size=(0.06, 0.03, 0.15),\n                offset=(pole_x + 0.08, pole_y, deck_frame_z + pole_h - 0.12),\n                mat_idx=casing_mat,\n                rgba=(0.7, 0.85, 0.9, 0.8),\n                uv_rect=PS1TextureAtlas.get_rect(\"glass_reinforced\")\n            )\n\n        # -------------------------------------------------------------\n        # 7. Articulated Vitals Monitor Arm\n        # -------------------------------------------------------------\n        if self.config.has_monitor_arm:\n            arm_x = half_w - 0.04\n            arm_y = half_l - 0.16\n            arm_base_z = deck_frame_z + 0.25\n\n            # Post\n            MeshBuilder.add_box(\n                bm,\n                size=(0.03, 0.03, 0.5),\n                offset=(arm_x, arm_y, arm_base_z),\n                mat_idx=metal_mat,\n                rgba=metal_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n            )\n\n            # Monitor chassis\n            mon_x = arm_x + 0.05\n            mon_y = arm_y - 0.15\n            mon_z = arm_base_z + 0.32\n            MeshBuilder.add_box(\n                bm,\n                size=(0.20, 0.12, 0.18),\n                offset=(mon_x, mon_y, mon_z),\n                mat_idx=casing_mat,\n                rgba=(0.78, 0.76, 0.72, 1.0),\n                uv_rect=PS1TextureAtlas.get_rect(\"beige_plastic_worn\")\n            )\n\n            # Screen\n            MeshBuilder.add_box(\n                bm,\n                size=(0.015, 0.09, 0.13),\n                offset=(mon_x - 0.09, mon_y, mon_z),\n                mat_idx=screen_mat,\n                rgba=screen_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"crt_screen_green\")\n            )\n\n            # LED\n            MeshBuilder.add_box(\n                bm,\n                size=(0.015, 0.02, 0.02),\n                offset=(mon_x - 0.09, mon_y + 0.05, mon_z - 0.06),\n                mat_idx=screen_mat,\n                rgba=(0.1, 0.9, 0.2, 1.0),\n                uv_rect=PS1TextureAtlas.get_rect(\"led_green\")\n            )\n\n        self.finalize_mesh(obj, bm)\n        self.compact_materials(obj)\n        return obj\n",
+    "config_code": "from dataclasses import dataclass\nfrom ...core.base_config import BaseAssetConfig\n\n@dataclass\nclass QuarantineBedConfig(BaseAssetConfig):\n    \"\"\"Configuration for Clinical Isolation Quarantine Bed.\"\"\"\n    bed_length: float = 2.1\n    bed_width: float = 0.95\n    bed_height: float = 0.85\n    headrest_angle: float = 15.0      # 0.0 to 45.0 degrees raised\n    rails_raised: bool = True          # Safety isolation side rails raised or lowered\n    has_iv_pole: bool = True           # Tall IV fluid pole attached to bedframe\n    has_restraint_straps: bool = True  # Heavy containment straps across mattress\n    has_patient_bulk: bool = False     # Covered sheet silhouette under sterile draping\n    has_monitor_arm: bool = True       # Swivel vitals display terminal on articulated arm\n\n    name: str = \"quarantine_bed\"\n    palette_name: str = \"medbay_clean\"\n    wear_level: float = 0.35\n    target_tri_budget: int = 750\n"
+  },
+  {
     "id": "below_nominal.furniture.radiator_heater",
     "family": "radiator_heater",
     "name": "Radiador / Calefactor de Pared",
@@ -10449,6 +11287,151 @@
     "config_code": "from dataclasses import dataclass\nfrom ...core.base_config import BaseAssetConfig\n\n@dataclass\nclass SpaceToiletConfig(BaseAssetConfig):\n    \"\"\"Configuration for brutalist stainless steel vacuum space toilets, zero-G clamp latrines, and sanitaries.\"\"\"\n    toilet_type: str = \"bulkhead_vacuum\"    # \"bulkhead_vacuum\", \"compact_cubicle\", \"zero_g_clamp\"\n    width: float = 0.50                     # Toilet bowl unit width in meters\n    depth: float = 0.65                     # Overall projection depth in meters\n    height: float = 0.85                    # Back wall tank/shroud height in meters\n    has_thigh_restraints: bool = True       # Padded zero-G thigh restraint bars / handles\n    lid_state: str = \"closed\"               # \"closed\", \"open\", \"damaged\"\n    has_paper_dispenser: bool = True        # Wall-mounted enclosed institutional paper box\n    vacuum_pipe: bool = True                # High-pressure vacuum suction waste conduit\n    palette_name: str = \"industrial_hazard\"\n    target_tri_budget: int = 240\n"
   },
   {
+    "id": "below_nominal.laboratory.specimen_freezer",
+    "family": "specimen_freezer",
+    "name": "Congelador Criogénico de Muestras",
+    "version": "1.0.0",
+    "description": "Congelador de ultra-baja temperatura (-80°C) para conservación y aislamiento de muestras biológicas y agentes patógenos. Incluye zócalo de ventilación de compresor, bandejas deslizantes de acero con gradillas criogénicas, puerta aislada con palanca de vacío, visor térmico triple y panel digital de temperatura con alerta de ruptura de cadena de frío.",
+    "category": "laboratory",
+    "tags": [
+      "psx",
+      "low-poly",
+      "cryo",
+      "freezer",
+      "specimen",
+      "laboratory",
+      "biohazard",
+      "cold-storage",
+      "below-nominal"
+    ],
+    "author": {
+      "name": "ModelCoder Core Team",
+      "github": "FrancisCuarto"
+    },
+    "license": "CC-BY-4.0",
+    "compatibility": {},
+    "parameters": [
+      {
+        "key": "freezer_width",
+        "label": "Ancho de Gabinete (m)",
+        "type": "float",
+        "default": 0.9,
+        "group": "Dimensiones",
+        "min": 0.7,
+        "max": 1.3,
+        "step": 0.05
+      },
+      {
+        "key": "freezer_depth",
+        "label": "Profundidad de Gabinete (m)",
+        "type": "float",
+        "default": 0.8,
+        "group": "Dimensiones",
+        "min": 0.6,
+        "max": 1.1,
+        "step": 0.05
+      },
+      {
+        "key": "freezer_height",
+        "label": "Altura de Gabinete (m)",
+        "type": "float",
+        "default": 1.9,
+        "group": "Dimensiones",
+        "min": 1.5,
+        "max": 2.2,
+        "step": 0.05
+      },
+      {
+        "key": "door_open_angle",
+        "label": "Apertura de Puerta (grados)",
+        "type": "float",
+        "default": 0.0,
+        "group": "Estado",
+        "min": 0.0,
+        "max": 90.0,
+        "step": 5.0
+      },
+      {
+        "key": "tray_count",
+        "label": "Bandejas Interiores",
+        "type": "int",
+        "default": 4,
+        "group": "Estructura",
+        "min": 2.0,
+        "max": 6.0,
+        "step": 1.0
+      },
+      {
+        "key": "temperature_celsius",
+        "label": "Temperatura (°C)",
+        "type": "float",
+        "default": -80.0,
+        "group": "Estado",
+        "min": -90.0,
+        "max": 25.0,
+        "step": 1.0
+      },
+      {
+        "key": "has_alarm_beacon",
+        "label": "Baliza Superior de Alarma",
+        "type": "bool",
+        "default": false,
+        "group": "Seguridad"
+      },
+      {
+        "key": "has_window",
+        "label": "Ventana de Inspección",
+        "type": "bool",
+        "default": true,
+        "group": "Detalles"
+      }
+    ],
+    "presets": [
+      {
+        "id": "cryo_stable",
+        "name": "cryo_stable",
+        "values": {
+          "door_open_angle": 0.0,
+          "temperature_celsius": -80.0,
+          "tray_count": 4,
+          "has_alarm_beacon": false,
+          "has_window": true
+        }
+      },
+      {
+        "id": "open_inspection",
+        "name": "open_inspection",
+        "values": {
+          "door_open_angle": 80.0,
+          "temperature_celsius": -72.0,
+          "tray_count": 4,
+          "has_alarm_beacon": false,
+          "has_window": true
+        }
+      },
+      {
+        "id": "cold_chain_breach",
+        "name": "cold_chain_breach",
+        "values": {
+          "door_open_angle": 30.0,
+          "temperature_celsius": 14.0,
+          "tray_count": 3,
+          "has_alarm_beacon": true,
+          "has_window": true
+        }
+      }
+    ],
+    "export_capabilities": {
+      "supports_collision": true,
+      "default_collision_suffix": "-convcolonly"
+    },
+    "has_model": true,
+    "model_url": "/models/specimen_freezer.glb",
+    "file_size_bytes": 112696,
+    "source_code": "import bpy\nimport bmesh\nimport math\nfrom mathutils import Vector\nfrom typing import Dict, Any\n\nfrom ...core.base_generator import BaseAssetGenerator\nfrom ...core.mesh_builder import MeshBuilder\nfrom ...core.texture_atlas import PS1TextureAtlas\nfrom .config import SpecimenFreezerConfig\n\nclass SpecimenFreezerGenerator(BaseAssetGenerator):\n    \"\"\"\n    Procedural PSX generator for cryogenic specimen freezers (-80°C).\n    Features heavy insulated cabinet, compressor intake grill, slide-out internal\n    cryo-trays, vacuum latch handle, digital readout display, and triple-pane window.\n    \"\"\"\n\n    def generate(self, config: SpecimenFreezerConfig = None) -> bpy.types.Object:\n        if config is not None:\n            self.config = config\n        elif not hasattr(self, \"config\") or self.config is None:\n            self.config = SpecimenFreezerConfig()\n\n        self.clean_context()\n        self.material_manager = self.get_material_manager(self.config)\n        MeshBuilder.set_active_material_manager(self.material_manager)\n\n        obj, bm = self.create_mesh_object(self.config.name)\n        self.material_manager.assign_to_mesh(obj)\n        m_idx = self.material_manager.material_indices\n\n        w = self.config.freezer_width\n        d = self.config.freezer_depth\n        h = self.config.freezer_height\n        half_w = w * 0.5\n        half_d = d * 0.5\n\n        wall_th = 0.08\n        plinth_h = 0.35\n\n        casing_mat = m_idx.get(\"casing\", 0)\n        metal_mat = m_idx.get(\"dark_metal\", m_idx.get(\"casing\", 0))\n        glass_mat = m_idx.get(\"glass\", m_idx.get(\"casing\", 0))\n        screen_mat = m_idx.get(\"screen\", m_idx.get(\"casing\", 0))\n\n        casing_rgba = self.material_manager.get_rgba(\"casing\")\n        metal_rgba = self.material_manager.get_rgba(\"dark_metal\")\n        rubber_rgba = (0.15, 0.15, 0.16, 1.0)\n        screen_rgba = (0.2, 0.85, 0.35, 1.0) if self.config.temperature_celsius <= -50.0 else (0.9, 0.65, 0.15, 1.0)\n\n        # -------------------------------------------------------------\n        # 1. Base Plinth & Compressor Vent\n        # -------------------------------------------------------------\n        MeshBuilder.add_box(\n            bm,\n            size=(w, d, plinth_h),\n            offset=(0.0, 0.0, plinth_h * 0.5),\n            mat_idx=metal_mat,\n            rgba=metal_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n        )\n\n        vent_w = w * 0.75\n        vent_h = plinth_h * 0.65\n        MeshBuilder.add_box(\n            bm,\n            size=(vent_w, 0.02, vent_h),\n            offset=(0.0, -half_d - 0.005, plinth_h * 0.5),\n            mat_idx=metal_mat,\n            rgba=metal_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"vent_grill\")\n        )\n\n        # -------------------------------------------------------------\n        # 2. Main Insulated Body Walls\n        # -------------------------------------------------------------\n        body_h = h - plinth_h\n        body_center_z = plinth_h + body_h * 0.5\n\n        # Back wall\n        MeshBuilder.add_box(\n            bm,\n            size=(w, wall_th, body_h),\n            offset=(0.0, half_d - wall_th * 0.5, body_center_z),\n            mat_idx=casing_mat,\n            rgba=casing_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"painted_metal_white\")\n        )\n\n        # Left wall\n        MeshBuilder.add_box(\n            bm,\n            size=(wall_th, d - wall_th, body_h),\n            offset=(-half_w + wall_th * 0.5, 0.0, body_center_z),\n            mat_idx=casing_mat,\n            rgba=casing_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"painted_metal_white\")\n        )\n\n        # Right wall\n        MeshBuilder.add_box(\n            bm,\n            size=(wall_th, d - wall_th, body_h),\n            offset=(half_w - wall_th * 0.5, 0.0, body_center_z),\n            mat_idx=casing_mat,\n            rgba=casing_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"painted_metal_white\")\n        )\n\n        # Top ceiling\n        MeshBuilder.add_box(\n            bm,\n            size=(w, d, wall_th),\n            offset=(0.0, 0.0, h - wall_th * 0.5),\n            mat_idx=casing_mat,\n            rgba=casing_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"painted_metal_white\")\n        )\n\n        # Floor of cold chamber\n        MeshBuilder.add_box(\n            bm,\n            size=(w - wall_th * 2, d - wall_th * 2, wall_th),\n            offset=(0.0, 0.0, plinth_h + wall_th * 0.5),\n            mat_idx=metal_mat,\n            rgba=metal_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"metal_light_brushed\")\n        )\n\n        # Perimeter rubber gasket trim\n        MeshBuilder.add_box(\n            bm,\n            size=(w - 0.02, 0.02, body_h - 0.02),\n            offset=(0.0, -half_d + 0.01, body_center_z),\n            mat_idx=metal_mat,\n            rgba=rubber_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"rubber_black\")\n        )\n\n        # -------------------------------------------------------------\n        # 3. Interior Cryogenic Shelves & Cassette Boxes\n        # -------------------------------------------------------------\n        tray_count = max(2, min(self.config.tray_count, 6))\n        inner_w = w - wall_th * 2 - 0.04\n        inner_d = d - wall_th * 2 - 0.06\n        chamber_avail_h = body_h - wall_th * 2 - 0.08\n        tray_spacing = chamber_avail_h / (tray_count + 1)\n\n        for i in range(1, tray_count + 1):\n            tray_z = plinth_h + wall_th + i * tray_spacing\n            MeshBuilder.add_box(\n                bm,\n                size=(inner_w, inner_d, 0.02),\n                offset=(0.0, 0.02, tray_z),\n                mat_idx=metal_mat,\n                rgba=metal_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"metal_light_brushed\")\n            )\n\n            box_w = inner_w * 0.38\n            box_d = inner_d * 0.65\n            box_h = min(0.12, tray_spacing * 0.6)\n            for bx_side in (-1.0, 1.0):\n                bx = bx_side * (box_w * 0.6)\n                box_uv = \"cartridge_amber\" if (i % 2 == 0) else \"metal_dark_grime\"\n                MeshBuilder.add_box(\n                    bm,\n                    size=(box_w, box_d, box_h),\n                    offset=(bx, 0.02, tray_z + 0.01 + box_h * 0.5),\n                    mat_idx=metal_mat,\n                    rgba=(0.7, 0.55, 0.25, 1.0) if (i % 2 == 0) else metal_rgba,\n                    uv_rect=PS1TextureAtlas.get_rect(box_uv)\n                )\n\n        # -------------------------------------------------------------\n        # 4. Front Insulated Heavy Door & Latch\n        # -------------------------------------------------------------\n        door_w = w - 0.04\n        door_h = body_h - 0.04\n        door_th = 0.09\n        hinge_x = -half_w + 0.02\n        hinge_y = -half_d\n\n        angle_rad = math.radians(self.config.door_open_angle)\n        cos_a = math.cos(angle_rad)\n        sin_a = math.sin(angle_rad)\n\n        def rotate_door_pt(lx, ly, lz):\n            rx = hinge_x + lx * cos_a - ly * sin_a\n            ry = hinge_y + lx * sin_a + ly * cos_a\n            rz = body_center_z + lz\n            return rx, ry, rz\n\n        # Door slab center\n        dx, dy, dz = rotate_door_pt(door_w * 0.5, -door_th * 0.5, 0.0)\n        MeshBuilder.add_box(\n            bm,\n            size=(door_w, door_th, door_h),\n            offset=(dx, dy, dz),\n            mat_idx=casing_mat,\n            rgba=casing_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"painted_metal_white\")\n        )\n\n        # Inspection Window\n        if self.config.has_window:\n            wx, wy, wz = rotate_door_pt(door_w * 0.5, -door_th * 0.5 - 0.005, door_h * 0.12)\n            MeshBuilder.add_box(\n                bm,\n                size=(door_w * 0.38, door_th + 0.01, door_h * 0.32),\n                offset=(wx, wy, wz),\n                mat_idx=glass_mat,\n                rgba=(0.4, 0.65, 0.75, 0.8),\n                uv_rect=PS1TextureAtlas.get_rect(\"glass_reinforced\")\n            )\n\n        # Heavy Vacuum Clamp Latch & Handle\n        lx, ly, lz = rotate_door_pt(door_w - 0.08, -door_th - 0.04, 0.0)\n        MeshBuilder.add_box(\n            bm,\n            size=(0.05, 0.08, 0.32),\n            offset=(lx, ly, lz),\n            mat_idx=metal_mat,\n            rgba=metal_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"metal_light_brushed\")\n        )\n        hx, hy, hz = rotate_door_pt(door_w - 0.08, -door_th - 0.08, 0.0)\n        MeshBuilder.add_box(\n            bm,\n            size=(0.03, 0.03, 0.40),\n            offset=(hx, hy, hz),\n            mat_idx=metal_mat,\n            rgba=rubber_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"rubber_black\")\n        )\n\n        # Digital Readout Bezel & Screen\n        rx, ry, rz = rotate_door_pt(door_w * 0.5, -door_th - 0.015, door_h * 0.38)\n        MeshBuilder.add_box(\n            bm,\n            size=(0.26, 0.02, 0.12),\n            offset=(rx, ry, rz),\n            mat_idx=metal_mat,\n            rgba=metal_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n        )\n\n        screen_uv = \"crt_screen_green\" if self.config.temperature_celsius <= -50.0 else \"crt_screen_amber\"\n        sx, sy, sz = rotate_door_pt(door_w * 0.5, -door_th - 0.025, door_h * 0.38)\n        MeshBuilder.add_box(\n            bm,\n            size=(0.20, 0.015, 0.07),\n            offset=(sx, sy, sz),\n            mat_idx=screen_mat,\n            rgba=screen_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(screen_uv)\n        )\n\n        # Caution label on lower door\n        cx, cy, cz = rotate_door_pt(door_w * 0.5, -door_th - 0.01, -door_h * 0.28)\n        MeshBuilder.add_box(\n            bm,\n            size=(0.22, 0.015, 0.18),\n            offset=(cx, cy, cz),\n            mat_idx=metal_mat,\n            rgba=(0.9, 0.8, 0.1, 1.0),\n            uv_rect=PS1TextureAtlas.get_rect(\"caution_label\")\n        )\n\n        # -------------------------------------------------------------\n        # 5. Top Emergency Alarm Beacon (Optional)\n        # -------------------------------------------------------------\n        if self.config.has_alarm_beacon or self.config.temperature_celsius > -20.0:\n            MeshBuilder.add_box(\n                bm,\n                size=(0.14, 0.14, 0.04),\n                offset=(0.0, 0.0, h + 0.02),\n                mat_idx=metal_mat,\n                rgba=metal_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n            )\n            MeshBuilder.add_cylinder(\n                bm,\n                radius=0.06,\n                depth=0.12,\n                segments=6,\n                offset=(0.0, 0.0, h + 0.08),\n                axis='Z',\n                mat_idx=screen_mat,\n                rgba=(0.95, 0.15, 0.1, 1.0),\n                uv_rect=PS1TextureAtlas.get_rect(\"led_red\")\n            )\n\n        self.finalize_mesh(obj, bm)\n        self.compact_materials(obj)\n        return obj\n",
+    "config_code": "from dataclasses import dataclass\nfrom ...core.base_config import BaseAssetConfig\n\n@dataclass\nclass SpecimenFreezerConfig(BaseAssetConfig):\n    \"\"\"Configuration for Ultra-Low Temperature Specimen Cryo-Freezer (-80°C).\"\"\"\n    freezer_width: float = 0.9\n    freezer_depth: float = 0.8\n    freezer_height: float = 1.9\n    door_open_angle: float = 0.0          # 0.0 = sealed vacuum latch, 90.0 = fully open\n    tray_count: int = 4                   # 3 to 5 internal slide-out cryo racks\n    temperature_celsius: float = -80.0    # Display temp readout (-86 to +20)\n    has_alarm_beacon: bool = False        # Flashing red beacon on top if cold chain breached\n    has_frost_buildup: bool = True        # Frost/condensation around seals and window\n    has_window: bool = True               # Small triple-pane inspection window\n\n    name: str = \"specimen_freezer\"\n    palette_name: str = \"medbay_clean\"\n    wear_level: float = 0.35\n    target_tri_budget: int = 720\n"
+  },
+  {
     "id": "below_nominal.architecture.station_corridor",
     "family": "station_corridor",
     "name": "Sección de Pasillo Modular",
@@ -11075,6 +12058,273 @@
     "file_size_bytes": 126424,
     "source_code": "import math\nimport mathutils\nimport bmesh\nimport bpy\nfrom typing import List, Dict, Any\n\nfrom ...core.base_generator import BaseAssetGenerator, ValidationReport\nfrom ...core.mesh_builder import MeshBuilder\nfrom ...core.materials import MaterialManager\nfrom .config import StationRoomConfig\n\nclass StationRoomGenerator(BaseAssetGenerator):\n    \"\"\"Procedural generator for modular space station rooms and chambers.\"\"\"\n\n    def generate(self, config: StationRoomConfig) -> bpy.types.Object:\n        mesh = bpy.data.meshes.new(name=f\"{config.name}_mesh\")\n        obj = bpy.data.objects.new(name=config.name, object_data=mesh)\n        bpy.context.collection.objects.link(obj)\n\n        mat_mgr = self.get_material_manager(config)\n        mat_mgr.assign_to_mesh(obj)\n\n        bm = bmesh.new()\n        color_layer = bm.loops.layers.color.new(\"Col\")\n        uv_layer = bm.loops.layers.uv.new(\"UVMap\")\n\n        w = config.width\n        d = config.depth\n        h = config.height\n        half_w = w * 0.5\n        half_d = d * 0.5\n\n        # Archetype adjustments\n        has_window = config.has_observation_window or (config.room_archetype == \"control_hub\")\n        has_gantry = config.has_overhead_gantry or (config.room_archetype == \"cargo_bay\")\n        has_drain = config.has_floor_drain or (config.room_archetype == \"medbay_lab\")\n        elevation = config.floor_elevation\n        if config.room_archetype == \"control_hub\" and elevation == \"flat\":\n            elevation = \"raised_platform\"\n\n        # Material indices & UV rects\n        m_floor = mat_mgr.get_index(\"floor_metal\")\n        r_floor = mat_mgr.get_rect(\"floor_metal\")\n\n        m_hazard = mat_mgr.get_index(\"floor_hazard\")\n        r_hazard = mat_mgr.get_rect(\"hazard_yellow\")\n\n        m_grate = mat_mgr.get_index(\"floor_grate\")\n        r_grate = mat_mgr.get_rect(\"vent\")\n\n        m_wall = mat_mgr.get_index(\"wall_bulkhead\")\n        r_wall = mat_mgr.get_rect(\"metal_dark_grime\")\n\n        m_beam = mat_mgr.get_index(\"wall_support_beam\")\n        r_beam = mat_mgr.get_rect(\"metal_light_brushed\")\n\n        m_girder = mat_mgr.get_index(\"ceiling_girder\")\n        r_girder = mat_mgr.get_rect(\"metal_light_brushed\")\n\n        m_door_frame = mat_mgr.get_index(\"door_emergency_red\")\n        r_door_frame = mat_mgr.get_rect(\"door_emergency_red\")\n\n        m_glass = mat_mgr.get_index(\"glass_observation\")\n        r_glass = mat_mgr.get_rect(\"glass_observation\")\n\n        # Emissive lighting\n        m_light = mat_mgr.get_index(\"fluorescent_tube_lit\")\n        r_light = mat_mgr.get_rect(\"fluorescent_lit\")\n        if config.lighting_color == \"emergency_red\":\n            m_light = mat_mgr.get_index(\"led_red\")\n            r_light = mat_mgr.get_rect(\"led_red\")\n        elif config.lighting_color == \"medbay_cyan\":\n            m_light = mat_mgr.get_index(\"oxygen_cyan\")\n            r_light = mat_mgr.get_rect(\"oxygen_cyan\")\n        elif config.lighting_color == \"dim_amber\":\n            m_light = mat_mgr.get_index(\"memory_cartridge\")\n            r_light = mat_mgr.get_rect(\"cartridge_amber\")\n\n        # -------------------------------------------------------------\n        # 1. FLOOR & PLATFORMS\n        # -------------------------------------------------------------\n        floor_thick = 0.08\n        MeshBuilder.add_box(\n            bm,\n            size=mathutils.Vector((w, d, floor_thick)),\n            offset=mathutils.Vector((0.0, 0.0, -floor_thick * 0.5)),\n            mat_idx=m_floor,\n            uv_layer=uv_layer,\n            uv_rect=r_floor,\n            color_layer=color_layer,\n            rgba=(0.24, 0.26, 0.28, 1.0)\n        )\n\n        # Floor drainage trench\n        if has_drain:\n            trench_w = min(1.2, w * 0.25)\n            MeshBuilder.add_box(\n                bm,\n                size=mathutils.Vector((trench_w, d * 0.75, 0.006)),\n                offset=mathutils.Vector((0.0, 0.0, 0.003)),\n                mat_idx=m_grate,\n                uv_layer=uv_layer,\n                uv_rect=r_grate,\n                color_layer=color_layer,\n                rgba=(0.20, 0.20, 0.22, 1.0)\n            )\n\n        # Raised command platform\n        if elevation == \"raised_platform\":\n            plat_d = d * 0.38\n            plat_h = 0.35\n            plat_y = half_d - plat_d * 0.5\n            # Platform slab\n            MeshBuilder.add_box(\n                bm,\n                size=mathutils.Vector((w * 0.88, plat_d, plat_h)),\n                offset=mathutils.Vector((0.0, plat_y, plat_h * 0.5)),\n                mat_idx=m_beam,\n                uv_layer=uv_layer,\n                uv_rect=r_beam,\n                color_layer=color_layer,\n                rgba=(0.32, 0.35, 0.38, 1.0)\n            )\n            # Front step stair\n            step_d = 0.35\n            step_h = plat_h * 0.5\n            MeshBuilder.add_box(\n                bm,\n                size=mathutils.Vector((w * 0.60, step_d, step_h)),\n                offset=mathutils.Vector((0.0, half_d - plat_d - step_d * 0.5, step_h * 0.5)),\n                mat_idx=m_hazard,\n                uv_layer=uv_layer,\n                uv_rect=r_hazard,\n                color_layer=color_layer,\n                rgba=(0.85, 0.65, 0.10, 1.0)\n            )\n\n        # Sunken pit\n        elif elevation == \"sunken_pit\":\n            pit_w = w * 0.55\n            pit_d = d * 0.55\n            curb_w = 0.20\n            curb_h = 0.22\n            # Perimeter curbing\n            for sign_x in [-1, 1]:\n                MeshBuilder.add_box(\n                    bm,\n                    size=mathutils.Vector((curb_w, pit_d + curb_w * 2.0, curb_h)),\n                    offset=mathutils.Vector((sign_x * (pit_w * 0.5 + curb_w * 0.5), 0.0, curb_h * 0.5)),\n                    mat_idx=m_hazard,\n                    uv_layer=uv_layer,\n                    uv_rect=r_hazard,\n                    color_layer=color_layer\n                )\n\n        # Perimeter floor hazard stripes\n        stripe_w = 0.25\n        for sx in [-half_w + stripe_w * 0.5, half_w - stripe_w * 0.5]:\n            MeshBuilder.add_box(\n                bm,\n                size=mathutils.Vector((stripe_w, d, 0.005)),\n                offset=mathutils.Vector((sx, 0.0, 0.002)),\n                mat_idx=m_hazard,\n                uv_layer=uv_layer,\n                uv_rect=r_hazard,\n                color_layer=color_layer,\n                rgba=(0.85, 0.65, 0.10, 1.0)\n            )\n\n        # -------------------------------------------------------------\n        # 2. WALLS WITH DOORWAYS AND OBSERVATION VIEWPORT\n        # -------------------------------------------------------------\n        wall_thick = 0.20\n        dw = config.doorway_width\n        dh = config.doorway_height\n\n        def build_wall_with_optional_door(length: float, has_door: bool, is_ns: bool, pos_offset: float, is_north: bool = False):\n            \"\"\"Builds either a solid wall or a 3-part wall with a door opening in the center.\"\"\"\n            if has_door:\n                seg_len = max(0.4, (length - dw) * 0.5)\n                lintel_h = max(0.2, h - dh)\n\n                if is_ns:\n                    # Wall runs along X at Y = pos_offset\n                    # Left segment (-X)\n                    MeshBuilder.add_box(\n                        bm,\n                        size=mathutils.Vector((seg_len, wall_thick, h)),\n                        offset=mathutils.Vector((-length * 0.5 + seg_len * 0.5, pos_offset, h * 0.5)),\n                        mat_idx=m_wall,\n                        uv_layer=uv_layer,\n                        uv_rect=r_wall,\n                        color_layer=color_layer\n                    )\n                    # Right segment (+X)\n                    MeshBuilder.add_box(\n                        bm,\n                        size=mathutils.Vector((seg_len, wall_thick, h)),\n                        offset=mathutils.Vector((length * 0.5 - seg_len * 0.5, pos_offset, h * 0.5)),\n                        mat_idx=m_wall,\n                        uv_layer=uv_layer,\n                        uv_rect=r_wall,\n                        color_layer=color_layer\n                    )\n                    # Lintel header above door\n                    MeshBuilder.add_box(\n                        bm,\n                        size=mathutils.Vector((dw, wall_thick, lintel_h)),\n                        offset=mathutils.Vector((0.0, pos_offset, dh + lintel_h * 0.5)),\n                        mat_idx=m_door_frame,\n                        uv_layer=uv_layer,\n                        uv_rect=r_door_frame,\n                        color_layer=color_layer\n                    )\n                else:\n                    # Wall runs along Y at X = pos_offset\n                    # Seg 1 (-Y)\n                    MeshBuilder.add_box(\n                        bm,\n                        size=mathutils.Vector((wall_thick, seg_len, h)),\n                        offset=mathutils.Vector((pos_offset, -length * 0.5 + seg_len * 0.5, h * 0.5)),\n                        mat_idx=m_wall,\n                        uv_layer=uv_layer,\n                        uv_rect=r_wall,\n                        color_layer=color_layer\n                    )\n                    # Seg 2 (+Y)\n                    MeshBuilder.add_box(\n                        bm,\n                        size=mathutils.Vector((wall_thick, seg_len, h)),\n                        offset=mathutils.Vector((pos_offset, length * 0.5 - seg_len * 0.5, h * 0.5)),\n                        mat_idx=m_wall,\n                        uv_layer=uv_layer,\n                        uv_rect=r_wall,\n                        color_layer=color_layer\n                    )\n                    # Lintel header\n                    MeshBuilder.add_box(\n                        bm,\n                        size=mathutils.Vector((wall_thick, dw, lintel_h)),\n                        offset=mathutils.Vector((pos_offset, 0.0, dh + lintel_h * 0.5)),\n                        mat_idx=m_door_frame,\n                        uv_layer=uv_layer,\n                        uv_rect=r_door_frame,\n                        color_layer=color_layer\n                    )\n            else:\n                # Solid wall or Observation Viewport\n                if is_ns:\n                    if is_north and has_window:\n                        # Observation Viewport Window on North wall\n                        win_w = w * 0.65\n                        win_h = 1.40\n                        sill_h = 1.00\n                        side_w = (w - win_w) * 0.5\n                        # Left side wall\n                        MeshBuilder.add_box(\n                            bm,\n                            size=mathutils.Vector((side_w, wall_thick, h)),\n                            offset=mathutils.Vector((-half_w + side_w * 0.5, pos_offset, h * 0.5)),\n                            mat_idx=m_wall,\n                            uv_layer=uv_layer,\n                            uv_rect=r_wall,\n                            color_layer=color_layer\n                        )\n                        # Right side wall\n                        MeshBuilder.add_box(\n                            bm,\n                            size=mathutils.Vector((side_w, wall_thick, h)),\n                            offset=mathutils.Vector((half_w - side_w * 0.5, pos_offset, h * 0.5)),\n                            mat_idx=m_wall,\n                            uv_layer=uv_layer,\n                            uv_rect=r_wall,\n                            color_layer=color_layer\n                        )\n                        # Sill bottom wall\n                        MeshBuilder.add_box(\n                            bm,\n                            size=mathutils.Vector((win_w, wall_thick, sill_h)),\n                            offset=mathutils.Vector((0.0, pos_offset, sill_h * 0.5)),\n                            mat_idx=m_beam,\n                            uv_layer=uv_layer,\n                            uv_rect=r_beam,\n                            color_layer=color_layer\n                        )\n                        # Top header wall\n                        top_h = h - (sill_h + win_h)\n                        MeshBuilder.add_box(\n                            bm,\n                            size=mathutils.Vector((win_w, wall_thick, top_h)),\n                            offset=mathutils.Vector((0.0, pos_offset, h - top_h * 0.5)),\n                            mat_idx=m_beam,\n                            uv_layer=uv_layer,\n                            uv_rect=r_beam,\n                            color_layer=color_layer\n                        )\n                        # Glass pane\n                        MeshBuilder.add_box(\n                            bm,\n                            size=mathutils.Vector((win_w * 0.95, 0.04, win_h * 0.95)),\n                            offset=mathutils.Vector((0.0, pos_offset, sill_h + win_h * 0.5)),\n                            mat_idx=m_glass,\n                            uv_layer=uv_layer,\n                            uv_rect=r_glass,\n                            color_layer=color_layer,\n                            rgba=(0.05, 0.10, 0.15, 0.85)\n                        )\n                    else:\n                        MeshBuilder.add_box(\n                            bm,\n                            size=mathutils.Vector((length, wall_thick, h)),\n                            offset=mathutils.Vector((0.0, pos_offset, h * 0.5)),\n                            mat_idx=m_wall,\n                            uv_layer=uv_layer,\n                            uv_rect=r_wall,\n                            color_layer=color_layer\n                        )\n                else:\n                    MeshBuilder.add_box(\n                        bm,\n                        size=mathutils.Vector((wall_thick, length, h)),\n                        offset=mathutils.Vector((pos_offset, 0.0, h * 0.5)),\n                        mat_idx=m_wall,\n                        uv_layer=uv_layer,\n                        uv_rect=r_wall,\n                        color_layer=color_layer\n                    )\n\n        # North (+Y)\n        build_wall_with_optional_door(length=w, has_door=config.door_north, is_ns=True, pos_offset=half_d + wall_thick * 0.5, is_north=True)\n        # South (-Y)\n        build_wall_with_optional_door(length=w, has_door=config.door_south, is_ns=True, pos_offset=-half_d - wall_thick * 0.5)\n        # East (+X)\n        build_wall_with_optional_door(length=d, has_door=config.door_east, is_ns=False, pos_offset=half_w + wall_thick * 0.5)\n        # West (-X)\n        build_wall_with_optional_door(length=d, has_door=config.door_west, is_ns=False, pos_offset=-half_w - wall_thick * 0.5)\n\n        # -------------------------------------------------------------\n        # 3. COLUMNS & STRUCTURAL BUTTRESSES\n        # -------------------------------------------------------------\n        if config.pillar_layout == \"center_single\":\n            col_size = 0.65\n            MeshBuilder.add_box(\n                bm,\n                size=mathutils.Vector((col_size, col_size, h)),\n                offset=mathutils.Vector((0.0, 0.0, h * 0.5)),\n                mat_idx=m_beam,\n                uv_layer=uv_layer,\n                uv_rect=r_beam,\n                color_layer=color_layer\n            )\n        elif config.pillar_layout == \"dual_columns\":\n            col_size = 0.55\n            for col_y in [-d * 0.22, d * 0.22]:\n                MeshBuilder.add_box(\n                    bm,\n                    size=mathutils.Vector((col_size, col_size, h)),\n                    offset=mathutils.Vector((0.0, col_y, h * 0.5)),\n                    mat_idx=m_beam,\n                    uv_layer=uv_layer,\n                    uv_rect=r_beam,\n                    color_layer=color_layer\n                )\n        elif config.pillar_layout == \"perimeter_buttresses\":\n            butt_w = 0.35\n            butt_d = 0.35\n            for bx in [-half_w + butt_w * 0.5, half_w - butt_w * 0.5]:\n                for by in [-half_d + butt_d * 0.5, half_d - butt_d * 0.5]:\n                    MeshBuilder.add_box(\n                        bm,\n                        size=mathutils.Vector((butt_w, butt_d, h)),\n                        offset=mathutils.Vector((bx, by, h * 0.5)),\n                        mat_idx=m_beam,\n                        uv_layer=uv_layer,\n                        uv_rect=r_beam,\n                        color_layer=color_layer\n                    )\n\n        # -------------------------------------------------------------\n        # 4. CEILING, GIRDERS, CRANE GANTRY & LIGHTING\n        # -------------------------------------------------------------\n        ceil_thick = 0.08\n        MeshBuilder.add_box(\n            bm,\n            size=mathutils.Vector((w, d, ceil_thick)),\n            offset=mathutils.Vector((0.0, 0.0, h + ceil_thick * 0.5)),\n            mat_idx=m_wall,\n            uv_layer=uv_layer,\n            uv_rect=r_wall,\n            color_layer=color_layer\n        )\n\n        # Ceiling support girders spanning across X\n        girder_count = 3 if d > 7.0 else 2\n        for i in range(girder_count):\n            frac = (i + 1) / (girder_count + 1)\n            gy = -half_d + d * frac\n            MeshBuilder.add_box(\n                bm,\n                size=mathutils.Vector((w, 0.22, 0.18)),\n                offset=mathutils.Vector((0.0, gy, h - 0.09)),\n                mat_idx=m_girder,\n                uv_layer=uv_layer,\n                uv_rect=r_girder,\n                color_layer=color_layer\n            )\n\n        # Overhead Industrial Crane Gantry\n        if has_gantry:\n            gantry_beam_w = 0.30\n            gantry_beam_h = 0.25\n            # Longitudinal beam along Y\n            MeshBuilder.add_box(\n                bm,\n                size=mathutils.Vector((gantry_beam_w, d, gantry_beam_h)),\n                offset=mathutils.Vector((0.0, 0.0, h - 0.28)),\n                mat_idx=m_hazard,\n                uv_layer=uv_layer,\n                uv_rect=r_hazard,\n                color_layer=color_layer\n            )\n            # Crane Hoist Trolley\n            MeshBuilder.add_box(\n                bm,\n                size=mathutils.Vector((0.55, 0.55, 0.22)),\n                offset=mathutils.Vector((0.0, 0.0, h - 0.48)),\n                mat_idx=m_beam,\n                uv_layer=uv_layer,\n                uv_rect=r_beam,\n                color_layer=color_layer\n            )\n\n        # Lighting Troffers\n        light_rows = 2\n        for lx in [-w * 0.25, w * 0.25]:\n            for ly in [-d * 0.25, d * 0.25]:\n                # Casing\n                MeshBuilder.add_box(\n                    bm,\n                    size=mathutils.Vector((0.35, 1.2, 0.08)),\n                    offset=mathutils.Vector((lx, ly, h - 0.04)),\n                    mat_idx=m_beam,\n                    uv_layer=uv_layer,\n                    uv_rect=r_beam,\n                    color_layer=color_layer\n                )\n                # Emissive tube\n                MeshBuilder.add_box(\n                    bm,\n                    size=mathutils.Vector((0.18, 1.05, 0.02)),\n                    offset=mathutils.Vector((lx, ly, h - 0.075)),\n                    mat_idx=m_light,\n                    uv_layer=uv_layer,\n                    uv_rect=r_light,\n                    color_layer=color_layer\n                )\n\n        # -------------------------------------------------------------\n        # 5. COMPUTE DOORWAY SOCKETS FOR GODOT 4\n        # -------------------------------------------------------------\n        sockets: List[Dict[str, Any]] = []\n        if config.door_north:\n            sockets.append({\n                \"name\": \"door_north\",\n                \"pos\": [0.0, round(half_d, 4), 0.0],\n                \"forward\": [0.0, 1.0, 0.0],\n                \"width\": round(dw, 3),\n                \"height\": round(dh, 3)\n            })\n        if config.door_south:\n            sockets.append({\n                \"name\": \"door_south\",\n                \"pos\": [0.0, round(-half_d, 4), 0.0],\n                \"forward\": [0.0, -1.0, 0.0],\n                \"width\": round(dw, 3),\n                \"height\": round(dh, 3)\n            })\n        if config.door_east:\n            sockets.append({\n                \"name\": \"door_east\",\n                \"pos\": [round(half_w, 4), 0.0, 0.0],\n                \"forward\": [1.0, 0.0, 0.0],\n                \"width\": round(dw, 3),\n                \"height\": round(dh, 3)\n            })\n        if config.door_west:\n            sockets.append({\n                \"name\": \"door_west\",\n                \"pos\": [round(-half_w, 4), 0.0, 0.0],\n                \"forward\": [-1.0, 0.0, 0.0],\n                \"width\": round(dw, 3),\n                \"height\": round(dh, 3)\n            })\n\n        config.doorway_sockets = sockets\n\n        bm.to_mesh(mesh)\n        bm.free()\n        mesh.update()\n        return obj\n\n    def validate(self, obj: bpy.types.Object, config: StationRoomConfig) -> ValidationReport:\n        report = super().validate(obj, config)\n        return report\n",
     "config_code": "from dataclasses import dataclass, field\nfrom typing import Dict, List, Any\nfrom ...core.base_config import BaseAssetConfig\n\n@dataclass\nclass StationRoomConfig(BaseAssetConfig):\n    \"\"\"Configuration for complete space station rooms, labs, and chambers.\"\"\"\n    room_archetype: str = \"medbay_lab\"    # \"medbay_lab\", \"control_hub\", \"cargo_bay\", \"airlock_chamber\", \"crew_quarters\"\n    width: float = 6.0                    # Room width across X axis in meters\n    depth: float = 8.0                    # Room depth across Y axis in meters\n    height: float = 3.4                   # Ceiling clearance in meters\n    door_north: bool = True               # Open doorway in +Y wall\n    door_south: bool = True               # Open doorway in -Y wall\n    door_east: bool = False               # Open doorway in +X wall\n    door_west: bool = False               # Open doorway in -X wall\n    doorway_width: float = 2.0            # Doorway opening width (matches door asset)\n    doorway_height: float = 2.4           # Doorway opening height (matches door asset)\n    pillar_layout: str = \"perimeter_buttresses\" # \"none\", \"center_single\", \"dual_columns\", \"perimeter_buttresses\"\n    floor_elevation: str = \"flat\"         # \"flat\", \"raised_platform\", \"sunken_pit\"\n    has_observation_window: bool = False  # Large reinforced glass viewport\n    has_overhead_gantry: bool = False     # Heavy industrial yellow crane beam\n    has_floor_drain: bool = False         # Center drainage grate trench\n    lighting_color: str = \"clean_white\"   # \"clean_white\", \"emergency_red\", \"medbay_cyan\", \"dim_amber\"\n    target_tri_budget: int = 750\n    palette_name: str = \"industrial_hazard\"\n    doorway_sockets: List[Dict[str, Any]] = field(default_factory=list)\n"
+  },
+  {
+    "id": "below_nominal.fixtures.suit_rack",
+    "family": "suit_rack",
+    "name": "Perchero de Trajes Espaciales",
+    "version": "1.0.0",
+    "description": "Estructura reforzada de almacenamiento para trajes EVA, guantes y botas, con bandeja de goteo inferior y soportes para cascos. Podés configurar el ancho, cantidad de estaciones y trajes colgados en GLB.",
+    "category": "fixtures",
+    "tags": [
+      "psx",
+      "low-poly",
+      "suit",
+      "eva",
+      "rack",
+      "airlock",
+      "below-nominal"
+    ],
+    "author": {
+      "name": "ModelCoder Core Team",
+      "github": "FrancisCuarto"
+    },
+    "license": "CC-BY-4.0",
+    "compatibility": {},
+    "parameters": [
+      {
+        "key": "width",
+        "label": "Ancho Perchero (m)",
+        "type": "float",
+        "default": 1.4,
+        "group": "Dimensiones",
+        "min": 1.0,
+        "max": 2.2,
+        "step": 0.1
+      },
+      {
+        "key": "height",
+        "label": "Altura Perchero (m)",
+        "type": "float",
+        "default": 1.9,
+        "group": "Dimensiones",
+        "min": 1.6,
+        "max": 2.2,
+        "step": 0.05
+      },
+      {
+        "key": "depth",
+        "label": "Profundidad (m)",
+        "type": "float",
+        "default": 0.65,
+        "group": "Dimensiones",
+        "min": 0.5,
+        "max": 0.9,
+        "step": 0.05
+      },
+      {
+        "key": "suit_positions",
+        "label": "Capacidad de Trajes",
+        "type": "int",
+        "default": 3,
+        "group": "Estructura",
+        "min": 2.0,
+        "max": 4.0,
+        "step": 1.0
+      },
+      {
+        "key": "occupied_suits",
+        "label": "Trajes Colgados",
+        "type": "int",
+        "default": 2,
+        "group": "Estado",
+        "min": 0.0,
+        "max": 4.0,
+        "step": 1.0
+      },
+      {
+        "key": "has_boot_tray",
+        "label": "Bandeja Inferior de Botas",
+        "type": "bool",
+        "default": true,
+        "group": "Detalles"
+      },
+      {
+        "key": "has_helmet_hooks",
+        "label": "Soportes de Casco Superiores",
+        "type": "bool",
+        "default": true,
+        "group": "Detalles"
+      }
+    ],
+    "presets": [
+      {
+        "id": "eva_ready",
+        "name": "eva_ready",
+        "values": {
+          "suit_positions": 3,
+          "occupied_suits": 3,
+          "has_boot_tray": true,
+          "has_helmet_hooks": true
+        }
+      },
+      {
+        "id": "shift_active",
+        "name": "shift_active",
+        "values": {
+          "suit_positions": 3,
+          "occupied_suits": 1,
+          "has_boot_tray": true,
+          "has_helmet_hooks": true
+        }
+      },
+      {
+        "id": "evacuated_rack",
+        "name": "evacuated_rack",
+        "values": {
+          "suit_positions": 3,
+          "occupied_suits": 0,
+          "has_boot_tray": true,
+          "has_helmet_hooks": true
+        }
+      }
+    ],
+    "export_capabilities": {
+      "supports_collision": true,
+      "default_collision_suffix": "-convcolonly"
+    },
+    "has_model": true,
+    "model_url": "/models/suit_rack.glb",
+    "file_size_bytes": 112708,
+    "source_code": "import math\nimport mathutils\nimport bpy\nimport bmesh\nfrom ...core.base_generator import BaseAssetGenerator\nfrom ...core.mesh_builder import MeshBuilder\nfrom ...core.texture_atlas import PS1TextureAtlas\nfrom .config import SuitRackConfig\n\nclass SuitRackGenerator(BaseAssetGenerator[SuitRackConfig]):\n    \"\"\"\n    Procedural generator for Suit Rack:\n    Heavy steel mobile hanger rack for EVA spacesuits, gloves, and helmets,\n    with lower drainage grating and upper helmet mounting horns.\n    \"\"\"\n\n    def generate(self, config: SuitRackConfig = None) -> bpy.types.Object:\n        if config is not None:\n            self.config = config\n        self.clean_context()\n        self.material_manager = self.get_material_manager(self.config)\n        MeshBuilder.set_active_material_manager(self.material_manager)\n\n        obj, bm = self.create_mesh_object(self.config.name)\n        self.material_manager.assign_to_mesh(obj)\n        m_idx = self.material_manager.material_indices\n\n        w = self.config.width\n        h = self.config.height\n        d = self.config.depth\n\n        casing_mat = m_idx.get(\"casing\", 0)\n        metal_mat = m_idx.get(\"dark_metal\", m_idx.get(\"casing\", 0))\n        screen_mat = m_idx.get(\"screen\", m_idx.get(\"casing\", 0))\n\n        casing_rgba = self.material_manager.get_rgba(\"casing\")\n        metal_rgba = self.material_manager.get_rgba(\"dark_metal\")\n\n        # 1. Base floor frame (rectangular tubular sled)\n        tube_w = 0.05\n        # Side floor skids\n        for sx in (-1, 1):\n            MeshBuilder.add_box(\n                bm,\n                size=(tube_w, d, tube_w),\n                offset=(sx * (w / 2.0 - tube_w / 2.0), 0.0, tube_w / 2.0),\n                mat_idx=metal_mat,\n                rgba=metal_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n            )\n        # Front and back floor tie bars\n        for sy in (-1, 1):\n            MeshBuilder.add_box(\n                bm,\n                size=(w - 2.0 * tube_w, tube_w, tube_w),\n                offset=(0.0, sy * (d / 2.0 - tube_w / 2.0), tube_w / 2.0),\n                mat_idx=metal_mat,\n                rgba=metal_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n            )\n\n        # 2. Lower boot drainage tray\n        if self.config.has_boot_tray:\n            MeshBuilder.add_box(\n                bm,\n                size=(w * 0.88, d * 0.82, 0.02),\n                offset=(0.0, 0.0, tube_w + 0.01),\n                mat_idx=metal_mat,\n                rgba=(0.25, 0.25, 0.28, 1.0),\n                uv_rect=PS1TextureAtlas.get_rect(\"vent_grill\")\n            )\n\n        # 3. Main vertical upright pillars\n        col_h = h - tube_w\n        for sx in (-1, 1):\n            MeshBuilder.add_box(\n                bm,\n                size=(tube_w, tube_w * 1.5, col_h),\n                offset=(sx * (w / 2.0 - tube_w / 2.0), 0.0, tube_w + col_h / 2.0),\n                mat_idx=metal_mat,\n                rgba=metal_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n            )\n\n        # 4. Top horizontal hanging beam\n        beam_h = 0.06\n        beam_z = h - beam_h / 2.0\n        MeshBuilder.add_box(\n            bm,\n            size=(w, tube_w * 1.2, beam_h),\n            offset=(0.0, 0.0, beam_z),\n            mat_idx=metal_mat,\n            rgba=metal_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n        )\n\n        # 5. Hanging positions & EVA Suit modules\n        num_pos = max(2, min(4, int(self.config.suit_positions)))\n        num_occ = max(0, min(num_pos, int(self.config.occupied_suits)))\n        spacing = (w - 2.0 * tube_w - 0.2) / float(num_pos)\n\n        for i in range(num_pos):\n            pos_x = -(w / 2.0 - tube_w - 0.1) + i * spacing + spacing / 2.0\n            \n            # Heavy steel hanger triangle hook\n            MeshBuilder.add_cylinder(\n                bm,\n                radius=0.015,\n                depth=0.12,\n                segments=6,\n                offset=(pos_x, 0.0, beam_z - 0.08),\n                axis='Z',\n                mat_idx=metal_mat,\n                rgba=(0.7, 0.7, 0.75, 1.0),\n                uv_rect=PS1TextureAtlas.get_rect(\"metal_light_brushed\")\n            )\n\n            # Upper helmet support peg\n            if self.config.has_helmet_hooks:\n                MeshBuilder.add_cylinder(\n                    bm,\n                    radius=0.012,\n                    depth=0.16,\n                    segments=6,\n                    offset=(pos_x, 0.12, beam_z + 0.05),\n                    axis='Y',\n                    mat_idx=screen_mat,\n                    rgba=(0.95, 0.8, 0.1, 1.0),\n                    uv_rect=PS1TextureAtlas.get_rect(\"button_yellow\")\n                )\n\n            # Hanging Suit silhouette (if occupied)\n            if i < num_occ:\n                suit_top_z = beam_z - 0.14\n                \n                # Torso / Upper body EVA pressure suit\n                torso_h = 0.65\n                torso_w = 0.38\n                torso_d = 0.32\n                torso_z = suit_top_z - torso_h / 2.0\n                MeshBuilder.add_box(\n                    bm,\n                    size=(torso_w, torso_d, torso_h),\n                    offset=(pos_x, 0.0, torso_z),\n                    mat_idx=casing_mat,\n                    rgba=(0.88, 0.90, 0.92, 1.0),\n                    uv_rect=PS1TextureAtlas.get_rect(\"painted_metal_white\")\n                )\n\n                # Chest life support pack (backpack & chest control unit)\n                MeshBuilder.add_box(\n                    bm,\n                    size=(torso_w * 0.75, 0.10, torso_h * 0.55),\n                    offset=(pos_x, -torso_d / 2.0 - 0.04, torso_z + 0.05),\n                    mat_idx=metal_mat,\n                    rgba=metal_rgba,\n                    uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n                )\n\n                # Chest telemetry indicator\n                MeshBuilder.add_box(\n                    bm,\n                    size=(0.08, 0.01, 0.08),\n                    offset=(pos_x, -torso_d / 2.0 - 0.095, torso_z + 0.12),\n                    mat_idx=screen_mat,\n                    rgba=(0.85, 0.65, 0.2, 1.0),\n                    uv_rect=PS1TextureAtlas.get_rect(\"cartridge_amber\")\n                )\n\n                # Hanging legs / lower garment\n                legs_h = 0.65\n                legs_z = torso_z - torso_h / 2.0 - legs_h / 2.0\n                for leg_dir in (-1, 1):\n                    MeshBuilder.add_box(\n                        bm,\n                        size=(0.14, 0.20, legs_h),\n                        offset=(pos_x + leg_dir * 0.10, 0.0, legs_z),\n                        mat_idx=casing_mat,\n                        rgba=(0.82, 0.84, 0.86, 1.0),\n                        uv_rect=PS1TextureAtlas.get_rect(\"rubber_black\")\n                    )\n\n        self.finalize_mesh(obj, bm)\n        self.compact_materials(obj)\n        return obj\n",
+    "config_code": "from dataclasses import dataclass\nfrom ...core.base_config import BaseAssetConfig\n\n@dataclass\nclass SuitRackConfig(BaseAssetConfig):\n    \"\"\"Configuration for Suit Rack EVA spacesuit storage assembly.\"\"\"\n    width: float = 1.4\n    height: float = 1.9\n    depth: float = 0.65\n    suit_positions: int = 3           # 2 to 4 suit hanging stations\n    occupied_suits: int = 2           # Number of suits currently hung\n    has_boot_tray: bool = True        # Lower drip grating tray\n    has_helmet_hooks: bool = True     # Upper helmet peg brackets\n\n    name: str = \"suit_rack\"\n    palette_name: str = \"industrial_hazard\"\n    wear_level: float = 0.4\n    target_tri_budget: int = 750\n"
+  },
+  {
+    "id": "below_nominal.medical.surgical_light",
+    "family": "surgical_light",
+    "name": "Lámpara Quirúrgica Articulada",
+    "version": "1.0.0",
+    "description": "Luminaria quirúrgica multi-reflector de alta precisión para quirófanos y salas de disección. Dispone de anclaje de techo estanco, brazo pantógrafo articulado con contrapeso, cabezal parabólico con lentes reflectoras facetadas sin sombras, asidero central de guiado estéril y empuñaduras perimetrales de posicionamiento rápido.",
+    "category": "medical",
+    "tags": [
+      "psx",
+      "low-poly",
+      "surgical",
+      "light",
+      "lamp",
+      "hospital",
+      "medical",
+      "ceiling",
+      "below-nominal"
+    ],
+    "author": {
+      "name": "ModelCoder Core Team",
+      "github": "FrancisCuarto"
+    },
+    "license": "CC-BY-4.0",
+    "compatibility": {},
+    "parameters": [
+      {
+        "key": "dish_diameter",
+        "label": "Diámetro de Cabezal (m)",
+        "type": "float",
+        "default": 0.75,
+        "group": "Dimensiones",
+        "min": 0.55,
+        "max": 1.05,
+        "step": 0.05
+      },
+      {
+        "key": "reflector_count",
+        "label": "Lentes Reflectoras",
+        "type": "int",
+        "default": 4,
+        "group": "Óptica",
+        "min": 3.0,
+        "max": 6.0,
+        "step": 1.0
+      },
+      {
+        "key": "arm_reach",
+        "label": "Alcance del Brazo (m)",
+        "type": "float",
+        "default": 1.25,
+        "group": "Estructura",
+        "min": 0.8,
+        "max": 1.8,
+        "step": 0.05
+      },
+      {
+        "key": "arm_pitch_deg",
+        "label": "Inclinación de Brazo (grados)",
+        "type": "float",
+        "default": -20.0,
+        "group": "Articulación",
+        "min": -45.0,
+        "max": 20.0,
+        "step": 5.0
+      },
+      {
+        "key": "dish_pitch_deg",
+        "label": "Inclinación de Cabezal (grados)",
+        "type": "float",
+        "default": 30.0,
+        "group": "Articulación",
+        "min": -30.0,
+        "max": 60.0,
+        "step": 5.0
+      },
+      {
+        "key": "is_light_on",
+        "label": "Lámparas Encendidas",
+        "type": "bool",
+        "default": true,
+        "group": "Estado"
+      },
+      {
+        "key": "has_central_handle",
+        "label": "Mango Central Estéril",
+        "type": "bool",
+        "default": true,
+        "group": "Detalles"
+      }
+    ],
+    "presets": [
+      {
+        "id": "active_surgery",
+        "name": "active_surgery",
+        "values": {
+          "dish_diameter": 0.75,
+          "reflector_count": 4,
+          "is_light_on": true,
+          "dish_pitch_deg": 35.0,
+          "has_central_handle": true
+        }
+      },
+      {
+        "id": "parked_standby",
+        "name": "parked_standby",
+        "values": {
+          "dish_diameter": 0.75,
+          "reflector_count": 4,
+          "is_light_on": false,
+          "arm_pitch_deg": 10.0,
+          "dish_pitch_deg": 0.0,
+          "has_central_handle": true
+        }
+      },
+      {
+        "id": "power_failure",
+        "name": "power_failure",
+        "values": {
+          "dish_diameter": 0.75,
+          "reflector_count": 3,
+          "is_light_on": false,
+          "arm_pitch_deg": -40.0,
+          "dish_pitch_deg": 50.0,
+          "has_central_handle": false
+        }
+      }
+    ],
+    "export_capabilities": {
+      "supports_collision": true,
+      "default_collision_suffix": "-convcolonly"
+    },
+    "has_model": true,
+    "model_url": "/models/surgical_light.glb",
+    "file_size_bytes": 113152,
+    "source_code": "import bpy\nimport bmesh\nimport math\nfrom mathutils import Vector\nfrom typing import Dict, Any\n\nfrom ...core.base_generator import BaseAssetGenerator\nfrom ...core.mesh_builder import MeshBuilder\nfrom ...core.texture_atlas import PS1TextureAtlas\nfrom .config import SurgicalLightConfig\n\nclass SurgicalLightGenerator(BaseAssetGenerator):\n    \"\"\"\n    Procedural PSX generator for articulated surgical theatre multi-reflector lamps.\n    Features ceiling mount flange, counterbalanced pantograph arm, multi-lens satellite\n    reflector dish, sterile positioning handle, and perimeter rim grips.\n    \"\"\"\n\n    def generate(self, config: SurgicalLightConfig = None) -> bpy.types.Object:\n        if config is not None:\n            self.config = config\n        elif not hasattr(self, \"config\") or self.config is None:\n            self.config = SurgicalLightConfig()\n\n        self.clean_context()\n        self.material_manager = self.get_material_manager(self.config)\n        MeshBuilder.set_active_material_manager(self.material_manager)\n\n        obj, bm = self.create_mesh_object(self.config.name)\n        self.material_manager.assign_to_mesh(obj)\n        m_idx = self.material_manager.material_indices\n\n        dish_radius = self.config.dish_diameter * 0.5\n        is_ceiling = (self.config.mount_type == \"ceiling\")\n\n        casing_mat = m_idx.get(\"casing\", 0)\n        metal_mat = m_idx.get(\"dark_metal\", m_idx.get(\"casing\", 0))\n        screen_mat = m_idx.get(\"screen\", m_idx.get(\"casing\", 0))\n\n        casing_rgba = self.material_manager.get_rgba(\"casing\")\n        metal_rgba = self.material_manager.get_rgba(\"dark_metal\")\n        rubber_rgba = (0.15, 0.15, 0.16, 1.0)\n        lens_rgba = (0.85, 0.95, 1.0, 1.0) if self.config.is_light_on else (0.4, 0.5, 0.55, 0.8)\n\n        mount_top_z = 2.4 if is_ceiling else 1.8\n\n        # -------------------------------------------------------------\n        # 1. Mount Flange & Drop Post\n        # -------------------------------------------------------------\n        if is_ceiling:\n            MeshBuilder.add_cylinder(\n                bm,\n                radius=0.18,\n                depth=0.06,\n                segments=8,\n                offset=(0.0, 0.0, mount_top_z - 0.03),\n                axis='Z',\n                mat_idx=metal_mat,\n                rgba=metal_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n            )\n            rod_len = 0.35\n            MeshBuilder.add_cylinder(\n                bm,\n                radius=0.04,\n                depth=rod_len,\n                segments=6,\n                offset=(0.0, 0.0, mount_top_z - 0.06 - rod_len * 0.5),\n                axis='Z',\n                mat_idx=metal_mat,\n                rgba=metal_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"metal_light_brushed\")\n            )\n            pivot_origin = Vector((0.0, 0.0, mount_top_z - 0.06 - rod_len))\n        else:\n            MeshBuilder.add_box(\n                bm,\n                size=(0.25, 0.08, 0.35),\n                offset=(0.0, 0.0, mount_top_z),\n                mat_idx=metal_mat,\n                rgba=metal_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n            )\n            pivot_origin = Vector((0.0, 0.15, mount_top_z))\n\n        # Swivel Hub Block\n        MeshBuilder.add_cylinder(\n            bm,\n            radius=0.07,\n            depth=0.12,\n            segments=6,\n            offset=pivot_origin,\n            axis='Z',\n            mat_idx=metal_mat,\n            rgba=metal_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n        )\n\n        # -------------------------------------------------------------\n        # 2. Articulating Suspension Arm & Counterweight\n        # -------------------------------------------------------------\n        arm_len = self.config.arm_reach * 0.55\n        arm_pitch_rad = math.radians(self.config.arm_pitch_deg)\n\n        arm1_dir = Vector((0.0, math.cos(arm_pitch_rad), math.sin(arm_pitch_rad))).normalized()\n        arm1_mid = pivot_origin + arm1_dir * (arm_len * 0.5)\n\n        MeshBuilder.add_box(\n            bm,\n            size=(0.05, arm_len, 0.05),\n            offset=arm1_mid,\n            mat_idx=casing_mat,\n            rgba=casing_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"painted_metal_white\")\n        )\n\n        # Counterbalance weight\n        cb_pos = pivot_origin - arm1_dir * 0.22\n        MeshBuilder.add_cylinder(\n            bm,\n            radius=0.08,\n            depth=0.16,\n            segments=6,\n            offset=cb_pos,\n            axis='Y',\n            mat_idx=metal_mat,\n            rgba=metal_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n        )\n\n        # Elbow Joint\n        elbow_pos = pivot_origin + arm1_dir * arm_len\n        MeshBuilder.add_cylinder(\n            bm,\n            radius=0.06,\n            depth=0.10,\n            segments=6,\n            offset=elbow_pos,\n            axis='Y',\n            mat_idx=metal_mat,\n            rgba=metal_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"metal_light_brushed\")\n        )\n\n        # Forearm segment\n        forearm_len = self.config.arm_reach * 0.50\n        forearm_dir = Vector((0.0, math.cos(arm_pitch_rad - 0.4), math.sin(arm_pitch_rad - 0.4))).normalized()\n        forearm_mid = elbow_pos + forearm_dir * (forearm_len * 0.5)\n\n        MeshBuilder.add_box(\n            bm,\n            size=(0.045, forearm_len, 0.045),\n            offset=forearm_mid,\n            mat_idx=casing_mat,\n            rgba=casing_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"painted_metal_white\")\n        )\n\n        # Gimbal Yoke\n        lamp_mount_pos = elbow_pos + forearm_dir * forearm_len\n        MeshBuilder.add_box(\n            bm,\n            size=(0.14, 0.10, 0.08),\n            offset=lamp_mount_pos,\n            mat_idx=metal_mat,\n            rgba=metal_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"metal_light_brushed\")\n        )\n\n        # -------------------------------------------------------------\n        # 3. Multi-Reflector Satellite Dish\n        # -------------------------------------------------------------\n        dish_center = lamp_mount_pos + Vector((0.0, 0.08, -0.15))\n        dish_th = 0.10\n\n        # Satellite dome back\n        MeshBuilder.add_cylinder(\n            bm,\n            radius=dish_radius,\n            depth=dish_th,\n            segments=8,\n            offset=dish_center - Vector((0.0, 0.0, dish_th * 0.5)),\n            axis='Z',\n            mat_idx=casing_mat,\n            rgba=casing_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"painted_metal_white\")\n        )\n\n        # Front recessed bezel plate\n        MeshBuilder.add_cylinder(\n            bm,\n            radius=dish_radius * 0.94,\n            depth=0.02,\n            segments=8,\n            offset=dish_center - Vector((0.0, 0.0, dish_th + 0.005)),\n            axis='Z',\n            mat_idx=metal_mat,\n            rgba=metal_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"metal_light_brushed\")\n        )\n\n        # -------------------------------------------------------------\n        # 4. Faceted Reflector Lenses\n        # -------------------------------------------------------------\n        refl_count = max(3, min(self.config.reflector_count, 6))\n        refl_ring_r = dish_radius * 0.55\n        refl_lens_r = dish_radius * 0.22\n        lens_uv = \"fluorescent_lit\" if self.config.is_light_on else \"glass_reinforced\"\n\n        for i in range(refl_count):\n            theta = (2.0 * math.pi * i) / refl_count\n            lx = math.cos(theta) * refl_ring_r\n            ly = math.sin(theta) * refl_ring_r\n\n            lens_pos = dish_center + Vector((lx, ly, -dish_th - 0.015))\n            MeshBuilder.add_cylinder(\n                bm,\n                radius=refl_lens_r,\n                depth=0.025,\n                segments=6,\n                offset=lens_pos,\n                axis='Z',\n                mat_idx=screen_mat,\n                rgba=lens_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(lens_uv)\n            )\n\n        # -------------------------------------------------------------\n        # 5. Central Sterile Handle & Perimeter Grips\n        # -------------------------------------------------------------\n        if self.config.has_central_handle:\n            MeshBuilder.add_cylinder(\n                bm,\n                radius=0.045,\n                depth=0.03,\n                segments=6,\n                offset=dish_center - Vector((0.0, 0.0, dish_th + 0.02)),\n                axis='Z',\n                mat_idx=metal_mat,\n                rgba=metal_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"metal_light_brushed\")\n            )\n            MeshBuilder.add_cylinder(\n                bm,\n                radius=0.02,\n                depth=0.16,\n                segments=6,\n                offset=dish_center - Vector((0.0, 0.0, dish_th + 0.10)),\n                axis='Z',\n                mat_idx=metal_mat,\n                rgba=rubber_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"rubber_black\")\n            )\n            MeshBuilder.add_cylinder(\n                bm,\n                radius=0.03,\n                depth=0.04,\n                segments=6,\n                offset=dish_center - Vector((0.0, 0.0, dish_th + 0.18)),\n                axis='Z',\n                mat_idx=metal_mat,\n                rgba=metal_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"metal_light_brushed\")\n            )\n\n        # Perimeter grips\n        for rim_side in (-1.0, 1.0):\n            MeshBuilder.add_box(\n                bm,\n                size=(0.025, 0.14, 0.025),\n                offset=dish_center + Vector((rim_side * (dish_radius + 0.03), 0.0, -dish_th * 0.5)),\n                mat_idx=metal_mat,\n                rgba=rubber_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"rubber_black\")\n            )\n\n        self.finalize_mesh(obj, bm)\n        self.compact_materials(obj)\n        return obj\n",
+    "config_code": "from dataclasses import dataclass\nfrom ...core.base_config import BaseAssetConfig\n\n@dataclass\nclass SurgicalLightConfig(BaseAssetConfig):\n    \"\"\"Configuration for Articulated Multi-Reflector Operating Room Surgical Light.\"\"\"\n    dish_diameter: float = 0.75\n    reflector_count: int = 4            # 3 to 6 circular faceted light lenses\n    arm_reach: float = 1.25             # Reach distance of the dual articulating suspension arm\n    arm_pitch_deg: float = -20.0        # Arm downward angle (-45 to +20 degrees)\n    dish_pitch_deg: float = 30.0        # Lamp head tilt down toward operating field\n    dish_yaw_deg: float = 15.0          # Lamp head rotation angle\n    is_light_on: bool = True            # Light reflectors emit brilliant surgical illumination\n    has_central_handle: bool = True     # Central detachable sterile steering handle\n    mount_type: str = \"ceiling\"         # \"ceiling\", \"wall\"\n\n    name: str = \"surgical_light\"\n    palette_name: str = \"medbay_clean\"\n    wear_level: float = 0.25\n    target_tri_budget: int = 680\n"
   },
   {
     "id": "below_nominal.infrastructure.terminal",

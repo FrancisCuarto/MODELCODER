@@ -1,0 +1,130 @@
+{
+  "id": "below_nominal.medical.surgical_light",
+  "name": "Lámpara Quirúrgica Articulada",
+  "version": "1.0.0",
+  "description": "Luminaria quirúrgica multi-reflector de alta precisión para quirófanos y salas de disección. Dispone de anclaje de techo estanco, brazo pantógrafo articulado con contrapeso, cabezal parabólico con lentes reflectoras facetadas sin sombras, asidero central de guiado estéril y empuñaduras perimetrales de posicionamiento rápido.",
+  "author": {
+    "name": "ModelCoder Core Team",
+    "github": "FrancisCuarto"
+  },
+  "license": "CC-BY-4.0",
+  "category": "medical",
+  "tags": [
+    "psx",
+    "low-poly",
+    "surgical",
+    "light",
+    "lamp",
+    "hospital",
+    "medical",
+    "ceiling",
+    "below-nominal"
+  ],
+  "parameters": [
+    {
+      "key": "dish_diameter",
+      "label": "Diámetro de Cabezal (m)",
+      "type": "float",
+      "default": 0.75,
+      "min": 0.55,
+      "max": 1.05,
+      "step": 0.05,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "reflector_count",
+      "label": "Lentes Reflectoras",
+      "type": "int",
+      "default": 4,
+      "min": 3,
+      "max": 6,
+      "step": 1,
+      "group": "Óptica"
+    },
+    {
+      "key": "arm_reach",
+      "label": "Alcance del Brazo (m)",
+      "type": "float",
+      "default": 1.25,
+      "min": 0.8,
+      "max": 1.8,
+      "step": 0.05,
+      "group": "Estructura"
+    },
+    {
+      "key": "arm_pitch_deg",
+      "label": "Inclinación de Brazo (grados)",
+      "type": "float",
+      "default": -20.0,
+      "min": -45.0,
+      "max": 20.0,
+      "step": 5.0,
+      "group": "Articulación"
+    },
+    {
+      "key": "dish_pitch_deg",
+      "label": "Inclinación de Cabezal (grados)",
+      "type": "float",
+      "default": 30.0,
+      "min": -30.0,
+      "max": 60.0,
+      "step": 5.0,
+      "group": "Articulación"
+    },
+    {
+      "key": "is_light_on",
+      "label": "Lámparas Encendidas",
+      "type": "bool",
+      "default": true,
+      "group": "Estado"
+    },
+    {
+      "key": "has_central_handle",
+      "label": "Mango Central Estéril",
+      "type": "bool",
+      "default": true,
+      "group": "Detalles"
+    }
+  ],
+  "presets": [
+    {
+      "id": "active_surgery",
+      "label": "Cirugía Activa (Foco Fuerte)",
+      "values": {
+        "dish_diameter": 0.75,
+        "reflector_count": 4,
+        "is_light_on": true,
+        "dish_pitch_deg": 35.0,
+        "has_central_handle": true
+      }
+    },
+    {
+      "id": "parked_standby",
+      "label": "Plegada en Reposo",
+      "values": {
+        "dish_diameter": 0.75,
+        "reflector_count": 4,
+        "is_light_on": false,
+        "arm_pitch_deg": 10.0,
+        "dish_pitch_deg": 0.0,
+        "has_central_handle": true
+      }
+    },
+    {
+      "id": "power_failure",
+      "label": "Fallo Eléctrico / Caída",
+      "values": {
+        "dish_diameter": 0.75,
+        "reflector_count": 3,
+        "is_light_on": false,
+        "arm_pitch_deg": -40.0,
+        "dish_pitch_deg": 50.0,
+        "has_central_handle": false
+      }
+    }
+  ],
+  "export_capabilities": {
+    "supports_collision": true,
+    "default_collision_suffix": "-convcolonly"
+  }
+}

@@ -1,0 +1,139 @@
+{
+  "id": "below_nominal.medical.decon_chamber",
+  "name": "Cabina de Descontaminación",
+  "version": "1.0.0",
+  "description": "Cabina vertical estanca para descontaminación biológica y química de personal de superficie o tripulación expuesta a patógenos. Cuenta con rociadores perimetrales en varios niveles, alcachofa de techo, rejilla de drenaje inferior, puerta con ventana de inspección y panel exterior con indicadores de estado de ciclo.",
+  "author": {
+    "name": "ModelCoder Core Team",
+    "github": "FrancisCuarto"
+  },
+  "license": "CC-BY-4.0",
+  "category": "medical",
+  "tags": [
+    "psx",
+    "low-poly",
+    "decon",
+    "chamber",
+    "medical",
+    "biosecurity",
+    "shower",
+    "below-nominal"
+  ],
+  "parameters": [
+    {
+      "key": "chamber_width",
+      "label": "Ancho de Cabina (m)",
+      "type": "float",
+      "default": 1.2,
+      "min": 1.0,
+      "max": 1.6,
+      "step": 0.05,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "chamber_depth",
+      "label": "Profundidad de Cabina (m)",
+      "type": "float",
+      "default": 1.2,
+      "min": 1.0,
+      "max": 1.6,
+      "step": 0.05,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "chamber_height",
+      "label": "Altura de Cabina (m)",
+      "type": "float",
+      "default": 2.2,
+      "min": 2.0,
+      "max": 2.6,
+      "step": 0.05,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "door_open_angle",
+      "label": "Apertura de Puerta (grados)",
+      "type": "float",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 90.0,
+      "step": 5.0,
+      "group": "Estado"
+    },
+    {
+      "key": "nozzle_tiers",
+      "label": "Niveles de Rociadores",
+      "type": "int",
+      "default": 3,
+      "min": 2,
+      "max": 4,
+      "step": 1,
+      "group": "Detalles"
+    },
+    {
+      "key": "has_ceiling_shower_head",
+      "label": "Ducha de Techo",
+      "type": "bool",
+      "default": true,
+      "group": "Detalles"
+    },
+    {
+      "key": "has_external_cycle_panel",
+      "label": "Panel de Control de Ciclo",
+      "type": "bool",
+      "default": true,
+      "group": "Detalles"
+    },
+    {
+      "key": "cycle_state",
+      "label": "Estado de Ciclo",
+      "type": "enum",
+      "default": "idle",
+      "options": [
+        { "value": "idle", "label": "Reposo (Luz Verde / Neutra)" },
+        { "value": "active", "label": "Descontaminando (Luz Ámbar)" },
+        { "value": "alarm", "label": "Alarma / Infección (Luz Roja)" }
+      ],
+      "group": "Estado"
+    }
+  ],
+  "presets": [
+    {
+      "id": "sealed_idle",
+      "label": "Sellada en Espera",
+      "values": {
+        "door_open_angle": 0.0,
+        "cycle_state": "idle",
+        "nozzle_tiers": 3,
+        "has_ceiling_shower_head": true,
+        "has_external_cycle_panel": true
+      }
+    },
+    {
+      "id": "active_purge",
+      "label": "Ciclo Activo de Purga",
+      "values": {
+        "door_open_angle": 0.0,
+        "cycle_state": "active",
+        "nozzle_tiers": 4,
+        "has_ceiling_shower_head": true,
+        "has_external_cycle_panel": true
+      }
+    },
+    {
+      "id": "breached_alarm",
+      "label": "Alarma de Brecha / Puerta Abierta",
+      "values": {
+        "door_open_angle": 75.0,
+        "cycle_state": "alarm",
+        "nozzle_tiers": 3,
+        "has_ceiling_shower_head": true,
+        "has_external_cycle_panel": true
+      }
+    }
+  ],
+  "export_capabilities": {
+    "supports_collision": true,
+    "default_collision_suffix": "-convcolonly"
+  }
+}

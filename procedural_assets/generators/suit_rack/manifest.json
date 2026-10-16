@@ -1,0 +1,123 @@
+{
+  "id": "below_nominal.fixtures.suit_rack",
+  "name": "Perchero de Trajes Espaciales",
+  "version": "1.0.0",
+  "description": "Estructura reforzada de almacenamiento para trajes EVA, guantes y botas, con bandeja de goteo inferior y soportes para cascos. Podés configurar el ancho, cantidad de estaciones y trajes colgados en GLB.",
+  "author": {
+    "name": "ModelCoder Core Team",
+    "github": "FrancisCuarto"
+  },
+  "license": "CC-BY-4.0",
+  "category": "fixtures",
+  "tags": [
+    "psx",
+    "low-poly",
+    "suit",
+    "eva",
+    "rack",
+    "airlock",
+    "below-nominal"
+  ],
+  "parameters": [
+    {
+      "key": "width",
+      "label": "Ancho Perchero (m)",
+      "type": "float",
+      "default": 1.4,
+      "min": 1.0,
+      "max": 2.2,
+      "step": 0.1,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "height",
+      "label": "Altura Perchero (m)",
+      "type": "float",
+      "default": 1.9,
+      "min": 1.6,
+      "max": 2.2,
+      "step": 0.05,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "depth",
+      "label": "Profundidad (m)",
+      "type": "float",
+      "default": 0.65,
+      "min": 0.5,
+      "max": 0.9,
+      "step": 0.05,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "suit_positions",
+      "label": "Capacidad de Trajes",
+      "type": "int",
+      "default": 3,
+      "min": 2,
+      "max": 4,
+      "step": 1,
+      "group": "Estructura"
+    },
+    {
+      "key": "occupied_suits",
+      "label": "Trajes Colgados",
+      "type": "int",
+      "default": 2,
+      "min": 0,
+      "max": 4,
+      "step": 1,
+      "group": "Estado"
+    },
+    {
+      "key": "has_boot_tray",
+      "label": "Bandeja Inferior de Botas",
+      "type": "bool",
+      "default": true,
+      "group": "Detalles"
+    },
+    {
+      "key": "has_helmet_hooks",
+      "label": "Soportes de Casco Superiores",
+      "type": "bool",
+      "default": true,
+      "group": "Detalles"
+    }
+  ],
+  "presets": [
+    {
+      "id": "eva_ready",
+      "label": "EVA Listo / Completo",
+      "values": {
+        "suit_positions": 3,
+        "occupied_suits": 3,
+        "has_boot_tray": true,
+        "has_helmet_hooks": true
+      }
+    },
+    {
+      "id": "shift_active",
+      "label": "Turno en Marcha (Parcial)",
+      "values": {
+        "suit_positions": 3,
+        "occupied_suits": 1,
+        "has_boot_tray": true,
+        "has_helmet_hooks": true
+      }
+    },
+    {
+      "id": "evacuated_rack",
+      "label": "Perchero Vacío / Evacuación",
+      "values": {
+        "suit_positions": 3,
+        "occupied_suits": 0,
+        "has_boot_tray": true,
+        "has_helmet_hooks": true
+      }
+    }
+  ],
+  "export_capabilities": {
+    "supports_collision": true,
+    "default_collision_suffix": "-convcolonly"
+  }
+}

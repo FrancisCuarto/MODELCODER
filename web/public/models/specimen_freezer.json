@@ -1,0 +1,97 @@
+{
+  "generator": "SpecimenFreezerGenerator",
+  "model_name": "specimen_freezer",
+  "seed": 42,
+  "timestamp": "2026-10-16T04:59:12.680323Z",
+  "mesh_metrics": {
+    "triangle_count": 324,
+    "vertex_count": 216,
+    "target_tri_budget": 720,
+    "budget_compliance_ratio": 0.45,
+    "dimensions_meters": {
+      "width": 0.9,
+      "height": 0.985,
+      "depth": 1.9
+    },
+    "has_vertex_colors": true,
+    "materials_assigned": [
+      "mat_psx_medbay_clean_casing_w35"
+    ]
+  },
+  "config_parameters": {
+    "seed": 42,
+    "target_tri_budget": 720,
+    "name": "specimen_freezer",
+    "wear_level": 0.35,
+    "add_collision_mesh": false,
+    "collision_type": "box",
+    "collision_suffix": "-convcolonly",
+    "pivot_rule": "floor_center",
+    "export_subcomponents": false,
+    "palette_name": "medbay_clean",
+    "emission_scale": 1.0,
+    "extra_params": {},
+    "freezer_width": 0.9,
+    "freezer_depth": 0.8,
+    "freezer_height": 1.9,
+    "door_open_angle": 0.0,
+    "tray_count": 4,
+    "temperature_celsius": -80.0,
+    "has_alarm_beacon": false,
+    "has_frost_buildup": true,
+    "has_window": true
+  },
+  "sockets": [
+    {
+      "name": "socket_player_interact",
+      "position": [
+        0.0,
+        -1.043,
+        0.0
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "Standard player character interaction stand point"
+    },
+    {
+      "name": "socket_item_spawn",
+      "position": [
+        0.0,
+        0.0,
+        1.92
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "Prop or pickup spawn snap position (keycards, ammo, medical items)"
+    },
+    {
+      "name": "socket_light",
+      "position": [
+        0.0,
+        0.0,
+        1.615
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "OmniLight3D / SpotLight3D mount anchor point"
+    }
+  ],
+  "godot_4_compatibility": {
+    "format": "glTF 2.0 Binary (.glb)",
+    "unit": "meters (1.0 Blender unit = 1.0 Godot unit)",
+    "forward_axis": "-Z",
+    "up_axis": "+Y",
+    "collision_mesh_convention": "Child node with -col or -colonly creates Godot StaticBody3D collision shape",
+    "vertex_colors": "Exported in COLOR_0 accessor (usable with StandardMaterial3D or PSX shader)",
+    "pbr_materials": "Exported as glTF PBR metallic/roughness + emissive"
+  }
+}

@@ -1,0 +1,97 @@
+{
+  "generator": "SurgicalLightGenerator",
+  "model_name": "surgical_light",
+  "seed": 42,
+  "timestamp": "2026-10-16T04:59:13.282729Z",
+  "mesh_metrics": {
+    "triangle_count": 364,
+    "vertex_count": 220,
+    "target_tri_budget": 680,
+    "budget_compliance_ratio": 0.54,
+    "dimensions_meters": {
+      "width": 0.835,
+      "height": 1.8455,
+      "depth": 1.5207
+    },
+    "has_vertex_colors": true,
+    "materials_assigned": [
+      "mat_psx_medbay_clean_casing_w25"
+    ]
+  },
+  "config_parameters": {
+    "seed": 42,
+    "target_tri_budget": 680,
+    "name": "surgical_light",
+    "wear_level": 0.25,
+    "add_collision_mesh": false,
+    "collision_type": "box",
+    "collision_suffix": "-convcolonly",
+    "pivot_rule": "floor_center",
+    "export_subcomponents": false,
+    "palette_name": "medbay_clean",
+    "emission_scale": 1.0,
+    "extra_params": {},
+    "dish_diameter": 0.75,
+    "reflector_count": 4,
+    "arm_reach": 1.25,
+    "arm_pitch_deg": -20.0,
+    "dish_pitch_deg": 30.0,
+    "dish_yaw_deg": 15.0,
+    "is_light_on": true,
+    "has_central_handle": true,
+    "mount_type": "ceiling"
+  },
+  "sockets": [
+    {
+      "name": "socket_player_interact",
+      "position": [
+        0.0,
+        -1.473,
+        0.0
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "Standard player character interaction stand point"
+    },
+    {
+      "name": "socket_item_spawn",
+      "position": [
+        0.0,
+        0.0,
+        1.541
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "Prop or pickup spawn snap position (keycards, ammo, medical items)"
+    },
+    {
+      "name": "socket_light",
+      "position": [
+        0.0,
+        0.0,
+        1.293
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "OmniLight3D / SpotLight3D mount anchor point"
+    }
+  ],
+  "godot_4_compatibility": {
+    "format": "glTF 2.0 Binary (.glb)",
+    "unit": "meters (1.0 Blender unit = 1.0 Godot unit)",
+    "forward_axis": "-Z",
+    "up_axis": "+Y",
+    "collision_mesh_convention": "Child node with -col or -colonly creates Godot StaticBody3D collision shape",
+    "vertex_colors": "Exported in COLOR_0 accessor (usable with StandardMaterial3D or PSX shader)",
+    "pbr_materials": "Exported as glTF PBR metallic/roughness + emissive"
+  }
+}

@@ -1,0 +1,141 @@
+{
+  "id": "below_nominal.medical.quarantine_bed",
+  "name": "Cama de Aislamiento Clínico",
+  "version": "1.0.0",
+  "description": "Cama médica de contención biológica y cuidados intensivos para enfermería de estación espacial. Equipada con barandillas perimetrales de seguridad, soporte telescópico de suero IV, panel monitor de constantes vitales sobre brazo articulado, correas de sujeción para pacientes agitados e inclinación de cabecero configurable.",
+  "author": {
+    "name": "ModelCoder Core Team",
+    "github": "FrancisCuarto"
+  },
+  "license": "CC-BY-4.0",
+  "category": "medical",
+  "tags": [
+    "psx",
+    "low-poly",
+    "quarantine",
+    "bed",
+    "medical",
+    "hospital",
+    "stretcher",
+    "below-nominal"
+  ],
+  "parameters": [
+    {
+      "key": "bed_length",
+      "label": "Largo de Cama (m)",
+      "type": "float",
+      "default": 2.1,
+      "min": 1.8,
+      "max": 2.3,
+      "step": 0.05,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "bed_width",
+      "label": "Ancho de Cama (m)",
+      "type": "float",
+      "default": 0.95,
+      "min": 0.8,
+      "max": 1.2,
+      "step": 0.05,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "bed_height",
+      "label": "Altura del Bastidor (m)",
+      "type": "float",
+      "default": 0.85,
+      "min": 0.7,
+      "max": 1.0,
+      "step": 0.05,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "headrest_angle",
+      "label": "Inclinación de Cabecero (grados)",
+      "type": "float",
+      "default": 15.0,
+      "min": 0.0,
+      "max": 45.0,
+      "step": 5.0,
+      "group": "Articulación"
+    },
+    {
+      "key": "rails_raised",
+      "label": "Barandillas Elevadas",
+      "type": "bool",
+      "default": true,
+      "group": "Seguridad"
+    },
+    {
+      "key": "has_iv_pole",
+      "label": "Soporte de Suero IV",
+      "type": "bool",
+      "default": true,
+      "group": "Equipamiento"
+    },
+    {
+      "key": "has_restraint_straps",
+      "label": "Correas de Inmovilización",
+      "type": "bool",
+      "default": true,
+      "group": "Seguridad"
+    },
+    {
+      "key": "has_patient_bulk",
+      "label": "Bulto Cubierto por Sábana",
+      "type": "bool",
+      "default": false,
+      "group": "Ambiente"
+    },
+    {
+      "key": "has_monitor_arm",
+      "label": "Monitor de Signos Vitales",
+      "type": "bool",
+      "default": true,
+      "group": "Equipamiento"
+    }
+  ],
+  "presets": [
+    {
+      "id": "sterile_ready",
+      "label": "Lista y Esterilizada",
+      "values": {
+        "headrest_angle": 15.0,
+        "rails_raised": true,
+        "has_iv_pole": true,
+        "has_restraint_straps": false,
+        "has_patient_bulk": false,
+        "has_monitor_arm": true
+      }
+    },
+    {
+      "id": "quarantine_contained",
+      "label": "Contención de Cuarentena",
+      "values": {
+        "headrest_angle": 25.0,
+        "rails_raised": true,
+        "has_iv_pole": true,
+        "has_restraint_straps": true,
+        "has_patient_bulk": true,
+        "has_monitor_arm": true
+      }
+    },
+    {
+      "id": "abandoned_empty",
+      "label": "Cama Evacuada / Fuera de Servicio",
+      "values": {
+        "headrest_angle": 0.0,
+        "rails_raised": false,
+        "has_iv_pole": true,
+        "has_restraint_straps": true,
+        "has_patient_bulk": false,
+        "has_monitor_arm": false
+      }
+    }
+  ],
+  "export_capabilities": {
+    "supports_collision": true,
+    "default_collision_suffix": "-convcolonly"
+  }
+}

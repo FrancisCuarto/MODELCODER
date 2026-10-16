@@ -1,0 +1,97 @@
+{
+  "generator": "QuarantineBedGenerator",
+  "model_name": "quarantine_bed",
+  "seed": 42,
+  "timestamp": "2026-10-16T04:59:12.385460Z",
+  "mesh_metrics": {
+    "triangle_count": 500,
+    "vertex_count": 328,
+    "target_tri_budget": 750,
+    "budget_compliance_ratio": 0.67,
+    "dimensions_meters": {
+      "width": 1.12,
+      "height": 2.1275,
+      "depth": 1.8195
+    },
+    "has_vertex_colors": true,
+    "materials_assigned": [
+      "mat_psx_medbay_clean_casing_w35"
+    ]
+  },
+  "config_parameters": {
+    "seed": 42,
+    "target_tri_budget": 750,
+    "name": "quarantine_bed",
+    "wear_level": 0.35,
+    "add_collision_mesh": false,
+    "collision_type": "box",
+    "collision_suffix": "-convcolonly",
+    "pivot_rule": "floor_center",
+    "export_subcomponents": false,
+    "palette_name": "medbay_clean",
+    "emission_scale": 1.0,
+    "extra_params": {},
+    "bed_length": 2.1,
+    "bed_width": 0.95,
+    "bed_height": 0.85,
+    "headrest_angle": 15.0,
+    "rails_raised": true,
+    "has_iv_pole": true,
+    "has_restraint_straps": true,
+    "has_patient_bulk": false,
+    "has_monitor_arm": true
+  },
+  "sockets": [
+    {
+      "name": "socket_player_interact",
+      "position": [
+        0.0,
+        -1.614,
+        0.0
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "Standard player character interaction stand point"
+    },
+    {
+      "name": "socket_item_spawn",
+      "position": [
+        0.0,
+        0.0,
+        1.839
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "Prop or pickup spawn snap position (keycards, ammo, medical items)"
+    },
+    {
+      "name": "socket_light",
+      "position": [
+        0.0,
+        0.0,
+        1.547
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "OmniLight3D / SpotLight3D mount anchor point"
+    }
+  ],
+  "godot_4_compatibility": {
+    "format": "glTF 2.0 Binary (.glb)",
+    "unit": "meters (1.0 Blender unit = 1.0 Godot unit)",
+    "forward_axis": "-Z",
+    "up_axis": "+Y",
+    "collision_mesh_convention": "Child node with -col or -colonly creates Godot StaticBody3D collision shape",
+    "vertex_colors": "Exported in COLOR_0 accessor (usable with StandardMaterial3D or PSX shader)",
+    "pbr_materials": "Exported as glTF PBR metallic/roughness + emissive"
+  }
+}
