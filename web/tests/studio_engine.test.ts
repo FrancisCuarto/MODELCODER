@@ -589,6 +589,205 @@ test('Material System Test 6: disposeHierarchy no destruye las texturas cacheada
   ProceduralEngine.disposeHierarchy(group2);
 });
 
+test('Editor Redesign 1: Componentes reciben userData.componentIndex y respetan visibilidad comp.visible === false', () => {
+  const spec = {
+    id: 'test.editor.selection',
+    name: 'Selection Test',
+    category: 'test',
+    description: 'Verificación de selección y visibilidad',
+    units: 'meters' as const,
+    dimensions: { width: 1.0, depth: 1.0, height: 1.0 },
+    palette: 'standard',
+    components: [
+      { name: 'visible_part', shape: 'box' as const, size: [1, 1, 1], visible: true },
+      { name: 'hidden_part', shape: 'cylinder' as const, size: [0.5, 0.5, 1, 8], visible: false }
+    ]
+  };
+
+  const { group, stats } = ProceduralEngine.buildModelFromSpec(spec);
+  assert.equal(group.children.length, 2, 'Must create both meshes in group');
+
+  // Verification of index tagging for raycasting and gizmos
+  assert.equal(group.children[0].userData.componentIndex, 0, 'First mesh must have componentIndex 0');
+  assert.equal(group.children[1].userData.componentIndex, 1, 'Second mesh must have componentIndex 1');
+
+  // Verification of visibility
+  assert.equal(group.children[0].visible, true, 'Visible component must have mesh.visible true');
+  assert.equal(group.children[1].visible, false, 'Hidden component must have mesh.visible false');
+
+  ProceduralEngine.disposeHierarchy(group);
+});
+
+test('Editor Redesign 2: Las 8 primitivas generan geometrías válidas según sus parámetros reales', () => {
+  const spec = {
+    id: 'test.editor.primitives',
+    name: 'Primitives Test',
+    category: 'test',
+    description: 'Las 8 primitivas paramétricas',
+    units: 'meters' as const,
+    dimensions: { width: 4.0, depth: 4.0, height: 2.0 },
+    palette: 'standard',
+    components: [
+      { name: 'p_box', shape: 'box' as const, size: [1.2, 0.8, 1.5] },
+      { name: 'p_cyl', shape: 'cylinder' as const, size: [0.4, 0.2, 1.2, 12] },
+      { name: 'p_sph', shape: 'sphere' as const, size: [0.6, 10, 8] },
+      { name: 'p_wdg', shape: 'wedge' as const, size: [1.0, 0.6, 0.9] },
+      { name: 'p_cne', shape: 'cone' as const, size: [0.5, 1.1, 10] },
+      { name: 'p_tor', shape: 'torus' as const, size: [0.7, 0.12, 8, 16] },
+      { name: 'p_cap', shape: 'capsule' as const, size: [0.3, 0.8, 4, 8] },
+      { name: 'p_pln', shape: 'plane' as const, size: [1.5, 1.2] }
+    ]
+  };
+
+  const { group, stats } = ProceduralEngine.buildModelFromSpec(spec);
+  assert.equal(group.children.length, 8, 'All 8 primitives must be instantiated');
+  assert.ok(stats.triangles > 200, 'Combined triangle count should reflect all 8 primitives');
+  assert.ok(stats.vertices > 200, 'Combined vertex count should reflect all 8 primitives');
+
+  for (let i = 0; i < group.children.length; i++) {
+    const mesh = group.children[i] as THREE.Mesh;
+    assert.ok(mesh.geometry instanceof THREE.BufferGeometry, `Primitive #${i} (${spec.components[i].shape}) must have valid geometry`);
+    assert.ok(mesh.geometry.getAttribute('position').count > 0, `Primitive #${i} must have position vertices`);
+  }
+
+  ProceduralEngine.disposeHierarchy(group);
+});
+
+test('Editor Redesign 3: Soporte de transparencia, opacidad y modo alámbrico individual', () => {
+  const spec = {
+    id: 'test.editor.material_props',
+    name: 'Material Props Test',
+    category: 'test',
+    description: 'Transparencia, opacidad y wireframe',
+    units: 'meters' as const,
+    dimensions: { width: 1.0, depth: 1.0, height: 1.0 },
+    palette: 'standard',
+    components: [
+      {
+        name: 'glass_canopy',
+        shape: 'box' as const,
+        size: [1, 1, 1],
+        transparent: true,
+        opacity: 0.35,
+        wireframe: false
+      },
+      {
+        name: 'wire_cage',
+        shape: 'sphere' as const,
+        size: [0.5, 8, 6],
+        wireframe: true
+      }
+    ]
+  };
+
+  const { group } = ProceduralEngine.buildModelFromSpec(spec);
+  const meshGlass = group.children[0] as THREE.Mesh;
+  const matGlass = meshGlass.material as THREE.MeshStandardMaterial;
+
+  assert.equal(matGlass.transparent, true, 'Glass component material must be transparent');
+  assert.equal(matGlass.opacity, 0.35, 'Glass component opacity must be 0.35');
+  assert.equal(matGlass.wireframe, false, 'Glass wireframe must be false');
+
+  const meshWire = group.children[1] as THREE.Mesh;
+  const matWire = meshWire.material as THREE.MeshStandardMaterial;
+  assert.equal(matWire.wireframe, true, 'Wireframe component material must have wireframe true');
+
+  ProceduralEngine.disposeHierarchy(group);
+});
+
+test('Editor Redesign 4: Mutaciones de Outliner (Duplicar, Renombrar, Eliminar) preservan integridad del ModelSpec', () => {
+  let spec = {
+    id: 'test.editor.mutations',
+    name: 'Crate Editable',
+    category: 'furniture',
+    description: 'Prueba de mutaciones de árbol',
+    units: 'meters' as const,
+    dimensions: { width: 1.0, depth: 1.0, height: 1.0 },
+    palette: 'standard',
+    components: [
+      { name: 'base', shape: 'box' as const, size: [1, 0.2, 1], position: [0, 0.1, 0] as [number, number, number] }
+    ]
+  };
+
+  // 1. Add primitive
+  spec.components.push({
+    name: 'pillar',
+    shape: 'cylinder' as const,
+    size: [0.1, 0.1, 0.8, 8],
+    position: [0.4, 0.5, 0.4] as [number, number, number]
+  });
+  assert.equal(spec.components.length, 2);
+
+  // 2. Duplicate component
+  const copy = JSON.parse(JSON.stringify(spec.components[1]));
+  copy.name = 'pillar_copia';
+  copy.position[0] -= 0.8;
+  spec.components.push(copy);
+  assert.equal(spec.components.length, 3);
+  assert.equal(spec.components[2].name, 'pillar_copia');
+
+  // 3. Rename component
+  spec.components[0].name = 'base_reforzada';
+  assert.equal(spec.components[0].name, 'base_reforzada');
+
+  // 4. Build and verify
+  const { group, stats } = ProceduralEngine.buildModelFromSpec(spec);
+  assert.equal(group.children.length, 3);
+  assert.equal(group.children[0].name, 'base_reforzada');
+  assert.equal(group.children[2].name, 'pillar_copia');
+
+  // 5. Delete component
+  spec.components.splice(1, 1);
+  assert.equal(spec.components.length, 2);
+  const { group: groupAfterDel } = ProceduralEngine.buildModelFromSpec(spec);
+  assert.equal(groupAfterDel.children.length, 2);
+
+  ProceduralEngine.disposeHierarchy(group);
+  ProceduralEngine.disposeHierarchy(groupAfterDel);
+});
+
+test('Editor Redesign 5: Exportación GLB preserva transformaciones, nuevas primitivas y materiales del editor', async () => {
+  const spec = {
+    id: 'test.editor.export',
+    name: 'Estudio Custom Model',
+    category: 'furniture',
+    description: 'Exportación con múltiples piezas editadas',
+    units: 'meters' as const,
+    dimensions: { width: 2.0, depth: 2.0, height: 1.5 },
+    palette: 'standard',
+    components: [
+      {
+        name: 'plataforma',
+        shape: 'box' as const,
+        size: [1.4, 0.15, 1.4],
+        position: [0, 0.075, 0] as [number, number, number],
+        rotation: [0, 45, 0] as [number, number, number],
+        texturePreset: 'worn_metal',
+        color: '#4a5568'
+      },
+      {
+        name: 'tanque_capsula',
+        shape: 'capsule' as const,
+        size: [0.25, 0.6, 4, 8],
+        position: [0, 0.6, 0] as [number, number, number],
+        texturePreset: 'hazard_stripes',
+        color: '#ffffff'
+      }
+    ]
+  };
+
+  const { group } = ProceduralEngine.buildModelFromSpec(spec);
+  const glbBuffer = await GLBExporterService.exportToArrayBuffer(group);
+  assert.ok(glbBuffer.byteLength > 2000, 'GLB exported from custom editor spec must contain valid binary payload');
+
+  const verification = await GLBExporterService.verifyGLBBuffer(glbBuffer);
+  assert.equal(verification.verified, true);
+  assert.ok(verification.triangleCount > 50);
+  assert.ok(verification.vertexCount > 50);
+
+  ProceduralEngine.disposeHierarchy(group);
+});
+
 // Teardown: ensure Node exits cleanly after tests
 test('Teardown: Exit cleanly', () => {
   setTimeout(() => process.exit(0), 100);

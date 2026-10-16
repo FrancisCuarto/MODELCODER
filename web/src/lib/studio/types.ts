@@ -62,6 +62,12 @@ export interface ComponentDef {
   label?: string; // Text string for decal / stencil plate
   labelColor?: string;
 
+  // Component State & Visibility
+  visible?: boolean;
+  locked?: boolean;
+  opacity?: number;
+  transparent?: boolean;
+
   // Authentic PS1 Material & Texture Preset Extension (optional, backward-compatible)
   texturePreset?: TexturePreset | string;
   materialType?: MaterialCategoryType | string;
@@ -98,6 +104,8 @@ export interface ModelSpec {
 export type GenerationMode = 'ai' | 'visual' | 'code';
 export type GenerationState = 'idle' | 'pending' | 'generating' | 'completed' | 'error';
 export type ShadingMode = 'shaded' | 'wireframe' | 'normals' | 'vertex_colors' | 'unlit';
+export type TransformGizmoMode = 'translate' | 'rotate' | 'scale' | 'none';
+export type CameraViewPreset = 'front' | 'side' | 'top' | 'isometric' | 'perspective';
 
 export interface GeometricStats {
   triangles: number;

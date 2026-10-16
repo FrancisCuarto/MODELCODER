@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js';
 import { ProceduralEngine } from './procedural-engine';
-import type { ShadingMode, GenerationState, GeometricStats, GenerationResult } from './types';
+import type { ShadingMode, GenerationState, GeometricStats, GenerationResult, TransformGizmoMode, CameraViewPreset } from './types';
 
 export class StudioViewport {
   private container: HTMLElement;
@@ -9,7 +10,11 @@ export class StudioViewport {
   private camera: THREE.PerspectiveCamera;
   private renderer: THREE.WebGLRenderer;
   private controls: OrbitControls;
+  private transformControls: TransformControls;
   private gridHelper: THREE.GridHelper;
+  private axesHelper: THREE.AxesHelper;
+  private selectionBox: THREE.BoxHelper;
+  private raycaster: THREE.Raycaster;
   private dirLight: THREE.DirectionalLight;
   private ambientLight: THREE.AmbientLight;
 
@@ -18,20 +23,33 @@ export class StudioViewport {
   private activeShadingMode: ShadingMode = 'shaded';
   private currentShadingMaterialsBackup: Map<THREE.Mesh, THREE.Material | THREE.Material[]> = new Map();
 
+  // Selection & Gizmo state
+  private selectedComponentIndex: number | null = null;
+  private selectedMesh: THREE.Object3D | null = null;
+  private currentGizmoMode: TransformGizmoMode = 'translate';
+  private isTransformDragging = false;
+  private pointerDownPos = { x: 0, y: 0, time: 0 };
+
   // Concurrency and generation tracking
   private activeRequestId = '';
   private activeVersion = 0;
   private currentState: GenerationState = 'idle';
 
-  // HUD Callback
+  // Callbacks
   private onStatsUpdate?: (stats: GeometricStats | null, result: GenerationResult | null) => void;
+  private onComponentSelected?: (index: number | null) => void;
+  private onComponentTransformChange?: (index: number, pos: [number, number, number], rot: [number, number, number], scale: [number, number, number]) => void;
 
   constructor(
     container: HTMLElement,
-    onStatsUpdate?: (stats: GeometricStats | null, result: GenerationResult | null) => void
+    onStatsUpdate?: (stats: GeometricStats | null, result: GenerationResult | null) => void,
+    onComponentSelected?: (index: number | null) => void,
+    onComponentTransformChange?: (index: number, pos: [number, number, number], rot: [number, number, number], scale: [number, number, number]) => void
   ) {
     this.container = container;
     this.onStatsUpdate = onStatsUpdate;
+    this.onComponentSelected = onComponentSelected;
+    this.onComponentTransformChange = onComponentTransformChange;
 
     // 1. Scene setup
     this.scene = new THREE.Scene();
@@ -82,12 +100,100 @@ export class StudioViewport {
     fillLight.position.set(-5, -2, -4);
     this.scene.add(fillLight);
 
-    // 6. Retro Ground Grid
-    this.gridHelper = new THREE.GridHelper(6, 24, 0x00f0ff, 0x1f2937);
+    // 6. Retro Ground Grid & Axes
+    this.gridHelper = new THREE.GridHelper(8, 32, 0x00f0ff, 0x1f2937);
     this.gridHelper.position.y = -0.001;
     this.scene.add(this.gridHelper);
 
-    // 7. Event listeners & Render loop
+    this.axesHelper = new THREE.AxesHelper(2.5);
+    this.axesHelper.position.y = 0.001;
+    this.axesHelper.visible = true;
+    this.scene.add(this.axesHelper);
+
+    // 7. Selection Highlight BoxHelper
+    const dummy = new THREE.Mesh(new THREE.BufferGeometry());
+    this.selectionBox = new THREE.BoxHelper(dummy, 0x00f0ff);
+    this.selectionBox.visible = false;
+    this.scene.add(this.selectionBox);
+
+    // 8. TransformControls (Gizmos)
+    this.transformControls = new TransformControls(this.camera, this.renderer.domElement);
+    this.transformControls.size = 0.75;
+    this.transformControls.addEventListener('dragging-changed', (event) => {
+      this.controls.enabled = !event.value;
+      this.isTransformDragging = Boolean(event.value);
+    });
+    this.transformControls.addEventListener('objectChange', () => {
+      if (this.selectedMesh && this.selectedComponentIndex !== null) {
+        const pos: [number, number, number] = [
+          parseFloat(this.selectedMesh.position.x.toFixed(3)),
+          parseFloat(this.selectedMesh.position.y.toFixed(3)),
+          parseFloat(this.selectedMesh.position.z.toFixed(3))
+        ];
+        const rot: [number, number, number] = [
+          parseFloat(THREE.MathUtils.radToDeg(this.selectedMesh.rotation.x).toFixed(1)),
+          parseFloat(THREE.MathUtils.radToDeg(this.selectedMesh.rotation.y).toFixed(1)),
+          parseFloat(THREE.MathUtils.radToDeg(this.selectedMesh.rotation.z).toFixed(1))
+        ];
+        const scale: [number, number, number] = [
+          parseFloat(this.selectedMesh.scale.x.toFixed(3)),
+          parseFloat(this.selectedMesh.scale.y.toFixed(3)),
+          parseFloat(this.selectedMesh.scale.z.toFixed(3))
+        ];
+        this.selectionBox.setFromObject(this.selectedMesh);
+        if (this.onComponentTransformChange) {
+          this.onComponentTransformChange(this.selectedComponentIndex, pos, rot, scale);
+        }
+      }
+    });
+    const gizmoHelper = typeof this.transformControls.getHelper === 'function'
+      ? this.transformControls.getHelper()
+      : (this.transformControls as any);
+    this.scene.add(gizmoHelper);
+
+    // 9. Raycasting for Direct 3D Selection
+    this.raycaster = new THREE.Raycaster();
+    this.renderer.domElement.addEventListener('pointerdown', (e) => {
+      this.pointerDownPos = { x: e.clientX, y: e.clientY, time: Date.now() };
+    });
+    this.renderer.domElement.addEventListener('pointerup', (e) => {
+      if (this.isTransformDragging) return;
+      const dist = Math.hypot(e.clientX - this.pointerDownPos.x, e.clientY - this.pointerDownPos.y);
+      const duration = Date.now() - this.pointerDownPos.time;
+      if (dist > 6 || duration > 400) return; // Orbit or pan movement, not a click
+
+      const rect = this.renderer.domElement.getBoundingClientRect();
+      const mouse = new THREE.Vector2(
+        ((e.clientX - rect.left) / rect.width) * 2 - 1,
+        -((e.clientY - rect.top) / rect.height) * 2 + 1
+      );
+      this.raycaster.setFromCamera(mouse, this.camera);
+      if (this.currentMesh) {
+        const hits = this.raycaster.intersectObjects(this.currentMesh.children, true);
+        let matchedIdx: number | null = null;
+        for (const hit of hits) {
+          if (!hit.object.visible) continue;
+          let curr: THREE.Object3D | null = hit.object;
+          while (curr && curr !== this.currentMesh) {
+            if (curr.userData && typeof curr.userData.componentIndex === 'number') {
+              matchedIdx = curr.userData.componentIndex;
+              break;
+            }
+            curr = curr.parent;
+          }
+          if (matchedIdx !== null) break;
+        }
+
+        if (matchedIdx !== null) {
+          this.selectComponent(matchedIdx);
+          if (this.onComponentSelected) {
+            this.onComponentSelected(matchedIdx);
+          }
+        }
+      }
+    });
+
+    // 10. Event listeners & Render loop
     window.addEventListener('resize', this.handleResize);
     this.animate();
   }
@@ -131,6 +237,10 @@ export class StudioViewport {
     this.activeVersion = version;
     this.currentState = 'completed';
 
+    // Detach gizmos before disposing old mesh
+    this.transformControls.detach();
+    this.selectionBox.visible = false;
+
     // Dispose old active mesh
     if (this.currentMesh) {
       this.scene.remove(this.currentMesh);
@@ -153,6 +263,11 @@ export class StudioViewport {
 
     // Apply active shading mode
     this.applyShadingMode(this.activeShadingMode);
+
+    // Restore selection on updated geometry
+    if (this.selectedComponentIndex !== null) {
+      this.selectComponent(this.selectedComponentIndex);
+    }
 
     // Notify HUD
     if (this.onStatsUpdate) {
@@ -188,6 +303,175 @@ export class StudioViewport {
         isPreviousResultFallback: Boolean(this.lastValidMesh)
       });
     }
+  }
+
+  /**
+   * Selects an individual component by index, highlights it with BoxHelper, and attaches gizmo.
+   */
+  public selectComponent(index: number | null): void {
+    this.selectedComponentIndex = index;
+
+    if (index === null || !this.currentMesh) {
+      this.selectedMesh = null;
+      this.transformControls.detach();
+      this.selectionBox.visible = false;
+      return;
+    }
+
+    const target = this.getMeshByComponentIndex(index);
+    if (!target) {
+      this.selectedMesh = null;
+      this.transformControls.detach();
+      this.selectionBox.visible = false;
+      return;
+    }
+
+    this.selectedMesh = target;
+    if (this.currentGizmoMode !== 'none') {
+      this.transformControls.attach(target);
+    }
+    this.selectionBox.setFromObject(target);
+    this.selectionBox.visible = true;
+  }
+
+  public getSelectedComponentIndex(): number | null {
+    return this.selectedComponentIndex;
+  }
+
+  /**
+   * Sets gizmo transformation mode (translate, rotate, scale, or none).
+   */
+  public setGizmoMode(mode: TransformGizmoMode): void {
+    this.currentGizmoMode = mode;
+    if (mode === 'none') {
+      this.transformControls.detach();
+    } else {
+      this.transformControls.setMode(mode);
+      if (this.selectedMesh) {
+        this.transformControls.attach(this.selectedMesh);
+      }
+    }
+  }
+
+  /**
+   * Configures grid & rotation snapping on gizmos.
+   */
+  public setSnap(enableSnap: boolean, translationSnap: number = 0.1, rotationSnapDeg: number = 15): void {
+    if (enableSnap) {
+      this.transformControls.setTranslationSnap(translationSnap);
+      this.transformControls.setRotationSnap(THREE.MathUtils.degToRad(rotationSnapDeg));
+      this.transformControls.setScaleSnap(0.1);
+    } else {
+      this.transformControls.setTranslationSnap(null);
+      this.transformControls.setRotationSnap(null);
+      this.transformControls.setScaleSnap(null);
+    }
+  }
+
+  /**
+   * Toggles visibility of the ground grid.
+   */
+  public setGridVisible(visible: boolean): void {
+    this.gridHelper.visible = visible;
+  }
+
+  /**
+   * Toggles visibility of the XYZ coordinate axes.
+   */
+  public setAxesVisible(visible: boolean): void {
+    this.axesHelper.visible = visible;
+  }
+
+  /**
+   * Predefined camera viewpoints (front, side, top, isometric).
+   */
+  public setViewPreset(preset: CameraViewPreset): void {
+    const center = new THREE.Vector3(0, 0.4, 0);
+    let dist = 3.2;
+
+    if (this.currentMesh) {
+      const box = new THREE.Box3().setFromObject(this.currentMesh);
+      if (!box.isEmpty()) {
+        box.getCenter(center);
+        const size = new THREE.Vector3();
+        box.getSize(size);
+        const maxDim = Math.max(size.x, size.y, size.z, 0.5);
+        const fov = this.camera.fov * (Math.PI / 180);
+        dist = (maxDim / 2) / Math.tan(fov / 2) * 1.6;
+      }
+    }
+
+    this.controls.target.copy(center);
+    switch (preset) {
+      case 'front':
+        this.camera.position.set(center.x, center.y, center.z + dist);
+        break;
+      case 'side':
+        this.camera.position.set(center.x + dist, center.y, center.z);
+        break;
+      case 'top':
+        this.camera.position.set(center.x, center.y + dist, center.z + 0.001);
+        break;
+      case 'isometric':
+      case 'perspective':
+      default:
+        this.camera.position.set(
+          center.x + dist * 0.7,
+          center.y + dist * 0.55,
+          center.z + dist * 0.75
+        );
+        break;
+    }
+    this.controls.update();
+  }
+
+  /**
+   * Centers and frames the selected component in the viewport camera.
+   */
+  public focusComponent(index: number): void {
+    const mesh = this.getMeshByComponentIndex(index);
+    if (!mesh) return;
+
+    const box = new THREE.Box3().setFromObject(mesh);
+    if (box.isEmpty()) return;
+
+    const center = new THREE.Vector3();
+    const size = new THREE.Vector3();
+    box.getCenter(center);
+    box.getSize(size);
+
+    const maxDim = Math.max(size.x, size.y, size.z, 0.25);
+    const fov = this.camera.fov * (Math.PI / 180);
+    const dist = (maxDim / 2) / Math.tan(fov / 2) * 2.0;
+
+    this.controls.target.copy(center);
+    this.camera.position.set(
+      center.x + dist * 0.7,
+      center.y + dist * 0.6,
+      center.z + dist * 0.7
+    );
+    this.controls.update();
+  }
+
+  /**
+   * Updates selection helper box when component moves or resizes.
+   */
+  public updateSelectionBox(): void {
+    if (this.selectedMesh && this.selectionBox.visible) {
+      this.selectionBox.setFromObject(this.selectedMesh);
+    }
+  }
+
+  private getMeshByComponentIndex(index: number): THREE.Object3D | null {
+    if (!this.currentMesh) return null;
+    let match: THREE.Object3D | null = null;
+    this.currentMesh.traverse((child) => {
+      if (match) return;
+      if (child.userData && child.userData.componentIndex === index) {
+        match = child;
+      }
+    });
+    return match;
   }
 
   /**
@@ -246,7 +530,7 @@ export class StudioViewport {
   }
 
   /**
-   * Re-frames the camera to center the current model smoothly.
+   * Re-frames the camera to center the whole model smoothly.
    */
   public resetCameraAndFrame(): void {
     if (!this.currentMesh) {
@@ -268,7 +552,11 @@ export class StudioViewport {
     const fov = this.camera.fov * (Math.PI / 180);
     const cameraDistance = (maxDim / 2) / Math.tan(fov / 2) * 1.5;
 
-    this.camera.position.set(center.x + cameraDistance * 0.8, center.y + cameraDistance * 0.6, center.z + cameraDistance * 1.1);
+    this.camera.position.set(
+      center.x + cameraDistance * 0.8,
+      center.y + cameraDistance * 0.6,
+      center.z + cameraDistance * 1.1
+    );
     this.controls.target.copy(center);
     this.controls.update();
   }
@@ -288,8 +576,18 @@ export class StudioViewport {
     return this.activeVersion;
   }
 
+  public setOnComponentSelected(cb: (index: number | null) => void): void {
+    this.onComponentSelected = cb;
+  }
+
+  public setOnComponentTransformChange(cb: (index: number, pos: [number, number, number], rot: [number, number, number], scale: [number, number, number]) => void): void {
+    this.onComponentTransformChange = cb;
+  }
+
   public destroy(): void {
     window.removeEventListener('resize', this.handleResize);
+    this.transformControls.dispose();
+    this.selectionBox.dispose();
     if (this.currentMesh) {
       ProceduralEngine.disposeHierarchy(this.currentMesh);
     }

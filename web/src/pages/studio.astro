@@ -15,14 +15,24 @@ import catalog from '../data/catalog.json';
       <div class="topbar-actions">
         <!-- Mode Switcher Tabs -->
         <div class="mode-switcher-group">
-          <button id="mode-tab-ai" class="btn-mode-tab active" data-mode="ai" title="Creación de modelos mediante lenguaje natural">
+          <button id="mode-tab-ai" class="btn-mode-tab" data-mode="ai" title="Creación de modelos mediante lenguaje natural">
             ⚡ MODO IA
           </button>
-          <button id="mode-tab-visual" class="btn-mode-tab" data-mode="visual" title="Constructor visual paramétrico">
-            🛠️ CONSTRUCTOR VISUAL
+          <button id="mode-tab-visual" class="btn-mode-tab active" data-mode="visual" title="Editor procedural 3D con árbol de piezas y gizmos">
+            🛠️ EDITOR 3D
           </button>
           <button id="mode-tab-code" class="btn-mode-tab" data-mode="code" title="Editor de código procedural y especificaciones">
             💻 EDITOR DE CÓDIGO
+          </button>
+        </div>
+
+        <!-- History Actions (Undo / Redo) -->
+        <div class="history-actions-group">
+          <button id="btn-topbar-undo" class="btn-mini btn-outline" title="Deshacer última acción (Ctrl+Z)" disabled>
+            ↩ Deshacer
+          </button>
+          <button id="btn-topbar-redo" class="btn-mini btn-outline" title="Rehacer acción (Ctrl+Y)" disabled>
+            ↪ Rehacer
           </button>
         </div>
 
@@ -47,12 +57,14 @@ import catalog from '../data/catalog.json';
       </div>
     </div>
 
-    <!-- Main Studio Split View (Left: Creation Modes, Right: Viewport & Stats) -->
-    <div class="studio-workspace">
-      <!-- Left Column: Creation Modes (AI / Visual / Code) -->
+    <!-- Main Studio Split View (Responsive 3-Column / 2-Column Workspace) -->
+    <div class="studio-workspace mode-visual-active" id="studio-workspace">
+      
+      <!-- LEFT COLUMN: CREATION / OUTLINER -->
       <div class="creation-column">
+        
         <!-- MODE A: AI COPILOT WINDOW -->
-        <div id="ai-mode-container" class="mode-panel active">
+        <div id="ai-mode-container" class="mode-panel">
           <div class="ps1-window">
             <div class="ps1-titlebar ai-titlebar">
               <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
@@ -92,12 +104,12 @@ import catalog from '../data/catalog.json';
                     </button>
                   </div>
                   <small style="color: var(--text-dim); font-size: 0.65rem; margin-top: 0.3rem; display: block;">
-                    💡 Sin clave, el estudio utiliza el sintetizador procedural geométrico local con más de 25 categorías (autos, naves, robots, armas, muebles, etc.) sin límite ni costos.
+                    💡 Sin clave, el estudio utiliza el sintetizador procedural geométrico local con más de 25 categorías sin costo alguno.
                   </small>
                 </div>
               </div>
 
-              <!-- Engine Choice Selector (Gemini AI vs Motor Local) -->
+              <!-- Engine Choice Selector -->
               <div class="engine-selector-row">
                 <span class="selector-heading">&gt; MODO DE GENERACIÓN:</span>
                 <div class="engine-toggle-buttons">
@@ -129,30 +141,12 @@ import catalog from '../data/catalog.json';
               <!-- Quick Chips -->
               <div class="ai-chips-row">
                 <span class="chips-label">PRUEBAS RÁPIDAS:</span>
-                <button type="button" class="ai-chip" data-prompt="Auto deportivo retro con chasis bajo y cuatro ruedas con llantas metálicas">
-                  🚗 Auto Sci-Fi
-                </button>
-                <button type="button" class="ai-chip" data-prompt="Nave espacial interceptora orbital con alas en cuña y propulsores dobles">
-                  🚀 Caza Espacial
-                </button>
-                <button type="button" class="ai-chip" data-prompt="Robot bípedo de seguridad con torso acorazado y visor óptico">
-                  🤖 Robot Mech
-                </button>
-                <button type="button" class="ai-chip" data-prompt="Tarjeta de acceso de seguridad con chip dorado y banda magnética">
-                  💳 Tarjeta de Acceso
-                </button>
-                <button type="button" class="ai-chip" data-prompt="Blaster de plasma con cañón cilíndrico y celda de energía">
-                  🔫 Blaster Láser
-                </button>
-                <button type="button" class="ai-chip" data-prompt="Consola de navegación espacial con dos pantallas CRT inclinadas">
-                  🖥️ Consola CRT
-                </button>
-                <button type="button" class="ai-chip" data-prompt="Silla de mando ergonómica con respaldo y cuatro patas tubulares">
-                  🪑 Silla de Mando
-                </button>
-                <button type="button" class="ai-chip" data-prompt="Contenedor de carga reforzado con cantoneras metálicas">
-                  📦 Contenedor Carga
-                </button>
+                <button type="button" class="ai-chip" data-prompt="Auto deportivo retro con chasis bajo y cuatro ruedas con llantas metálicas">🚗 Auto Sci-Fi</button>
+                <button type="button" class="ai-chip" data-prompt="Nave espacial interceptora orbital con alas en cuña y propulsores dobles">🚀 Caza Espacial</button>
+                <button type="button" class="ai-chip" data-prompt="Robot bípedo de seguridad con torso acorazado y visor óptico">🤖 Robot Mech</button>
+                <button type="button" class="ai-chip" data-prompt="Tarjeta de acceso de seguridad con chip dorado y banda magnética">💳 Tarjeta de Acceso</button>
+                <button type="button" class="ai-chip" data-prompt="Blaster de plasma con cañón cilíndrico y celda de energía">🔫 Blaster Láser</button>
+                <button type="button" class="ai-chip" data-prompt="Consola de navegación espacial con dos pantallas CRT inclinadas">🖥️ Consola CRT</button>
               </div>
 
               <div id="ai-loading-status" class="ai-status-indicator" style="display: none;"></div>
@@ -160,21 +154,41 @@ import catalog from '../data/catalog.json';
           </div>
         </div>
 
-        <!-- MODE B: VISUAL BUILDER WINDOW -->
-        <div id="visual-mode-container" class="mode-panel">
-          <div class="ps1-window">
+        <!-- MODE B: OUTLINER COMPONENT TREE (MODO EDITOR 3D) -->
+        <div id="outliner-mode-container" class="mode-panel active">
+          <div class="ps1-window outliner-window">
             <div class="ps1-titlebar">
-              <span>// CONSTRUCTOR_VISUAL: COMPONENTES_GEOMÉTRICOS</span>
-              <div class="visual-builder-actions">
-                <button type="button" id="btn-add-box" class="btn-mini btn-cyan">+ CUBO</button>
-                <button type="button" id="btn-add-cylinder" class="btn-mini btn-cyan">+ CILINDRO</button>
-                <button type="button" id="btn-add-sphere" class="btn-mini btn-cyan">+ ESFERA</button>
-                <button type="button" id="btn-add-wedge" class="btn-mini btn-cyan">+ CUÑA</button>
+              <span>// ÁRBOL DE COMPONENTES (<span id="outliner-count">0</span>)</span>
+              <div class="outliner-titlebar-tools">
+                <button type="button" id="btn-outliner-undo" class="ps1-ctrl-btn" title="Deshacer (Ctrl+Z)" disabled>↩</button>
+                <button type="button" id="btn-outliner-redo" class="ps1-ctrl-btn" title="Rehacer (Ctrl+Y)" disabled>↪</button>
               </div>
             </div>
 
-            <div class="visual-builder-body" id="visual-components-list">
-              <!-- Dynamically populated component cards -->
+            <!-- Primitives Creation Toolbar -->
+            <div class="primitives-palette-container">
+              <span class="palette-label">AÑADIR PIEZA PRIMITIVA:</span>
+              <div class="primitives-grid">
+                <button type="button" class="btn-primitive" data-shape="box" title="Añadir Cubo / Prisma rectangular">+ CUBO</button>
+                <button type="button" class="btn-primitive" data-shape="cylinder" title="Añadir Cilindro / Tubo">+ CILINDRO</button>
+                <button type="button" class="btn-primitive" data-shape="sphere" title="Añadir Esfera / Domo">+ ESFERA</button>
+                <button type="button" class="btn-primitive" data-shape="wedge" title="Añadir Cuña prismática inclinada">+ CUÑA</button>
+                <button type="button" class="btn-primitive" data-shape="cone" title="Añadir Cono">+ CONO</button>
+                <button type="button" class="btn-primitive" data-shape="torus" title="Añadir Toroide / Anillo">+ TORO</button>
+                <button type="button" class="btn-primitive" data-shape="capsule" title="Añadir Cápsula presurizada">+ CÁPSULA</button>
+                <button type="button" class="btn-primitive" data-shape="plane" title="Añadir Plano bidimensional">+ PLANO</button>
+              </div>
+            </div>
+
+            <!-- Outliner Tree List -->
+            <div class="outliner-tree-wrapper ps1-inset">
+              <div id="outliner-tree-list" class="outliner-tree-list">
+                <!-- Dynamically populated component rows -->
+              </div>
+            </div>
+            
+            <div class="outliner-footer">
+              <small class="outliner-hint">💡 Clic para seleccionar • 👁️ Visibilidad • 📋 Duplicar • 🗑️ Eliminar</small>
             </div>
           </div>
         </div>
@@ -182,7 +196,6 @@ import catalog from '../data/catalog.json';
         <!-- MODE C: CODE EDITOR WINDOW -->
         <div id="code-mode-container" class="mode-panel">
           <div class="ps1-window editor-window">
-            <!-- Tab Bar -->
             <div class="editor-tabs">
               <button class="editor-tab active" data-file="spec">
                 model_spec.json <span class="tab-badge">GEOMETRÍA REAL</span>
@@ -195,13 +208,11 @@ import catalog from '../data/catalog.json';
               </button>
             </div>
 
-            <!-- Editor Surface -->
             <div class="editor-surface">
               <div class="line-numbers" id="line-numbers">1</div>
               <textarea id="code-textarea" spellcheck="false" autocomplete="off"></textarea>
             </div>
 
-            <!-- Editor Statusbar -->
             <div class="editor-statusbar">
               <div class="status-left">
                 <span id="cursor-pos">LN 1, COL 1</span>
@@ -217,22 +228,63 @@ import catalog from '../data/catalog.json';
         </div>
       </div>
 
-      <!-- Right Column: Live 3D Viewport & Geometric Stats -->
-      <div class="preview-column">
-        <!-- 3D Viewport Window -->
+      <!-- CENTER COLUMN: LIVE 3D VIEWPORT -->
+      <div class="viewport-column">
         <div class="ps1-window studio-viewport-window">
-          <div class="ps1-titlebar">
-            <span>// 3D_VIEWPORT: [<span id="viewport-model-name">MODELO ACTIVO</span>]</span>
-            <div class="viewport-quick-tools">
-              <button id="studio-reset-cam" class="ps1-ctrl-btn" title="Centrar cámara en el objeto">🎯 ENCUADRAR</button>
+          <!-- Viewport Header Toolbar -->
+          <div class="ps1-titlebar viewport-main-titlebar">
+            <div class="viewport-title-left">
+              <span class="viewport-tag">// 3D_VIEWPORT:</span>
+              <span id="viewport-model-name" class="viewport-model-title">MODELO ACTIVO</span>
+            </div>
+
+            <!-- Transform Gizmo Mode Toolbar -->
+            <div class="gizmo-toolbar" id="gizmo-toolbar">
+              <button type="button" class="btn-gizmo" data-mode="none" id="gizmo-btn-select" title="Modo Selección libre (Q)">
+                ↖ Selección
+              </button>
+              <button type="button" class="btn-gizmo active" data-mode="translate" id="gizmo-btn-translate" title="Mover posición [W]">
+                ✥ Mover
+              </button>
+              <button type="button" class="btn-gizmo" data-mode="rotate" id="gizmo-btn-rotate" title="Rotar en grados [E]">
+                🔄 Rotar
+              </button>
+              <button type="button" class="btn-gizmo" data-mode="scale" id="gizmo-btn-scale" title="Escalar tamaño [R]">
+                ⤢ Escalar
+              </button>
+              <button type="button" class="btn-gizmo" id="gizmo-btn-snap" title="Ajuste a la rejilla (0.1m / 15°)">
+                🧲 Snap
+              </button>
+            </div>
+
+            <!-- Camera & View Helpers Toolbar -->
+            <div class="viewport-camera-tools">
+              <div class="camera-presets-group">
+                <button type="button" class="btn-cam-preset ps1-ctrl-btn" data-preset="isometric" title="Vista Isométrica 3D">📐 ISO</button>
+                <button type="button" class="btn-cam-preset ps1-ctrl-btn" data-preset="front" title="Vista Frontal (Eje Z)">FRONTAL</button>
+                <button type="button" class="btn-cam-preset ps1-ctrl-btn" data-preset="side" title="Vista Lateral (Eje X)">LATERAL</button>
+                <button type="button" class="btn-cam-preset ps1-ctrl-btn" data-preset="top" title="Vista Superior (Eje Y)">CENITAL</button>
+              </div>
+              <button type="button" id="btn-focus-selected" class="ps1-ctrl-btn btn-focus" title="Enfocar pieza seleccionada [F]">
+                🔍 ENFOCAR
+              </button>
+              <button type="button" id="btn-toggle-grid" class="ps1-ctrl-btn active" title="Alternar visibilidad de cuadrícula">
+                ▦ REJILLA
+              </button>
+              <button type="button" id="btn-toggle-axes" class="ps1-ctrl-btn active" title="Alternar visibilidad de ejes XYZ">
+                🧭 EJES
+              </button>
+              <button type="button" id="studio-reset-cam" class="ps1-ctrl-btn" title="Restablecer cámara y centrar objeto">
+                🎯 ENCUADRE
+              </button>
             </div>
           </div>
 
+          <!-- Viewport Three.js Canvas Container -->
           <div class="ps1-inset studio-viewport-surface" id="three-viewport-container">
-            <!-- Three.js Canvas Mount Point -->
             <div id="three-canvas-mount" class="three-canvas-mount"></div>
 
-            <!-- Viewport Controls Overlay (Shading, Wireframe, Status) -->
+            <!-- Overlay Controls (Shading & Status) -->
             <div class="viewport-overlay-controls">
               <div class="shading-toggles" id="shading-toggles-group">
                 <button type="button" class="btn-shading active" data-shading="shaded" title="Sombreado estándar retro PSX">🎨 Sombreado</button>
@@ -257,7 +309,13 @@ import catalog from '../data/catalog.json';
               <div class="hud-row"><span class="hud-lbl">DIMENSIONES:</span> <span class="hud-val" id="hud-dims">--</span></div>
             </div>
 
-            <!-- Diagnostic Error Banner (Only shown on compile/generation error) -->
+            <!-- Selection Indicator Pill in Viewport -->
+            <div id="viewport-selection-pill" class="viewport-selection-pill" style="display: none;">
+              <span class="pill-dot"></span>
+              <span id="viewport-selection-label">Pieza: --</span>
+            </div>
+
+            <!-- Diagnostic Error Banner -->
             <div id="viewport-error-banner" class="viewport-error-banner" style="display: none;">
               <div class="error-banner-header">
                 <span class="error-icon">⚠️</span>
@@ -272,11 +330,11 @@ import catalog from '../data/catalog.json';
           </div>
         </div>
 
-        <!-- Parameters / Preset Fine-tuning Panel -->
-        <div class="ps1-window inspector-window">
+        <!-- Global Param Panel (Only visible in AI / Code modes) -->
+        <div class="ps1-window inspector-window" id="quick-adjust-window" style="display: none;">
           <div class="ps1-titlebar">
-            <span>// AJUSTES_RÁPIDOS_EN_VIVO</span>
-            <span class="ps1-telemetry-tag">PARÁMETROS GEOMÉTRICOS</span>
+            <span>// AJUSTES_RÁPIDOS_GLOBALES</span>
+            <span class="ps1-telemetry-tag">PARÁMETROS GENERALES</span>
           </div>
 
           <div class="inspector-body">
@@ -300,6 +358,22 @@ import catalog from '../data/catalog.json';
           </div>
         </div>
       </div>
+
+      <!-- RIGHT COLUMN: MODULAR PROPERTIES INSPECTOR (MODO EDITOR 3D) -->
+      <div class="inspector-column" id="visual-inspector-container">
+        <div class="ps1-window inspector-window" id="visual-inspector-panel">
+          <div class="ps1-titlebar">
+            <span>// PROPIEDADES_DE_PIEZA</span>
+            <span id="inspector-comp-badge" class="comp-badge">CUBO</span>
+          </div>
+
+          <div class="inspector-scroll-body" id="inspector-scroll-body">
+            <!-- Populated dynamically: Empty State or Component Inspector -->
+            <div id="inspector-content-mount"></div>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
 
@@ -327,9 +401,9 @@ import catalog from '../data/catalog.json';
           <h3>1. Tu Primer Modelo en Cinco Minutos</h3>
           <p>ModelCoder te permite crear geometría 3D real sin necesidad de software complejo. Sigue estos tres pasos:</p>
           <ol>
-            <li>En <strong>Modo IA</strong>, escribe una descripción clara como <code>"cubo de 1 metro rojo"</code> o <code>"tarjeta de acceso con chip"</code> y presiona <strong>⚡ Generar Geometría</strong>.</li>
-            <li>El visor mostrará inmediatamente el objeto tridimensional real. Puedes rotarlo arrastrando el ratón, hacer zoom con la rueda y cambiar a vista de <strong>Malla</strong> para ver su topología.</li>
-            <li>Haz clic en <strong>💾 Exportar GLB</strong>. El modelo visible se verificará y descargará como archivo <code>.glb</code> estándar para tus proyectos.</li>
+            <li>En <strong>Editor 3D</strong>, selecciona o añade primitivas (Cubo, Cilindro, Esfera, Cuña, Cono, Toro, Cápsula).</li>
+            <li>Usa los gizmos de transformación en pantalla o el inspector de propiedades numéricas para posicionar, rotar y escalar piezas con precisión métrica.</li>
+            <li>Haz clic en <strong>💾 Exportar GLB</strong> para descargar tu modelo verificado con texturas y materiales listos para tus videojuegos.</li>
           </ol>
         </section>
 
@@ -353,7 +427,10 @@ import catalog from '../data/catalog.json';
             <li><code>cylinder</code>: Tubos, columnas, botones, patas, cables, tanques.</li>
             <li><code>sphere</code>: Domos, sensores, balizas, articulaciones esféricas.</li>
             <li><code>wedge</code>: Cuñas prismáticas para rampas, biseles y teclados inclinados.</li>
-            <li><code>capsule / torus</code>: Contenedores presurizados y anillos de sellado.</li>
+            <li><code>cone</code>: Conos puntiagudos para conos de escape y conos de sensores.</li>
+            <li><code>torus</code>: Anillos de sellado, empuñaduras circulares y juntas de compresión.</li>
+            <li><code>capsule</code>: Contenedores presurizados y tanques de combustible.</li>
+            <li><code>plane</code>: Paneles planos, pantallas y superficies de calcomanía.</li>
           </ul>
         </section>
 
@@ -375,7 +452,6 @@ import catalog from '../data/catalog.json';
             <li><strong>Presets Industriales:</strong> <code>worn_metal</code>, <code>metal_light_brushed</code>, <code>painted_metal_white</code>, <code>beige_plastic_worn</code>, <code>rubber_black</code>, <code>rust_heavy</code>, <code>hazard_stripes</code>, <code>vent_grill</code>, <code>crt_screen_green</code>, <code>crt_screen_amber</code>, <code>caution_label</code> y <code>red_paint_worn</code>.</li>
             <li><strong>Mapeo UV Anti-Estiramiento:</strong> El motor calibra dinámicamente las coordenadas UV en metros reales sobre cajas, cilindros y cuñas para que los chevrons, rejillas y metal cepillado no se deformen en piezas alargadas.</li>
             <li><strong>Exportación GLB Completa:</strong> Todas las texturas y materiales se empaquetan de forma embebida en el archivo <code>.glb</code> binario listo para Godot 4, Blender y Unity.</li>
-            <li><strong>Compatibilidad Retroactiva:</strong> Cualquier componente antiguo que sólo defina <code>color</code> continuará funcionando con colores de vértice puros.</li>
           </ul>
         </section>
 
@@ -472,14 +548,22 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
   import { AIGenerator } from '../lib/studio/ai-generator';
   import { GLBExporterService } from '../lib/studio/glb-exporter';
   import { StudioViewport } from '../lib/studio/three-viewport';
-  import type { ModelSpec, ComponentDef, GeometricStats, GenerationResult, ShadingMode } from '../lib/studio/types';
+  import { TextureLibrary } from '../lib/studio/texture-library';
+  import type { ModelSpec, ComponentDef, GeometricStats, GenerationResult, ShadingMode, ShapePrimitive, TransformGizmoMode, CameraViewPreset } from '../lib/studio/types';
 
   // State Management
   let generationCounter = 1;
-  let activeMode: 'ai' | 'visual' | 'code' = 'ai';
+  let activeMode: 'ai' | 'visual' | 'code' = 'visual';
   let activeFile: 'spec' | 'script' | 'generator_py' = 'spec';
+  let selectedComponentIndex: number | null = 0;
+  let isUniformScaleLocked = true;
+  let isGridSnapEnabled = false;
 
-  // Default Initial Model (Genuine procedural crate specification)
+  // History Stack (Undo / Redo)
+  const historyStack: ModelSpec[] = [];
+  let historyIndex = -1;
+
+  // Default Initial Model (Authentic Industrial Cargo Crate)
   let currentSpec: ModelSpec = {
     id: 'below_nominal.furniture.crate',
     name: 'Cargo Crate',
@@ -494,6 +578,8 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
         shape: 'box',
         size: [1.0, 0.85, 1.0],
         position: [0, 0.425, 0],
+        rotation: [0, 0, 0],
+        scale: [1, 1, 1],
         color: '#4a5568',
         texturePreset: 'worn_metal',
         roughness: 0.68,
@@ -504,6 +590,8 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
         shape: 'box',
         size: [1.04, 0.12, 1.04],
         position: [0, 0.425, 0],
+        rotation: [0, 0, 0],
+        scale: [1, 1, 1],
         color: '#2d3748',
         texturePreset: 'metal_dark_grime',
         roughness: 0.70,
@@ -514,6 +602,8 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
         shape: 'box',
         size: [0.96, 0.08, 1.02],
         position: [0, 0.65, 0],
+        rotation: [0, 0, 0],
+        scale: [1, 1, 1],
         color: '#ffffff',
         texturePreset: 'hazard_stripes',
         roughness: 0.70,
@@ -524,6 +614,8 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
         shape: 'box',
         size: [0.4, 0.12, 0.02],
         position: [0, 0.425, 0.51],
+        rotation: [0, 0, 0],
+        scale: [1, 1, 1],
         color: '#edf2f7',
         texturePreset: 'caution_label',
         label: 'CARGO-77'
@@ -531,7 +623,11 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     ]
   };
 
+  // Push Initial Spec to History
+  pushHistoryState(currentSpec);
+
   // DOM Elements
+  const studioWorkspace = document.getElementById('studio-workspace') as HTMLElement;
   const threeMountEl = document.getElementById('three-canvas-mount') as HTMLElement;
   const viewportModelName = document.getElementById('viewport-model-name');
   const hudGenId = document.getElementById('hud-gen-id');
@@ -543,6 +639,8 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
   const errorBanner = document.getElementById('viewport-error-banner');
   const errorBannerBody = document.getElementById('error-banner-body');
   const btnCloseError = document.getElementById('btn-close-error');
+  const viewportSelectionPill = document.getElementById('viewport-selection-pill');
+  const viewportSelectionLabel = document.getElementById('viewport-selection-label');
 
   const codeTextarea = document.getElementById('code-textarea') as HTMLTextAreaElement;
   const lineNumbers = document.getElementById('line-numbers');
@@ -574,6 +672,157 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
   const geminiApiKeyInput = document.getElementById('gemini-api-key-input') as HTMLInputElement;
   const aiChips = document.querySelectorAll('.ai-chip');
 
+  // Outliner & Inspector Containers
+  const outlinerTreeList = document.getElementById('outliner-tree-list');
+  const outlinerCountEl = document.getElementById('outliner-count');
+  const inspectorContentMount = document.getElementById('inspector-content-mount');
+  const inspectorCompBadge = document.getElementById('inspector-comp-badge');
+  const quickAdjustWindow = document.getElementById('quick-adjust-window');
+  const visualInspectorContainer = document.getElementById('visual-inspector-container');
+
+  // Undo / Redo Buttons
+  const btnTopbarUndo = document.getElementById('btn-topbar-undo') as HTMLButtonElement;
+  const btnTopbarRedo = document.getElementById('btn-topbar-redo') as HTMLButtonElement;
+  const btnOutlinerUndo = document.getElementById('btn-outliner-undo') as HTMLButtonElement;
+  const btnOutlinerRedo = document.getElementById('btn-outliner-redo') as HTMLButtonElement;
+
+  // Viewport Gizmo & View Buttons
+  const gizmoBtnSelect = document.getElementById('gizmo-btn-select');
+  const gizmoBtnTranslate = document.getElementById('gizmo-btn-translate');
+  const gizmoBtnRotate = document.getElementById('gizmo-btn-rotate');
+  const gizmoBtnScale = document.getElementById('gizmo-btn-scale');
+  const gizmoBtnSnap = document.getElementById('gizmo-btn-snap');
+  const btnFocusSelected = document.getElementById('btn-focus-selected');
+  const btnToggleGrid = document.getElementById('btn-toggle-grid');
+  const btnToggleAxes = document.getElementById('btn-toggle-axes');
+
+  // Global Scale & Surface sliders (for quick adjust window)
+  const paramGlobalScale = document.getElementById('param-global-scale') as HTMLInputElement;
+  const paramGlobalScaleVal = document.getElementById('param-global-scale-val');
+  const paramRoughness = document.getElementById('param-roughness') as HTMLInputElement;
+  const paramRoughnessVal = document.getElementById('param-roughness-val');
+  const paramMetalness = document.getElementById('param-metalness') as HTMLInputElement;
+  const paramMetalnessVal = document.getElementById('param-metalness-val');
+
+  // Initialize Three.js Viewport
+  let viewport: StudioViewport;
+  if (threeMountEl) {
+    viewport = new StudioViewport(
+      threeMountEl,
+      handleViewportStatsUpdate,
+      handleViewportComponentSelect,
+      handleViewportGizmoTransform
+    );
+    document.getElementById('studio-reset-cam')?.addEventListener('click', () => {
+      viewport.resetCameraAndFrame();
+    });
+  }
+
+  function handleViewportStatsUpdate(stats: GeometricStats | null, result: GenerationResult | null) {
+    if (stats) {
+      if (hudTris) hudTris.textContent = `${stats.triangles.toLocaleString()} tris`;
+      if (hudVerts) hudVerts.textContent = `${stats.vertices.toLocaleString()} verts`;
+      if (hudDims) hudDims.textContent = `X: ${stats.dimensions.x}m | Y: ${stats.dimensions.y}m | Z: ${stats.dimensions.z}m`;
+    }
+
+    if (result) {
+      if (hudGenId) hudGenId.textContent = `${result.id} v${result.version}`;
+      if (statusBadge && statusBadgeText) {
+        if (result.success) {
+          statusBadge.className = 'generation-status-badge status-completed';
+          statusBadgeText.textContent = 'COMPLETADO';
+          if (errorBanner) errorBanner.style.display = 'none';
+        } else {
+          statusBadge.className = 'generation-status-badge status-error';
+          statusBadgeText.textContent = 'ERROR';
+          if (errorBanner && errorBannerBody) {
+            errorBanner.style.display = 'block';
+            errorBannerBody.textContent = result.error || 'Error desconocido';
+          }
+        }
+      }
+    }
+  }
+
+  function handleViewportComponentSelect(index: number | null): void {
+    selectedComponentIndex = index;
+    renderOutliner();
+    renderInspector();
+    updateSelectionPill();
+  }
+
+  function handleViewportGizmoTransform(
+    index: number,
+    pos: [number, number, number],
+    rot: [number, number, number],
+    scale: [number, number, number]
+  ): void {
+    const comp = currentSpec.components[index];
+    if (!comp) return;
+
+    comp.position = pos;
+    comp.rotation = rot;
+    comp.scale = scale;
+
+    // Update inspector numeric inputs in real time without tearing down scene
+    updateTransformInspectorInputs(pos, rot, scale);
+    updateEffectiveDimensions(comp);
+  }
+
+  // --- HISTORY MANAGEMENT (UNDO / REDO) ---
+  function pushHistoryState(spec: ModelSpec): void {
+    const snapshot: ModelSpec = JSON.parse(JSON.stringify(spec));
+    if (historyIndex < historyStack.length - 1) {
+      historyStack.splice(historyIndex + 1);
+    }
+    historyStack.push(snapshot);
+    if (historyStack.length > 50) {
+      historyStack.shift();
+    }
+    historyIndex = historyStack.length - 1;
+    updateHistoryButtons();
+  }
+
+  function undo(): void {
+    if (historyIndex > 0) {
+      historyIndex--;
+      currentSpec = JSON.parse(JSON.stringify(historyStack[historyIndex]));
+      if (selectedComponentIndex !== null && selectedComponentIndex >= currentSpec.components.length) {
+        selectedComponentIndex = currentSpec.components.length - 1;
+      }
+      renderCurrentSpec('visual', false);
+      updateHistoryButtons();
+    }
+  }
+
+  function redo(): void {
+    if (historyIndex < historyStack.length - 1) {
+      historyIndex++;
+      currentSpec = JSON.parse(JSON.stringify(historyStack[historyIndex]));
+      if (selectedComponentIndex !== null && selectedComponentIndex >= currentSpec.components.length) {
+        selectedComponentIndex = currentSpec.components.length - 1;
+      }
+      renderCurrentSpec('visual', false);
+      updateHistoryButtons();
+    }
+  }
+
+  function updateHistoryButtons(): void {
+    const canUndo = historyIndex > 0;
+    const canRedo = historyIndex < historyStack.length - 1;
+
+    if (btnTopbarUndo) btnTopbarUndo.disabled = !canUndo;
+    if (btnTopbarRedo) btnTopbarRedo.disabled = !canRedo;
+    if (btnOutlinerUndo) btnOutlinerUndo.disabled = !canUndo;
+    if (btnOutlinerRedo) btnOutlinerRedo.disabled = !canRedo;
+  }
+
+  btnTopbarUndo?.addEventListener('click', () => undo());
+  btnTopbarRedo?.addEventListener('click', () => redo());
+  btnOutlinerUndo?.addEventListener('click', () => undo());
+  btnOutlinerRedo?.addEventListener('click', () => redo());
+
+  // --- ENGINE SELECTION (AI vs LOCAL) ---
   let currentEngine: 'ai' | 'local' = (localStorage.getItem('modelcoder_selected_engine') as any) || 'local';
 
   function setEngineMode(engine: 'ai' | 'local'): void {
@@ -627,71 +876,57 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
 
   setEngineMode(currentEngine);
 
-  // Visual Builder Elements
-  const visualComponentsList = document.getElementById('visual-components-list');
-  const btnAddBox = document.getElementById('btn-add-box');
-  const btnAddCylinder = document.getElementById('btn-add-cylinder');
-  const btnAddSphere = document.getElementById('btn-add-sphere');
-  const btnAddWedge = document.getElementById('btn-add-wedge');
+  // --- WORKSPACE MODE SWITCHER (AI / VISUAL / CODE) ---
+  const modeTabs = document.querySelectorAll('.btn-mode-tab');
+  const modePanels = document.querySelectorAll('.mode-panel');
 
-  // Global Scale & Surface sliders
-  const paramGlobalScale = document.getElementById('param-global-scale') as HTMLInputElement;
-  const paramGlobalScaleVal = document.getElementById('param-global-scale-val');
-  const paramRoughness = document.getElementById('param-roughness') as HTMLInputElement;
-  const paramRoughnessVal = document.getElementById('param-roughness-val');
-  const paramMetalness = document.getElementById('param-metalness') as HTMLInputElement;
-  const paramMetalnessVal = document.getElementById('param-metalness-val');
-
-  // Initialize Three.js Viewport
-  let viewport: StudioViewport;
-  if (threeMountEl) {
-    viewport = new StudioViewport(threeMountEl, handleViewportStatsUpdate);
-    document.getElementById('studio-reset-cam')?.addEventListener('click', () => {
-      viewport.resetCameraAndFrame();
-    });
-  }
-
-  function handleViewportStatsUpdate(stats: GeometricStats | null, result: GenerationResult | null) {
-    if (stats) {
-      if (hudTris) hudTris.textContent = `${stats.triangles.toLocaleString()} tris`;
-      if (hudVerts) hudVerts.textContent = `${stats.vertices.toLocaleString()} verts`;
-      if (hudDims) hudDims.textContent = `X: ${stats.dimensions.x}m | Y: ${stats.dimensions.y}m | Z: ${stats.dimensions.z}m`;
-    }
-
-    if (result) {
-      if (hudGenId) hudGenId.textContent = `${result.id} v${result.version}`;
-      if (statusBadge && statusBadgeText) {
-        if (result.success) {
-          statusBadge.className = 'generation-status-badge status-completed';
-          statusBadgeText.textContent = 'COMPLETADO';
-          if (errorBanner) errorBanner.style.display = 'none';
-        } else {
-          statusBadge.className = 'generation-status-badge status-error';
-          statusBadgeText.textContent = 'ERROR';
-          if (errorBanner && errorBannerBody) {
-            errorBanner.style.display = 'block';
-            errorBannerBody.textContent = result.error || 'Error desconocido';
-          }
-        }
-      }
-    }
-  }
-
-  // Shading Modes
-  const shadingBtns = document.querySelectorAll('.btn-shading');
-  shadingBtns.forEach((btn) => {
-    btn.addEventListener('click', () => {
-      shadingBtns.forEach((b) => b.classList.remove('active'));
-      btn.classList.add('active');
-      const mode = (btn as HTMLElement).dataset.shading as ShadingMode;
-      if (viewport && mode) {
-        viewport.setShadingMode(mode);
-      }
+  modeTabs.forEach((tab) => {
+    tab.addEventListener('click', () => {
+      const mode = (tab as HTMLElement).dataset.mode as 'ai' | 'visual' | 'code';
+      if (!mode) return;
+      setStudioMode(mode);
     });
   });
 
-  // Render Spec into Viewport
-  function renderCurrentSpec(mode: 'ai' | 'visual' | 'code' = 'visual'): void {
+  function setStudioMode(mode: 'ai' | 'visual' | 'code'): void {
+    activeMode = mode;
+    modeTabs.forEach((t) => t.classList.remove('active'));
+    document.querySelector(`.btn-mode-tab[data-mode="${mode}"]`)?.classList.add('active');
+
+    modePanels.forEach((p) => p.classList.remove('active'));
+
+    if (mode === 'visual') {
+      document.getElementById('outliner-mode-container')?.classList.add('active');
+      studioWorkspace?.classList.add('mode-visual-active');
+      if (visualInspectorContainer) visualInspectorContainer.style.display = 'block';
+      if (quickAdjustWindow) quickAdjustWindow.style.display = 'none';
+      if (viewport) {
+        viewport.setGizmoMode('translate');
+        updateGizmoButtons('translate');
+      }
+    } else if (mode === 'ai') {
+      document.getElementById('ai-mode-container')?.classList.add('active');
+      studioWorkspace?.classList.remove('mode-visual-active');
+      if (visualInspectorContainer) visualInspectorContainer.style.display = 'none';
+      if (quickAdjustWindow) quickAdjustWindow.style.display = 'block';
+      if (viewport) viewport.setGizmoMode('none');
+    } else if (mode === 'code') {
+      document.getElementById('code-mode-container')?.classList.add('active');
+      studioWorkspace?.classList.remove('mode-visual-active');
+      if (visualInspectorContainer) visualInspectorContainer.style.display = 'none';
+      if (quickAdjustWindow) quickAdjustWindow.style.display = 'none';
+      if (viewport) viewport.setGizmoMode('none');
+      syncEditorFromSpec();
+    }
+
+    // Force Three.js viewport resize
+    setTimeout(() => {
+      window.dispatchEvent(new Event('resize'));
+    }, 50);
+  }
+
+  // --- RENDER CURRENT SPEC & GEOMETRY ---
+  function renderCurrentSpec(mode: 'ai' | 'visual' | 'code' = 'visual', recordHistory: boolean = true): void {
     if (!viewport) return;
 
     try {
@@ -705,10 +940,27 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
         viewportModelName.textContent = currentSpec.name.toUpperCase();
       }
 
-      // Sync editor & visual cards
+      // Sync active component selection with viewport
+      if (selectedComponentIndex !== null && selectedComponentIndex < currentSpec.components.length) {
+        viewport.selectComponent(selectedComponentIndex);
+      } else if (currentSpec.components.length > 0) {
+        selectedComponentIndex = 0;
+        viewport.selectComponent(0);
+      } else {
+        selectedComponentIndex = null;
+        viewport.selectComponent(null);
+      }
+
+      // Sync outliner, inspector, code editor
+      renderOutliner();
+      renderInspector();
+      updateSelectionPill();
       syncEditorFromSpec();
-      renderVisualBuilderCards();
       setLinterValid();
+
+      if (recordHistory) {
+        pushHistoryState(currentSpec);
+      }
     } catch (err: any) {
       const reqId = `GEN-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
       viewport.displayError(err.message, reqId, generationCounter, mode);
@@ -716,27 +968,1100 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     }
   }
 
-  // Mode Switcher Logic
-  const modeTabs = document.querySelectorAll('.btn-mode-tab');
-  const modePanels = document.querySelectorAll('.mode-panel');
+  // --- OUTLINER COMPONENT TREE ---
+  function renderOutliner(): void {
+    if (!outlinerTreeList) return;
+    if (outlinerCountEl) outlinerCountEl.textContent = `${currentSpec.components.length}`;
 
-  modeTabs.forEach((tab) => {
-    tab.addEventListener('click', () => {
-      const mode = (tab as HTMLElement).dataset.mode as 'ai' | 'visual' | 'code';
-      if (!mode) return;
+    outlinerTreeList.innerHTML = '';
 
-      activeMode = mode;
-      modeTabs.forEach((t) => t.classList.remove('active'));
-      tab.classList.add('active');
+    currentSpec.components.forEach((comp, idx) => {
+      const item = document.createElement('div');
+      item.className = `outliner-item ${idx === selectedComponentIndex ? 'active' : ''} ${comp.visible === false ? 'is-hidden' : ''}`;
+      item.dataset.idx = `${idx}`;
 
-      modePanels.forEach((p) => p.classList.remove('active'));
-      if (mode === 'ai') document.getElementById('ai-mode-container')?.classList.add('active');
-      else if (mode === 'visual') document.getElementById('visual-mode-container')?.classList.add('active');
-      else if (mode === 'code') document.getElementById('code-mode-container')?.classList.add('active');
+      const shapeIcon = getShapeIcon(comp.shape);
+      const isVisible = comp.visible !== false;
+
+      item.innerHTML = `
+        <div class="outliner-item-main" data-idx="${idx}" title="Seleccionar componente">
+          <span class="outliner-idx-tag">#${idx + 1}</span>
+          <span class="outliner-shape-badge" title="Tipo: ${comp.shape}">${shapeIcon} ${comp.shape.toUpperCase()}</span>
+          <span class="outliner-name-label">${escapeHtml(comp.name)}</span>
+        </div>
+        <div class="outliner-item-actions">
+          <button type="button" class="btn-outliner-vis ps1-ctrl-btn" data-idx="${idx}" title="${isVisible ? 'Ocultar pieza' : 'Mostrar pieza'}">
+            ${isVisible ? '👁️' : '🚫'}
+          </button>
+          <button type="button" class="btn-outliner-dup ps1-ctrl-btn" data-idx="${idx}" title="Duplicar componente">
+            📋
+          </button>
+          <button type="button" class="btn-outliner-del ps1-ctrl-btn" data-idx="${idx}" title="Eliminar componente">
+            🗑️
+          </button>
+        </div>
+      `;
+
+      outlinerTreeList.appendChild(item);
+    });
+
+    // Wire Outliner selection & actions
+    outlinerTreeList.querySelectorAll('.outliner-item-main').forEach((el) => {
+      el.addEventListener('click', (e) => {
+        const idx = parseInt((e.currentTarget as HTMLElement).dataset.idx || '0', 10);
+        selectComponent(idx);
+      });
+    });
+
+    outlinerTreeList.querySelectorAll('.btn-outliner-vis').forEach((el) => {
+      el.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const idx = parseInt((e.currentTarget as HTMLElement).dataset.idx || '0', 10);
+        toggleComponentVisibility(idx);
+      });
+    });
+
+    outlinerTreeList.querySelectorAll('.btn-outliner-dup').forEach((el) => {
+      e.stopPropagation();
+      const idx = parseInt((e.currentTarget as HTMLElement).dataset.idx || '0', 10);
+      duplicateComponent(idx);
+    });
+
+    outlinerTreeList.querySelectorAll('.btn-outliner-del').forEach((el) => {
+      e.stopPropagation();
+      const idx = parseInt((e.currentTarget as HTMLElement).dataset.idx || '0', 10);
+      deleteComponent(idx);
+    });
+  }
+
+  function selectComponent(idx: number): void {
+    if (idx < 0 || idx >= currentSpec.components.length) {
+      selectedComponentIndex = null;
+    } else {
+      selectedComponentIndex = idx;
+    }
+
+    if (viewport) {
+      viewport.selectComponent(selectedComponentIndex);
+    }
+    renderOutliner();
+    renderInspector();
+    updateSelectionPill();
+  }
+
+  function toggleComponentVisibility(idx: number): void {
+    const comp = currentSpec.components[idx];
+    if (!comp) return;
+    comp.visible = comp.visible === false ? true : false;
+    renderCurrentSpec('visual');
+  }
+
+  function duplicateComponent(idx: number): void {
+    const orig = currentSpec.components[idx];
+    if (!orig) return;
+
+    const copy: ComponentDef = JSON.parse(JSON.stringify(orig));
+    copy.name = `${orig.name}_copia`;
+    if (!copy.position) copy.position = [0, 0, 0];
+    copy.position[0] += 0.25;
+    copy.position[2] += 0.25;
+
+    currentSpec.components.splice(idx + 1, 0, copy);
+    selectedComponentIndex = idx + 1;
+    renderCurrentSpec('visual');
+  }
+
+  function deleteComponent(idx: number): void {
+    if (currentSpec.components.length <= 1) {
+      alert('El modelo debe contener al menos un componente geométrico.');
+      return;
+    }
+    const name = currentSpec.components[idx]?.name || 'pieza';
+    if (!confirm(`¿Eliminar componente "${name}"?`)) return;
+
+    currentSpec.components.splice(idx, 1);
+    if (selectedComponentIndex !== null) {
+      if (selectedComponentIndex >= currentSpec.components.length) {
+        selectedComponentIndex = currentSpec.components.length - 1;
+      }
+    }
+    renderCurrentSpec('visual');
+  }
+
+  // --- ADD PRIMITIVE BUTTONS ---
+  document.querySelectorAll('.btn-primitive').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      const shape = (e.currentTarget as HTMLElement).dataset.shape as ShapePrimitive;
+      if (!shape) return;
+      addPrimitiveComponent(shape);
     });
   });
 
-  // MODE A: AI GENERATION
+  function addPrimitiveComponent(shape: ShapePrimitive): void {
+    const count = currentSpec.components.length + 1;
+    let newComp: ComponentDef;
+
+    switch (shape) {
+      case 'box':
+        newComp = {
+          name: `cubo_${count}`,
+          shape: 'box',
+          size: [1.0, 1.0, 1.0],
+          position: [0, 0.5, 0],
+          rotation: [0, 0, 0],
+          scale: [1, 1, 1],
+          color: '#4a5568',
+          roughness: 0.75,
+          metalness: 0.25
+        };
+        break;
+      case 'cylinder':
+        newComp = {
+          name: `cilindro_${count}`,
+          shape: 'cylinder',
+          size: [0.35, 0.35, 1.0, 8],
+          position: [0, 0.5, 0],
+          rotation: [0, 0, 0],
+          scale: [1, 1, 1],
+          color: '#2d3748',
+          roughness: 0.70,
+          metalness: 0.35
+        };
+        break;
+      case 'sphere':
+        newComp = {
+          name: `esfera_${count}`,
+          shape: 'sphere',
+          size: [0.5, 8, 6],
+          position: [0, 0.5, 0],
+          rotation: [0, 0, 0],
+          scale: [1, 1, 1],
+          color: '#e53e3e',
+          roughness: 0.60,
+          metalness: 0.20
+        };
+        break;
+      case 'wedge':
+        newComp = {
+          name: `cuña_${count}`,
+          shape: 'wedge',
+          size: [1.0, 0.8, 0.8],
+          position: [0, 0.4, 0],
+          rotation: [0, 0, 0],
+          scale: [1, 1, 1],
+          color: '#d69e2e',
+          roughness: 0.75,
+          metalness: 0.15
+        };
+        break;
+      case 'cone':
+        newComp = {
+          name: `cono_${count}`,
+          shape: 'cone',
+          size: [0.4, 1.0, 8],
+          position: [0, 0.5, 0],
+          rotation: [0, 0, 0],
+          scale: [1, 1, 1],
+          color: '#dd6b20',
+          roughness: 0.65,
+          metalness: 0.25
+        };
+        break;
+      case 'torus':
+        newComp = {
+          name: `toro_${count}`,
+          shape: 'torus',
+          size: [0.5, 0.15, 6, 12],
+          position: [0, 0.2, 0],
+          rotation: [0, 0, 0],
+          scale: [1, 1, 1],
+          color: '#319795',
+          roughness: 0.60,
+          metalness: 0.40
+        };
+        break;
+      case 'capsule':
+        newComp = {
+          name: `capsula_${count}`,
+          shape: 'capsule',
+          size: [0.25, 0.5, 4, 8],
+          position: [0, 0.5, 0],
+          rotation: [0, 0, 0],
+          scale: [1, 1, 1],
+          color: '#3182ce',
+          roughness: 0.65,
+          metalness: 0.30
+        };
+        break;
+      case 'plane':
+        newComp = {
+          name: `plano_${count}`,
+          shape: 'plane',
+          size: [1.0, 1.0],
+          position: [0, 0.01, 0],
+          rotation: [-90, 0, 0],
+          scale: [1, 1, 1],
+          color: '#718096',
+          roughness: 0.90,
+          metalness: 0.10
+        };
+        break;
+    }
+
+    currentSpec.components.push(newComp);
+    selectedComponentIndex = currentSpec.components.length - 1;
+    renderCurrentSpec('visual');
+  }
+
+  // --- PROPERTIES INSPECTOR PANEL ---
+  function renderInspector(): void {
+    if (!inspectorContentMount) return;
+
+    if (selectedComponentIndex === null || !currentSpec.components[selectedComponentIndex]) {
+      inspectorContentMount.innerHTML = `
+        <div class="inspector-empty-state">
+          <div class="empty-icon">🎯</div>
+          <p class="empty-title">Ninguna pieza seleccionada</p>
+          <small class="empty-desc">Haz clic en una pieza del Árbol de Componentes o directamente sobre el modelo en el visor 3D para editarla.</small>
+        </div>
+      `;
+      if (inspectorCompBadge) inspectorCompBadge.textContent = '--';
+      return;
+    }
+
+    const comp = currentSpec.components[selectedComponentIndex];
+    if (inspectorCompBadge) {
+      inspectorCompBadge.textContent = comp.shape.toUpperCase();
+    }
+
+    // Ensure defaults
+    if (!comp.position) comp.position = [0, 0, 0];
+    if (!comp.rotation) comp.rotation = [0, 0, 0];
+    if (!comp.scale) comp.scale = [1, 1, 1];
+    if (!comp.size) comp.size = getDefaultSizeForShape(comp.shape);
+
+    const pos = comp.position;
+    const rot = comp.rotation;
+    const scl = comp.scale;
+
+    inspectorContentMount.innerHTML = `
+      <!-- Component Header / Identifier -->
+      <div class="prop-card-header ps1-inset">
+        <div class="prop-row-item">
+          <label class="field-label" for="inp-comp-name">NOMBRE DE LA PIEZA:</label>
+          <input type="text" id="inp-comp-name" class="form-input comp-name-editor" value="${escapeHtml(comp.name)}" />
+        </div>
+        <div class="prop-quick-btns">
+          <button type="button" id="btn-prop-vis" class="btn-mini btn-outline" title="Visibilidad">
+            ${comp.visible !== false ? '👁️ Visible' : '🚫 Oculta'}
+          </button>
+          <button type="button" id="btn-prop-dup" class="btn-mini btn-outline" title="Duplicar">
+            📋 Duplicar
+          </button>
+          <button type="button" id="btn-prop-del" class="btn-mini btn-danger" title="Eliminar">
+            🗑️ Eliminar
+          </button>
+        </div>
+      </div>
+
+      <!-- SECTION 1: TRANSFORMACIÓN -->
+      <div class="prop-section ps1-inset">
+        <div class="section-titlebar">
+          <span class="section-badge">1</span>
+          <span class="section-heading">TRANSFORMACIÓN</span>
+          <button type="button" id="btn-reset-transform" class="btn-mini-link" title="Restablecer posición, rotación y escala a valores neutros">
+            ↺ Restablecer
+          </button>
+        </div>
+
+        <!-- Posición -->
+        <div class="prop-field-block">
+          <div class="field-label-row">
+            <label class="field-label">Posición [X, Y, Z]:</label>
+            <span class="field-unit-tag">metros (m)</span>
+          </div>
+          <div class="coord-3-grid">
+            <div class="coord-input-wrap">
+              <span class="axis-tag axis-x">X</span>
+              <input type="number" step="0.01" id="inp-pos-x" class="coord-num-inp" value="${pos[0]}" />
+            </div>
+            <div class="coord-input-wrap">
+              <span class="axis-tag axis-y">Y</span>
+              <input type="number" step="0.01" id="inp-pos-y" class="coord-num-inp" value="${pos[1]}" />
+            </div>
+            <div class="coord-input-wrap">
+              <span class="axis-tag axis-z">Z</span>
+              <input type="number" step="0.01" id="inp-pos-z" class="coord-num-inp" value="${pos[2]}" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Rotación -->
+        <div class="prop-field-block">
+          <div class="field-label-row">
+            <label class="field-label">Rotación [X, Y, Z]:</label>
+            <span class="field-unit-tag">grados (°)</span>
+          </div>
+          <div class="coord-3-grid">
+            <div class="coord-input-wrap">
+              <span class="axis-tag axis-x">X</span>
+              <input type="number" step="1" id="inp-rot-x" class="coord-num-inp" value="${rot[0]}" />
+            </div>
+            <div class="coord-input-wrap">
+              <span class="axis-tag axis-y">Y</span>
+              <input type="number" step="1" id="inp-rot-y" class="coord-num-inp" value="${rot[1]}" />
+            </div>
+            <div class="coord-input-wrap">
+              <span class="axis-tag axis-z">Z</span>
+              <input type="number" step="1" id="inp-rot-z" class="coord-num-inp" value="${rot[2]}" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Escala -->
+        <div class="prop-field-block">
+          <div class="field-label-row">
+            <label class="field-label">Escala [X, Y, Z]:</label>
+            <label class="lock-proportions-toggle" title="Bloquear escala proporcional uniforme">
+              <input type="checkbox" id="chk-scale-lock" ${isUniformScaleLocked ? 'checked' : ''} />
+              <span>🔒 Proporcional</span>
+            </label>
+          </div>
+          <div class="coord-3-grid">
+            <div class="coord-input-wrap">
+              <span class="axis-tag axis-x">X</span>
+              <input type="number" step="0.01" min="0.01" id="inp-scl-x" class="coord-num-inp" value="${scl[0]}" />
+            </div>
+            <div class="coord-input-wrap">
+              <span class="axis-tag axis-y">Y</span>
+              <input type="number" step="0.01" min="0.01" id="inp-scl-y" class="coord-num-inp" value="${scl[1]}" />
+            </div>
+            <div class="coord-input-wrap">
+              <span class="axis-tag axis-z">Z</span>
+              <input type="number" step="0.01" min="0.01" id="inp-scl-z" class="coord-num-inp" value="${scl[2]}" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Dimensiones Efectivas Resultantes -->
+        <div class="effective-dims-box">
+          <span class="eff-label">DIMENSIONES REALES EFECTIVAS:</span>
+          <span id="eff-dims-val" class="eff-val">Calculando...</span>
+        </div>
+      </div>
+
+      <!-- SECTION 2: GEOMETRÍA ESPECÍFICA DE LA FORMA -->
+      <div class="prop-section ps1-inset">
+        <div class="section-titlebar">
+          <span class="section-badge">2</span>
+          <span class="section-heading">GEOMETRÍA (${comp.shape.toUpperCase()})</span>
+        </div>
+        <div id="shape-params-mount" class="shape-params-mount">
+          ${renderShapeSpecificParamsHTML(comp)}
+        </div>
+      </div>
+
+      <!-- SECTION 3: MATERIALES Y APARIENCIA -->
+      <div class="prop-section ps1-inset">
+        <div class="section-titlebar">
+          <span class="section-badge">3</span>
+          <span class="section-heading">MATERIALES Y APARIENCIA</span>
+        </div>
+
+        <!-- Color -->
+        <div class="prop-field-row">
+          <label class="field-label">Color Superficial:</label>
+          <div class="color-picker-group">
+            <input type="color" id="inp-mat-color" class="color-swatch-input" value="${comp.color?.startsWith('#') ? comp.color : '#4a5568'}" />
+            <input type="text" id="inp-mat-color-hex" class="form-input color-hex-input" value="${comp.color || '#4a5568'}" />
+          </div>
+        </div>
+
+        <!-- Rugosidad & Metalicidad -->
+        <div class="prop-field-block">
+          <div class="field-label-row">
+            <label class="field-label">Rugosidad:</label>
+            <span id="disp-roughness" class="param-val-disp">${comp.roughness ?? 0.75}</span>
+          </div>
+          <input type="range" id="inp-roughness" min="0.0" max="1.0" step="0.05" value="${comp.roughness ?? 0.75}" class="param-slider" />
+        </div>
+
+        <div class="prop-field-block">
+          <div class="field-label-row">
+            <label class="field-label">Aspecto Metálico:</label>
+            <span id="disp-metalness" class="param-val-disp">${comp.metalness ?? 0.25}</span>
+          </div>
+          <input type="range" id="inp-metalness" min="0.0" max="1.0" step="0.05" value="${comp.metalness ?? 0.25}" class="param-slider" />
+        </div>
+
+        <!-- Transparencia & Opacidad -->
+        <div class="prop-field-block">
+          <div class="field-label-row">
+            <label class="checkbox-label" title="Permitir transparencia en esta pieza">
+              <input type="checkbox" id="chk-transparent" ${comp.transparent || (comp.opacity !== undefined && comp.opacity < 1.0) ? 'checked' : ''} />
+              <span>Transparente</span>
+            </label>
+            <span id="disp-opacity" class="param-val-disp">${comp.opacity ?? 1.0}</span>
+          </div>
+          <input type="range" id="inp-opacity" min="0.05" max="1.0" step="0.05" value="${comp.opacity ?? 1.0}" class="param-slider" />
+        </div>
+
+        <!-- Textura Preset PS1 -->
+        <div class="prop-field-block">
+          <label class="field-label">Preset Textura Industrial PS1:</label>
+          <select id="sel-texture-preset" class="form-input texture-dropdown">
+            <option value="" ${!comp.texturePreset ? 'selected' : ''}>[Sin textura - Color plano]</option>
+            <option value="worn_metal" ${comp.texturePreset === 'worn_metal' ? 'selected' : ''}>🔩 Metal Desgastado (worn_metal)</option>
+            <option value="metal_light_brushed" ${comp.texturePreset === 'metal_light_brushed' ? 'selected' : ''}>✨ Metal Cepillado (metal_light_brushed)</option>
+            <option value="painted_metal_white" ${comp.texturePreset === 'painted_metal_white' ? 'selected' : ''}>⚪ Esmalte Blanco (painted_metal_white)</option>
+            <option value="beige_plastic_worn" ${comp.texturePreset === 'beige_plastic_worn' ? 'selected' : ''}>📟 Plástico Beige Retro (beige_plastic_worn)</option>
+            <option value="rubber_black" ${comp.texturePreset === 'rubber_black' ? 'selected' : ''}>⚫ Goma Negra (rubber_black)</option>
+            <option value="rust_heavy" ${comp.texturePreset === 'rust_heavy' ? 'selected' : ''}>🟤 Óxido Pesado (rust_heavy)</option>
+            <option value="hazard_stripes" ${comp.texturePreset === 'hazard_stripes' ? 'selected' : ''}>⚠️ Rayas de Peligro (hazard_stripes)</option>
+            <option value="vent_grill" ${comp.texturePreset === 'vent_grill' ? 'selected' : ''}>▦ Rejilla Ventilación (vent_grill)</option>
+            <option value="crt_screen_green" ${comp.texturePreset === 'crt_screen_green' ? 'selected' : ''}>🟢 Monitor CRT Verde (crt_screen_green)</option>
+            <option value="crt_screen_amber" ${comp.texturePreset === 'crt_screen_amber' ? 'selected' : ''}>🟠 Monitor CRT Ámbar (crt_screen_amber)</option>
+            <option value="caution_label" ${comp.texturePreset === 'caution_label' ? 'selected' : ''}>🏷️ Etiqueta Precaución (caution_label)</option>
+            <option value="red_paint_worn" ${comp.texturePreset === 'red_paint_worn' ? 'selected' : ''}>🔴 Pintura Roja Desgastada (red_paint_worn)</option>
+          </select>
+        </div>
+
+        <!-- Escala UV -->
+        <div class="prop-field-block">
+          <div class="field-label-row">
+            <label class="field-label">Frecuencia UV [U, V]:</label>
+            <span class="field-unit-tag">Anti-estiramiento</span>
+          </div>
+          <div class="coord-2-grid">
+            <div class="coord-input-wrap">
+              <span class="axis-tag">U</span>
+              <input type="number" step="0.1" min="0.1" id="inp-uv-u" class="coord-num-inp" value="${comp.uvScale?.[0] ?? 1.0}" />
+            </div>
+            <div class="coord-input-wrap">
+              <span class="axis-tag">V</span>
+              <input type="number" step="0.1" min="0.1" id="inp-uv-v" class="coord-num-inp" value="${comp.uvScale?.[1] ?? 1.0}" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Wireframe & Decal -->
+        <div class="prop-field-row" style="margin-top: 0.5rem;">
+          <label class="checkbox-label" title="Visualizar solo estructura poligonal para este componente">
+            <input type="checkbox" id="chk-comp-wireframe" ${comp.wireframe ? 'checked' : ''} />
+            <span>Malla Alámbrica</span>
+          </label>
+        </div>
+
+        <!-- Rótulo / Calcomanía -->
+        <div class="prop-field-block" style="margin-top: 0.5rem;">
+          <label class="field-label">Texto de Calcomanía / Rótulo:</label>
+          <input type="text" id="inp-comp-label" class="form-input" placeholder="ej. CARGO-77 / DANGER" value="${escapeHtml(comp.label || '')}" />
+        </div>
+      </div>
+    `;
+
+    updateEffectiveDimensions(comp);
+    wireInspectorEventListeners(comp);
+  }
+
+  function renderShapeSpecificParamsHTML(comp: ComponentDef): string {
+    const s = comp.size || getDefaultSizeForShape(comp.shape);
+
+    switch (comp.shape) {
+      case 'box':
+        return `
+          <div class="shape-grid-3">
+            <div class="shape-field">
+              <label class="field-label">Ancho (X):</label>
+              <div class="unit-input-wrap"><input type="number" step="0.01" min="0.01" class="shape-num-inp" data-param="0" value="${s[0] ?? 1.0}" /><span class="unit-sym">m</span></div>
+            </div>
+            <div class="shape-field">
+              <label class="field-label">Altura (Y):</label>
+              <div class="unit-input-wrap"><input type="number" step="0.01" min="0.01" class="shape-num-inp" data-param="1" value="${s[1] ?? 1.0}" /><span class="unit-sym">m</span></div>
+            </div>
+            <div class="shape-field">
+              <label class="field-label">Profundidad (Z):</label>
+              <div class="unit-input-wrap"><input type="number" step="0.01" min="0.01" class="shape-num-inp" data-param="2" value="${s[2] ?? 1.0}" /><span class="unit-sym">m</span></div>
+            </div>
+          </div>
+        `;
+      case 'cylinder':
+        return `
+          <div class="shape-grid-2">
+            <div class="shape-field">
+              <label class="field-label">Radio Superior:</label>
+              <div class="unit-input-wrap"><input type="number" step="0.01" min="0.01" class="shape-num-inp" data-param="0" value="${s[0] ?? 0.35}" /><span class="unit-sym">m</span></div>
+            </div>
+            <div class="shape-field">
+              <label class="field-label">Radio Inferior:</label>
+              <div class="unit-input-wrap"><input type="number" step="0.01" min="0.01" class="shape-num-inp" data-param="1" value="${s[1] ?? 0.35}" /><span class="unit-sym">m</span></div>
+            </div>
+            <div class="shape-field">
+              <label class="field-label">Altura (Y):</label>
+              <div class="unit-input-wrap"><input type="number" step="0.01" min="0.01" class="shape-num-inp" data-param="2" value="${s[2] ?? 1.0}" /><span class="unit-sym">m</span></div>
+            </div>
+            <div class="shape-field">
+              <label class="field-label">Segmentos Radiales:</label>
+              <div class="unit-input-wrap"><input type="number" step="1" min="4" max="32" class="shape-num-inp" data-param="3" value="${s[3] ?? 8}" /><span class="unit-sym">seg</span></div>
+            </div>
+          </div>
+        `;
+      case 'sphere':
+        return `
+          <div class="shape-grid-3">
+            <div class="shape-field">
+              <label class="field-label">Radio:</label>
+              <div class="unit-input-wrap"><input type="number" step="0.01" min="0.01" class="shape-num-inp" data-param="0" value="${s[0] ?? 0.5}" /><span class="unit-sym">m</span></div>
+            </div>
+            <div class="shape-field">
+              <label class="field-label">Segmentos Ancho:</label>
+              <div class="unit-input-wrap"><input type="number" step="1" min="4" max="32" class="shape-num-inp" data-param="1" value="${s[1] ?? 8}" /><span class="unit-sym">seg</span></div>
+            </div>
+            <div class="shape-field">
+              <label class="field-label">Segmentos Alto:</label>
+              <div class="unit-input-wrap"><input type="number" step="1" min="3" max="24" class="shape-num-inp" data-param="2" value="${s[2] ?? 6}" /><span class="unit-sym">seg</span></div>
+            </div>
+          </div>
+        `;
+      case 'wedge':
+        return `
+          <div class="shape-grid-3">
+            <div class="shape-field">
+              <label class="field-label">Ancho (X):</label>
+              <div class="unit-input-wrap"><input type="number" step="0.01" min="0.01" class="shape-num-inp" data-param="0" value="${s[0] ?? 1.0}" /><span class="unit-sym">m</span></div>
+            </div>
+            <div class="shape-field">
+              <label class="field-label">Altura (Y):</label>
+              <div class="unit-input-wrap"><input type="number" step="0.01" min="0.01" class="shape-num-inp" data-param="1" value="${s[1] ?? 0.8}" /><span class="unit-sym">m</span></div>
+            </div>
+            <div class="shape-field">
+              <label class="field-label">Profundidad (Z):</label>
+              <div class="unit-input-wrap"><input type="number" step="0.01" min="0.01" class="shape-num-inp" data-param="2" value="${s[2] ?? 0.8}" /><span class="unit-sym">m</span></div>
+            </div>
+          </div>
+        `;
+      case 'cone':
+        return `
+          <div class="shape-grid-3">
+            <div class="shape-field">
+              <label class="field-label">Radio Base:</label>
+              <div class="unit-input-wrap"><input type="number" step="0.01" min="0.01" class="shape-num-inp" data-param="0" value="${s[0] ?? 0.4}" /><span class="unit-sym">m</span></div>
+            </div>
+            <div class="shape-field">
+              <label class="field-label">Altura (Y):</label>
+              <div class="unit-input-wrap"><input type="number" step="0.01" min="0.01" class="shape-num-inp" data-param="1" value="${s[1] ?? 1.0}" /><span class="unit-sym">m</span></div>
+            </div>
+            <div class="shape-field">
+              <label class="field-label">Segmentos:</label>
+              <div class="unit-input-wrap"><input type="number" step="1" min="4" max="32" class="shape-num-inp" data-param="2" value="${s[2] ?? 8}" /><span class="unit-sym">seg</span></div>
+            </div>
+          </div>
+        `;
+      case 'torus':
+        return `
+          <div class="shape-grid-2">
+            <div class="shape-field">
+              <label class="field-label">Radio Principal:</label>
+              <div class="unit-input-wrap"><input type="number" step="0.01" min="0.01" class="shape-num-inp" data-param="0" value="${s[0] ?? 0.5}" /><span class="unit-sym">m</span></div>
+            </div>
+            <div class="shape-field">
+              <label class="field-label">Radio Tubo:</label>
+              <div class="unit-input-wrap"><input type="number" step="0.01" min="0.005" class="shape-num-inp" data-param="1" value="${s[1] ?? 0.15}" /><span class="unit-sym">m</span></div>
+            </div>
+            <div class="shape-field">
+              <label class="field-label">Segm. Radiales:</label>
+              <div class="unit-input-wrap"><input type="number" step="1" min="4" max="24" class="shape-num-inp" data-param="2" value="${s[2] ?? 6}" /><span class="unit-sym">seg</span></div>
+            </div>
+            <div class="shape-field">
+              <label class="field-label">Segm. Tubulares:</label>
+              <div class="unit-input-wrap"><input type="number" step="1" min="6" max="32" class="shape-num-inp" data-param="3" value="${s[3] ?? 12}" /><span class="unit-sym">seg</span></div>
+            </div>
+          </div>
+        `;
+      case 'capsule':
+        return `
+          <div class="shape-grid-2">
+            <div class="shape-field">
+              <label class="field-label">Radio:</label>
+              <div class="unit-input-wrap"><input type="number" step="0.01" min="0.01" class="shape-num-inp" data-param="0" value="${s[0] ?? 0.25}" /><span class="unit-sym">m</span></div>
+            </div>
+            <div class="shape-field">
+              <label class="field-label">Longitud:</label>
+              <div class="unit-input-wrap"><input type="number" step="0.01" min="0.01" class="shape-num-inp" data-param="1" value="${s[1] ?? 0.5}" /><span class="unit-sym">m</span></div>
+            </div>
+            <div class="shape-field">
+              <label class="field-label">Segm. Casquete:</label>
+              <div class="unit-input-wrap"><input type="number" step="1" min="2" max="16" class="shape-num-inp" data-param="2" value="${s[2] ?? 4}" /><span class="unit-sym">seg</span></div>
+            </div>
+            <div class="shape-field">
+              <label class="field-label">Segm. Radiales:</label>
+              <div class="unit-input-wrap"><input type="number" step="1" min="4" max="24" class="shape-num-inp" data-param="3" value="${s[3] ?? 8}" /><span class="unit-sym">seg</span></div>
+            </div>
+          </div>
+        `;
+      case 'plane':
+        return `
+          <div class="shape-grid-2">
+            <div class="shape-field">
+              <label class="field-label">Ancho (X):</label>
+              <div class="unit-input-wrap"><input type="number" step="0.01" min="0.01" class="shape-num-inp" data-param="0" value="${s[0] ?? 1.0}" /><span class="unit-sym">m</span></div>
+            </div>
+            <div class="shape-field">
+              <label class="field-label">Altura (Y):</label>
+              <div class="unit-input-wrap"><input type="number" step="0.01" min="0.01" class="shape-num-inp" data-param="1" value="${s[1] ?? 1.0}" /><span class="unit-sym">m</span></div>
+            </div>
+          </div>
+        `;
+      default:
+        return `<p style="font-size: 0.72rem; color: var(--text-dim);">Parámetros estándar de cubo aplicados.</p>`;
+    }
+  }
+
+  function getDefaultSizeForShape(shape: ShapePrimitive): number[] {
+    switch (shape) {
+      case 'box': return [1.0, 1.0, 1.0];
+      case 'cylinder': return [0.35, 0.35, 1.0, 8];
+      case 'sphere': return [0.5, 8, 6];
+      case 'wedge': return [1.0, 0.8, 0.8];
+      case 'cone': return [0.4, 1.0, 8];
+      case 'torus': return [0.5, 0.15, 6, 12];
+      case 'capsule': return [0.25, 0.5, 4, 8];
+      case 'plane': return [1.0, 1.0];
+      default: return [1.0, 1.0, 1.0];
+    }
+  }
+
+  function getShapeIcon(shape: ShapePrimitive): string {
+    switch (shape) {
+      case 'box': return '📦';
+      case 'cylinder': return '🛢️';
+      case 'sphere': return '🔮';
+      case 'wedge': return '📐';
+      case 'cone': return '🔺';
+      case 'torus': return '🍩';
+      case 'capsule': return '💊';
+      case 'plane': return '📄';
+      default: return '🔹';
+    }
+  }
+
+  function updateEffectiveDimensions(comp: ComponentDef): void {
+    const effDimsVal = document.getElementById('eff-dims-val');
+    if (!effDimsVal) return;
+
+    const s = comp.size || [1, 1, 1];
+    const scl = comp.scale || [1, 1, 1];
+
+    let w = 1.0;
+    let h = 1.0;
+    let d = 1.0;
+
+    switch (comp.shape) {
+      case 'box':
+      case 'wedge':
+        w = (s[0] ?? 1.0) * scl[0];
+        h = (s[1] ?? 1.0) * scl[1];
+        d = (s[2] ?? 1.0) * scl[2];
+        break;
+      case 'cylinder': {
+        const maxR = Math.max(s[0] ?? 0.35, s[1] ?? 0.35);
+        w = maxR * 2 * scl[0];
+        h = (s[2] ?? 1.0) * scl[1];
+        d = maxR * 2 * scl[2];
+        break;
+      }
+      case 'sphere': {
+        const r = s[0] ?? 0.5;
+        w = r * 2 * scl[0];
+        h = r * 2 * scl[1];
+        d = r * 2 * scl[2];
+        break;
+      }
+      case 'cone': {
+        const r = s[0] ?? 0.4;
+        w = r * 2 * scl[0];
+        h = (s[1] ?? 1.0) * scl[1];
+        d = r * 2 * scl[2];
+        break;
+      }
+      case 'torus': {
+        const R = s[0] ?? 0.5;
+        const r = s[1] ?? 0.15;
+        w = (R + r) * 2 * scl[0];
+        h = r * 2 * scl[1];
+        d = (R + r) * 2 * scl[2];
+        break;
+      }
+      case 'capsule': {
+        const r = s[0] ?? 0.25;
+        const len = s[1] ?? 0.5;
+        w = r * 2 * scl[0];
+        h = (len + r * 2) * scl[1];
+        d = r * 2 * scl[2];
+        break;
+      }
+      case 'plane':
+        w = (s[0] ?? 1.0) * scl[0];
+        h = 0.01;
+        d = (s[1] ?? 1.0) * scl[2];
+        break;
+    }
+
+    effDimsVal.textContent = `Ancho: ${w.toFixed(2)}m | Alto: ${h.toFixed(2)}m | Prof: ${d.toFixed(2)}m`;
+  }
+
+  function updateTransformInspectorInputs(
+    pos: [number, number, number],
+    rot: [number, number, number],
+    scale: [number, number, number]
+  ): void {
+    const inpPosX = document.getElementById('inp-pos-x') as HTMLInputElement | null;
+    const inpPosY = document.getElementById('inp-pos-y') as HTMLInputElement | null;
+    const inpPosZ = document.getElementById('inp-pos-z') as HTMLInputElement | null;
+
+    const inpRotX = document.getElementById('inp-rot-x') as HTMLInputElement | null;
+    const inpRotY = document.getElementById('inp-rot-y') as HTMLInputElement | null;
+    const inpRotZ = document.getElementById('inp-rot-z') as HTMLInputElement | null;
+
+    const inpSclX = document.getElementById('inp-scl-x') as HTMLInputElement | null;
+    const inpSclY = document.getElementById('inp-scl-y') as HTMLInputElement | null;
+    const inpSclZ = document.getElementById('inp-scl-z') as HTMLInputElement | null;
+
+    if (inpPosX) inpPosX.value = `${pos[0]}`;
+    if (inpPosY) inpPosY.value = `${pos[1]}`;
+    if (inpPosZ) inpPosZ.value = `${pos[2]}`;
+
+    if (inpRotX) inpRotX.value = `${rot[0]}`;
+    if (inpRotY) inpRotY.value = `${rot[1]}`;
+    if (inpRotZ) inpRotZ.value = `${rot[2]}`;
+
+    if (inpSclX) inpSclX.value = `${scale[0]}`;
+    if (inpSclY) inpSclY.value = `${scale[1]}`;
+    if (inpSclZ) inpSclZ.value = `${scale[2]}`;
+  }
+
+  function updateSelectionPill(): void {
+    if (!viewportSelectionPill || !viewportSelectionLabel) return;
+    if (selectedComponentIndex !== null && currentSpec.components[selectedComponentIndex]) {
+      const comp = currentSpec.components[selectedComponentIndex];
+      viewportSelectionPill.style.display = 'flex';
+      viewportSelectionLabel.textContent = `[${comp.shape.toUpperCase()}] ${comp.name}`;
+    } else {
+      viewportSelectionPill.style.display = 'none';
+    }
+  }
+
+  function wireInspectorEventListeners(comp: ComponentDef): void {
+    const idx = selectedComponentIndex!;
+
+    // Name input
+    document.getElementById('inp-comp-name')?.addEventListener('change', (e) => {
+      comp.name = (e.target as HTMLInputElement).value.trim() || `pieza_${idx + 1}`;
+      renderCurrentSpec('visual');
+    });
+
+    // Quick action buttons
+    document.getElementById('btn-prop-vis')?.addEventListener('click', () => {
+      toggleComponentVisibility(idx);
+    });
+    document.getElementById('btn-prop-dup')?.addEventListener('click', () => {
+      duplicateComponent(idx);
+    });
+    document.getElementById('btn-prop-del')?.addEventListener('click', () => {
+      deleteComponent(idx);
+    });
+
+    // Reset Transform
+    document.getElementById('btn-reset-transform')?.addEventListener('click', () => {
+      comp.position = [0, 0, 0];
+      comp.rotation = [0, 0, 0];
+      comp.scale = [1, 1, 1];
+      renderCurrentSpec('visual');
+    });
+
+    // Position inputs
+    const handlePosChange = () => {
+      const x = parseFloat((document.getElementById('inp-pos-x') as HTMLInputElement)?.value) || 0;
+      const y = parseFloat((document.getElementById('inp-pos-y') as HTMLInputElement)?.value) || 0;
+      const z = parseFloat((document.getElementById('inp-pos-z') as HTMLInputElement)?.value) || 0;
+      comp.position = [x, y, z];
+      renderCurrentSpec('visual');
+    };
+    ['inp-pos-x', 'inp-pos-y', 'inp-pos-z'].forEach((id) => {
+      document.getElementById(id)?.addEventListener('input', handlePosChange);
+    });
+
+    // Rotation inputs
+    const handleRotChange = () => {
+      const x = parseFloat((document.getElementById('inp-rot-x') as HTMLInputElement)?.value) || 0;
+      const y = parseFloat((document.getElementById('inp-rot-y') as HTMLInputElement)?.value) || 0;
+      const z = parseFloat((document.getElementById('inp-rot-z') as HTMLInputElement)?.value) || 0;
+      comp.rotation = [x, y, z];
+      renderCurrentSpec('visual');
+    };
+    ['inp-rot-x', 'inp-rot-y', 'inp-rot-z'].forEach((id) => {
+      document.getElementById(id)?.addEventListener('input', handleRotChange);
+    });
+
+    // Scale Lock checkbox
+    const chkScaleLock = document.getElementById('chk-scale-lock') as HTMLInputElement | null;
+    chkScaleLock?.addEventListener('change', (e) => {
+      isUniformScaleLocked = (e.target as HTMLInputElement).checked;
+    });
+
+    // Scale inputs
+    const handleScaleInput = (axis: 0 | 1 | 2, e: Event) => {
+      const val = Math.max(0.01, parseFloat((e.target as HTMLInputElement).value) || 1.0);
+      if (!comp.scale) comp.scale = [1, 1, 1];
+
+      if (isUniformScaleLocked) {
+        const oldVal = comp.scale[axis] || 1.0;
+        const ratio = val / oldVal;
+        comp.scale[0] = parseFloat((comp.scale[0] * ratio).toFixed(3));
+        comp.scale[1] = parseFloat((comp.scale[1] * ratio).toFixed(3));
+        comp.scale[2] = parseFloat((comp.scale[2] * ratio).toFixed(3));
+        (document.getElementById('inp-scl-x') as HTMLInputElement).value = `${comp.scale[0]}`;
+        (document.getElementById('inp-scl-y') as HTMLInputElement).value = `${comp.scale[1]}`;
+        (document.getElementById('inp-scl-z') as HTMLInputElement).value = `${comp.scale[2]}`;
+      } else {
+        comp.scale[axis] = val;
+      }
+      renderCurrentSpec('visual');
+    };
+
+    document.getElementById('inp-scl-x')?.addEventListener('input', (e) => handleScaleInput(0, e));
+    document.getElementById('inp-scl-y')?.addEventListener('input', (e) => handleScaleInput(1, e));
+    document.getElementById('inp-scl-z')?.addEventListener('input', (e) => handleScaleInput(2, e));
+
+    // Shape-specific parameters
+    document.querySelectorAll('.shape-num-inp').forEach((inp) => {
+      inp.addEventListener('input', (e) => {
+        const input = e.target as HTMLInputElement;
+        const paramIdx = parseInt(input.dataset.param || '0', 10);
+        const val = parseFloat(input.value) || 0.1;
+        if (!comp.size) comp.size = getDefaultSizeForShape(comp.shape);
+        comp.size[paramIdx] = val;
+        renderCurrentSpec('visual');
+      });
+    });
+
+    // Material Color
+    const inpMatColor = document.getElementById('inp-mat-color') as HTMLInputElement | null;
+    const inpMatColorHex = document.getElementById('inp-mat-color-hex') as HTMLInputElement | null;
+
+    inpMatColor?.addEventListener('input', (e) => {
+      const val = (e.target as HTMLInputElement).value;
+      comp.color = val;
+      if (inpMatColorHex) inpMatColorHex.value = val;
+      renderCurrentSpec('visual');
+    });
+
+    inpMatColorHex?.addEventListener('change', (e) => {
+      const val = (e.target as HTMLInputElement).value.trim();
+      comp.color = val;
+      if (inpMatColor && val.startsWith('#')) inpMatColor.value = val;
+      renderCurrentSpec('visual');
+    });
+
+    // Roughness & Metalness
+    const inpRoughness = document.getElementById('inp-roughness') as HTMLInputElement | null;
+    const dispRoughness = document.getElementById('disp-roughness');
+    inpRoughness?.addEventListener('input', (e) => {
+      const val = parseFloat((e.target as HTMLInputElement).value);
+      comp.roughness = val;
+      if (dispRoughness) dispRoughness.textContent = `${val}`;
+      renderCurrentSpec('visual');
+    });
+
+    const inpMetalness = document.getElementById('inp-metalness') as HTMLInputElement | null;
+    const dispMetalness = document.getElementById('disp-metalness');
+    inpMetalness?.addEventListener('input', (e) => {
+      const val = parseFloat((e.target as HTMLInputElement).value);
+      comp.metalness = val;
+      if (dispMetalness) dispMetalness.textContent = `${val}`;
+      renderCurrentSpec('visual');
+    });
+
+    // Transparent & Opacity
+    const chkTransparent = document.getElementById('chk-transparent') as HTMLInputElement | null;
+    const inpOpacity = document.getElementById('inp-opacity') as HTMLInputElement | null;
+    const dispOpacity = document.getElementById('disp-opacity');
+
+    chkTransparent?.addEventListener('change', (e) => {
+      comp.transparent = (e.target as HTMLInputElement).checked;
+      renderCurrentSpec('visual');
+    });
+
+    inpOpacity?.addEventListener('input', (e) => {
+      const val = parseFloat((e.target as HTMLInputElement).value);
+      comp.opacity = val;
+      if (val < 1.0) comp.transparent = true;
+      if (dispOpacity) dispOpacity.textContent = `${val}`;
+      renderCurrentSpec('visual');
+    });
+
+    // Texture Preset
+    document.getElementById('sel-texture-preset')?.addEventListener('change', (e) => {
+      const val = (e.target as HTMLSelectElement).value;
+      if (val) {
+        comp.texturePreset = val;
+      } else {
+        delete comp.texturePreset;
+      }
+      renderCurrentSpec('visual');
+    });
+
+    // UV Scale
+    const inpUvU = document.getElementById('inp-uv-u') as HTMLInputElement | null;
+    const inpUvV = document.getElementById('inp-uv-v') as HTMLInputElement | null;
+    const handleUVChange = () => {
+      const u = parseFloat(inpUvU?.value || '1.0') || 1.0;
+      const v = parseFloat(inpUvV?.value || '1.0') || 1.0;
+      comp.uvScale = [u, v];
+      renderCurrentSpec('visual');
+    };
+    inpUvU?.addEventListener('input', handleUVChange);
+    inpUvV?.addEventListener('input', handleUVChange);
+
+    // Wireframe
+    document.getElementById('chk-comp-wireframe')?.addEventListener('change', (e) => {
+      comp.wireframe = (e.target as HTMLInputElement).checked;
+      renderCurrentSpec('visual');
+    });
+
+    // Label / Decal
+    document.getElementById('inp-comp-label')?.addEventListener('change', (e) => {
+      const val = (e.target as HTMLInputElement).value.trim();
+      if (val) {
+        comp.label = val;
+      } else {
+        delete comp.label;
+      }
+      renderCurrentSpec('visual');
+    });
+  }
+
+  function escapeHtml(str: string): string {
+    return str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  // --- GIZMO TOOLBAR CONTROLS ---
+  function updateGizmoButtons(activeGizmoMode: TransformGizmoMode): void {
+    [gizmoBtnSelect, gizmoBtnTranslate, gizmoBtnRotate, gizmoBtnScale].forEach((btn) => {
+      btn?.classList.remove('active');
+    });
+
+    if (activeGizmoMode === 'none') gizmoBtnSelect?.classList.add('active');
+    else if (activeGizmoMode === 'translate') gizmoBtnTranslate?.classList.add('active');
+    else if (activeGizmoMode === 'rotate') gizmoBtnRotate?.classList.add('active');
+    else if (activeGizmoMode === 'scale') gizmoBtnScale?.classList.add('active');
+  }
+
+  gizmoBtnSelect?.addEventListener('click', () => {
+    viewport?.setGizmoMode('none');
+    updateGizmoButtons('none');
+  });
+  gizmoBtnTranslate?.addEventListener('click', () => {
+    viewport?.setGizmoMode('translate');
+    updateGizmoButtons('translate');
+  });
+  gizmoBtnRotate?.addEventListener('click', () => {
+    viewport?.setGizmoMode('rotate');
+    updateGizmoButtons('rotate');
+  });
+  gizmoBtnScale?.addEventListener('click', () => {
+    viewport?.setGizmoMode('scale');
+    updateGizmoButtons('scale');
+  });
+
+  gizmoBtnSnap?.addEventListener('click', () => {
+    isGridSnapEnabled = !isGridSnapEnabled;
+    gizmoBtnSnap.classList.toggle('active', isGridSnapEnabled);
+    viewport?.setSnap(isGridSnapEnabled, 0.1, 15);
+  });
+
+  // Camera Presets
+  document.querySelectorAll('.btn-cam-preset').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      const preset = (e.currentTarget as HTMLElement).dataset.preset as CameraViewPreset;
+      if (viewport && preset) {
+        viewport.setViewPreset(preset);
+      }
+    });
+  });
+
+  // Focus Selected Component
+  btnFocusSelected?.addEventListener('click', () => {
+    if (viewport && selectedComponentIndex !== null) {
+      viewport.focusComponent(selectedComponentIndex);
+    }
+  });
+
+  // Toggle Grid & Axes
+  let isGridVisible = true;
+  btnToggleGrid?.addEventListener('click', () => {
+    isGridVisible = !isGridVisible;
+    btnToggleGrid.classList.toggle('active', isGridVisible);
+    viewport?.setGridVisible(isGridVisible);
+  });
+
+  let isAxesVisible = true;
+  btnToggleAxes?.addEventListener('click', () => {
+    isAxesVisible = !isAxesVisible;
+    btnToggleAxes.classList.toggle('active', isAxesVisible);
+    viewport?.setAxesVisible(isAxesVisible);
+  });
+
+  // --- KEYBOARD SHORTCUTS ---
+  window.addEventListener('keydown', (e) => {
+    const targetTag = (e.target as HTMLElement)?.tagName?.toLowerCase();
+    const isInputActive = targetTag === 'input' || targetTag === 'textarea' || targetTag === 'select';
+
+    // Undo / Redo (available everywhere)
+    if ((e.ctrlKey || e.metaKey) && (e.key === 'z' || e.key === 'Z')) {
+      e.preventDefault();
+      if (e.shiftKey) redo();
+      else undo();
+      return;
+    }
+    if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || e.key === 'Y')) {
+      e.preventDefault();
+      redo();
+      return;
+    }
+
+    // Viewport & Editor shortcuts when not typing in text fields
+    if (!isInputActive) {
+      if (e.key === 'w' || e.key === 'W') {
+        viewport?.setGizmoMode('translate');
+        updateGizmoButtons('translate');
+      } else if (e.key === 'e' || e.key === 'E') {
+        viewport?.setGizmoMode('rotate');
+        updateGizmoButtons('rotate');
+      } else if (e.key === 'r' || e.key === 'R') {
+        viewport?.setGizmoMode('scale');
+        updateGizmoButtons('scale');
+      } else if (e.key === 'q' || e.key === 'Q') {
+        viewport?.setGizmoMode('none');
+        updateGizmoButtons('none');
+      } else if (e.key === 'f' || e.key === 'F') {
+        if (selectedComponentIndex !== null) {
+          viewport?.focusComponent(selectedComponentIndex);
+        }
+      } else if (e.key === 'Delete' || e.key === 'Backspace') {
+        if (selectedComponentIndex !== null) {
+          deleteComponent(selectedComponentIndex);
+        }
+      }
+    }
+  });
+
+  // --- AI GENERATION COPILOT ---
   generateAiBtn?.addEventListener('click', () => triggerAIGeneration());
   aiPromptInput?.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') triggerAIGeneration();
@@ -784,6 +2109,7 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
         forceFresh: currentEngine === 'ai'
       });
       currentSpec = spec;
+      selectedComponentIndex = 0;
       renderCurrentSpec('ai');
 
       if (aiLoadingStatus) {
@@ -814,7 +2140,7 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     }
   }
 
-  // API Key Storage
+  // Gemini API Key Drawer
   toggleGeminiKeyBtn?.addEventListener('click', () => {
     if (geminiKeyDrawer) {
       geminiKeyDrawer.style.display = geminiKeyDrawer.style.display === 'none' ? 'block' : 'none';
@@ -831,7 +2157,7 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     if (key) {
       localStorage.setItem('modelcoder_gemini_key', key);
       setEngineMode('ai');
-      alert('¡Clave de Google Gemini guardada exitosamente! El modo [⚡ IA GENERATIVA] está ahora activo. Cada modelo se creará de forma 100% original e innovadora sin usar plantillas.');
+      alert('¡Clave de Google Gemini guardada exitosamente! El modo [⚡ IA GENERATIVA] está ahora activo.');
       if (geminiKeyDrawer) geminiKeyDrawer.style.display = 'none';
     } else {
       localStorage.removeItem('modelcoder_gemini_key');
@@ -840,174 +2166,7 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     }
   });
 
-  // MODE B: VISUAL BUILDER
-  function renderVisualBuilderCards(): void {
-    if (!visualComponentsList) return;
-    visualComponentsList.innerHTML = '';
-
-    currentSpec.components.forEach((comp, idx) => {
-      const card = document.createElement('div');
-      card.className = 'comp-card ps1-inset';
-
-      card.innerHTML = `
-        <div class="comp-card-header">
-          <span class="comp-badge">${comp.shape.toUpperCase()}</span>
-          <input type="text" class="comp-name-input" value="${comp.name}" data-idx="${idx}" />
-          <button type="button" class="btn-del-comp ps1-ctrl-btn" data-idx="${idx}" title="Eliminar componente">✕</button>
-        </div>
-        <div class="comp-card-body">
-          <div class="comp-field-group">
-            <label>Dimensiones [X, Y, Z]:</label>
-            <div class="dim-inputs">
-              <input type="number" step="0.05" class="dim-input" data-idx="${idx}" data-dim="0" value="${comp.size?.[0] ?? 1.0}" />
-              <input type="number" step="0.05" class="dim-input" data-idx="${idx}" data-dim="1" value="${comp.size?.[1] ?? 1.0}" />
-              <input type="number" step="0.05" class="dim-input" data-idx="${idx}" data-dim="2" value="${comp.size?.[2] ?? 1.0}" />
-            </div>
-          </div>
-          <div class="comp-field-group">
-            <label>Posición [X, Y, Z]:</label>
-            <div class="dim-inputs">
-              <input type="number" step="0.05" class="pos-input" data-idx="${idx}" data-pos="0" value="${comp.position?.[0] ?? 0.0}" />
-              <input type="number" step="0.05" class="pos-input" data-idx="${idx}" data-pos="1" value="${comp.position?.[1] ?? 0.0}" />
-              <input type="number" step="0.05" class="pos-input" data-idx="${idx}" data-pos="2" value="${comp.position?.[2] ?? 0.0}" />
-            </div>
-          </div>
-          <div class="comp-field-row">
-            <label>Color:</label>
-            <input type="color" class="color-picker-input" data-idx="${idx}" value="${comp.color?.startsWith('#') ? comp.color : '#4a5568'}" />
-          </div>
-          <div class="comp-field-row" style="margin-top: 0.4rem;">
-            <label>Textura PS1:</label>
-            <select class="comp-texture-select form-input" data-idx="${idx}" style="font-size: 0.72rem; padding: 0.2rem 0.4rem; flex: 1;">
-              <option value="" ${!comp.texturePreset ? 'selected' : ''}>[Sin textura - Color plano]</option>
-              <option value="worn_metal" ${comp.texturePreset === 'worn_metal' ? 'selected' : ''}>🔩 Metal Desgastado (worn_metal)</option>
-              <option value="metal_light_brushed" ${comp.texturePreset === 'metal_light_brushed' ? 'selected' : ''}>✨ Metal Cepillado (metal_light_brushed)</option>
-              <option value="painted_metal_white" ${comp.texturePreset === 'painted_metal_white' ? 'selected' : ''}>⚪ Esmalte Blanco (painted_metal_white)</option>
-              <option value="beige_plastic_worn" ${comp.texturePreset === 'beige_plastic_worn' ? 'selected' : ''}>📟 Plástico Beige Retro (beige_plastic_worn)</option>
-              <option value="rubber_black" ${comp.texturePreset === 'rubber_black' ? 'selected' : ''}>⚫ Goma Negra (rubber_black)</option>
-              <option value="rust_heavy" ${comp.texturePreset === 'rust_heavy' ? 'selected' : ''}>🟤 Óxido Pesado (rust_heavy)</option>
-              <option value="hazard_stripes" ${comp.texturePreset === 'hazard_stripes' ? 'selected' : ''}>⚠️ Rayas de Peligro (hazard_stripes)</option>
-              <option value="vent_grill" ${comp.texturePreset === 'vent_grill' ? 'selected' : ''}>▦ Rejilla Ventilación (vent_grill)</option>
-              <option value="crt_screen_green" ${comp.texturePreset === 'crt_screen_green' ? 'selected' : ''}>🟢 Monitor CRT Verde (crt_screen_green)</option>
-              <option value="crt_screen_amber" ${comp.texturePreset === 'crt_screen_amber' ? 'selected' : ''}>🟠 Monitor CRT Ámbar (crt_screen_amber)</option>
-              <option value="caution_label" ${comp.texturePreset === 'caution_label' ? 'selected' : ''}>🏷️ Etiqueta Precaución (caution_label)</option>
-              <option value="red_paint_worn" ${comp.texturePreset === 'red_paint_worn' ? 'selected' : ''}>🔴 Pintura Roja (red_paint_worn)</option>
-            </select>
-          </div>
-        </div>
-      `;
-
-      visualComponentsList.appendChild(card);
-    });
-
-    // Wire component events
-    visualComponentsList.querySelectorAll('.comp-name-input').forEach((el) => {
-      el.addEventListener('change', (e) => {
-        const idx = parseInt((e.target as HTMLElement).dataset.idx || '0', 10);
-        currentSpec.components[idx].name = (e.target as HTMLInputElement).value;
-        syncEditorFromSpec();
-      });
-    });
-
-    visualComponentsList.querySelectorAll('.dim-input').forEach((el) => {
-      el.addEventListener('input', (e) => {
-        const input = e.target as HTMLInputElement;
-        const idx = parseInt(input.dataset.idx || '0', 10);
-        const dim = parseInt(input.dataset.dim || '0', 10);
-        if (!currentSpec.components[idx].size) currentSpec.components[idx].size = [1, 1, 1];
-        currentSpec.components[idx].size![dim] = parseFloat(input.value) || 0.1;
-        renderCurrentSpec('visual');
-      });
-    });
-
-    visualComponentsList.querySelectorAll('.pos-input').forEach((el) => {
-      el.addEventListener('input', (e) => {
-        const input = e.target as HTMLInputElement;
-        const idx = parseInt(input.dataset.idx || '0', 10);
-        const pos = parseInt(input.dataset.pos || '0', 10);
-        if (!currentSpec.components[idx].position) currentSpec.components[idx].position = [0, 0, 0];
-        currentSpec.components[idx].position![pos] = parseFloat(input.value) || 0;
-        renderCurrentSpec('visual');
-      });
-    });
-
-    visualComponentsList.querySelectorAll('.color-picker-input').forEach((el) => {
-      el.addEventListener('input', (e) => {
-        const input = e.target as HTMLInputElement;
-        const idx = parseInt(input.dataset.idx || '0', 10);
-        currentSpec.components[idx].color = input.value;
-        renderCurrentSpec('visual');
-      });
-    });
-
-    visualComponentsList.querySelectorAll('.comp-texture-select').forEach((el) => {
-      el.addEventListener('change', (e) => {
-        const select = e.target as HTMLSelectElement;
-        const idx = parseInt(select.dataset.idx || '0', 10);
-        if (select.value) {
-          currentSpec.components[idx].texturePreset = select.value;
-        } else {
-          delete currentSpec.components[idx].texturePreset;
-        }
-        renderCurrentSpec('visual');
-      });
-    });
-
-    visualComponentsList.querySelectorAll('.btn-del-comp').forEach((el) => {
-      el.addEventListener('click', (e) => {
-        const idx = parseInt((e.target as HTMLElement).dataset.idx || '0', 10);
-        currentSpec.components.splice(idx, 1);
-        renderCurrentSpec('visual');
-      });
-    });
-  }
-
-  // Add Component Buttons in Visual Mode
-  btnAddBox?.addEventListener('click', () => {
-    currentSpec.components.push({
-      name: `box_${currentSpec.components.length + 1}`,
-      shape: 'box',
-      size: [0.8, 0.8, 0.8],
-      position: [0, 0.4, 0],
-      color: '#4a5568'
-    });
-    renderCurrentSpec('visual');
-  });
-
-  btnAddCylinder?.addEventListener('click', () => {
-    currentSpec.components.push({
-      name: `cylinder_${currentSpec.components.length + 1}`,
-      shape: 'cylinder',
-      size: [0.3, 0.3, 1.0, 8],
-      position: [0, 0.5, 0],
-      color: '#2d3748'
-    });
-    renderCurrentSpec('visual');
-  });
-
-  btnAddSphere?.addEventListener('click', () => {
-    currentSpec.components.push({
-      name: `sphere_${currentSpec.components.length + 1}`,
-      shape: 'sphere',
-      size: [0.4, 8, 6],
-      position: [0, 0.4, 0],
-      color: '#e53e3e'
-    });
-    renderCurrentSpec('visual');
-  });
-
-  btnAddWedge?.addEventListener('click', () => {
-    currentSpec.components.push({
-      name: `wedge_${currentSpec.components.length + 1}`,
-      shape: 'wedge',
-      size: [0.8, 0.6, 0.6],
-      position: [0, 0.3, 0],
-      color: '#d69e2e'
-    });
-    renderCurrentSpec('visual');
-  });
-
-  // MODE C: CODE EDITOR & COMPILATION
+  // --- CODE EDITOR & COMPILATION ---
   function syncEditorFromSpec(): void {
     if (!codeTextarea) return;
     if (activeFile === 'spec') {
@@ -1034,13 +2193,11 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     return `import bpy\nfrom ...core.base_generator import BaseAssetGenerator\nfrom ...core.mesh_builder import MeshBuilder\n\nclass ${className}(BaseAssetGenerator):\n    """Generador procedural 3D para ${spec.name}."""\n    def generate(self) -> bpy.types.Object:\n        obj, bm = self.create_mesh_object("${spec.id}")\n        # ${spec.components.length} componentes definidos\n        self.finalize_mesh(obj, bm)\n        return obj\n`;
   }
 
-  // Compile Button Event
   runCompileBtn?.addEventListener('click', () => compileCode());
 
   function compileCode(): void {
     if (!codeTextarea) return;
     const code = codeTextarea.value;
-
     const { spec, error, errorLine } = CodeSandbox.executeCode(code);
 
     if (error) {
@@ -1052,6 +2209,7 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     }
 
     currentSpec = spec;
+    selectedComponentIndex = 0;
     renderCurrentSpec('code');
   }
 
@@ -1065,7 +2223,6 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     if (linterText) linterText.textContent = `ERROR ${line ? `LN ${line}: ` : ''}${msg.substring(0, 40)}`;
   }
 
-  // Editor Tabs
   const editorTabs = document.querySelectorAll('.editor-tab');
   editorTabs.forEach((tab) => {
     tab.addEventListener('click', () => {
@@ -1079,11 +2236,7 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     });
   });
 
-  // Line Numbers and Cursor Tracking
-  codeTextarea?.addEventListener('input', () => {
-    updateLineNumbers();
-  });
-
+  codeTextarea?.addEventListener('input', () => updateLineNumbers());
   codeTextarea?.addEventListener('keyup', () => updateCursorPos());
   codeTextarea?.addEventListener('click', () => updateCursorPos());
 
@@ -1099,7 +2252,20 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     cursorPos.textContent = `LN ${textLines.length}, COL ${textLines[textLines.length - 1].length + 1}`;
   }
 
-  // EXPORT GLB WITH VERIFICATION
+  // --- SHADING MODES ---
+  const shadingBtns = document.querySelectorAll('.btn-shading');
+  shadingBtns.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      shadingBtns.forEach((b) => b.classList.remove('active'));
+      btn.classList.add('active');
+      const mode = (btn as HTMLElement).dataset.shading as ShadingMode;
+      if (viewport && mode) {
+        viewport.setShadingMode(mode);
+      }
+    });
+  });
+
+  // --- GLB & ZIP EXPORT ---
   exportGlbBtn?.addEventListener('click', async () => {
     if (!viewport) return;
     const rootObj = viewport.getVisibleObject();
@@ -1120,7 +2286,6 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     }
   });
 
-  // Export ZIP Package
   exportZipBtn?.addEventListener('click', async () => {
     exportZipBtn.textContent = '⏳ Empaquetando...';
     try {
@@ -1148,7 +2313,7 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     }
   });
 
-  // Docs Modal
+  // Modals & Navigation
   openDocsBtn?.addEventListener('click', () => {
     if (docsModal) docsModal.showModal();
   });
@@ -1168,7 +2333,6 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     });
   });
 
-  // GitHub Modal
   githubPrBtn?.addEventListener('click', () => {
     if (githubModal) githubModal.showModal();
   });
@@ -1196,8 +2360,9 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     if (errorBanner) errorBanner.style.display = 'none';
   });
 
-  // Initial Render on Page Load
-  renderCurrentSpec('visual');
+  // Initial Load
+  setStudioMode('visual');
+  renderCurrentSpec('visual', false);
 </script>
 
 <style>
@@ -1206,12 +2371,12 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     flex-direction: column;
     gap: 0.75rem;
     padding: 0.75rem;
-    max-width: 1700px;
+    max-width: 1750px;
     margin: 0 auto;
     min-height: calc(100vh - 80px);
   }
 
-  /* Studio Topbar */
+  /* Topbar */
   .studio-topbar {
     padding: 0.5rem;
   }
@@ -1254,22 +2419,39 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     box-shadow: 0 0 10px rgba(0, 240, 255, 0.4);
   }
 
+  .history-actions-group {
+    display: flex;
+    gap: 0.3rem;
+  }
+
   .topbar-btn-group {
     display: flex;
     gap: 0.4rem;
     flex-wrap: wrap;
   }
 
-  /* Workspace Layout */
+  /* Studio Workspace Layout */
   .studio-workspace {
     display: grid;
-    grid-template-columns: 1.15fr 0.85fr;
+    grid-template-columns: 1fr 1fr;
     gap: 0.75rem;
-    min-height: 680px;
+    min-height: 720px;
   }
 
-  @media (max-width: 1100px) {
-    .studio-workspace {
+  /* 3-Column Responsive Grid in Visual 3D Mode */
+  .studio-workspace.mode-visual-active {
+    grid-template-columns: 310px 1fr 350px;
+  }
+
+  @media (max-width: 1300px) {
+    .studio-workspace.mode-visual-active {
+      grid-template-columns: 280px 1fr 320px;
+    }
+  }
+
+  @media (max-width: 1024px) {
+    .studio-workspace,
+    .studio-workspace.mode-visual-active {
       grid-template-columns: 1fr;
     }
   }
@@ -1290,287 +2472,714 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     flex-direction: column;
   }
 
-  /* AI Copilot Styling */
-  .ai-copilot-body {
-    padding: 0.75rem;
+  /* Outliner Panel */
+  .outliner-window {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+
+  .outliner-titlebar-tools {
+    display: flex;
+    gap: 0.25rem;
+  }
+
+  .primitives-palette-container {
+    padding: 0.6rem;
+    background: #080c16;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .palette-label {
+    display: block;
+    font-family: var(--font-pixel);
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    margin-bottom: 0.4rem;
+  }
+
+  .primitives-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.3rem;
+  }
+
+  .btn-primitive {
+    background: #0d1527;
+    border: 1px solid #1e293b;
+    color: var(--ps1-cyan);
+    font-family: var(--font-pixel);
+    font-size: 0.62rem;
+    padding: 0.35rem 0.2rem;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .btn-primitive:hover {
+    background: var(--ps1-cyan);
+    color: #000;
+    border-color: var(--ps1-cyan);
+    box-shadow: 0 0 8px rgba(0, 240, 255, 0.3);
+  }
+
+  .outliner-tree-wrapper {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0.4rem;
+    background: #040710;
+    min-height: 380px;
+    max-height: 520px;
+  }
+
+  .outliner-tree-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+
+  .outliner-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #0b1120;
+    border: 1px solid #1e293b;
+    padding: 0.35rem 0.5rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .outliner-item:hover {
+    border-color: #3b82f6;
+    background: #10192e;
+  }
+
+  .outliner-item.active {
+    border-color: var(--ps1-cyan);
+    background: #0f2338;
+    box-shadow: 0 0 8px rgba(0, 240, 255, 0.2);
+  }
+
+  .outliner-item.is-hidden {
+    opacity: 0.45;
+  }
+
+  .outliner-item-main {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    overflow: hidden;
+  }
+
+  .outliner-idx-tag {
+    font-size: 0.62rem;
+    color: #64748b;
+    font-family: var(--font-mono);
+  }
+
+  .outliner-shape-badge {
+    font-family: var(--font-pixel);
+    font-size: 0.62rem;
+    color: var(--ps1-cyan);
+    background: #071322;
+    padding: 0.1rem 0.3rem;
+    border: 1px solid rgba(0, 240, 255, 0.2);
+  }
+
+  .outliner-name-label {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--text-bright);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .outliner-item-actions {
+    display: flex;
+    gap: 0.2rem;
+  }
+
+  .outliner-footer {
+    padding: 0.4rem 0.6rem;
+    background: #04060c;
+    border-top: 1px solid var(--border-color);
+  }
+
+  .outliner-hint {
+    font-size: 0.62rem;
+    color: #64748b;
+    font-family: var(--font-mono);
+  }
+
+  /* Viewport Column */
+  .viewport-column {
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
   }
 
-  /* Engine Choice Selector Styling */
-  .engine-selector-row {
+  .studio-viewport-window {
     display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    background: #090e18;
-    border: 1px solid #1a253a;
-    padding: 0.45rem 0.65rem;
-    flex-wrap: wrap;
+    flex-direction: column;
+    height: 100%;
   }
 
-  .selector-heading {
-    font-family: var(--font-pixel);
+  .viewport-main-titlebar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    padding: 0.35rem 0.6rem;
+  }
+
+  .viewport-title-left {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .viewport-tag {
     font-size: 0.68rem;
-    color: var(--text-muted);
-    letter-spacing: 0.5px;
-  }
-
-  .engine-toggle-buttons {
-    display: flex;
-    gap: 0.4rem;
-    flex: 1;
-    flex-wrap: wrap;
-  }
-
-  .btn-engine-toggle {
-    background: #0d1424;
-    border: 1px solid #23314d;
-    color: #94a3b8;
+    color: var(--ps1-cyan);
     font-family: var(--font-pixel);
-    font-size: 0.72rem;
-    padding: 0.35rem 0.75rem;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-    transition: all 0.15s ease;
   }
 
-  .btn-engine-toggle:hover {
-    border-color: var(--ps1-cyan);
+  .viewport-model-title {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    font-weight: bold;
     color: var(--text-bright);
   }
 
-  .btn-engine-toggle.active {
-    background: #0e2a38;
+  /* Gizmo Toolbar */
+  .gizmo-toolbar {
+    display: flex;
+    gap: 0.25rem;
+    background: #080d18;
+    border: 1px solid #1a253a;
+    padding: 0.15rem;
+  }
+
+  .btn-gizmo {
+    background: transparent;
+    border: 1px solid transparent;
+    color: #94a3b8;
+    font-family: var(--font-pixel);
+    font-size: 0.62rem;
+    padding: 0.25rem 0.5rem;
+    cursor: pointer;
+    transition: all 0.12s ease;
+  }
+
+  .btn-gizmo:hover {
+    color: var(--text-bright);
+    border-color: #2e3c54;
+  }
+
+  .btn-gizmo.active {
+    background: var(--ps1-cyan);
+    color: #000;
+    font-weight: bold;
     border-color: var(--ps1-cyan);
-    color: var(--ps1-cyan);
-    box-shadow: 0 0 8px rgba(0, 240, 255, 0.25);
+  }
+
+  .btn-gizmo#gizmo-btn-snap.active {
+    background: var(--ps1-gold);
+    color: #000;
+  }
+
+  .viewport-camera-tools {
+    display: flex;
+    gap: 0.25rem;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .camera-presets-group {
+    display: flex;
+    gap: 0.2rem;
+  }
+
+  .btn-cam-preset {
+    font-size: 0.62rem;
+    padding: 0.2rem 0.4rem;
+  }
+
+  .studio-viewport-surface {
+    position: relative;
+    width: 100%;
+    height: 520px;
+    overflow: hidden;
+    background: #060910;
+  }
+
+  .three-canvas-mount {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  .viewport-overlay-controls {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    right: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    pointer-events: none;
+  }
+
+  .shading-toggles {
+    display: flex;
+    gap: 0.25rem;
+    pointer-events: auto;
+    background: rgba(6, 9, 16, 0.75);
+    backdrop-filter: blur(4px);
+    padding: 0.2rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .btn-shading {
+    background: transparent;
+    border: 1px solid transparent;
+    color: #94a3b8;
+    font-family: var(--font-pixel);
+    font-size: 0.62rem;
+    padding: 0.25rem 0.45rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .btn-shading:hover {
+    color: var(--text-bright);
+  }
+
+  .btn-shading.active {
+    background: var(--ps1-cyan);
+    color: #000;
     font-weight: bold;
   }
 
-  .btn-engine-toggle#btn-engine-ai.active {
-    background: #2a1b3d;
-    border-color: #d946ef;
-    color: #f5d0fe;
-    box-shadow: 0 0 8px rgba(217, 70, 239, 0.35);
-  }
-
-  .badge-unique {
-    font-size: 0.58rem;
-    padding: 0.1rem 0.35rem;
-    background: #e11d48;
-    color: #fff;
-    border-radius: 2px;
-    letter-spacing: 0.5px;
-    font-weight: 800;
-  }
-
-  .ai-prompt-row {
-    display: flex;
-    gap: 0.5rem;
-    align-items: stretch;
-  }
-
-  .prompt-input-wrap {
-    flex: 1;
+  .generation-status-badge {
+    pointer-events: auto;
     display: flex;
     align-items: center;
-    background: #080c14;
+    gap: 0.35rem;
+    background: rgba(6, 9, 16, 0.85);
     border: 1px solid var(--border-color);
-    padding: 0 0.6rem;
-  }
-
-  .prompt-prefix {
+    padding: 0.25rem 0.6rem;
     font-family: var(--font-pixel);
-    font-size: 0.7rem;
-    color: var(--ps1-cyan);
-    margin-right: 0.5rem;
-    white-space: nowrap;
+    font-size: 0.65rem;
   }
 
-  .ai-prompt-input {
+  .badge-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+
+  .dot-completed { background: #10b981; box-shadow: 0 0 6px #10b981; }
+  .dot-generating { background: var(--ps1-cyan); box-shadow: 0 0 6px var(--ps1-cyan); animation: pulse 1s infinite alternate; }
+  .dot-error { background: #ef4444; box-shadow: 0 0 6px #ef4444; }
+
+  .viewport-stats-hud {
+    position: absolute;
+    bottom: 8px;
+    left: 8px;
+    background: rgba(4, 6, 12, 0.85);
+    backdrop-filter: blur(4px);
+    border: 1px solid rgba(0, 240, 255, 0.3);
+    padding: 0.4rem 0.6rem;
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    pointer-events: none;
+  }
+
+  .hud-lbl { color: #64748b; margin-right: 0.3rem; }
+  .hud-val { color: var(--ps1-cyan); font-weight: bold; }
+
+  .viewport-selection-pill {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    background: rgba(14, 28, 48, 0.88);
+    backdrop-filter: blur(4px);
+    border: 1px solid var(--ps1-cyan);
+    padding: 0.3rem 0.6rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: #e2e8f0;
+    pointer-events: none;
+  }
+
+  .pill-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--ps1-cyan);
+    box-shadow: 0 0 5px var(--ps1-cyan);
+  }
+
+  .viewport-error-banner {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    left: 8px;
+    background: rgba(40, 8, 8, 0.95);
+    border: 1px solid #ef4444;
+    padding: 0.6rem 0.8rem;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    z-index: 20;
+  }
+
+  .error-banner-header {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: #fca5a5;
+    font-family: var(--font-pixel);
+    font-size: 0.75rem;
+    margin-bottom: 0.3rem;
+  }
+
+  .btn-mini-close {
+    margin-left: auto;
+    background: transparent;
+    border: none;
+    color: #fca5a5;
+    cursor: pointer;
+    font-weight: bold;
+  }
+
+  .error-banner-body { color: #fee2e2; margin-bottom: 0.25rem; }
+  .error-banner-footer { color: #94a3b8; font-size: 0.65rem; }
+
+  /* Properties Inspector Panel */
+  .inspector-column {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .inspector-window {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+
+  .inspector-scroll-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0.6rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    background: #060912;
+    max-height: calc(100vh - 200px);
+  }
+
+  .inspector-empty-state {
+    padding: 2.5rem 1rem;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  .empty-icon {
+    font-size: 2rem;
+    opacity: 0.7;
+  }
+
+  .empty-title {
+    font-family: var(--font-pixel);
+    font-size: 0.8rem;
+    color: var(--ps1-cyan);
+    margin: 0;
+  }
+
+  .empty-desc {
+    font-size: 0.72rem;
+    color: var(--text-dim);
+    line-height: 1.4;
+  }
+
+  .prop-card-header {
+    background: #090e1a;
+    border: 1px solid #1a253a;
+    padding: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .comp-name-editor {
+    font-size: 0.8rem;
+    font-family: var(--font-mono);
+    font-weight: bold;
+    color: var(--ps1-cyan);
+    background: #040710;
+  }
+
+  .prop-quick-btns {
+    display: flex;
+    gap: 0.3rem;
+  }
+
+  .prop-section {
+    background: #080c16;
+    border: 1px solid #192336;
+    padding: 0.55rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .section-titlebar {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding-bottom: 0.35rem;
+    margin-bottom: 0.2rem;
+  }
+
+  .section-badge {
+    background: var(--ps1-cyan);
+    color: #000;
+    font-family: var(--font-pixel);
+    font-size: 0.6rem;
+    padding: 0.1rem 0.35rem;
+    font-weight: bold;
+  }
+
+  .section-heading {
+    font-family: var(--font-pixel);
+    font-size: 0.68rem;
+    color: var(--text-bright);
+    letter-spacing: 0.5px;
+    flex: 1;
+  }
+
+  .btn-mini-link {
+    background: transparent;
+    border: none;
+    color: var(--ps1-gold);
+    font-family: var(--font-pixel);
+    font-size: 0.62rem;
+    cursor: pointer;
+    padding: 0;
+  }
+
+  .btn-mini-link:hover {
+    text-decoration: underline;
+  }
+
+  .prop-field-block {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .field-label-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .field-label {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+  }
+
+  .field-unit-tag {
+    font-size: 0.62rem;
+    color: #64748b;
+    font-family: var(--font-mono);
+  }
+
+  .lock-proportions-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.62rem;
+    color: var(--ps1-gold);
+    font-family: var(--font-mono);
+    cursor: pointer;
+  }
+
+  .coord-3-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.35rem;
+  }
+
+  .coord-2-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.35rem;
+  }
+
+  .coord-input-wrap {
+    display: flex;
+    align-items: center;
+    background: #04060c;
+    border: 1px solid #23314d;
+    padding: 0 0.3rem;
+  }
+
+  .axis-tag {
+    font-size: 0.65rem;
+    font-weight: bold;
+    font-family: var(--font-mono);
+    margin-right: 0.25rem;
+  }
+
+  .axis-x { color: #ef4444; }
+  .axis-y { color: #10b981; }
+  .axis-z { color: #3b82f6; }
+
+  .coord-num-inp {
     flex: 1;
     background: transparent;
     border: none;
     color: var(--text-bright);
     font-family: var(--font-mono);
-    font-size: 0.85rem;
-    padding: 0.6rem 0;
+    font-size: 0.75rem;
+    padding: 0.25rem 0;
     outline: none;
+    width: 100%;
   }
 
-  .ai-generate-btn {
-    font-family: var(--font-pixel);
-    font-size: 0.8rem;
-    padding: 0 1.25rem;
-    white-space: nowrap;
-  }
-
-  .ai-chips-row {
-    display: flex;
-    gap: 0.4rem;
-    align-items: center;
-    flex-wrap: wrap;
-  }
-
-  .chips-label {
-    font-size: 0.7rem;
-    color: var(--text-muted);
-    font-family: var(--font-pixel);
-  }
-
-  .ai-chip {
-    background: #0e1526;
-    border: 1px solid #1e293b;
-    color: #94a3b8;
-    font-size: 0.72rem;
-    padding: 0.25rem 0.55rem;
-    cursor: pointer;
-    font-family: var(--font-mono);
-    transition: all 0.15s ease;
-  }
-
-  .ai-chip:hover {
-    border-color: var(--ps1-cyan);
-    color: var(--ps1-cyan);
-    background: #141e34;
-  }
-
-  .ai-status-indicator {
-    padding: 0.6rem 0.8rem;
-    font-size: 0.75rem;
-    font-family: var(--font-mono);
-    border-left: 3px solid var(--ps1-cyan);
-    background: #080d18;
-  }
-
-  .ai-status-indicator.status-loading {
-    border-color: var(--ps1-gold);
-    color: var(--ps1-gold);
-  }
-
-  .ai-status-indicator.status-ok {
-    border-color: var(--ps1-green);
-    color: var(--ps1-green);
-  }
-
-  .ai-status-indicator.status-error {
-    border-color: #ef4444;
-    color: #ef4444;
-  }
-
-  /* Visual Builder */
-  .visual-builder-actions {
-    display: flex;
-    gap: 0.3rem;
-  }
-
-  .btn-mini {
-    font-size: 0.65rem;
-    padding: 0.2rem 0.45rem;
-    font-family: var(--font-pixel);
-    cursor: pointer;
-    background: #10192e;
-    border: 1px solid var(--ps1-cyan);
-    color: var(--ps1-cyan);
-  }
-
-  .btn-mini:hover {
-    background: var(--ps1-cyan);
-    color: #000;
-  }
-
-  .visual-builder-body {
-    padding: 0.6rem;
+  .effective-dims-box {
+    background: #04060c;
+    border-left: 2px solid var(--ps1-cyan);
+    padding: 0.35rem 0.5rem;
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
-    max-height: 520px;
-    overflow-y: auto;
+    gap: 0.15rem;
   }
 
-  .comp-card {
-    background: #0a0f1d;
-    border: 1px solid #1e293b;
-    padding: 0.5rem;
-  }
-
-  .comp-card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 0.4rem;
-    margin-bottom: 0.4rem;
-  }
-
-  .comp-badge {
+  .eff-label {
+    font-size: 0.58rem;
+    color: #64748b;
     font-family: var(--font-pixel);
-    font-size: 0.65rem;
-    background: var(--ps1-cyan);
-    color: #000;
-    padding: 0.15rem 0.35rem;
   }
 
-  .comp-name-input {
-    flex: 1;
-    background: #050810;
-    border: 1px solid #2d3748;
-    color: var(--text-bright);
-    font-size: 0.75rem;
+  .eff-val {
+    font-size: 0.68rem;
+    color: var(--ps1-cyan);
     font-family: var(--font-mono);
-    padding: 0.2rem 0.4rem;
+    font-weight: bold;
   }
 
-  .comp-card-body {
-    display: flex;
-    flex-direction: column;
-    gap: 0.35rem;
+  /* Shape Specific Grids */
+  .shape-grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.4rem;
   }
 
-  .comp-field-group {
+  .shape-grid-2 {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.4rem;
+  }
+
+  .shape-field {
     display: flex;
     flex-direction: column;
     gap: 0.2rem;
   }
 
-  .comp-field-group label {
-    font-size: 0.65rem;
-    color: var(--text-muted);
+  .unit-input-wrap {
+    display: flex;
+    align-items: center;
+    background: #04060c;
+    border: 1px solid #23314d;
+    padding: 0 0.35rem;
   }
 
-  .dim-inputs {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 0.3rem;
-  }
-
-  .dim-input, .pos-input {
-    background: #050810;
-    border: 1px solid #2d3748;
-    color: #e2e8f0;
+  .shape-num-inp {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--text-bright);
+    font-family: var(--font-mono);
     font-size: 0.75rem;
-    padding: 0.2rem 0.3rem;
+    padding: 0.25rem 0;
+    outline: none;
+    width: 100%;
+  }
+
+  .unit-sym {
+    font-size: 0.65rem;
+    color: #64748b;
     font-family: var(--font-mono);
   }
 
-  .comp-field-row {
+  /* Material & Color Controls */
+  .prop-field-row {
     display: flex;
+    justify-content: space-between;
     align-items: center;
     gap: 0.5rem;
-    font-size: 0.68rem;
-    color: var(--text-muted);
   }
 
-  .color-picker-input {
-    width: 32px;
-    height: 20px;
-    border: none;
+  .color-picker-group {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .color-swatch-input {
+    width: 28px;
+    height: 24px;
+    border: 1px solid #2d3748;
+    background: transparent;
+    cursor: pointer;
+    padding: 0;
+  }
+
+  .color-hex-input {
+    width: 80px;
+    font-size: 0.75rem;
+    font-family: var(--font-mono);
+    padding: 0.2rem 0.4rem;
+  }
+
+  .texture-dropdown {
+    font-size: 0.72rem;
+    padding: 0.3rem 0.5rem;
+    font-family: var(--font-mono);
+  }
+
+  .checkbox-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.68rem;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
     cursor: pointer;
   }
 
-  /* Code Editor */
+  /* Code Editor Surface */
   .editor-window {
     display: flex;
     flex-direction: column;
@@ -1654,147 +3263,155 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     color: #64748b;
   }
 
-  /* Right Preview Column & Three.js Viewport */
-  .preview-column {
+  /* AI Copilot Styling */
+  .ai-copilot-body {
+    padding: 0.75rem;
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
   }
 
-  .studio-viewport-surface {
-    position: relative;
-    width: 100%;
-    height: 420px;
-    overflow: hidden;
-    background: #060910;
-  }
-
-  .three-canvas-mount {
-    width: 100%;
-    height: 100%;
-    display: block;
-  }
-
-  /* Viewport Overlay Controls */
-  .viewport-overlay-controls {
-    position: absolute;
-    top: 8px;
-    left: 8px;
-    right: 8px;
+  .engine-selector-row {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    pointer-events: none;
+    gap: 0.75rem;
+    background: #090e18;
+    border: 1px solid #1a253a;
+    padding: 0.45rem 0.65rem;
+    flex-wrap: wrap;
   }
 
-  .shading-toggles {
+  .selector-heading {
+    font-family: var(--font-pixel);
+    font-size: 0.68rem;
+    color: var(--text-muted);
+  }
+
+  .engine-toggle-buttons {
     display: flex;
-    gap: 0.25rem;
-    pointer-events: auto;
-    background: rgba(6, 9, 16, 0.75);
-    backdrop-filter: blur(4px);
-    padding: 0.2rem;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    gap: 0.4rem;
+    flex: 1;
+    flex-wrap: wrap;
   }
 
-  .btn-shading {
-    background: transparent;
-    border: 1px solid transparent;
+  .btn-engine-toggle {
+    background: #0d1424;
+    border: 1px solid #23314d;
     color: #94a3b8;
     font-family: var(--font-pixel);
-    font-size: 0.62rem;
-    padding: 0.25rem 0.45rem;
+    font-size: 0.72rem;
+    padding: 0.35rem 0.75rem;
     cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
     transition: all 0.15s ease;
   }
 
-  .btn-shading:hover {
+  .btn-engine-toggle:hover {
+    border-color: var(--ps1-cyan);
     color: var(--text-bright);
   }
 
-  .btn-shading.active {
-    background: var(--ps1-cyan);
-    color: #000;
+  .btn-engine-toggle.active {
+    background: #0e2a38;
+    border-color: var(--ps1-cyan);
+    color: var(--ps1-cyan);
+    box-shadow: 0 0 8px rgba(0, 240, 255, 0.25);
     font-weight: bold;
   }
 
-  .generation-status-badge {
-    pointer-events: auto;
+  .badge-unique {
+    font-size: 0.58rem;
+    padding: 0.1rem 0.35rem;
+    background: #e11d48;
+    color: #fff;
+    border-radius: 2px;
+    font-weight: 800;
+  }
+
+  .ai-prompt-row {
+    display: flex;
+    gap: 0.5rem;
+    align-items: stretch;
+  }
+
+  .prompt-input-wrap {
+    flex: 1;
     display: flex;
     align-items: center;
-    gap: 0.35rem;
-    background: rgba(6, 9, 16, 0.85);
+    background: #080c14;
     border: 1px solid var(--border-color);
-    padding: 0.25rem 0.6rem;
+    padding: 0 0.6rem;
+  }
+
+  .prompt-prefix {
     font-family: var(--font-pixel);
-    font-size: 0.65rem;
+    font-size: 0.7rem;
+    color: var(--ps1-cyan);
+    margin-right: 0.5rem;
+    white-space: nowrap;
   }
 
-  .badge-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-  }
-
-  .dot-completed { background: #10b981; box-shadow: 0 0 6px #10b981; }
-  .dot-generating { background: var(--ps1-cyan); box-shadow: 0 0 6px var(--ps1-cyan); animation: pulse 1s infinite alternate; }
-  .dot-error { background: #ef4444; box-shadow: 0 0 6px #ef4444; }
-
-  /* Viewport Stats HUD */
-  .viewport-stats-hud {
-    position: absolute;
-    bottom: 8px;
-    left: 8px;
-    background: rgba(4, 6, 12, 0.85);
-    backdrop-filter: blur(4px);
-    border: 1px solid rgba(0, 240, 255, 0.3);
-    padding: 0.4rem 0.6rem;
-    font-family: var(--font-mono);
-    font-size: 0.68rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.2rem;
-    pointer-events: none;
-  }
-
-  .hud-lbl { color: #64748b; margin-right: 0.3rem; }
-  .hud-val { color: var(--ps1-cyan); font-weight: bold; }
-
-  /* Error Banner */
-  .viewport-error-banner {
-    position: absolute;
-    bottom: 8px;
-    right: 8px;
-    left: 8px;
-    background: rgba(40, 8, 8, 0.95);
-    border: 1px solid #ef4444;
-    padding: 0.6rem 0.8rem;
-    font-family: var(--font-mono);
-    font-size: 0.72rem;
-    z-index: 20;
-  }
-
-  .error-banner-header {
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-    color: #fca5a5;
-    font-family: var(--font-pixel);
-    font-size: 0.75rem;
-    margin-bottom: 0.3rem;
-  }
-
-  .btn-mini-close {
-    margin-left: auto;
+  .ai-prompt-input {
+    flex: 1;
     background: transparent;
     border: none;
-    color: #fca5a5;
-    cursor: pointer;
-    font-weight: bold;
+    color: var(--text-bright);
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    padding: 0.6rem 0;
+    outline: none;
   }
 
-  .error-banner-body { color: #fee2e2; margin-bottom: 0.25rem; }
-  .error-banner-footer { color: #94a3b8; font-size: 0.65rem; }
+  .ai-generate-btn {
+    font-family: var(--font-pixel);
+    font-size: 0.8rem;
+    padding: 0 1.25rem;
+    white-space: nowrap;
+  }
+
+  .ai-chips-row {
+    display: flex;
+    gap: 0.4rem;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .chips-label {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    font-family: var(--font-pixel);
+  }
+
+  .ai-chip {
+    background: #0e1526;
+    border: 1px solid #1e293b;
+    color: #94a3b8;
+    font-size: 0.72rem;
+    padding: 0.25rem 0.55rem;
+    cursor: pointer;
+    font-family: var(--font-mono);
+    transition: all 0.15s ease;
+  }
+
+  .ai-chip:hover {
+    border-color: var(--ps1-cyan);
+    color: var(--ps1-cyan);
+    background: #141e34;
+  }
+
+  .ai-status-indicator {
+    padding: 0.6rem 0.8rem;
+    font-size: 0.75rem;
+    font-family: var(--font-mono);
+    border-left: 3px solid var(--ps1-cyan);
+    background: #080d18;
+  }
+
+  .ai-status-indicator.status-loading { border-color: var(--ps1-gold); color: var(--ps1-gold); }
+  .ai-status-indicator.status-ok { border-color: var(--ps1-green); color: var(--ps1-green); }
+  .ai-status-indicator.status-error { border-color: #ef4444; color: #ef4444; }
 
   /* Quick Adjust Panel */
   .quick-adjust-grid {

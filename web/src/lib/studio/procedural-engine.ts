@@ -15,8 +15,13 @@ export class ProceduralEngine {
       throw new Error(`La especificación del modelo '${spec.name || 'Sin nombre'}' no contiene componentes geométricos.`);
     }
 
-    for (const comp of spec.components) {
+    for (let i = 0; i < spec.components.length; i++) {
+      const comp = spec.components[i];
       const mesh = this.createComponentMesh(comp);
+      mesh.userData = { componentIndex: i, componentDef: comp };
+      if (comp.visible === false) {
+        mesh.visible = false;
+      }
       group.add(mesh);
     }
 
@@ -145,6 +150,15 @@ export class ProceduralEngine {
         vertexColors: true,
         wireframe: Boolean(comp.wireframe)
       });
+    }
+
+    // Material transparency, opacity, and wireframe customization
+    if (comp.transparent || (comp.opacity !== undefined && comp.opacity < 1.0)) {
+      mat.transparent = true;
+      mat.opacity = comp.opacity !== undefined ? Math.max(0.0, Math.min(1.0, comp.opacity)) : 0.8;
+    }
+    if (comp.wireframe !== undefined) {
+      mat.wireframe = Boolean(comp.wireframe);
     }
 
     const mesh = new THREE.Mesh(geom, mat);
