@@ -97,6 +97,19 @@ import catalog from '../data/catalog.json';
                 </div>
               </div>
 
+              <!-- Engine Choice Selector (Gemini AI vs Motor Local) -->
+              <div class="engine-selector-row">
+                <span class="selector-heading">&gt; MODO DE GENERACIÓN:</span>
+                <div class="engine-toggle-buttons">
+                  <button type="button" class="btn-engine-toggle" id="btn-engine-ai" data-engine="ai" title="Google Gemini Generative AI - Diseña modelos 100% nuevos, creativos y originales sin basarse en los existentes">
+                    ⚡ IA GENERATIVA (GEMINI) <span class="badge-unique">SIEMPRE NUEVO</span>
+                  </button>
+                  <button type="button" class="btn-engine-toggle active" id="btn-engine-local" data-engine="local" title="Motor Procedural Local - Rápido, determinista y sin API Key">
+                    🤖 MOTOR PROCEDURAL LOCAL
+                  </button>
+                </div>
+              </div>
+
               <!-- Prompt Input Row -->
               <div class="ai-prompt-row">
                 <div class="prompt-input-wrap">
@@ -540,8 +553,10 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
   const githubModal = document.getElementById('github-modal') as HTMLDialogElement;
   const closeModalBtn = document.getElementById('close-modal-btn');
 
-  // AI Elements
+  // AI Elements & Engine Selector
   const aiEngineBadge = document.getElementById('ai-engine-badge');
+  const btnEngineAi = document.getElementById('btn-engine-ai') as HTMLButtonElement;
+  const btnEngineLocal = document.getElementById('btn-engine-local') as HTMLButtonElement;
   const aiPromptInput = document.getElementById('ai-prompt-input') as HTMLInputElement;
   const generateAiBtn = document.getElementById('generate-ai-btn') as HTMLButtonElement;
   const aiLoadingStatus = document.getElementById('ai-loading-status');
@@ -551,13 +566,49 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
   const geminiApiKeyInput = document.getElementById('gemini-api-key-input') as HTMLInputElement;
   const aiChips = document.querySelectorAll('.ai-chip');
 
+  let currentEngine: 'ai' | 'local' = (localStorage.getItem('modelcoder_selected_engine') as any) || 'local';
+
+  function setEngineMode(engine: 'ai' | 'local'): void {
+    currentEngine = engine;
+    localStorage.setItem('modelcoder_selected_engine', engine);
+
+    if (engine === 'ai') {
+      btnEngineAi?.classList.add('active');
+      btnEngineLocal?.classList.remove('active');
+      if (aiPromptInput) {
+        aiPromptInput.placeholder = '⚡ Describe lo que quieras: la IA inventará un diseño 3D 100% nuevo y original...';
+      }
+      const savedKey = localStorage.getItem('modelcoder_gemini_key');
+      if (!savedKey || savedKey.trim().length <= 10) {
+        if (geminiKeyDrawer) geminiKeyDrawer.style.display = 'block';
+        geminiApiKeyInput?.focus();
+      }
+    } else {
+      btnEngineLocal?.classList.add('active');
+      btnEngineAi?.classList.remove('active');
+      if (aiPromptInput) {
+        aiPromptInput.placeholder = 'ej. auto deportivo rojo con ruedas / caza espacial con alas / robot mech / tarjeta de acceso';
+      }
+    }
+    updateAIEngineBadge();
+  }
+
+  btnEngineAi?.addEventListener('click', () => setEngineMode('ai'));
+  btnEngineLocal?.addEventListener('click', () => setEngineMode('local'));
+
   function updateAIEngineBadge(): void {
     const key = localStorage.getItem('modelcoder_gemini_key');
     if (aiEngineBadge) {
-      if (key && key.trim().length > 10) {
-        aiEngineBadge.textContent = '⚡ GEMINI 2.5 FLASH CONECTADO';
-        aiEngineBadge.style.borderColor = 'var(--ps1-gold)';
-        aiEngineBadge.style.color = 'var(--ps1-gold)';
+      if (currentEngine === 'ai') {
+        if (key && key.trim().length > 10) {
+          aiEngineBadge.textContent = '⚡ IA GEMINI (SIEMPRE NUEVO / SIN CACHÉ)';
+          aiEngineBadge.style.borderColor = 'var(--ps1-gold)';
+          aiEngineBadge.style.color = 'var(--ps1-gold)';
+        } else {
+          aiEngineBadge.textContent = '⚡ IA GEMINI (INGRESA TU CLAVE)';
+          aiEngineBadge.style.borderColor = 'var(--ps1-gold)';
+          aiEngineBadge.style.color = 'var(--ps1-gold)';
+        }
       } else {
         aiEngineBadge.textContent = '🤖 MOTOR PROCEDURAL LOCAL';
         aiEngineBadge.style.borderColor = 'var(--ps1-cyan)';
@@ -565,7 +616,8 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
       }
     }
   }
-  updateAIEngineBadge();
+
+  setEngineMode(currentEngine);
 
   // Visual Builder Elements
   const visualComponentsList = document.getElementById('visual-components-list');
@@ -705,7 +757,9 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     if (aiLoadingStatus) {
       aiLoadingStatus.style.display = 'block';
       aiLoadingStatus.className = 'ai-status-indicator status-loading';
-      aiLoadingStatus.textContent = '🧠 Computando componentes geométricos procedurales...';
+      aiLoadingStatus.textContent = currentEngine === 'ai'
+        ? '⚡ Gemini AI sintetizando geometría 3D única y original (sin plantillas)...'
+        : '🧠 Computando componentes geométricos procedurales...';
     }
 
     if (statusBadge && statusBadgeText) {
@@ -716,14 +770,18 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     const apiKey = localStorage.getItem('modelcoder_gemini_key') || undefined;
 
     try {
-      const { spec, source } = await AIGenerator.generateModel(prompt, apiKey);
+      const { spec, source } = await AIGenerator.generateModel(prompt, {
+        engine: currentEngine,
+        apiKey,
+        forceFresh: currentEngine === 'ai'
+      });
       currentSpec = spec;
       renderCurrentSpec('ai');
 
       if (aiLoadingStatus) {
         aiLoadingStatus.className = 'ai-status-indicator status-ok';
         let engineLabel = '🤖 MOTOR PROCEDURAL';
-        if (source === 'gemini') engineLabel = '⚡ GOOGLE GEMINI';
+        if (source === 'gemini') engineLabel = '⚡ IA GEMINI (DISEÑO 100% ÚNICO)';
         else if (source === 'local_memory') engineLabel = '💾 MEMORIA LOCAL APRENDIDA';
         else if (source === 'cloud_memory') engineLabel = '☁️ NUBE COMUNITARIA RECUPERADA';
         aiLoadingStatus.textContent = `✅ [ ${engineLabel} ] ${spec.name} (${spec.components.length} componentes) renderizado en el visor.`;
@@ -732,6 +790,10 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
       if (aiLoadingStatus) {
         aiLoadingStatus.className = 'ai-status-indicator status-error';
         aiLoadingStatus.textContent = `⚠️ Error al generar: ${err.message}`;
+      }
+      if (err.message && err.message.includes('🔑 CONECTAR GEMINI')) {
+        if (geminiKeyDrawer) geminiKeyDrawer.style.display = 'block';
+        geminiApiKeyInput?.focus();
       }
       if (viewport) {
         viewport.displayError(err.message, `GEN-ERR`, generationCounter, 'ai');
@@ -760,13 +822,13 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     const key = geminiApiKeyInput?.value.trim() || '';
     if (key) {
       localStorage.setItem('modelcoder_gemini_key', key);
-      updateAIEngineBadge();
-      alert('Clave de Gemini guardada de forma segura en tu navegador. El estudio ahora usará Google Gemini para cualquier consulta.');
+      setEngineMode('ai');
+      alert('¡Clave de Google Gemini guardada exitosamente! El modo [⚡ IA GENERATIVA] está ahora activo. Cada modelo se creará de forma 100% original e innovadora sin usar plantillas.');
       if (geminiKeyDrawer) geminiKeyDrawer.style.display = 'none';
     } else {
       localStorage.removeItem('modelcoder_gemini_key');
-      updateAIEngineBadge();
-      alert('Clave eliminada. El estudio usará el generador procedural local.');
+      setEngineMode('local');
+      alert('Clave eliminada. El estudio ha cambiado al [🤖 MOTOR PROCEDURAL LOCAL].');
     }
   });
 
@@ -1195,6 +1257,75 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
+  }
+
+  /* Engine Choice Selector Styling */
+  .engine-selector-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: #090e18;
+    border: 1px solid #1a253a;
+    padding: 0.45rem 0.65rem;
+    flex-wrap: wrap;
+  }
+
+  .selector-heading {
+    font-family: var(--font-pixel);
+    font-size: 0.68rem;
+    color: var(--text-muted);
+    letter-spacing: 0.5px;
+  }
+
+  .engine-toggle-buttons {
+    display: flex;
+    gap: 0.4rem;
+    flex: 1;
+    flex-wrap: wrap;
+  }
+
+  .btn-engine-toggle {
+    background: #0d1424;
+    border: 1px solid #23314d;
+    color: #94a3b8;
+    font-family: var(--font-pixel);
+    font-size: 0.72rem;
+    padding: 0.35rem 0.75rem;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    transition: all 0.15s ease;
+  }
+
+  .btn-engine-toggle:hover {
+    border-color: var(--ps1-cyan);
+    color: var(--text-bright);
+  }
+
+  .btn-engine-toggle.active {
+    background: #0e2a38;
+    border-color: var(--ps1-cyan);
+    color: var(--ps1-cyan);
+    box-shadow: 0 0 8px rgba(0, 240, 255, 0.25);
+    font-weight: bold;
+  }
+
+  .btn-engine-toggle#btn-engine-ai.active {
+    background: #2a1b3d;
+    border-color: #d946ef;
+    color: #f5d0fe;
+    box-shadow: 0 0 8px rgba(217, 70, 239, 0.35);
+  }
+
+  .badge-unique {
+    font-size: 0.58rem;
+    padding: 0.1rem 0.35rem;
+    background: #e11d48;
+    color: #fff;
+    border-radius: 2px;
+    letter-spacing: 0.5px;
+    font-weight: 800;
   }
 
   .ai-prompt-row {

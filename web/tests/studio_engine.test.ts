@@ -246,4 +246,38 @@ test('Procedural Memory: Cuando se genera un modelo nuevo, se almacena y se recu
   ProceduralMemory.clearLocalMemory();
 });
 
+test('Engine Selector: modo "ai" exige clave Gemini y no consulta caché local', async () => {
+  // Sin clave o clave inválida: debe fallar con mensaje claro
+  await assert.rejects(
+    async () => {
+      await AIGenerator.generateModel('nave interceptora', { engine: 'ai', apiKey: '' });
+    },
+    /Para usar la IA Generativa necesitas ingresar tu clave/
+  );
+
+  await assert.rejects(
+    async () => {
+      await AIGenerator.generateModel('nave interceptora', { engine: 'ai', apiKey: 'corta' });
+    },
+    /Para usar la IA Generativa necesitas ingresar tu clave/
+  );
+});
+
+test('Engine Selector: modo "local" funciona de forma autónoma sin clave y con memoria', async () => {
+  ProceduralMemory.clearLocalMemory();
+  const res = await AIGenerator.generateModel('tanque blindado oruga', { engine: 'local' });
+  assert.equal(res.source, 'local');
+  assert.ok(res.spec.components.length > 0);
+
+  // Segunda llamada en modo local utiliza la memoria aprendida
+  const resCached = await AIGenerator.generateModel('tanque blindado oruga', { engine: 'local' });
+  assert.equal(resCached.source, 'local_memory');
+
+  // Llamada forzando refresco (forceFresh) omite la memoria aprendida
+  const resFresh = await AIGenerator.generateModel('tanque blindado oruga', { engine: 'local', forceFresh: true });
+  assert.equal(resFresh.source, 'local');
+
+  ProceduralMemory.clearLocalMemory();
+});
+
 

@@ -1,65 +1,92 @@
 import type { ModelSpec, ComponentDef } from './types.ts';
 import { ProceduralMemory } from './procedural-memory.ts';
 
+export interface GenerationConfig {
+  engine?: 'ai' | 'local';
+  apiKey?: string;
+  forceFresh?: boolean;
+}
+
 export class AIGenerator {
   /**
    * Generates a structured ModelSpec from a natural language user prompt.
-   * 1. Checks persistent learned memory (Local Browser Cache & Supabase Cloud).
-   * 2. Uses Gemini API if an API key is available.
-   * 3. Uses an extensive procedural semantic engine (+25 blueprints & dynamic synthesis).
-   * 4. Automatically persists new blueprints so future requests immediately reuse them!
+   * - In AI Mode (Gemini): ALWAYS creates fresh, unique models. Never reuses or caches existing models.
+   * - In Local Mode: Uses deterministic procedural blueprints, semantic synthesis, and persistent memory.
    */
   public static async generateModel(
     prompt: string,
-    apiKey?: string
+    configOrKey?: string | GenerationConfig
   ): Promise<{ spec: ModelSpec; rawResponse?: string; source: 'gemini' | 'local' | 'local_memory' | 'cloud_memory' }> {
     const cleanPrompt = prompt.trim();
     if (!cleanPrompt) {
       throw new Error('El prompt no puede estar vacío.');
     }
 
-    // 1. Check persistent memory (Local cache or Supabase cloud)
-    const learned = await ProceduralMemory.findLearnedModel(cleanPrompt);
-    if (learned) {
-      return { spec: learned.spec, source: learned.source };
+    let engine: 'ai' | 'local' = 'local';
+    let apiKey: string | undefined = undefined;
+    let forceFresh = false;
+
+    if (typeof configOrKey === 'string') {
+      apiKey = configOrKey;
+      engine = (apiKey && apiKey.trim().length > 10) ? 'ai' : 'local';
+    } else if (configOrKey) {
+      engine = configOrKey.engine || 'local';
+      apiKey = configOrKey.apiKey;
+      forceFresh = configOrKey.forceFresh ?? (engine === 'ai');
     }
 
-    // 2. Call Gemini API if key is present
-    if (apiKey && apiKey.trim().length > 10) {
-      try {
-        const geminiRes = await this.callGeminiAPI(cleanPrompt, apiKey.trim());
-        // Automatically persist learned model
-        await ProceduralMemory.recordLearnedModel(cleanPrompt, geminiRes.spec);
-        return { ...geminiRes, source: 'gemini' };
-      } catch (err: any) {
-        console.warn('Fallo llamada a Gemini API, usando motor procedural local:', err);
+    // =========================================================================
+    // MODO IA (GOOGLE GEMINI)
+    // REGLA ESTRICTA:
+    // Si se usa la IA, NUNCA debe basarse en modelos existentes ni usar caché;
+    // SIEMPRE debe crear un modelo 100% nuevo, original e innovador.
+    // =========================================================================
+    if (engine === 'ai') {
+      if (!apiKey || apiKey.trim().length <= 10) {
+        throw new Error('Para usar la IA Generativa necesitas ingresar tu clave gratuita de Google Gemini en el botón [🔑 CONECTAR GEMINI].');
+      }
+
+      // Llamada directa a Gemini sin consultar memoria ni presets existentes
+      const geminiRes = await this.callGeminiAPI(cleanPrompt, apiKey.trim());
+      return { ...geminiRes, source: 'gemini' };
+    }
+
+    // =========================================================================
+    // MODO MOTOR PROCEDURAL LOCAL
+    // =========================================================================
+    if (!forceFresh) {
+      const learned = await ProceduralMemory.findLearnedModel(cleanPrompt);
+      if (learned) {
+        return { spec: learned.spec, source: learned.source };
       }
     }
 
-    // 3. Local procedural generator
     const spec = this.synthesizeProceduralSpec(cleanPrompt);
-    // Automatically persist learned model so future queries stay saved
+    // Guarda en memoria local para acceso rápido offline
     await ProceduralMemory.recordLearnedModel(cleanPrompt, spec);
     return { spec, source: 'local' };
   }
 
   /**
-   * Calls Google Gemini API with structured JSON output schema.
+   * Calls Google Gemini API with structured JSON output schema and creative variation.
    */
   private static async callGeminiAPI(
     prompt: string,
     apiKey: string
   ): Promise<{ spec: ModelSpec; rawResponse: string }> {
+    const uniqueNonce = `${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+
     const systemInstruction = `You are ModelCoder 3D Architect, an expert procedural 3D modeler for retro PS1 sci-fi games.
-Convert the user's prompt into a strict JSON ModelSpec containing realistic geometric primitives (box, cylinder, sphere, wedge, cone, torus, capsule) in meters.
-Keep triangle budgets low (100 to 500 tris). Use authentic retro colors (casing, metal, metal_light, hazard, accent, screen, glass, red, blue, green, dark, rust, gold).
-All coordinates (position, size) must be real numbers in meters.
+CRITICAL DIRECTIVE: You must invent a completely ORIGINAL, UNIQUE, and UNCONVENTIONAL 3D procedural composition for this request.
+Do NOT reuse standard repetitive box templates or previously seen presets.
+Design fresh component proportions, creative shapes (using combinations of box, cylinder, sphere, wedge, cone, torus, capsule), intricate details, and authentic retro vertex colors (casing, metal, metal_light, hazard, accent, screen, glass, red, blue, green, dark, rust, gold).
+Keep triangle budgets low (100 to 500 tris). All coordinates (position, size) must be real numbers in meters.
 Return ONLY valid JSON matching this schema:
 {
-  "id": "below_nominal.generated.<name_snake_case>",
-  "name": "<Human readable name>",
+  "id": "below_nominal.generated.${uniqueNonce}",
+  "name": "<Creative Human Readable Name in Spanish>",
   "category": "vehicles" | "furniture" | "infrastructure" | "command" | "medical" | "security" | "weapons",
-  "description": "<One sentence description in Spanish>",
+  "description": "<Creative descriptive sentence in Spanish>",
   "units": "meters",
   "dimensions": { "width": <float>, "depth": <float>, "height": <float> },
   "palette": "industrial_hazard",
@@ -79,10 +106,15 @@ Return ONLY valid JSON matching this schema:
 
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
     const payload = {
-      contents: [{ role: 'user', parts: [{ text: `${systemInstruction}\n\nUSER PROMPT: ${prompt}` }] }],
+      contents: [{
+        role: 'user',
+        parts: [{
+          text: `${systemInstruction}\n\nUSER PROMPT: ${prompt}\nCREATION_ID: ${uniqueNonce}\nINSTRUCTION: Synthesize a brand-new, unique 3D model variation.`
+        }]
+      }],
       generationConfig: {
         responseMimeType: 'application/json',
-        temperature: 0.2
+        temperature: 0.75
       }
     };
 
