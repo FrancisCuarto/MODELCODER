@@ -287,15 +287,40 @@ gen.parameters.forEach((param: any) => {
             <div id="live-generate-status" class="live-status-box" style="display: none;"></div>
 
             <!-- Optional Remote Worker URL Config Accordion -->
-            <details class="worker-config-details">
-              <summary class="worker-config-summary">⚙️ Configurar Servidor de Generación (Opcional)</summary>
+            <details class="worker-config-details" id="worker-config-details">
+              <summary class="worker-config-summary">⚙️ Conectar Servidor de Generación (Local o Nube)</summary>
               <div class="worker-config-box">
-                <label for="worker-url-input" class="field-label" style="font-size: 0.7rem;">URL del Worker Remoto:</label>
+                <div style="margin-bottom: 0.75rem; border-bottom: 1px dashed rgba(255,255,255,0.1); padding-bottom: 0.6rem;">
+                  <span style="font-size: 0.68rem; color: var(--ps1-cyan); font-family: var(--font-pixel); display: block; margin-bottom: 0.35rem;">
+                    ACCESOS RÁPIDOS 1-CLIC:
+                  </span>
+                  <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+                    <a 
+                      href="/INICIAR_MODELCODER.bat" 
+                      download="INICIAR_MODELCODER.bat" 
+                      class="btn btn-gold" 
+                      style="font-size: 0.65rem; padding: 0.25rem 0.5rem; text-decoration: none;"
+                    >
+                      📥 Bajar Lanzador Local (.bat)
+                    </a>
+                    <a 
+                      href="https://codespaces.new/FrancisCuarto/MODELCODER" 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      class="btn btn-cyan" 
+                      style="font-size: 0.65rem; padding: 0.25rem 0.5rem; text-decoration: none;"
+                    >
+                      ☁️ Abrir en Codespaces
+                    </a>
+                  </div>
+                </div>
+
+                <label for="worker-url-input" class="field-label" style="font-size: 0.7rem;">URL del Worker Remoto o Local:</label>
                 <div style="display: flex; gap: 0.4rem; margin-top: 0.3rem;">
                   <input 
                     type="text" 
                     id="worker-url-input" 
-                    placeholder="ej. http://localhost:8000 o https://mi-worker.render.com" 
+                    placeholder="http://localhost:8000/api/generate o https://space.hf.space/api/generate" 
                     class="form-input" 
                     style="flex: 1; font-size: 0.75rem;"
                   />
@@ -303,9 +328,15 @@ gen.parameters.forEach((param: any) => {
                     Guardar
                   </button>
                 </div>
-                <small style="color: var(--text-dim); font-size: 0.68rem; margin-top: 0.3rem; display: block;">
-                  Si estás en otra PC o móvil, puedes usar la personalización visual directamente o conectar tu worker de Blender.
-                </small>
+                <div style="display: flex; gap: 0.4rem; margin-top: 0.4rem; flex-wrap: wrap;">
+                  <button type="button" id="set-localhost-btn" class="btn btn-outline" style="font-size: 0.62rem; padding: 0.2rem 0.45rem;">
+                    ⚡ Usar Localhost (8000)
+                  </button>
+                  <button type="button" id="clear-worker-btn" class="btn btn-outline" style="font-size: 0.62rem; padding: 0.2rem 0.45rem; color: #ff8888;">
+                    ✕ Desconectar (Modo Navegador)
+                  </button>
+                </div>
+                <div id="worker-ping-status" style="font-size: 0.68rem; margin-top: 0.45rem; display: none;"></div>
               </div>
             </details>
           </div>
@@ -359,25 +390,10 @@ gen.parameters.forEach((param: any) => {
   const downloadGlbBtn = document.querySelector('a[download$=".glb"]') as HTMLAnchorElement;
   const liveGenBtn = document.getElementById('live-generate-btn') as HTMLButtonElement;
   const liveStatus = document.getElementById('live-generate-status');
-  const workerUrlInput = document.getElementById('worker-url-input') as HTMLInputElement;
-  const saveWorkerUrlBtn = document.getElementById('save-worker-url-btn');
 
   // URL family from path
   const pathParts = window.location.pathname.split('/').filter(Boolean);
   const familyName = pathParts[pathParts.length - 1] || 'model';
-
-  // Load saved worker URL if any
-  const savedWorkerUrl = localStorage.getItem('modelcoder_worker_url') || '';
-  if (workerUrlInput && savedWorkerUrl) {
-    workerUrlInput.value = savedWorkerUrl;
-  }
-
-  saveWorkerUrlBtn?.addEventListener('click', () => {
-    if (workerUrlInput) {
-      localStorage.setItem('modelcoder_worker_url', workerUrlInput.value.trim());
-      alert('URL del worker guardada.');
-    }
-  });
 
   // Palette definitions corresponding to Below Nominal procedural engine
   const PALETTES: Record<string, { primary: number[]; secondary: number[]; metal: number[]; roughness: number }> = {
@@ -802,6 +818,84 @@ gen.parameters.forEach((param: any) => {
     } finally {
       liveGenBtn.disabled = false;
       liveGenBtn.textContent = '⚡ GENERAR MALLA 3D EN VIVO';
+    }
+  });
+
+  // Worker URL configuration and fast-track actions
+  const workerUrlInput = document.getElementById('worker-url-input') as HTMLInputElement;
+  const saveWorkerUrlBtn = document.getElementById('save-worker-url-btn');
+  const setLocalhostBtn = document.getElementById('set-localhost-btn');
+  const clearWorkerBtn = document.getElementById('clear-worker-btn');
+  const workerPingStatus = document.getElementById('worker-ping-status');
+
+  // Load existing saved URL
+  const savedWorkerUrl = localStorage.getItem('modelcoder_worker_url');
+  if (savedWorkerUrl && workerUrlInput) {
+    workerUrlInput.value = savedWorkerUrl;
+    if (workerPingStatus) {
+      workerPingStatus.style.display = 'block';
+      workerPingStatus.style.color = 'var(--ps1-cyan)';
+      workerPingStatus.textContent = `● Configurado: ${savedWorkerUrl}`;
+    }
+  }
+
+  async function pingWorker(url: string) {
+    if (!workerPingStatus) return;
+    workerPingStatus.style.display = 'block';
+    workerPingStatus.style.color = 'var(--ps1-gold)';
+    workerPingStatus.textContent = '⏳ Comprobando conexión con el worker...';
+
+    try {
+      const baseUrl = url.replace(/\/api\/generate\/?$/, '');
+      const testUrl = `${baseUrl}/api/health`;
+      const res = await fetch(testUrl, { method: 'GET', signal: AbortSignal.timeout(3500) }).catch(() => null);
+      if (res && res.ok) {
+        workerPingStatus.style.color = '#33ff88';
+        workerPingStatus.textContent = '✅ [ EN LÍNEA ] Worker de Blender conectado y respondiendo.';
+      } else {
+        workerPingStatus.style.color = 'var(--ps1-cyan)';
+        workerPingStatus.textContent = `ℹ️ URL guardada. Se usará en la próxima generación.`;
+      }
+    } catch {
+      workerPingStatus.style.color = 'var(--ps1-cyan)';
+      workerPingStatus.textContent = `ℹ️ URL guardada. Asegúrate de tener el worker activo.`;
+    }
+  }
+
+  saveWorkerUrlBtn?.addEventListener('click', () => {
+    const rawVal = workerUrlInput?.value.trim() || '';
+    if (!rawVal) {
+      localStorage.removeItem('modelcoder_worker_url');
+      if (workerPingStatus) {
+        workerPingStatus.style.display = 'block';
+        workerPingStatus.style.color = 'var(--text-dim)';
+        workerPingStatus.textContent = 'Modo Navegador Autónomo restaurado.';
+      }
+      return;
+    }
+    let target = rawVal;
+    if (!target.includes('/api/generate')) {
+      target = target.replace(/\/+$/, '') + '/api/generate';
+    }
+    localStorage.setItem('modelcoder_worker_url', target);
+    if (workerUrlInput) workerUrlInput.value = target;
+    pingWorker(target);
+  });
+
+  setLocalhostBtn?.addEventListener('click', () => {
+    const localUrl = 'http://localhost:8000/api/generate';
+    if (workerUrlInput) workerUrlInput.value = localUrl;
+    localStorage.setItem('modelcoder_worker_url', localUrl);
+    pingWorker(localUrl);
+  });
+
+  clearWorkerBtn?.addEventListener('click', () => {
+    localStorage.removeItem('modelcoder_worker_url');
+    if (workerUrlInput) workerUrlInput.value = '';
+    if (workerPingStatus) {
+      workerPingStatus.style.display = 'block';
+      workerPingStatus.style.color = '#88aacc';
+      workerPingStatus.textContent = '✅ Desconectado. Usando modo navegador autónomo.';
     }
   });
 

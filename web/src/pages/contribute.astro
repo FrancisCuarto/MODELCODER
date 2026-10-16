@@ -82,6 +82,55 @@ class MiFamiliaGenerator(BaseAssetGenerator):
       </div>
     </div>
 
+    <!-- 1-Click Fast Track: Zero Setup Cloud & Local -->
+    <div class="ps1-window fast-track-window">
+      <div class="ps1-titlebar" style="background: linear-gradient(90deg, #003344, #001122);">
+        <span>// FAST_TRACK: ACCESO EN 1-CLIC (SIN CONFIGURACIÓN MANUAL)</span>
+        <span class="ps1-telemetry-tag" style="color: var(--ps1-cyan);">READY-TO-USE</span>
+      </div>
+      <div style="padding: 1.25rem;">
+        <p style="color: var(--text-bright); font-size: 0.9rem; margin-bottom: 1rem;">
+          Para programar, probar o generar sin complicaciones técnicas, tienes dos vías inmediatas:
+        </p>
+        <div class="fast-track-grid">
+          <div class="ps1-inset fast-track-card">
+            <h3 style="color: var(--ps1-cyan); font-family: var(--font-pixel); font-size: 0.85rem; margin-bottom: 0.5rem;">
+              ☁️ EN LA NUBE: GITHUB CODESPACES
+            </h3>
+            <p style="font-size: 0.8rem; color: var(--text-dim); margin-bottom: 0.8rem; line-height: 1.45;">
+              Abre un Visual Studio Code completo en tu navegador con Python, Node.js y Blender 5.0 preinstalados. No necesitas instalar nada en tu PC.
+            </p>
+            <a 
+              href="https://codespaces.new/FrancisCuarto/MODELCODER" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              class="btn btn-cyan" 
+              style="font-size: 0.75rem; text-decoration: none; display: inline-block;"
+            >
+              🚀 ABRIR EN CODESPACES (1-CLIC)
+            </a>
+          </div>
+
+          <div class="ps1-inset fast-track-card">
+            <h3 style="color: var(--ps1-gold); font-family: var(--font-pixel); font-size: 0.85rem; margin-bottom: 0.5rem;">
+              💻 EN TU PC: LANZADOR AUTOMÁTICO
+            </h3>
+            <p style="font-size: 0.8rem; color: var(--text-dim); margin-bottom: 0.8rem; line-height: 1.45;">
+              Descarga el lanzador para Windows. Detecta tu instalación de Blender, instala librerías necesarias y levanta el worker de generación automáticamente.
+            </p>
+            <a 
+              href="/INICIAR_MODELCODER.bat" 
+              download="INICIAR_MODELCODER.bat"
+              class="btn btn-gold" 
+              style="font-size: 0.75rem; text-decoration: none; display: inline-block;"
+            >
+              📥 DESCARGAR LANZADOR (.BAT)
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Stepper Grid -->
     <div class="steps-flow">
       <!-- Step 1 -->
@@ -285,5 +334,24 @@ class MiFamiliaGenerator(BaseAssetGenerator):
 
   .guidelines-list strong {
     color: var(--ps1-gold);
+  }
+
+  .fast-track-window {
+    border-color: var(--ps1-cyan);
+    box-shadow: 0 4px 16px rgba(0, 240, 255, 0.12);
+  }
+
+  .fast-track-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.25rem;
+  }
+
+  .fast-track-card {
+    padding: 1.2rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    background: #080d1a;
   }
 </style>

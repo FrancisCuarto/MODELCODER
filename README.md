@@ -2,6 +2,13 @@
 
 Herramienta de generación procedural de modelos 3D con estética retro PS1 / PSX low-poly, desarrollada para el survival horror espacial **Below Nominal**. El sistema produce geometría optimizada, mallas de colisión nativas para Godot 4, sockets de acople, paletas temáticas PBR y mapeo automático a un atlas de texturas erosionadas de 256×256 píxeles.
 
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/FrancisCuarto/MODELCODER)
+[![Vercel Deployment](https://img.shields.io/badge/Web_Live-modelcoder.vercel.app-00f0ff?style=flat&logo=vercel)](https://modelcoder.vercel.app/)
+
+> **🚀 Inicio Inmediato en 1-Clic (Sin Configuración Manual):**
+> - **En la Nube (Gratis):** Haz clic en el botón de **Open in GitHub Codespaces** para abrir un Visual Studio Code completo en tu navegador con Python, Blender y la web listos para generar.
+> - **En Windows (Local):** Haz doble clic en [`INICIAR_MODELCODER.bat`](file:///d:/MODELCODER/INICIAR_MODELCODER.bat) para autodetectar Blender, instalar dependencias y levantar el worker en segundo plano.
+
 ---
 
 ## 📑 Tabla de Contenidos

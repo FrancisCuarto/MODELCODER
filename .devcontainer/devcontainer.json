@@ -1,0 +1,31 @@
+{
+  "name": "ModelCoder 3D Procedural Engine",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "forwardPorts": [4321, 8000],
+  "portsAttributes": {
+    "4321": {
+      "label": "ModelCoder Web (Astro)",
+      "onAutoForward": "openBrowser"
+    },
+    "8000": {
+      "label": "ModelCoder Worker API (FastAPI / Blender)",
+      "onAutoForward": "silent"
+    }
+  },
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "python.defaultInterpreterPath": "/usr/local/bin/python"
+      },
+      "extensions": [
+        "ms-python.python",
+        "astro-build.astro-vscode",
+        "esbenp.prettier-vscode",
+        "redhat.vscode-yaml"
+      ]
+    }
+  },
+  "postCreateCommand": "bash .devcontainer/setup.sh"
+}

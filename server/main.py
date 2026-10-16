@@ -29,9 +29,21 @@ TMP_DIR = os.path.join(SERVER_DIR, "tmp")
 os.makedirs(CACHE_DIR, exist_ok=True)
 os.makedirs(TMP_DIR, exist_ok=True)
 
-BLENDER_EXE = r"C:\Program Files\Blender Foundation\Blender 5.0\blender.exe"
-if not os.path.isfile(BLENDER_EXE):
-    BLENDER_EXE = "blender"
+BLENDER_EXE = os.environ.get("BLENDER_BIN")
+if not BLENDER_EXE or not os.path.isfile(BLENDER_EXE):
+    candidates = [
+        r"C:\Program Files\Blender Foundation\Blender 5.0\blender.exe",
+        r"C:\Program Files\Blender Foundation\Blender 4.3\blender.exe",
+        r"C:\Program Files\Blender Foundation\Blender 4.2\blender.exe",
+        r"C:\Program Files\Blender Foundation\Blender 4.1\blender.exe",
+        r"C:\Program Files\Blender Foundation\Blender 4.0\blender.exe",
+        r"C:\Program Files (x86)\Steam\steamapps\common\Blender\blender.exe",
+        shutil.which("blender") or "blender"
+    ]
+    for c in candidates:
+        if c and (os.path.isfile(c) or shutil.which(c)):
+            BLENDER_EXE = c
+            break
 
 def compute_cache_key(family: str, params: Dict[str, Any], preset: Optional[str] = None) -> str:
     """Generate deterministic SHA256 key for a family + parameter combination."""
@@ -283,7 +295,7 @@ def run_server(port: int = 8000):
             server.server_close()
 
 if __name__ == "__main__":
-    port = 8000
+    port = int(os.environ.get("PORT", 8000))
     for idx, arg in enumerate(sys.argv):
         if arg == "--port" and idx + 1 < len(sys.argv):
             port = int(sys.argv[idx + 1])
