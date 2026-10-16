@@ -27,6 +27,19 @@ const categories = [
     </div>
 
     <div class="hero-body">
+      <div class="hero-creator-banner">
+        <img src="/logo.png" alt="ModelCoder Logo" class="hero-logo-img" width="52" height="52" />
+        <div class="hero-creator-meta">
+          <div class="hero-creator-tag">
+            <span class="pulse-dot"></span>
+            <span>PROYECTO INDEPENDIENTE // IV ORBIT GAMES</span>
+          </div>
+          <span class="hero-creator-by">
+            POR <a href="https://ivorbitgames.online" target="_blank" rel="noopener noreferrer">IV ORBIT GAMES</a> &bull; FRANCISCUARTO &bull; BUENOS AIRES
+          </span>
+        </div>
+      </div>
+
       <div class="hero-header-line">
         <h1 class="hero-title">Creá modelos 3D para tus proyectos, sin empezar desde cero.</h1>
       </div>
@@ -236,6 +249,90 @@ const categories = [
       </button>
     </div>
   </div>
+
+  <!-- Sección: Sobre el Creador / IV Orbit Games -->
+  <section class="ps1-window creator-showcase-window" id="sobre-el-creador">
+    <div class="ps1-titlebar">
+      <span>// EL CREADOR // SOBRE IV ORBIT GAMES & EL ECOSISTEMA DE BELOW NOMINAL</span>
+      <span class="ps1-title-status">BUENOS AIRES, ARGENTINA</span>
+    </div>
+    <div class="creator-showcase-body">
+      <div class="creator-showcase-grid">
+        <!-- Tarjeta de Identidad del Creador -->
+        <div class="creator-card ps1-inset">
+          <div class="creator-card-header">
+            <img src="/logo.png" alt="Logo de ModelCoder e IV Orbit" class="creator-logo-avatar" width="72" height="72" />
+            <div class="creator-header-meta">
+              <span class="creator-badge">[ CREADOR INDEPENDIENTE ]</span>
+              <h3 class="creator-name">FRANCISCUARTO</h3>
+              <span class="creator-studio-name">IV ORBIT GAMES &bull; ARGENTINA</span>
+            </div>
+          </div>
+          <p class="creator-bio-p">
+            Desarrollo videojuegos independientes y herramientas propias desde Buenos Aires, Argentina. Me interesa combinar mecánicas interesantes, atmósferas cuidadas y soluciones técnicas que hagan realidad cada idea.
+          </p>
+          <div class="creator-specs-row">
+            <div class="spec-pill"><span class="lbl">MOTOR:</span> <span class="val">Godot Engine</span></div>
+            <div class="spec-pill"><span class="lbl">MODELADO:</span> <span class="val">Blender & ModelCoder</span></div>
+            <div class="spec-pill"><span class="lbl">ESTÉTICA:</span> <span class="val">PS1 / 32-Bit Low-Poly</span></div>
+          </div>
+          <div class="creator-links-group">
+            <a href="https://ivorbitgames.online" target="_blank" rel="noopener noreferrer" class="btn btn-gold btn-sm">
+              🪐 ivorbitgames.online &rarr;
+            </a>
+            <a href="https://iv-orbit.itch.io" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-sm">
+              🎮 itch.io
+            </a>
+            <a href="https://www.youtube.com/@Franciscuarto" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-sm">
+              📺 YouTube
+            </a>
+            <a href="https://github.com/FrancisCuarto" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-sm">
+              🐙 GitHub
+            </a>
+          </div>
+        </div>
+
+        <!-- Tarjeta del Origen y Videojuegos de IV Orbit Games -->
+        <div class="creator-games-card ps1-inset">
+          <div class="games-card-header">
+            <span class="spotlight-tag">[ EL ORIGEN DE MODELCODER ]</span>
+            <h4 class="games-card-title">Diseñado para crear assets reales de videojuegos</h4>
+          </div>
+          <p class="games-card-desc">
+            ModelCoder no es un experimento aislado: nació como el conjunto de generadores modulares para crear el equipamiento, las consolas y los props industriales de <strong>Below Nominal</strong>, un juego de terror y supervivencia bajo el hielo de la luna Europa desarrollado con Godot Engine.
+          </p>
+
+          <div class="games-showcase-list">
+            <div class="game-item-box">
+              <div class="game-item-top">
+                <span class="game-item-title">🧊 Below Nominal</span>
+                <span class="game-badge-dev">EN DESARROLLO (PC)</span>
+              </div>
+              <p class="game-item-text">
+                Una estación científica en la luna Europa. Mantené con vida los sistemas de oxígeno y energía mientras descubrís los horrores que yacen bajo el hielo.
+              </p>
+              <a href="https://iv-orbit.itch.io/belownominal" target="_blank" rel="noopener noreferrer" class="game-link">
+                Descargar Demo Técnica en itch.io &rarr;
+              </a>
+            </div>
+
+            <div class="game-item-box">
+              <div class="game-item-top">
+                <span class="game-item-title">🚗 Puchito &bull; Taller Espacial</span>
+                <span class="game-badge-avail">DISPONIBLE (PC)</span>
+              </div>
+              <p class="game-item-text">
+                Minijuegos y gestión arcade a ritmo frenético atendiendo naves espaciales en una estación de servicio intergaláctica.
+              </p>
+              <a href="https://ivorbitgames.online/juegos/puchito" target="_blank" rel="noopener noreferrer" class="game-link">
+                Ver ficha de Puchito &rarr;
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
 </Layout>
 
 <script>
@@ -704,6 +801,295 @@ const categories = [
     letter-spacing: 0.04em;
   }
 
+  /* Hero Creator Banner */
+  .hero-creator-banner {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem 1rem;
+    background: #080d1a;
+    border: 1px solid var(--ps1-steel);
+    margin-bottom: 1.25rem;
+    box-shadow: inset 0 0 10px rgba(0, 240, 255, 0.05);
+  }
+
+  .hero-logo-img {
+    width: 48px;
+    height: 48px;
+    object-fit: contain;
+    border-radius: 6px;
+    border: 1px solid var(--ps1-gold);
+    background: #000;
+    box-shadow: 0 0 12px rgba(255, 176, 0, 0.4);
+    flex-shrink: 0;
+  }
+
+  .hero-creator-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .hero-creator-tag {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-family: var(--font-pixel);
+    font-size: 0.65rem;
+    color: var(--ps1-cyan);
+    letter-spacing: 0.05em;
+  }
+
+  .pulse-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--ps1-green);
+    box-shadow: 0 0 8px var(--ps1-green);
+    display: inline-block;
+  }
+
+  .hero-creator-by {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: #b0c0d8;
+  }
+
+  .hero-creator-by a {
+    color: var(--ps1-gold);
+    text-decoration: underline;
+    font-weight: bold;
+  }
+
+  .hero-creator-by a:hover {
+    color: #ffffff;
+    text-shadow: 0 0 8px rgba(255, 176, 0, 0.8);
+  }
+
+  /* Creator Showcase Window */
+  .creator-showcase-window {
+    margin-top: 2.5rem;
+    margin-bottom: 2rem;
+    border-color: var(--ps1-gold);
+    box-shadow: 0 4px 20px rgba(255, 176, 0, 0.12);
+  }
+
+  .creator-showcase-body {
+    padding: 1.5rem;
+  }
+
+  .creator-showcase-grid {
+    display: grid;
+    grid-template-columns: 1.1fr 1fr;
+    gap: 1.5rem;
+  }
+
+  .creator-card {
+    padding: 1.25rem;
+    background: #080d1c;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    border-color: var(--ps1-steel);
+  }
+
+  .creator-card-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .creator-logo-avatar {
+    width: 64px;
+    height: 64px;
+    object-fit: contain;
+    border-radius: 6px;
+    border: 2px solid var(--ps1-gold);
+    background: #000;
+    box-shadow: 0 0 14px rgba(255, 176, 0, 0.45);
+    flex-shrink: 0;
+  }
+
+  .creator-header-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+
+  .creator-badge {
+    font-family: var(--font-pixel);
+    font-size: 0.6rem;
+    color: var(--ps1-gold);
+    letter-spacing: 0.04em;
+  }
+
+  .creator-name {
+    font-family: var(--font-title);
+    font-size: 1.15rem;
+    color: #ffffff;
+    letter-spacing: 0.05em;
+    margin: 0;
+  }
+
+  .creator-studio-name {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--ps1-cyan);
+    letter-spacing: 0.06em;
+  }
+
+  .creator-bio-p {
+    font-size: 0.85rem;
+    color: #c4d4e8;
+    line-height: 1.55;
+    margin: 0;
+  }
+
+  .creator-specs-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .spec-pill {
+    background: #101628;
+    border: 1px inset var(--ps1-steel);
+    padding: 0.25rem 0.6rem;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+  }
+
+  .spec-pill .lbl {
+    color: var(--ps1-gold);
+    font-weight: bold;
+    margin-right: 0.3rem;
+  }
+
+  .spec-pill .val {
+    color: #ffffff;
+  }
+
+  .creator-links-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin-top: auto;
+  }
+
+  .creator-games-card {
+    padding: 1.25rem;
+    background: #070c18;
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+    border-color: var(--ps1-steel);
+  }
+
+  .games-card-header {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .spotlight-tag {
+    font-family: var(--font-pixel);
+    font-size: 0.65rem;
+    color: var(--ps1-cyan);
+    letter-spacing: 0.05em;
+  }
+
+  .games-card-title {
+    font-family: var(--font-pixel);
+    font-size: 0.82rem;
+    color: var(--ps1-gold);
+    margin: 0;
+    line-height: 1.4;
+  }
+
+  .games-card-desc {
+    font-size: 0.82rem;
+    color: #b0c0d4;
+    line-height: 1.5;
+    margin: 0;
+  }
+
+  .games-card-desc strong {
+    color: #ffffff;
+  }
+
+  .games-showcase-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .game-item-box {
+    padding: 0.75rem;
+    background: #0b1122;
+    border: 1px solid #162440;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  .game-item-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .game-item-title {
+    font-family: var(--font-pixel);
+    font-size: 0.75rem;
+    color: #ffffff;
+  }
+
+  .game-badge-dev {
+    font-family: var(--font-pixel);
+    font-size: 0.58rem;
+    background: rgba(255, 176, 0, 0.15);
+    color: var(--ps1-gold);
+    border: 1px solid var(--ps1-gold);
+    padding: 0.1rem 0.35rem;
+  }
+
+  .game-badge-avail {
+    font-family: var(--font-pixel);
+    font-size: 0.58rem;
+    background: rgba(57, 255, 20, 0.12);
+    color: var(--ps1-green);
+    border: 1px solid var(--ps1-green);
+    padding: 0.1rem 0.35rem;
+  }
+
+  .game-item-text {
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    line-height: 1.4;
+    margin: 0;
+  }
+
+  .game-link {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--ps1-cyan);
+    text-decoration: underline;
+    align-self: flex-start;
+    margin-top: 0.2rem;
+  }
+
+  .game-link:hover {
+    color: #ffffff;
+    text-shadow: 0 0 6px var(--ps1-cyan);
+  }
+
+  @media (max-width: 900px) {
+    .creator-showcase-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
   @media (max-width: 768px) {
     .user-journeys-container {
       grid-template-columns: 1fr;
@@ -720,6 +1106,10 @@ const categories = [
     .search-row, .category-filters {
       flex-direction: column;
       align-items: stretch;
+    }
+    .hero-creator-banner {
+      flex-direction: column;
+      align-items: flex-start;
     }
   }
 </style>

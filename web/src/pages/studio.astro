@@ -8,8 +8,11 @@ import catalog from '../data/catalog.json';
     <!-- Studio Header Bar -->
     <div class="ps1-window studio-topbar">
       <div class="ps1-titlebar">
-        <span>// MODELCODER_WEB_STUDIO // IN-BROWSER 3D PROCEDURAL IDE</span>
-        <span class="ps1-telemetry-tag">ENGINE: THREE.JS PROCEDURAL CORE</span>
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <img src="/logo.png" alt="ModelCoder Logo" style="width: 18px; height: 18px; object-fit: contain; border-radius: 3px;" />
+          <span>// MODELCODER_WEB_STUDIO // IN-BROWSER 3D PROCEDURAL IDE</span>
+        </div>
+        <span class="ps1-telemetry-tag">BY IV ORBIT GAMES &bull; THREE.JS PROCEDURAL CORE</span>
       </div>
 
       <div class="topbar-actions">
@@ -394,6 +397,7 @@ import catalog from '../data/catalog.json';
         <button class="doc-tab" data-section="doc-advanced">7. Editor Avanzado</button>
         <button class="doc-tab" data-section="doc-export">8. Exportar a Blender/Godot</button>
         <button class="doc-tab" data-section="doc-community">9. Contribuciones</button>
+        <button class="doc-tab" data-section="doc-creator">10. El Creador & IV Orbit</button>
       </div>
 
       <div class="docs-content-area">
@@ -494,6 +498,38 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
             <li>Usa la opción <strong>⭐ Propuesta en GitHub (1-Clic)</strong>. Se creará automáticamente un Issue con tu código formateado y especificación.</li>
             <li>El equipo revisará tu generador y lo integrará en la siguiente versión de la biblioteca.</li>
           </ol>
+        </section>
+
+        <section id="doc-creator" class="doc-section">
+          <h3>10. El Creador & IV Orbit Games</h3>
+          <div style="display: flex; gap: 1rem; align-items: flex-start; margin-bottom: 1rem; flex-wrap: wrap;">
+            <img src="/logo.png" alt="ModelCoder Logo" style="width: 52px; height: 52px; object-fit: contain; border-radius: 6px; border: 1px solid var(--ps1-gold); background: #000; box-shadow: 0 0 10px rgba(255, 176, 0, 0.4); flex-shrink: 0;" />
+            <div>
+              <h4 style="color: var(--ps1-gold); font-family: var(--font-pixel); font-size: 0.85rem; margin: 0 0 0.25rem 0;">
+                FRANCISCUARTO &bull; IV ORBIT GAMES
+              </h4>
+              <span style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--ps1-cyan);">
+                Buenos Aires, Argentina &bull; Desarrollo Independiente
+              </span>
+            </div>
+          </div>
+          <p>
+            ModelCoder es desarrollado de forma independiente por <strong>Franciscuarto</strong> bajo el sello <strong>IV Orbit Games</strong>. Nació para impulsar la creación y optimización de assets procedurales 3D para <em>Below Nominal</em> (videojuego de terror sci-fi desarrollado en Godot Engine).
+          </p>
+          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 1rem;">
+            <a href="https://ivorbitgames.online" target="_blank" rel="noopener noreferrer" class="btn btn-gold" style="font-size: 0.72rem; text-decoration: none;">
+              🪐 ivorbitgames.online &rarr;
+            </a>
+            <a href="https://iv-orbit.itch.io" target="_blank" rel="noopener noreferrer" class="btn btn-outline" style="font-size: 0.72rem; text-decoration: none;">
+              🎮 itch.io
+            </a>
+            <a href="https://www.youtube.com/@Franciscuarto" target="_blank" rel="noopener noreferrer" class="btn btn-outline" style="font-size: 0.72rem; text-decoration: none;">
+              📺 YouTube
+            </a>
+            <a href="https://github.com/FrancisCuarto" target="_blank" rel="noopener noreferrer" class="btn btn-outline" style="font-size: 0.72rem; text-decoration: none;">
+              🐙 GitHub
+            </a>
+          </div>
         </section>
       </div>
     </div>

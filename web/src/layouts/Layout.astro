@@ -15,7 +15,8 @@ import '../styles/global.css';
     <meta charset="UTF-8" />
     <meta name="description" content={description} />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" href="/logo.png" />
+    <link rel="apple-touch-icon" href="/logo.png" />
     <meta name="generator" content={Astro.generator} />
     <title>{title} | ModelCoder PS1 3D Platform</title>
 
@@ -33,7 +34,8 @@ import '../styles/global.css';
 
     <header class="site-header">
       <div class="header-container">
-        <a href="/" class="brand-logo" title="ModelCoder - Inicio">
+        <a href="/" class="brand-logo" title="ModelCoder — Generadores 3D Procedurales por IV Orbit Games">
+          <img src="/logo.png" alt="Logo de ModelCoder" class="brand-logo-img" width="30" height="30" />
           <span class="brand-bracket">[</span>
           <span class="brand-name">MODELCODER</span>
           <span class="brand-bracket">]</span>
@@ -49,6 +51,9 @@ import '../styles/global.css';
           <a href="/" class="nav-link">&gt; Catálogo</a>
           <a href="/studio" class="nav-link nav-link-studio" style="color: var(--ps1-gold); border-color: var(--ps1-gold);">&gt; Studio 3D (Crear)</a>
           <a href="/contribute" class="nav-link">&gt; Cómo funciona</a>
+          <a href="https://ivorbitgames.online" target="_blank" rel="noopener noreferrer" class="nav-link nav-link-creator" title="Estudio Creador: IV Orbit Games (Argentina)">
+            🪐 IV Orbit
+          </a>
           <a href="https://github.com/FrancisCuarto/MODELCODER" target="_blank" rel="noopener noreferrer" class="nav-link nav-link-gh" title="Ver código fuente en GitHub">
             &gt; GitHub
           </a>
@@ -156,18 +161,96 @@ import '../styles/global.css';
     </div>
 
     <footer class="site-footer">
-      <div class="footer-content">
-        <div>
-          <span class="footer-title">[ MODELCODER — MODELOS 3D PROCEDURALES ]</span>
-          <p class="footer-subtext">
-            Creá y personalizá modelos 3D para tus proyectos, sin empezar desde cero. Descargá mallas optimizadas en formato GLB listas para Godot, Unity, Blender y la web.
+      <div class="footer-container">
+        <!-- Columna 1: Marca & Propósito -->
+        <div class="footer-col footer-col-brand">
+          <div class="footer-brand-header">
+            <img src="/logo.png" alt="ModelCoder Logo" class="footer-brand-logo" width="36" height="36" />
+            <div class="footer-brand-text">
+              <span class="footer-brand-title">[ MODELCODER ]</span>
+              <span class="footer-brand-tagline">HERRAMIENTA PROCEDURAL 3D</span>
+            </div>
+          </div>
+          <p class="footer-desc">
+            Plataforma web abierta para crear, personalizar y descargar modelos 3D low-poly en formato universal GLB. Diseñada con enfoque práctico para videojuegos independientes.
           </p>
+          <div class="footer-badges">
+            <span class="footer-tag">BLENDER 5.0</span>
+            <span class="footer-tag">GLTF / GLB UNIVERSAL</span>
+            <span class="footer-tag">GODOT 4 & UNITY</span>
+            <span class="footer-tag">LICENCIA CC-BY 4.0</span>
+          </div>
         </div>
-        <div class="footer-meta">
-          <span class="footer-tag">BLENDER 5.0</span>
-          <span class="footer-tag">GLTF / GLB UNIVERSAL</span>
-          <span class="footer-tag">GODOT 4 & UNITY</span>
-          <span class="footer-tag">LICENCIA CC-BY 4.0</span>
+
+        <!-- Columna 2: Creador & Estudio (IV Orbit Games) -->
+        <div class="footer-col footer-col-creator">
+          <h4 class="footer-col-title">// EL CREADOR & EL ESTUDIO</h4>
+          <p class="footer-creator-text">
+            Desarrollado y mantenido por <strong>Franciscuarto</strong> bajo el sello independiente <strong>IV Orbit Games</strong> desde Buenos Aires, Argentina.
+          </p>
+          <p class="footer-creator-mission">
+            ModelCoder nació como el conjunto de herramientas internas para generar la maquinaria, mobiliario y accesorios modulares de <em>Below Nominal</em> (desarrollado con Godot Engine).
+          </p>
+          <div class="footer-creator-links">
+            <a href="https://ivorbitgames.online" target="_blank" rel="noopener noreferrer" class="creator-link link-highlight">
+              🪐 ivorbitgames.online (Web Oficial) &rarr;
+            </a>
+            <a href="https://iv-orbit.itch.io" target="_blank" rel="noopener noreferrer" class="creator-link">
+              🎮 itch.io (Juegos & Demos) &rarr;
+            </a>
+            <a href="https://www.youtube.com/@Franciscuarto" target="_blank" rel="noopener noreferrer" class="creator-link">
+              📺 YouTube (@Franciscuarto) &rarr;
+            </a>
+            <a href="https://github.com/FrancisCuarto" target="_blank" rel="noopener noreferrer" class="creator-link">
+              🐙 GitHub (@FrancisCuarto) &rarr;
+            </a>
+          </div>
+        </div>
+
+        <!-- Columna 3: Videojuegos & Proyectos de IV Orbit Games -->
+        <div class="footer-col footer-col-projects">
+          <h4 class="footer-col-title">// JUEGOS DE IV ORBIT GAMES</h4>
+          <ul class="footer-project-list">
+            <li>
+              <a href="https://iv-orbit.itch.io/belownominal" target="_blank" rel="noopener noreferrer" class="project-item">
+                <div class="project-header">
+                  <span class="project-name">🧊 Below Nominal</span>
+                  <span class="project-badge">EN DESARROLLO</span>
+                </div>
+                <span class="project-desc">Terror y supervivencia bajo el hielo de Europa (Godot Engine, PC).</span>
+              </a>
+            </li>
+            <li>
+              <a href="https://ivorbitgames.online/juegos/puchito" target="_blank" rel="noopener noreferrer" class="project-item">
+                <div class="project-header">
+                  <span class="project-name">🚗 Puchito</span>
+                  <span class="project-badge badge-avail">DISPONIBLE</span>
+                </div>
+                <span class="project-desc">Gestión y minijuegos arcade en taller espacial (PC).</span>
+              </a>
+            </li>
+            <li>
+              <a href="https://ivorbitgames.online/juegos/topoloco" target="_blank" rel="noopener noreferrer" class="project-item">
+                <div class="project-header">
+                  <span class="project-name">🎯 Topoloco</span>
+                  <span class="project-badge badge-avail">ANDROID</span>
+                </div>
+                <span class="project-desc">Arcade casual de reflejos rápidos para móviles.</span>
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Barra Inferior de Derechos -->
+      <div class="footer-bottom-bar">
+        <div class="footer-bottom-inner">
+          <span>&copy; 2026 IV Orbit Games &bull; Franciscuarto &bull; Buenos Aires, Argentina</span>
+          <div class="footer-bottom-links">
+            <a href="https://github.com/FrancisCuarto/MODELCODER" target="_blank" rel="noopener noreferrer">Repositorio Open Source</a>
+            <span class="sep">&bull;</span>
+            <a href="https://ivorbitgames.online/contacto" target="_blank" rel="noopener noreferrer">Contacto Directo</a>
+          </div>
         </div>
       </div>
     </footer>
