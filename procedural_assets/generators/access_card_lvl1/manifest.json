@@ -1,0 +1,50 @@
+{
+  "id": "below_nominal.fixtures.access_card_lvl1",
+  "name": "Tarjeta de Acceso Nivel 1",
+  "version": "1.0.0",
+  "description": "Tarjeta de identificación de seguridad nivel 1 con estética PSX.",
+  "author": {
+    "name": "FrancisCuarto",
+    "github": "FrancisCuarto"
+  },
+  "license": "CC-BY-4.0",
+  "category": "fixtures",
+  "tags": [
+    "psx",
+    "low-poly",
+    "retro",
+    "keycard"
+  ],
+  "parameters": [
+    {
+      "key": "width",
+      "label": "Ancho",
+      "type": "float",
+      "default": 0.085,
+      "min": 0.05,
+      "max": 0.15,
+      "step": 0.005,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "height",
+      "label": "Alto",
+      "type": "float",
+      "default": 0.055,
+      "min": 0.04,
+      "max": 0.1,
+      "step": 0.005,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "thickness",
+      "label": "Grosor",
+      "type": "float",
+      "default": 0.004,
+      "min": 0.001,
+      "max": 0.01,
+      "step": 0.001,
+      "group": "Dimensiones"
+    }
+  ]
+}

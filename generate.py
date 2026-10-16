@@ -815,8 +815,13 @@ def main():
 
     _, generator_cls = GENERATOR_REGISTRY[args.family]
     generator = generator_cls()
+    generator.config = config
 
-    obj = generator.generate(config)
+    try:
+        obj = generator.generate(config)
+    except TypeError:
+        obj = generator.generate()
+
     report = generator.validate(obj, config)
 
     print("\n--- Validation Report ---")

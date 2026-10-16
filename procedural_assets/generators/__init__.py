@@ -105,6 +105,28 @@ GENERATOR_REGISTRY = {
     "pipes": (PipeConfig, PipeGenerator),
 }
 
+# Dynamic auto-discovery for community-contributed generator families
+import os as _os
+import importlib as _importlib
+
+_generators_dir = _os.path.dirname(_os.path.abspath(__file__))
+for _item in _os.listdir(_generators_dir):
+    _item_path = _os.path.join(_generators_dir, _item)
+    if _os.path.isdir(_item_path) and not _item.startswith(("_", ".")) and _item not in GENERATOR_REGISTRY:
+        try:
+            _mod = _importlib.import_module(f".{_item}", package=__name__)
+            _cfg_cls = None
+            _gen_cls = None
+            for _attr_name in dir(_mod):
+                if _attr_name.endswith("Config") and _attr_name != "BaseAssetConfig":
+                    _cfg_cls = getattr(_mod, _attr_name)
+                elif _attr_name.endswith("Generator") and _attr_name != "BaseAssetGenerator":
+                    _gen_cls = getattr(_mod, _attr_name)
+            if _cfg_cls and _gen_cls:
+                GENERATOR_REGISTRY[_item] = (_cfg_cls, _gen_cls)
+        except Exception:
+            pass
+
 __all__ = [
     "GENERATOR_REGISTRY",
     "StationCorridorConfig", "StationCorridorGenerator",

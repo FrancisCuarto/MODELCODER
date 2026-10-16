@@ -148,6 +148,13 @@ class BaseAssetGenerator(ABC, Generic[TConfig]):
 
         MaterialManager.compact_materials(obj)
 
+    @classmethod
+    def compact_materials(cls, obj: bpy.types.Object):
+        """Compact unused materials from the object."""
+        if MaterialManager and hasattr(MaterialManager, "compact_materials"):
+            MaterialManager.compact_materials(obj)
+
+
     def validate(self, obj: bpy.types.Object, config: TConfig) -> ValidationReport:
         """Verify geometry exists, adheres to budget, and matches configuration parameters."""
         errors = []

@@ -1,5 +1,64 @@
 [
   {
+    "id": "below_nominal.fixtures.access_card_lvl1",
+    "family": "access_card_lvl1",
+    "name": "Tarjeta de Acceso Nivel 1",
+    "version": "1.0.0",
+    "description": "Tarjeta de identificación de seguridad nivel 1 con estética PSX.",
+    "category": "fixtures",
+    "tags": [
+      "psx",
+      "low-poly",
+      "retro",
+      "keycard"
+    ],
+    "author": {
+      "name": "FrancisCuarto",
+      "github": "FrancisCuarto"
+    },
+    "license": "CC-BY-4.0",
+    "compatibility": {},
+    "parameters": [
+      {
+        "key": "width",
+        "label": "Ancho",
+        "type": "float",
+        "default": 0.085,
+        "group": "Dimensiones",
+        "min": 0.05,
+        "max": 0.15,
+        "step": 0.005
+      },
+      {
+        "key": "height",
+        "label": "Alto",
+        "type": "float",
+        "default": 0.055,
+        "group": "Dimensiones",
+        "min": 0.04,
+        "max": 0.1,
+        "step": 0.005
+      },
+      {
+        "key": "thickness",
+        "label": "Grosor",
+        "type": "float",
+        "default": 0.004,
+        "group": "Dimensiones",
+        "min": 0.001,
+        "max": 0.01,
+        "step": 0.001
+      }
+    ],
+    "presets": [],
+    "export_capabilities": {},
+    "has_model": true,
+    "model_url": "/models/access_card_lvl1.glb",
+    "file_size_bytes": 87404,
+    "source_code": "import bpy\nimport bmesh\nimport math\nfrom ...core.base_generator import BaseAssetGenerator\nfrom ...materials.palette import get_or_create_material\n\nclass AccessCardGenerator(BaseAssetGenerator):\n    def generate(self) -> bpy.types.Object:\n        mesh = bpy.data.meshes.new(\"AccessCard\")\n        obj = bpy.data.objects.new(\"AccessCard\", mesh)\n        bpy.context.collection.objects.link(obj)\n        bm = bmesh.new()\n\n        # Base card dimensions\n        w = self.config.width / 2\n        h = self.config.height / 2\n        t = self.config.thickness / 2\n\n        # Create main body\n        bm_cube = bmesh.ops.create_cube(bm, size=1.0)\n        bmesh.ops.scale(bm, vec=(w, h, t), verts=bm.verts)\n\n        # Create a small hole for the lanyard (PSX style: just a small square cutout)\n        hole_size = 0.005\n        hole_x = w - 0.01\n        hole_y = 0\n        \n        # Simple bevel for corners (low poly)\n        bmesh.ops.bevel(bm, geom=bm.edges, offset=0.002, segments=1, profile=0.5)\n\n        # Add a \"chip\" or \"magnetic stripe\" detail using a separate small cube to keep geometry clean\n        chip_w = self.config.chip_size / 2\n        chip_h = self.config.chip_size / 2\n        chip_t = 0.001\n        \n        import mathutils\n        matrix_chip = mathutils.Matrix.Translation((-w * 0.5, h * 0.3, t))\n        bmesh.ops.create_cube(bm, size=1.0, matrix=matrix_chip)\n        # Scale the last added verts (the chip)\n        chip_verts = [v for v in bm.verts if v.select]\n        # Note: In a real script we'd track indices, here we simplify for the procedural generation\n        \n        bm.to_mesh(mesh)\n        bm.free()\n\n        # Material setup\n        mat = get_or_create_material(self.config.palette_name)\n        if obj.data.materials:\n            obj.data.materials[0] = mat\n        else:\n            obj.data.materials.append(mat)\n\n        if len(obj.data.color_attributes) == 0:\n            obj.data.color_attributes.new(name=\"Col\", type='BYTE_COLOR', domain='CORNER')\n        if len(obj.data.uv_layers) == 0:\n            obj.data.uv_layers.new(name=\"UVMap\")\n\n        self.compact_materials(obj)\n        return obj\n",
+    "config_code": "from dataclasses import dataclass\nfrom ...core.base_config import BaseAssetConfig\n\n@dataclass\nclass AccessCardConfig(BaseAssetConfig):\n    width: float = 0.085\n    height: float = 0.055\n    thickness: float = 0.004\n    chip_size: float = 0.015\n    palette_name: str = \"industrial_hazard\"\n"
+  },
+  {
     "id": "below_nominal.medical.autopsy_table",
     "family": "autopsy_table",
     "name": "Mesa de Autopsia y Disección",
