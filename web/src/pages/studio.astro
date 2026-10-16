@@ -33,8 +33,8 @@ import catalog from '../data/catalog.json';
           <button id="export-zip-btn" class="btn btn-primary" title="Descargar paquete de 4 archivos listo para Pull Request">
             💾 DESCARGAR PAQUETE (.ZIP)
           </button>
-          <button id="github-pr-btn" class="btn btn-green" title="Abrir Pull Request directo en GitHub">
-            🚀 PUBLICAR PR
+          <button id="github-pr-btn" class="btn btn-green" title="Publicar o proponer tu modelo en la comunidad de GitHub">
+            🚀 PUBLICAR MODELO
           </button>
         </div>
       </div>
@@ -212,34 +212,67 @@ import catalog from '../data/catalog.json';
     </div>
   </div>
 
-  <!-- GitHub Pull Request Modal -->
+  <!-- GitHub Contribution Modal -->
   <dialog id="github-modal" class="ps1-window gh-modal">
     <div class="ps1-titlebar">
-      <span>// GITHUB_CONTRIBUTION_PIPELINE</span>
+      <span>// PUBLICAR MODELO EN LA COMUNIDAD</span>
       <button id="close-modal-btn" class="ps1-ctrl-btn">X</button>
     </div>
-    <div class="modal-body">
-      <h3 style="color: var(--ps1-gold); font-family: var(--font-pixel); font-size: 0.9rem; margin-bottom: 0.5rem;">
-        PUBLICAR DIRECTO A FrancisCuarto/MODELCODER
+    <div class="modal-body" style="padding: 1.25rem;">
+      <h3 style="color: var(--ps1-gold); font-family: var(--font-pixel); font-size: 0.95rem; margin-bottom: 0.4rem;">
+        PUBLICAR EN FrancisCuarto/MODELCODER
       </h3>
-      <p style="font-size: 0.82rem; color: #b0c0d4; margin-bottom: 1rem; line-height: 1.5;">
-        Puedes enviar tu generador automáticamente creando una rama en GitHub o copiando los 4 archivos a tu fork local.
+      <p style="font-size: 0.82rem; color: #b0c0d4; margin-bottom: 1.25rem; line-height: 1.5;">
+        Tu modelo puede incorporarse al catálogo oficial abierto para que todos puedan usarlo en sus juegos. Elige la opción que prefieras:
       </p>
 
-      <div class="ps1-inset" style="padding: 0.85rem; margin-bottom: 1rem;">
-        <label for="gh-token-input" class="field-label" style="font-size: 0.75rem;">GitHub Personal Access Token (PAT):</label>
-        <input type="password" id="gh-token-input" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" class="form-input" style="width: 100%; margin-top: 0.35rem;" />
-        <small style="color: var(--text-dim); font-size: 0.68rem; display: block; margin-top: 0.35rem;">
-          Requiere permisos <code>repo</code> para crear la rama <code>contrib/mi-generador</code> y abrir el PR. Tu token no se guarda en ningún servidor.
-        </small>
+      <!-- Option 1: 1-Click Issue / Proposal on GitHub (Zero Setup) -->
+      <div class="ps1-inset" style="padding: 1rem; margin-bottom: 1rem; background: #080e1c; border-left: 3px solid var(--ps1-green);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+          <span style="font-family: var(--font-pixel); font-size: 0.8rem; color: var(--ps1-green);">
+            ⭐ OPCIÓN RECOMENDADA (1-CLIC SIN CONFIGURACIÓN)
+          </span>
+        </div>
+        <p style="font-size: 0.8rem; color: var(--text-dim); margin-bottom: 0.85rem; line-height: 1.45;">
+          Abre automáticamente una propuesta en GitHub con el código de tu modelo formateado, listo para ser revisado e incorporado a la biblioteca oficial.
+        </p>
+        <button id="btn-quick-github-proposal" type="button" class="btn btn-green" style="width: 100%; font-size: 0.8rem; padding: 0.65rem;">
+          🚀 ENVIAR PROPUESTA A GITHUB (1-CLIC)
+        </button>
       </div>
 
-      <div style="display: flex; gap: 0.6rem;">
-        <button id="submit-pr-btn" class="btn btn-green" style="flex: 1;">
-          🚀 ENVIAR PULL REQUEST AHORA
+      <!-- Option 2: Download ZIP Package -->
+      <div class="ps1-inset" style="padding: 1rem; margin-bottom: 1rem; background: #060912; border-left: 3px solid var(--ps1-gold);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+          <span style="font-family: var(--font-pixel); font-size: 0.8rem; color: var(--ps1-gold);">
+            💾 DESCARGAR PAQUETE LOCAL (.ZIP)
+          </span>
+        </div>
+        <p style="font-size: 0.8rem; color: var(--text-dim); margin-bottom: 0.85rem; line-height: 1.45;">
+          Descarga los 4 archivos (código Python, configuración y manifiesto) empaquetados en tu computadora para usarlos en tu propio proyecto o abrirlos en Blender.
+        </p>
+        <button id="btn-modal-download-zip" type="button" class="btn btn-gold" style="width: 100%; font-size: 0.8rem; padding: 0.65rem;">
+          📥 DESCARGAR PAQUETE (.ZIP)
         </button>
-        <button id="modal-cancel-btn" class="btn btn-outline">
-          CANCELAR
+      </div>
+
+      <!-- Option 3: Advanced PAT (Folded Collapsible for Developers) -->
+      <details style="margin-top: 1rem; font-size: 0.75rem;">
+        <summary style="cursor: pointer; color: var(--text-dim); font-family: var(--font-pixel); font-size: 0.68rem; user-select: none;">
+          ⚙️ Opcional para desarrolladores: Crear Pull Request directo con Token (PAT)
+        </summary>
+        <div class="ps1-inset" style="padding: 0.85rem; margin-top: 0.5rem; background: #040710;">
+          <label for="gh-token-input" class="field-label" style="font-size: 0.72rem;">GitHub Personal Access Token (PAT):</label>
+          <input type="password" id="gh-token-input" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" class="form-input" style="width: 100%; margin-top: 0.35rem; font-size: 0.75rem;" />
+          <button id="submit-pr-btn" class="btn btn-outline" style="width: 100%; margin-top: 0.6rem; font-size: 0.72rem;">
+            Subir vía API directa de GitHub
+          </button>
+        </div>
+      </details>
+
+      <div style="display: flex; justify-content: flex-end; margin-top: 1.25rem;">
+        <button id="modal-cancel-btn" class="btn btn-outline" style="font-size: 0.75rem;">
+          CERRAR
         </button>
       </div>
 
@@ -933,6 +966,39 @@ Nuevo generador procedural creado con ModelCoder Web Studio.
   });
 
   modalCancelBtn?.addEventListener('click', () => {
+    if (githubModal) githubModal.close();
+  });
+
+  const btnQuickGithubProposal = document.getElementById('btn-quick-github-proposal');
+  const btnModalDownloadZip = document.getElementById('btn-modal-download-zip');
+
+  btnQuickGithubProposal?.addEventListener('click', () => {
+    let familyName = 'mi_modelo';
+    let humanName = 'Nuevo Modelo';
+    try {
+      const manifest = JSON.parse(fileContents['manifest'] || '{}');
+      humanName = manifest.name || humanName;
+      const parts = (manifest.id || '').split('.');
+      familyName = parts[parts.length - 1] || familyName;
+    } catch (e) {}
+
+    const title = encodeURIComponent(`[Nuevo Modelo]: ${humanName} (${familyName})`);
+    const body = encodeURIComponent(
+      `## Propuesta de Nuevo Modelo 3D para ModelCoder\n\n` +
+      `- **Nombre**: ${humanName}\n` +
+      `- **Familia**: \`${familyName}\`\n\n` +
+      `### Manifiesto (\`manifest.json\`)\n\`\`\`json\n${fileContents['manifest']}\n\`\`\`\n\n` +
+      `### Generador (\`generator.py\`)\n\`\`\`python\n${fileContents['generator']}\n\`\`\`\n\n` +
+      `### Configuración (\`config.py\`)\n\`\`\`python\n${fileContents['config']}\n\`\`\`\n`
+    );
+
+    const issueUrl = `https://github.com/FrancisCuarto/MODELCODER/issues/new?title=${title}&body=${body}`;
+    window.open(issueUrl, '_blank');
+    if (githubModal) githubModal.close();
+  });
+
+  btnModalDownloadZip?.addEventListener('click', () => {
+    if (exportZipBtn) exportZipBtn.click();
     if (githubModal) githubModal.close();
   });
 
