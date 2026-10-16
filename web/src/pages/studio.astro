@@ -1475,7 +1475,19 @@ Diseña un paquete de 4 archivos completo en un único JSON:
   "name": "Nombre Humano",
   "generator": "código python completo heredando de BaseAssetGenerator",
   "config": "código python completo heredando de BaseAssetConfig con dataclass",
-  "manifest": { ...objeto json válido cumpliendo schemas/generator-v1.json... },
+  "manifest": {
+    "id": "below_nominal.fixtures.nombre_en_snake_case",
+    "name": "Nombre Humano",
+    "version": "1.0.0",
+    "description": "Breve descripción",
+    "author": { "name": "Comunidad", "github": "contributor" },
+    "license": "CC-BY-4.0",
+    "category": "fixtures",
+    "tags": ["psx", "low-poly", "retro"],
+    "parameters": [
+      { "key": "param_name", "label": "Etiqueta Legible", "type": "float", "default": 1.0, "min": 0.1, "max": 2.5, "step": 0.05, "group": "Dimensiones" }
+    ]
+  },
   "readme": "documentación markdown"
 }
 
@@ -1484,7 +1496,7 @@ REGLAS TÉCNICAS:
 - Debe tener 'def generate(self) -> bpy.types.Object:' y llamar a 'self.compact_materials(obj)'.
 - Presupuesto low-poly: 80 a 500 triángulos.
 - En config.py incluir 'palette_name: str = "industrial_hazard"'.
-- En manifest.json incluir parámetros lógicos con min, max, default y group.
+- En manifest.json usar obligatoriamente 'key' y 'label' en cada parámetro, e incluir 'name', 'category', 'license': 'CC-BY-4.0'.
 Responde ÚNICAMENTE con el objeto JSON estructurado.`;
 
     try {

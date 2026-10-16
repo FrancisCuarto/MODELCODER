@@ -27,8 +27,6 @@ if current_dir not in sys.path:
 from tools.verify_community_generator import audit_source_code, verify_manifest
 from tools.sync_web_catalog import sync_catalog
 
-
-
 def extract_code_block(markdown_text: str, heading_pattern: str, lang: str) -> Optional[str]:
     """Extract code block content following a specific markdown section heading."""
     pattern = rf"{heading_pattern}[\s\S]*?```{lang}[^\n]*\n([\s\S]*?)```"
@@ -41,7 +39,6 @@ def extract_files_from_issue_body(issue_body: str) -> Dict[str, str]:
     """Extract manifest.json, generator.py, and config.py from GitHub Issue text."""
     manifest_raw = extract_code_block(issue_body, r"manifest\.json", "json")
     if not manifest_raw:
-        # Fallback: find any json code block
         match = re.search(r"```json[^\n]*\n([\s\S]*?)```", issue_body)
         if match:
             manifest_raw = match.group(1).strip()
@@ -58,7 +55,7 @@ def extract_files_from_issue_body(issue_body: str) -> Dict[str, str]:
             elif ("BaseAssetConfig" in block or "@dataclass" in block) and not config_raw:
                 config_raw = block.strip()
         
-        # If still missing and exactly 2 python blocks exist, assume 1st is generator, 2nd is config (or vice versa)
+        # If still missing and exactly 2 python blocks exist
         if len(py_blocks) == 2 and (not generator_raw or not config_raw):
             b1, b2 = py_blocks[0].strip(), py_blocks[1].strip()
             if "Generator" in b1:
@@ -81,7 +78,76 @@ def extract_files_from_issue_body(issue_body: str) -> Dict[str, str]:
         "config": config_raw
     }
 
-def install_model(manifest_text: str, generator_text: str, config_text: str, author_login: str = "", readme_text: str = "") -> Tuple[str, str]:
+def normalize_manifest(manifest_data: Dict[str, Any], family_name: str, author_login: str = "", issue_title: str = "") -> Dict[str, Any]:
+    """Normalize and auto-complete minor omissions in community manifests."""
+    # 1. Family & ID
+    if not manifest_data.get("id"):
+        manifest_data["id"] = f"below_nominal.fixtures.{family_name}"
+
+    # 2. Name
+    if not manifest_data.get("name"):
+        clean_title = re.sub(r"\[.*?\]", "", issue_title).strip()
+        manifest_data["name"] = clean_title or family_name.replace("_", " ").title()
+
+    # 3. Version
+    if not manifest_data.get("version"):
+        manifest_data["version"] = "1.0.0"
+
+    # 4. Category
+    valid_categories = ["furniture", "fixtures", "infrastructure", "medical", "architecture"]
+    cat = str(manifest_data.get("category", "")).lower()
+    if cat not in valid_categories:
+        tags = [str(t).lower() for t in manifest_data.get("tags", [])]
+        if any(t in tags for t in ["chair", "desk", "bed", "table", "cabinet", "shelf", "furniture", "storage"]):
+            cat = "furniture"
+        elif any(t in tags for t in ["medical", "clinic", "hospital", "autopsy", "health", "morgue"]):
+            cat = "medical"
+        elif any(t in tags for t in ["infrastructure", "pipe", "cables", "room", "corridor"]):
+            cat = "infrastructure"
+        elif any(t in tags for t in ["architecture", "wall", "door", "floor"]):
+            cat = "architecture"
+        else:
+            cat = "fixtures"
+    manifest_data["category"] = cat
+
+    # 5. Author
+    author = manifest_data.get("author")
+    if not author or not isinstance(author, dict) or not author.get("name") or author.get("name") in ["Community", "Tu Nombre", "Comunidad"]:
+        manifest_data["author"] = {
+            "name": author_login or "Comunidad",
+            "github": author_login or "comunidad"
+        }
+    elif author_login and not author.get("github"):
+        author["github"] = author_login
+
+    # 6. License
+    valid_licenses = ["CC-BY-4.0", "CC0-1.0", "MIT", "Apache-2.0", "GPL-3.0"]
+    if manifest_data.get("license") not in valid_licenses:
+        manifest_data["license"] = "CC-BY-4.0"
+
+    # 7. Parameters
+    raw_params = manifest_data.get("parameters", [])
+    if not isinstance(raw_params, list) or len(raw_params) == 0:
+        raw_params = [{"key": "scale", "label": "Escala General", "type": "float", "default": 1.0}]
+
+    norm_params = []
+    for p in raw_params:
+        if not isinstance(p, dict):
+            continue
+        key = p.get("key") or p.get("name") or "param"
+        label = p.get("label") or key.replace("_", " ").title()
+        ptype = p.get("type", "float")
+        pdef = p.get("default", 1.0)
+        p["key"] = key
+        p["label"] = label
+        p["type"] = ptype
+        p["default"] = pdef
+        norm_params.append(p)
+
+    manifest_data["parameters"] = norm_params
+    return manifest_data
+
+def install_model(manifest_text: str, generator_text: str, config_text: str, author_login: str = "", issue_title: str = "", readme_text: str = "") -> Tuple[str, str]:
     """Install model into procedural_assets/generators/<family>/ and run verification."""
     manifest_data = json.loads(manifest_text)
     manifest_id = manifest_data.get("id", "")
@@ -91,18 +157,9 @@ def install_model(manifest_text: str, generator_text: str, config_text: str, aut
     if not family_name or not re.match(r"^[a-z0-9_]+$", family_name):
         raise ValueError(f"Identificador de familia inválido en manifest: '{family_name}' (solo minúsculas y guiones bajos)")
 
-    model_display_name = manifest_data.get("name", family_name.replace("_", " ").title())
-
-    # Credit GitHub author if provided and not explicitly customized
-    if author_login:
-        author_info = manifest_data.get("author")
-        if not author_info or not isinstance(author_info, dict) or author_info.get("name") in ["Community", "Tu Nombre"]:
-            manifest_data["author"] = {
-                "name": author_login,
-                "github": author_login
-            }
-        elif isinstance(author_info, dict) and not author_info.get("github"):
-            author_info["github"] = author_login
+    # Auto-normalize manifest
+    manifest_data = normalize_manifest(manifest_data, family_name, author_login=author_login, issue_title=issue_title)
+    model_display_name = manifest_data["name"]
 
     target_dir = os.path.join(current_dir, "procedural_assets", "generators", family_name)
     os.makedirs(target_dir, exist_ok=True)
@@ -168,16 +225,20 @@ def main():
     parser.add_argument("--issue-body", type=str, help="Raw Markdown body from GitHub Issue")
     parser.add_argument("--issue-file", type=str, help="Path to text file containing Issue body")
     parser.add_argument("--author", type=str, default="", help="GitHub handle of issue creator")
+    parser.add_argument("--title", type=str, default="", help="Issue title")
     args = parser.parse_args()
 
     body = args.issue_body
     author = args.author
+    title = args.title
 
     if args.event_path and os.path.isfile(args.event_path):
         try:
             with open(args.event_path, "r", encoding="utf-8") as f:
                 event_data = json.load(f)
             body = event_data.get("issue", {}).get("body", "")
+            if not title:
+                title = event_data.get("issue", {}).get("title", "")
             if not author:
                 author = event_data.get("issue", {}).get("user", {}).get("login", "")
         except Exception as e:
@@ -194,7 +255,7 @@ def main():
 
     try:
         files = extract_files_from_issue_body(body)
-        family, model_name = install_model(files["manifest"], files["generator"], files["config"], author_login=author)
+        family, model_name = install_model(files["manifest"], files["generator"], files["config"], author_login=author, issue_title=title)
         print(f"SUCCESS: Modelo '{model_name}' ({family}) incorporado correctamente.")
         sys.exit(0)
     except Exception as e:
