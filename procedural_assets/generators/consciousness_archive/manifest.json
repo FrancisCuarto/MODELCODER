@@ -1,0 +1,122 @@
+{
+  "id": "below_nominal.infrastructure.consciousness_archive",
+  "name": "Módulo Archivo de Conciencia",
+  "version": "1.0.0",
+  "description": "Banco de racks industriales para archivo y preservación de cartuchos de memoria neural con refrigeración líquida. Podés configurar la cantidad de filas de bahías, densidad de cartuchos insertados y cableado diegético en GLB.",
+  "author": {
+    "name": "ModelCoder Core Team",
+    "github": "FrancisCuarto"
+  },
+  "license": "CC-BY-4.0",
+  "category": "infrastructure",
+  "tags": [
+    "psx",
+    "low-poly",
+    "archive",
+    "memory",
+    "datacenter",
+    "below-nominal"
+  ],
+  "parameters": [
+    {
+      "key": "height",
+      "label": "Altura (m)",
+      "type": "float",
+      "default": 2.0,
+      "min": 1.6,
+      "max": 2.4,
+      "step": 0.05,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "width",
+      "label": "Ancho (m)",
+      "type": "float",
+      "default": 1.0,
+      "min": 0.8,
+      "max": 1.5,
+      "step": 0.05,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "depth",
+      "label": "Profundidad (m)",
+      "type": "float",
+      "default": 0.7,
+      "min": 0.5,
+      "max": 1.0,
+      "step": 0.05,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "bay_rows",
+      "label": "Filas de Bahías",
+      "type": "int",
+      "default": 4,
+      "min": 2,
+      "max": 6,
+      "step": 1,
+      "group": "Estructura"
+    },
+    {
+      "key": "cartridge_density",
+      "label": "Densidad de Cartuchos",
+      "type": "float",
+      "default": 0.75,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.05,
+      "group": "Estado"
+    },
+    {
+      "key": "has_cooling_vent",
+      "label": "Rejilla de Enfriamiento",
+      "type": "bool",
+      "default": true,
+      "group": "Detalles"
+    },
+    {
+      "key": "has_conduit_harness",
+      "label": "Arnés de Cables Lateral",
+      "type": "bool",
+      "default": true,
+      "group": "Detalles"
+    }
+  ],
+  "presets": [
+    {
+      "id": "stable_archive",
+      "label": "Archivo Estable",
+      "values": {
+        "bay_rows": 4,
+        "cartridge_density": 0.85,
+        "has_cooling_vent": true,
+        "has_conduit_harness": true
+      }
+    },
+    {
+      "id": "partial_purge",
+      "label": "Purga Parcial",
+      "values": {
+        "bay_rows": 4,
+        "cartridge_density": 0.35,
+        "has_cooling_vent": true,
+        "has_conduit_harness": true
+      }
+    },
+    {
+      "id": "derelict_bank",
+      "label": "Banco Abandonado",
+      "values": {
+        "bay_rows": 3,
+        "cartridge_density": 0.5,
+        "has_cooling_vent": false,
+        "has_conduit_harness": true
+      }
+    }
+  ],
+  "export_capabilities": {
+    "supports_collision": true,
+    "default_collision_suffix": "-convcolonly"
+  }
+}

@@ -45,6 +45,17 @@ from .bridge_console_desk import BridgeConsoleDeskConfig, BridgeConsoleDeskGener
 from .space_toilet import SpaceToiletConfig, SpaceToiletGenerator
 from .scrub_sink import ScrubSinkConfig, ScrubSinkGenerator
 
+# Lote B: Soporte Vital & Narrativa (Familias 45-53)
+from .cryo_stasis_pod import CryoStasisPodConfig, CryoStasisPodGenerator
+from .consciousness_archive import ConsciousnessArchiveConfig, ConsciousnessArchiveGenerator
+from .neural_interface_chair import NeuralInterfaceChairConfig, NeuralInterfaceChairGenerator
+from .memory_extraction_terminal import MemoryExtractionTerminalConfig, MemoryExtractionTerminalGenerator
+from .oxygen_regulator import OxygenRegulatorConfig, OxygenRegulatorGenerator
+from .oxygen_tank import OxygenTankConfig, OxygenTankGenerator
+from .pressure_door_control import PressureDoorControlConfig, PressureDoorControlGenerator
+from .airlock_chamber import AirlockChamberConfig, AirlockChamberGenerator
+from .pressure_indicator import PressureIndicatorConfig, PressureIndicatorGenerator
+
 GENERATOR_REGISTRY = {
     # Environment & Architectural Tiles
     "station_corridor": (StationCorridorConfig, StationCorridorGenerator),
@@ -103,6 +114,17 @@ GENERATOR_REGISTRY = {
     "crate": (CrateConfig, CrateGenerator),
     "locker": (LockerConfig, LockerGenerator),
     "pipes": (PipeConfig, PipeGenerator),
+
+    # Lote B: Soporte Vital & Narrativa (Familias 45-53)
+    "cryo_stasis_pod": (CryoStasisPodConfig, CryoStasisPodGenerator),
+    "consciousness_archive": (ConsciousnessArchiveConfig, ConsciousnessArchiveGenerator),
+    "neural_interface_chair": (NeuralInterfaceChairConfig, NeuralInterfaceChairGenerator),
+    "memory_extraction_terminal": (MemoryExtractionTerminalConfig, MemoryExtractionTerminalGenerator),
+    "oxygen_regulator": (OxygenRegulatorConfig, OxygenRegulatorGenerator),
+    "oxygen_tank": (OxygenTankConfig, OxygenTankGenerator),
+    "pressure_door_control": (PressureDoorControlConfig, PressureDoorControlGenerator),
+    "airlock_chamber": (AirlockChamberConfig, AirlockChamberGenerator),
+    "pressure_indicator": (PressureIndicatorConfig, PressureIndicatorGenerator),
 }
 
 # Dynamic auto-discovery for community-contributed generator families
@@ -173,4 +195,14 @@ __all__ = [
     "CrateConfig", "CrateGenerator",
     "LockerConfig", "LockerGenerator",
     "PipeConfig", "PipeGenerator",
+    "CryoStasisPodConfig", "CryoStasisPodGenerator",
+    "ConsciousnessArchiveConfig", "ConsciousnessArchiveGenerator",
+    "NeuralInterfaceChairConfig", "NeuralInterfaceChairGenerator",
+    "MemoryExtractionTerminalConfig", "MemoryExtractionTerminalGenerator",
+    "OxygenRegulatorConfig", "OxygenRegulatorGenerator",
+    "OxygenTankConfig", "OxygenTankGenerator",
+    "PressureDoorControlConfig", "PressureDoorControlGenerator",
+    "AirlockChamberConfig", "AirlockChamberGenerator",
+    "PressureIndicatorConfig", "PressureIndicatorGenerator",
 ]
+

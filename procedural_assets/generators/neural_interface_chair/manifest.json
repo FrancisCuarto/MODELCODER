@@ -1,0 +1,106 @@
+{
+  "id": "below_nominal.medical.neural_interface_chair",
+  "name": "Silla de Interfaz Neuronal",
+  "version": "1.0.0",
+  "description": "Silla técnica ergonómica para procedimientos de enlace cognitivo e interfaz humano-máquina, con electrodos facetados, arco sensor y cableado diegético. Podés configurar inclinación de respaldo, altura y accesorios en GLB.",
+  "author": {
+    "name": "ModelCoder Core Team",
+    "github": "FrancisCuarto"
+  },
+  "license": "CC-BY-4.0",
+  "category": "medical",
+  "tags": [
+    "psx",
+    "low-poly",
+    "chair",
+    "neural",
+    "medical",
+    "below-nominal"
+  ],
+  "parameters": [
+    {
+      "key": "seat_height",
+      "label": "Altura Asiento (m)",
+      "type": "float",
+      "default": 0.52,
+      "min": 0.4,
+      "max": 0.65,
+      "step": 0.02,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "backrest_angle",
+      "label": "Inclinación Respaldo (°)",
+      "type": "float",
+      "default": 18.0,
+      "min": 0.0,
+      "max": 45.0,
+      "step": 5.0,
+      "group": "Mecanismo"
+    },
+    {
+      "key": "has_sensor_arch",
+      "label": "Arco Sensor Superior",
+      "type": "bool",
+      "default": true,
+      "group": "Detalles"
+    },
+    {
+      "key": "has_restraint_straps",
+      "label": "Brazaderas de Sujeción",
+      "type": "bool",
+      "default": true,
+      "group": "Detalles"
+    },
+    {
+      "key": "has_side_operator_panel",
+      "label": "Botonera de Operador",
+      "type": "bool",
+      "default": true,
+      "group": "Detalles"
+    },
+    {
+      "key": "has_umbilical_cables",
+      "label": "Cables Umbilicales",
+      "type": "bool",
+      "default": true,
+      "group": "Detalles"
+    }
+  ],
+  "presets": [
+    {
+      "id": "procedure_ready",
+      "label": "Procedimiento Clínico",
+      "values": {
+        "backrest_angle": 18.0,
+        "has_sensor_arch": true,
+        "has_restraint_straps": true,
+        "has_side_operator_panel": true
+      }
+    },
+    {
+      "id": "recline_transfer",
+      "label": "Transferencia Reclinada",
+      "values": {
+        "backrest_angle": 35.0,
+        "has_sensor_arch": true,
+        "has_restraint_straps": true,
+        "has_side_operator_panel": true
+      }
+    },
+    {
+      "id": "abandoned_rig",
+      "label": "Equipo Abandonado",
+      "values": {
+        "backrest_angle": 25.0,
+        "has_sensor_arch": false,
+        "has_restraint_straps": false,
+        "has_side_operator_panel": true
+      }
+    }
+  ],
+  "export_capabilities": {
+    "supports_collision": true,
+    "default_collision_suffix": "-convcolonly"
+  }
+}

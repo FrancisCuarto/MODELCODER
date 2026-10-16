@@ -1,0 +1,110 @@
+{
+  "id": "below_nominal.fixtures.oxygen_regulator",
+  "name": "Regulador de Oxígeno Mural",
+  "version": "1.0.0",
+  "description": "Regulador de presión mural para el circuito de soporte vital, con manómetros analógicos Bourdon, válvulas de corte en bronce y acoples de tubería. Podés configurar cantidad de manómetros, llaves de paso y corte de emergencia en GLB.",
+  "author": {
+    "name": "ModelCoder Core Team",
+    "github": "FrancisCuarto"
+  },
+  "license": "CC-BY-4.0",
+  "category": "fixtures",
+  "tags": [
+    "psx",
+    "low-poly",
+    "oxygen",
+    "regulator",
+    "gauge",
+    "valve",
+    "below-nominal"
+  ],
+  "parameters": [
+    {
+      "key": "width",
+      "label": "Ancho Placa (m)",
+      "type": "float",
+      "default": 0.45,
+      "min": 0.35,
+      "max": 0.65,
+      "step": 0.05,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "height",
+      "label": "Altura Placa (m)",
+      "type": "float",
+      "default": 0.55,
+      "min": 0.4,
+      "max": 0.8,
+      "step": 0.05,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "gauge_count",
+      "label": "Cantidad de Manómetros",
+      "type": "int",
+      "default": 2,
+      "min": 1,
+      "max": 3,
+      "step": 1,
+      "group": "Instrumentación"
+    },
+    {
+      "key": "has_brass_valves",
+      "label": "Válvulas de Ajuste en Bronce",
+      "type": "bool",
+      "default": true,
+      "group": "Detalles"
+    },
+    {
+      "key": "has_emergency_shutoff",
+      "label": "Palanca de Corte de Emergencia",
+      "type": "bool",
+      "default": true,
+      "group": "Seguridad"
+    },
+    {
+      "key": "has_flow_meter",
+      "label": "Flujómetro Tubular de Cristal",
+      "type": "bool",
+      "default": true,
+      "group": "Instrumentación"
+    }
+  ],
+  "presets": [
+    {
+      "id": "nominal_pressure",
+      "label": "Presión Nominal",
+      "values": {
+        "gauge_count": 2,
+        "has_brass_valves": true,
+        "has_emergency_shutoff": true,
+        "has_flow_meter": true
+      }
+    },
+    {
+      "id": "emergency_cutoff",
+      "label": "Corte de Emergencia",
+      "values": {
+        "gauge_count": 2,
+        "has_brass_valves": true,
+        "has_emergency_shutoff": true,
+        "has_flow_meter": false
+      }
+    },
+    {
+      "id": "compact_bypass",
+      "label": "Bypass Compacto 1 Vía",
+      "values": {
+        "gauge_count": 1,
+        "has_brass_valves": true,
+        "has_emergency_shutoff": false,
+        "has_flow_meter": false
+      }
+    }
+  ],
+  "export_capabilities": {
+    "supports_collision": true,
+    "default_collision_suffix": "-convcolonly"
+  }
+}

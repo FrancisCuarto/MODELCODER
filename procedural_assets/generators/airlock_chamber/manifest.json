@@ -1,0 +1,129 @@
+{
+  "id": "below_nominal.architecture.airlock_chamber",
+  "name": "Módulo de Esclusa de Aire",
+  "version": "1.0.0",
+  "description": "Módulo arquitectónico completo de esclusa de descompresión con compuertas estancas en ambos extremos, suelo de rejilla industrial, panel de ciclo de vacío y pasamanos EVA. Podés configurar longitud, apertura de puertas interior y exterior en GLB.",
+  "author": {
+    "name": "ModelCoder Core Team",
+    "github": "FrancisCuarto"
+  },
+  "license": "CC-BY-4.0",
+  "category": "architecture",
+  "tags": [
+    "psx",
+    "low-poly",
+    "airlock",
+    "architecture",
+    "modular",
+    "below-nominal"
+  ],
+  "parameters": [
+    {
+      "key": "chamber_length",
+      "label": "Longitud Cámara (m)",
+      "type": "float",
+      "default": 3.2,
+      "min": 2.2,
+      "max": 4.5,
+      "step": 0.1,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "chamber_width",
+      "label": "Ancho Cámara (m)",
+      "type": "float",
+      "default": 2.4,
+      "min": 2.0,
+      "max": 3.2,
+      "step": 0.1,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "chamber_height",
+      "label": "Altura Cámara (m)",
+      "type": "float",
+      "default": 2.4,
+      "min": 2.2,
+      "max": 3.0,
+      "step": 0.1,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "inner_door_open",
+      "label": "Apertura Puerta Interior",
+      "type": "float",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.05,
+      "group": "Mecanismo"
+    },
+    {
+      "key": "outer_door_open",
+      "label": "Apertura Puerta Exterior (EVA)",
+      "type": "float",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.05,
+      "group": "Mecanismo"
+    },
+    {
+      "key": "has_floor_grate",
+      "label": "Suelo de Rejilla Metálica",
+      "type": "bool",
+      "default": true,
+      "group": "Estructura"
+    },
+    {
+      "key": "has_depressurize_vents",
+      "label": "Rejillas de Despresurización",
+      "type": "bool",
+      "default": true,
+      "group": "Detalles"
+    },
+    {
+      "key": "has_eva_grab_bars",
+      "label": "Pasamanos EVA Amarillos",
+      "type": "bool",
+      "default": true,
+      "group": "Seguridad"
+    }
+  ],
+  "presets": [
+    {
+      "id": "sealed_chamber",
+      "label": "Esclusa Sellada",
+      "values": {
+        "inner_door_open": 0.0,
+        "outer_door_open": 0.0,
+        "has_floor_grate": true,
+        "has_depressurize_vents": true
+      }
+    },
+    {
+      "id": "eva_egress",
+      "label": "Salida a EVA",
+      "values": {
+        "inner_door_open": 0.0,
+        "outer_door_open": 0.85,
+        "has_floor_grate": true,
+        "has_depressurize_vents": true
+      }
+    },
+    {
+      "id": "decompression_alert",
+      "label": "Fallo de Presurización",
+      "values": {
+        "inner_door_open": 0.25,
+        "outer_door_open": 0.5,
+        "has_floor_grate": true,
+        "has_depressurize_vents": true
+      }
+    }
+  ],
+  "export_capabilities": {
+    "supports_collision": true,
+    "default_collision_suffix": "-convcolonly"
+  }
+}

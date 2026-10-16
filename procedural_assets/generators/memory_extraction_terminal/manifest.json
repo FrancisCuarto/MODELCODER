@@ -1,0 +1,115 @@
+{
+  "id": "below_nominal.infrastructure.memory_extraction_terminal",
+  "name": "Terminal de Extracción de Memoria",
+  "version": "1.0.0",
+  "description": "Consola de operaciones para lectura y transferencia de cartuchos de memoria neural, con monitor CRT angulado, teclado mecánico y bandeja de inserción de cartucho. Podés configurar tipo de soporte, inclinación, color de pantalla y accesorios en GLB.",
+  "author": {
+    "name": "ModelCoder Core Team",
+    "github": "FrancisCuarto"
+  },
+  "license": "CC-BY-4.0",
+  "category": "infrastructure",
+  "tags": [
+    "psx",
+    "low-poly",
+    "terminal",
+    "console",
+    "crt",
+    "below-nominal"
+  ],
+  "parameters": [
+    {
+      "key": "mount_style",
+      "label": "Tipo de Montaje",
+      "type": "enum",
+      "default": "pedestal",
+      "options": [
+        { "value": "pedestal", "label": "Pedestal Industrial de Pie" },
+        { "value": "desktop", "label": "Sobre Mueble / Sobremesa" }
+      ],
+      "group": "Estructura"
+    },
+    {
+      "key": "crt_tilt",
+      "label": "Inclinación Pantalla (°)",
+      "type": "float",
+      "default": 20.0,
+      "min": 0.0,
+      "max": 35.0,
+      "step": 5.0,
+      "group": "Mecanismo"
+    },
+    {
+      "key": "screen_color",
+      "label": "Fósforo de Pantalla",
+      "type": "enum",
+      "default": "amber",
+      "options": [
+        { "value": "amber", "label": "Ámbar Cálido (CRT)" },
+        { "value": "green", "label": "Verde Fósforo" },
+        { "value": "off", "label": "Apagada / Sin Señal" }
+      ],
+      "group": "Estado"
+    },
+    {
+      "key": "cartridge_inserted",
+      "label": "Cartucho Insertado",
+      "type": "bool",
+      "default": true,
+      "group": "Estado"
+    },
+    {
+      "key": "has_side_tape_drive",
+      "label": "Unidad de Cinta Lateral",
+      "type": "bool",
+      "default": true,
+      "group": "Detalles"
+    },
+    {
+      "key": "has_rotary_dials",
+      "label": "Diales Potenciómetro",
+      "type": "bool",
+      "default": true,
+      "group": "Detalles"
+    }
+  ],
+  "presets": [
+    {
+      "id": "active_transfer",
+      "label": "Transferencia Activa",
+      "values": {
+        "mount_style": "pedestal",
+        "crt_tilt": 20.0,
+        "screen_color": "amber",
+        "cartridge_inserted": true,
+        "has_side_tape_drive": true
+      }
+    },
+    {
+      "id": "desktop_diagnostic",
+      "label": "Diagnóstico de Sobremesa",
+      "values": {
+        "mount_style": "desktop",
+        "crt_tilt": 15.0,
+        "screen_color": "green",
+        "cartridge_inserted": false,
+        "has_side_tape_drive": true
+      }
+    },
+    {
+      "id": "system_error",
+      "label": "Fallo de Lectura",
+      "values": {
+        "mount_style": "pedestal",
+        "crt_tilt": 25.0,
+        "screen_color": "off",
+        "cartridge_inserted": true,
+        "has_side_tape_drive": false
+      }
+    }
+  ],
+  "export_capabilities": {
+    "supports_collision": true,
+    "default_collision_suffix": "-convcolonly"
+  }
+}

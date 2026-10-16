@@ -1,0 +1,114 @@
+{
+  "id": "below_nominal.fixtures.oxygen_tank",
+  "name": "Cilindro de Oxígeno Industrial",
+  "version": "1.0.0",
+  "description": "Botella de alta presión recargable para recarga de estaciones de soporte vital, carritos de emergencia y armarios. Con cuello abovedado, collar protector y manómetro. Podés personalizar altura, radio, color y accesorios en GLB.",
+  "author": {
+    "name": "ModelCoder Core Team",
+    "github": "FrancisCuarto"
+  },
+  "license": "CC-BY-4.0",
+  "category": "fixtures",
+  "tags": [
+    "psx",
+    "low-poly",
+    "oxygen",
+    "tank",
+    "canister",
+    "below-nominal"
+  ],
+  "parameters": [
+    {
+      "key": "tank_height",
+      "label": "Altura del Cilindro (m)",
+      "type": "float",
+      "default": 1.1,
+      "min": 0.6,
+      "max": 1.5,
+      "step": 0.05,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "tank_radius",
+      "label": "Radio del Cilindro (m)",
+      "type": "float",
+      "default": 0.14,
+      "min": 0.09,
+      "max": 0.22,
+      "step": 0.01,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "tank_color",
+      "label": "Color y Función",
+      "type": "enum",
+      "default": "cyan",
+      "options": [
+        { "value": "cyan", "label": "Cian Médico (O2 Vital)" },
+        { "value": "white", "label": "Blanco Puro (EVA)" },
+        { "value": "yellow", "label": "Amarillo Industrial" }
+      ],
+      "group": "Acabado"
+    },
+    {
+      "key": "has_top_handle_cage",
+      "label": "Jaula Protectora de Válvula",
+      "type": "bool",
+      "default": true,
+      "group": "Seguridad"
+    },
+    {
+      "key": "has_mini_gauge",
+      "label": "Manómetro en Cuello",
+      "type": "bool",
+      "default": true,
+      "group": "Detalles"
+    },
+    {
+      "key": "has_hazard_collar",
+      "label": "Banda de Advertencia",
+      "type": "bool",
+      "default": true,
+      "group": "Detalles"
+    }
+  ],
+  "presets": [
+    {
+      "id": "standard_cyan",
+      "label": "Reserva Médica O2",
+      "values": {
+        "tank_height": 1.1,
+        "tank_radius": 0.14,
+        "tank_color": "cyan",
+        "has_top_handle_cage": true,
+        "has_mini_gauge": true
+      }
+    },
+    {
+      "id": "portable_compact",
+      "label": "Botella Compacta EVA",
+      "values": {
+        "tank_height": 0.75,
+        "tank_radius": 0.11,
+        "tank_color": "white",
+        "has_top_handle_cage": true,
+        "has_mini_gauge": false
+      }
+    },
+    {
+      "id": "industrial_heavy",
+      "label": "Cilindro Industrial Pesado",
+      "values": {
+        "tank_height": 1.35,
+        "tank_radius": 0.18,
+        "tank_color": "yellow",
+        "has_top_handle_cage": true,
+        "has_mini_gauge": true
+      }
+    }
+  ],
+  "export_capabilities": {
+    "supports_collision": true,
+    "default_collision_suffix": "-convcolonly"
+  }
+}

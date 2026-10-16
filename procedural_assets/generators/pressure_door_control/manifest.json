@@ -1,0 +1,121 @@
+{
+  "id": "below_nominal.fixtures.pressure_door_control",
+  "name": "Panel de Control de Presión",
+  "version": "1.0.0",
+  "description": "Panel mural montado junto a compuertas herméticas con lectura diegética de presión bar/psi, teclado de acceso, lector de tarjeta y luces de estado. Podés configurar estado de luz, teclado, lector y dimensiones en GLB.",
+  "author": {
+    "name": "ModelCoder Core Team",
+    "github": "FrancisCuarto"
+  },
+  "license": "CC-BY-4.0",
+  "category": "fixtures",
+  "tags": [
+    "psx",
+    "low-poly",
+    "door_control",
+    "pressure",
+    "security",
+    "below-nominal"
+  ],
+  "parameters": [
+    {
+      "key": "width",
+      "label": "Ancho Panel (m)",
+      "type": "float",
+      "default": 0.28,
+      "min": 0.2,
+      "max": 0.4,
+      "step": 0.02,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "height",
+      "label": "Altura Panel (m)",
+      "type": "float",
+      "default": 0.42,
+      "min": 0.3,
+      "max": 0.6,
+      "step": 0.02,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "depth",
+      "label": "Profundidad (m)",
+      "type": "float",
+      "default": 0.08,
+      "min": 0.05,
+      "max": 0.14,
+      "step": 0.01,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "status_light",
+      "label": "Luz de Estado",
+      "type": "enum",
+      "default": "green",
+      "options": [
+        { "value": "green", "label": "Verde (Presurizado Nominal)" },
+        { "value": "yellow", "label": "Ámbar (Alerta / Ciclo)" },
+        { "value": "red", "label": "Rojo (Bloqueo / Fuga)" }
+      ],
+      "group": "Estado"
+    },
+    {
+      "key": "has_keypad",
+      "label": "Teclado Numérico",
+      "type": "bool",
+      "default": true,
+      "group": "Acceso"
+    },
+    {
+      "key": "has_card_slot",
+      "label": "Ranura Lector de Tarjetas",
+      "type": "bool",
+      "default": true,
+      "group": "Acceso"
+    },
+    {
+      "key": "has_emergency_vent_button",
+      "label": "Botón de Venteo Rápido",
+      "type": "bool",
+      "default": true,
+      "group": "Seguridad"
+    }
+  ],
+  "presets": [
+    {
+      "id": "pressurized_nominal",
+      "label": "Presurizado Seguro",
+      "values": {
+        "status_light": "green",
+        "has_keypad": true,
+        "has_card_slot": true,
+        "has_emergency_vent_button": true
+      }
+    },
+    {
+      "id": "lockout_alarm",
+      "label": "Bloqueo por Alarma",
+      "values": {
+        "status_light": "red",
+        "has_keypad": true,
+        "has_card_slot": true,
+        "has_emergency_vent_button": true
+      }
+    },
+    {
+      "id": "maintenance_override",
+      "label": "Bypass de Mantenimiento",
+      "values": {
+        "status_light": "yellow",
+        "has_keypad": false,
+        "has_card_slot": true,
+        "has_emergency_vent_button": false
+      }
+    }
+  ],
+  "export_capabilities": {
+    "supports_collision": true,
+    "default_collision_suffix": "-convcolonly"
+  }
+}

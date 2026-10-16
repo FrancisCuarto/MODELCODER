@@ -1,0 +1,106 @@
+{
+  "id": "below_nominal.fixtures.pressure_indicator",
+  "name": "Indicador de Presión de Sector",
+  "version": "1.0.0",
+  "description": "Instrumento mural de gran tamaño con dial analógico circular, aguja mecánica, cuadrante de advertencia y bisel reforzado con pernos. Podés configurar el ángulo de la aguja, diámetro y cristal protector en GLB.",
+  "author": {
+    "name": "ModelCoder Core Team",
+    "github": "FrancisCuarto"
+  },
+  "license": "CC-BY-4.0",
+  "category": "fixtures",
+  "tags": [
+    "psx",
+    "low-poly",
+    "gauge",
+    "pressure",
+    "meter",
+    "below-nominal"
+  ],
+  "parameters": [
+    {
+      "key": "diameter",
+      "label": "Diámetro Dial (m)",
+      "type": "float",
+      "default": 0.45,
+      "min": 0.3,
+      "max": 0.7,
+      "step": 0.05,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "depth",
+      "label": "Profundidad (m)",
+      "type": "float",
+      "default": 0.12,
+      "min": 0.08,
+      "max": 0.2,
+      "step": 0.01,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "needle_angle",
+      "label": "Ángulo de Aguja (°)",
+      "type": "float",
+      "default": 35.0,
+      "min": -120.0,
+      "max": 120.0,
+      "step": 5.0,
+      "group": "Lectura"
+    },
+    {
+      "key": "has_warning_zones",
+      "label": "Zonas de Advertencia en Dial",
+      "type": "bool",
+      "default": true,
+      "group": "Detalles"
+    },
+    {
+      "key": "has_protective_glass",
+      "label": "Cristal Protector Frontal",
+      "type": "bool",
+      "default": true,
+      "group": "Detalles"
+    },
+    {
+      "key": "has_bottom_pipe_fitting",
+      "label": "Acople Inferior de Sensor",
+      "type": "bool",
+      "default": true,
+      "group": "Detalles"
+    }
+  ],
+  "presets": [
+    {
+      "id": "sector_nominal",
+      "label": "Presión Nominal",
+      "values": {
+        "needle_angle": 0.0,
+        "has_protective_glass": true,
+        "has_bottom_pipe_fitting": true
+      }
+    },
+    {
+      "id": "critical_overpressure",
+      "label": "Sobrepresión Crítica",
+      "values": {
+        "needle_angle": 95.0,
+        "has_protective_glass": true,
+        "has_bottom_pipe_fitting": true
+      }
+    },
+    {
+      "id": "vacuum_decompression",
+      "label": "Despresurización / Vacío",
+      "values": {
+        "needle_angle": -110.0,
+        "has_protective_glass": false,
+        "has_bottom_pipe_fitting": true
+      }
+    }
+  ],
+  "export_capabilities": {
+    "supports_collision": true,
+    "default_collision_suffix": "-convcolonly"
+  }
+}

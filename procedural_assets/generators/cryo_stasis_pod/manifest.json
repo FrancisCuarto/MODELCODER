@@ -1,0 +1,134 @@
+{
+  "id": "below_nominal.medical.cryo_stasis_pod",
+  "name": "Cápsula de Criostasis",
+  "version": "1.0.0",
+  "description": "Cápsula vertical de criostasis industrial para preservación de tripulación con visor reforzado, bisagras pesadas y tuberías criogénicas. Podés configurar altura, ángulo de escotilla, nivel de escarcha y estado en GLB.",
+  "author": {
+    "name": "ModelCoder Core Team",
+    "github": "FrancisCuarto"
+  },
+  "license": "CC-BY-4.0",
+  "category": "medical",
+  "tags": [
+    "psx",
+    "low-poly",
+    "cryo",
+    "stasis",
+    "medical",
+    "below-nominal"
+  ],
+  "parameters": [
+    {
+      "key": "height",
+      "label": "Altura (m)",
+      "type": "float",
+      "default": 2.1,
+      "min": 1.8,
+      "max": 2.5,
+      "step": 0.05,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "width",
+      "label": "Ancho (m)",
+      "type": "float",
+      "default": 0.85,
+      "min": 0.7,
+      "max": 1.2,
+      "step": 0.05,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "depth",
+      "label": "Profundidad (m)",
+      "type": "float",
+      "default": 0.85,
+      "min": 0.7,
+      "max": 1.2,
+      "step": 0.05,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "door_open_angle",
+      "label": "Apertura Escotilla (°)",
+      "type": "float",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 90.0,
+      "step": 5.0,
+      "group": "Mecanismo"
+    },
+    {
+      "key": "frost_level",
+      "label": "Nivel de Escarcha",
+      "type": "float",
+      "default": 0.45,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.05,
+      "group": "Estado"
+    },
+    {
+      "key": "pod_state",
+      "label": "Estado de Cápsula",
+      "type": "enum",
+      "default": "occupied",
+      "options": [
+        { "value": "occupied", "label": "Ocupada (Silueta)" },
+        { "value": "empty", "label": "Vacía" },
+        { "value": "offline", "label": "Sin Energía" }
+      ],
+      "group": "Estado"
+    },
+    {
+      "key": "has_cryo_pipes",
+      "label": "Tuberías Criogénicas",
+      "type": "bool",
+      "default": true,
+      "group": "Detalles"
+    },
+    {
+      "key": "has_status_monitor",
+      "label": "Monitor de Estado Lateral",
+      "type": "bool",
+      "default": true,
+      "group": "Detalles"
+    }
+  ],
+  "presets": [
+    {
+      "id": "clinical_stasis",
+      "label": "Criostasis Activa",
+      "values": {
+        "pod_state": "occupied",
+        "door_open_angle": 0.0,
+        "frost_level": 0.45,
+        "has_cryo_pipes": true
+      }
+    },
+    {
+      "id": "emergency_evac",
+      "label": "Evacuación de Emergencia",
+      "values": {
+        "pod_state": "empty",
+        "door_open_angle": 50.0,
+        "frost_level": 0.15,
+        "has_cryo_pipes": true
+      }
+    },
+    {
+      "id": "offline_containment",
+      "label": "Fallo de Contención",
+      "values": {
+        "pod_state": "offline",
+        "door_open_angle": 0.0,
+        "frost_level": 0.9,
+        "has_cryo_pipes": true
+      }
+    }
+  ],
+  "export_capabilities": {
+    "supports_collision": true,
+    "default_collision_suffix": "-convcolonly"
+  }
+}

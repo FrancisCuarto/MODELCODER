@@ -78,6 +78,142 @@
     "config_code": "from dataclasses import dataclass\nfrom ...core.base_config import BaseAssetConfig\n\n@dataclass\nclass AccessCardConfig(BaseAssetConfig):\n    width: float = 0.085\n    height: float = 0.055\n    thickness: float = 0.004\n    chip_size: float = 0.015\n    palette_name: str = \"industrial_hazard\"\n"
   },
   {
+    "id": "below_nominal.architecture.airlock_chamber",
+    "family": "airlock_chamber",
+    "name": "Módulo de Esclusa de Aire",
+    "version": "1.0.0",
+    "description": "Módulo arquitectónico completo de esclusa de descompresión con compuertas estancas en ambos extremos, suelo de rejilla industrial, panel de ciclo de vacío y pasamanos EVA. Podés configurar longitud, apertura de puertas interior y exterior en GLB.",
+    "category": "architecture",
+    "tags": [
+      "psx",
+      "low-poly",
+      "airlock",
+      "architecture",
+      "modular",
+      "below-nominal"
+    ],
+    "author": {
+      "name": "ModelCoder Core Team",
+      "github": "FrancisCuarto"
+    },
+    "license": "CC-BY-4.0",
+    "compatibility": {},
+    "parameters": [
+      {
+        "key": "chamber_length",
+        "label": "Longitud Cámara (m)",
+        "type": "float",
+        "default": 3.2,
+        "group": "Dimensiones",
+        "min": 2.2,
+        "max": 4.5,
+        "step": 0.1
+      },
+      {
+        "key": "chamber_width",
+        "label": "Ancho Cámara (m)",
+        "type": "float",
+        "default": 2.4,
+        "group": "Dimensiones",
+        "min": 2.0,
+        "max": 3.2,
+        "step": 0.1
+      },
+      {
+        "key": "chamber_height",
+        "label": "Altura Cámara (m)",
+        "type": "float",
+        "default": 2.4,
+        "group": "Dimensiones",
+        "min": 2.2,
+        "max": 3.0,
+        "step": 0.1
+      },
+      {
+        "key": "inner_door_open",
+        "label": "Apertura Puerta Interior",
+        "type": "float",
+        "default": 0.0,
+        "group": "Mecanismo",
+        "min": 0.0,
+        "max": 1.0,
+        "step": 0.05
+      },
+      {
+        "key": "outer_door_open",
+        "label": "Apertura Puerta Exterior (EVA)",
+        "type": "float",
+        "default": 0.0,
+        "group": "Mecanismo",
+        "min": 0.0,
+        "max": 1.0,
+        "step": 0.05
+      },
+      {
+        "key": "has_floor_grate",
+        "label": "Suelo de Rejilla Metálica",
+        "type": "bool",
+        "default": true,
+        "group": "Estructura"
+      },
+      {
+        "key": "has_depressurize_vents",
+        "label": "Rejillas de Despresurización",
+        "type": "bool",
+        "default": true,
+        "group": "Detalles"
+      },
+      {
+        "key": "has_eva_grab_bars",
+        "label": "Pasamanos EVA Amarillos",
+        "type": "bool",
+        "default": true,
+        "group": "Seguridad"
+      }
+    ],
+    "presets": [
+      {
+        "id": "sealed_chamber",
+        "name": "sealed_chamber",
+        "values": {
+          "inner_door_open": 0.0,
+          "outer_door_open": 0.0,
+          "has_floor_grate": true,
+          "has_depressurize_vents": true
+        }
+      },
+      {
+        "id": "eva_egress",
+        "name": "eva_egress",
+        "values": {
+          "inner_door_open": 0.0,
+          "outer_door_open": 0.85,
+          "has_floor_grate": true,
+          "has_depressurize_vents": true
+        }
+      },
+      {
+        "id": "decompression_alert",
+        "name": "decompression_alert",
+        "values": {
+          "inner_door_open": 0.25,
+          "outer_door_open": 0.5,
+          "has_floor_grate": true,
+          "has_depressurize_vents": true
+        }
+      }
+    ],
+    "export_capabilities": {
+      "supports_collision": true,
+      "default_collision_suffix": "-convcolonly"
+    },
+    "has_model": true,
+    "model_url": "/models/airlock_chamber.glb",
+    "file_size_bytes": 115036,
+    "source_code": "import math\nimport mathutils\nimport bpy\nimport bmesh\nfrom ...core.base_generator import BaseAssetGenerator\nfrom ...core.mesh_builder import MeshBuilder\nfrom ...core.texture_atlas import PS1TextureAtlas\nfrom .config import AirlockChamberConfig\n\nclass AirlockChamberGenerator(BaseAssetGenerator[AirlockChamberConfig]):\n    \"\"\"\n    Procedural generator for Airlock Chamber:\n    Modular decompression transition vault with dual heavy sliding bulkhead doors,\n    floor grate, vacuum cycle vents, and EVA emergency grab bars.\n    \"\"\"\n\n    def generate(self, config: AirlockChamberConfig = None) -> bpy.types.Object:\n        if config is not None:\n            self.config = config\n        self.clean_context()\n        self.material_manager = self.get_material_manager(self.config)\n        MeshBuilder.set_active_material_manager(self.material_manager)\n\n        obj, bm = self.create_mesh_object(self.config.name)\n        self.material_manager.assign_to_mesh(obj)\n        m_idx = self.material_manager.material_indices\n\n        uv_layer = MeshBuilder.get_or_create_uv_layer(bm)\n        col_layer = MeshBuilder.get_or_create_color_layer(bm)\n\n        L = self.config.chamber_length\n        W = self.config.chamber_width\n        H = self.config.chamber_height\n\n        casing_mat = m_idx.get(\"casing\", 0)\n        metal_mat = m_idx.get(\"dark_metal\", m_idx.get(\"casing\", 0))\n        glass_mat = m_idx.get(\"glass\", m_idx.get(\"casing\", 0))\n        screen_mat = m_idx.get(\"screen\", m_idx.get(\"casing\", 0))\n\n        casing_rgba = self.material_manager.get_rgba(\"casing\")\n        metal_rgba = self.material_manager.get_rgba(\"dark_metal\")\n        glass_rgba = (0.35, 0.65, 0.75, 0.85)\n\n        wall_t = 0.15\n        floor_h = 0.12\n\n        # 1. Structural base and floor\n        MeshBuilder.add_box(\n            bm,\n            size=(W, L, floor_h),\n            offset=(0.0, 0.0, floor_h / 2.0),\n            mat_idx=metal_mat,\n            rgba=metal_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n        )\n\n        # Walking floor grating\n        if self.config.has_floor_grate:\n            MeshBuilder.add_box(\n                bm,\n                size=(W * 0.65, L * 0.88, 0.02),\n                offset=(0.0, 0.0, floor_h + 0.01),\n                mat_idx=metal_mat,\n                rgba=(0.25, 0.25, 0.28, 1.0),\n                uv_rect=PS1TextureAtlas.get_rect(\"vent_grill\")\n            )\n\n        # 2. Side Walls\n        wall_h = H - floor_h - 0.15\n        wall_z = floor_h + wall_h / 2.0\n        for sx in (-1, 1):\n            MeshBuilder.add_box(\n                bm,\n                size=(wall_t, L, wall_h),\n                offset=(sx * (W / 2.0 - wall_t / 2.0), 0.0, wall_z),\n                mat_idx=casing_mat,\n                rgba=casing_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"painted_metal_white\")\n            )\n\n        # 3. Ceiling roof slab\n        roof_h = 0.15\n        MeshBuilder.add_box(\n            bm,\n            size=(W, L, roof_h),\n            offset=(0.0, 0.0, H - roof_h / 2.0),\n            mat_idx=metal_mat,\n            rgba=metal_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n        )\n\n        # Ceiling fluorescent fixture\n        MeshBuilder.add_box(\n            bm,\n            size=(0.4, L * 0.7, 0.06),\n            offset=(0.0, 0.0, H - roof_h - 0.03),\n            mat_idx=screen_mat,\n            rgba=(0.95, 0.95, 0.85, 1.0),\n            uv_rect=PS1TextureAtlas.get_rect(\"fluorescent_lit\")\n        )\n\n        # 4. Front & Rear Portal Bulkhead Frames\n        portal_w = W * 0.7\n        portal_h = H * 0.78\n        door_w = portal_w * 0.48\n        door_h = portal_h * 0.98\n        door_t = 0.08\n\n        for end_idx, sy in enumerate((-1, 1)):\n            portal_y = sy * (L / 2.0 - wall_t / 2.0)\n            \n            # Left & right frame jambs\n            jamb_w = (W - portal_w) / 2.0\n            for sx in (-1, 1):\n                MeshBuilder.add_box(\n                    bm,\n                    size=(jamb_w, wall_t, portal_h),\n                    offset=(sx * (W / 2.0 - jamb_w / 2.0), portal_y, floor_h + portal_h / 2.0),\n                    mat_idx=metal_mat,\n                    rgba=metal_rgba,\n                    uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n                )\n\n            # Header lintel with hazard chevrons\n            lintel_h = (H - floor_h - portal_h)\n            MeshBuilder.add_box(\n                bm,\n                size=(portal_w, wall_t, lintel_h),\n                offset=(0.0, portal_y, floor_h + portal_h + lintel_h / 2.0),\n                mat_idx=screen_mat,\n                rgba=(0.95, 0.8, 0.1, 1.0),\n                uv_rect=PS1TextureAtlas.get_rect(\"hazard_stripes\")\n            )\n\n            # Sliding Door Panels (2 split leaves per portal)\n            fraction_open = self.config.inner_door_open if sy < 0 else self.config.outer_door_open\n            slide_offset = fraction_open * (door_w * 0.85)\n\n            for leaf_dir in (-1, 1):\n                leaf_x = leaf_dir * (door_w / 2.0 + slide_offset)\n                MeshBuilder.add_box(\n                    bm,\n                    size=(door_w, door_t, door_h),\n                    offset=(leaf_x, portal_y, floor_h + door_h / 2.0),\n                    mat_idx=metal_mat,\n                    rgba=(0.4, 0.42, 0.45, 1.0),\n                    uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n                )\n\n                # Reinforced circular porthole inspection glass on each leaf\n                porthole_rad = 0.14\n                porthole_z = floor_h + door_h * 0.65\n                MeshBuilder.add_cylinder(\n                    bm,\n                    radius=porthole_rad,\n                    depth=door_t + 0.01,\n                    segments=8,\n                    offset=(leaf_x, portal_y, porthole_z),\n                    axis='Y',\n                    mat_idx=glass_mat,\n                    rgba=glass_rgba,\n                    uv_rect=PS1TextureAtlas.get_rect(\"glass_reinforced\")\n                )\n\n        # 5. Side wall atmospheric vent grills\n        if self.config.has_depressurize_vents:\n            for sx in (-1, 1):\n                MeshBuilder.add_box(\n                    bm,\n                    size=(0.02, L * 0.45, 0.35),\n                    offset=(sx * (W / 2.0 - wall_t - 0.01), 0.0, wall_z + 0.25),\n                    mat_idx=metal_mat,\n                    rgba=(0.2, 0.2, 0.22, 1.0),\n                    uv_rect=PS1TextureAtlas.get_rect(\"vent_grill\")\n                )\n\n        # 6. EVA yellow grab bars along walls\n        if self.config.has_eva_grab_bars:\n            bar_z = floor_h + 1.05\n            for sx in (-1, 1):\n                MeshBuilder.add_cylinder(\n                    bm,\n                    radius=0.022,\n                    depth=L * 0.75,\n                    segments=6,\n                    offset=(sx * (W / 2.0 - wall_t - 0.06), 0.0, bar_z),\n                    axis='Y',\n                    mat_idx=screen_mat,\n                    rgba=(0.95, 0.8, 0.1, 1.0),\n                    uv_rect=PS1TextureAtlas.get_rect(\"button_yellow\")\n                )\n\n        self.finalize_mesh(obj, bm)\n        self.compact_materials(obj)\n        return obj\n",
+    "config_code": "from dataclasses import dataclass\nfrom ...core.base_config import BaseAssetConfig\n\n@dataclass\nclass AirlockChamberConfig(BaseAssetConfig):\n    \"\"\"Configuration for Airlock Chamber modular decompression transition room.\"\"\"\n    chamber_length: float = 3.2\n    chamber_width: float = 2.4\n    chamber_height: float = 2.4\n    inner_door_open: float = 0.0       # 0.0 to 1.0 fraction open\n    outer_door_open: float = 0.0       # 0.0 to 1.0 fraction open\n    has_floor_grate: bool = True\n    has_depressurize_vents: bool = True\n    has_eva_grab_bars: bool = True\n\n    name: str = \"airlock_chamber\"\n    palette_name: str = \"industrial_hazard\"\n    wear_level: float = 0.4\n    target_tri_budget: int = 1400\n"
+  },
+  {
     "id": "below_nominal.medical.autopsy_table",
     "family": "autopsy_table",
     "name": "Mesa Quirúrgica y Autopsia",
@@ -1565,6 +1701,135 @@
     "config_code": "from dataclasses import dataclass\nfrom ...core.base_config import BaseAssetConfig\n\n@dataclass\nclass ChemicalCabinetConfig(BaseAssetConfig):\n    \"\"\"Configuration for toxic chemical storage, medicine display cases, and specimen cabinets.\"\"\"\n    cabinet_type: str = \"tall_two_door\"     # \"tall_two_door\", \"low_counter_top\", \"wall_hanging\"\n    width: float = 0.90                     # Overall cabinet width in meters\n    height: float = 1.80                    # Overall cabinet height in meters\n    depth: float = 0.45                     # Overall cabinet depth in meters\n    glass_type: str = \"wired_mesh\"          # \"wired_mesh\", \"frosted_hazard\", \"missing_broken\"\n    door_state: str = \"both_closed\"         # \"both_closed\", \"left_open\", \"right_ajar\"\n    has_padlock: bool = True                # Heavy hasp with hanging padlock\n    shelf_item_density: float = 0.70        # Reagent bottle and specimen canister clutter (0.0 to 1.0)\n    palette_name: str = \"industrial_hazard\"\n    target_tri_budget: int = 450\n"
   },
   {
+    "id": "below_nominal.infrastructure.consciousness_archive",
+    "family": "consciousness_archive",
+    "name": "Módulo Archivo de Conciencia",
+    "version": "1.0.0",
+    "description": "Banco de racks industriales para archivo y preservación de cartuchos de memoria neural con refrigeración líquida. Podés configurar la cantidad de filas de bahías, densidad de cartuchos insertados y cableado diegético en GLB.",
+    "category": "infrastructure",
+    "tags": [
+      "psx",
+      "low-poly",
+      "archive",
+      "memory",
+      "datacenter",
+      "below-nominal"
+    ],
+    "author": {
+      "name": "ModelCoder Core Team",
+      "github": "FrancisCuarto"
+    },
+    "license": "CC-BY-4.0",
+    "compatibility": {},
+    "parameters": [
+      {
+        "key": "height",
+        "label": "Altura (m)",
+        "type": "float",
+        "default": 2.0,
+        "group": "Dimensiones",
+        "min": 1.6,
+        "max": 2.4,
+        "step": 0.05
+      },
+      {
+        "key": "width",
+        "label": "Ancho (m)",
+        "type": "float",
+        "default": 1.0,
+        "group": "Dimensiones",
+        "min": 0.8,
+        "max": 1.5,
+        "step": 0.05
+      },
+      {
+        "key": "depth",
+        "label": "Profundidad (m)",
+        "type": "float",
+        "default": 0.7,
+        "group": "Dimensiones",
+        "min": 0.5,
+        "max": 1.0,
+        "step": 0.05
+      },
+      {
+        "key": "bay_rows",
+        "label": "Filas de Bahías",
+        "type": "int",
+        "default": 4,
+        "group": "Estructura",
+        "min": 2.0,
+        "max": 6.0,
+        "step": 1.0
+      },
+      {
+        "key": "cartridge_density",
+        "label": "Densidad de Cartuchos",
+        "type": "float",
+        "default": 0.75,
+        "group": "Estado",
+        "min": 0.0,
+        "max": 1.0,
+        "step": 0.05
+      },
+      {
+        "key": "has_cooling_vent",
+        "label": "Rejilla de Enfriamiento",
+        "type": "bool",
+        "default": true,
+        "group": "Detalles"
+      },
+      {
+        "key": "has_conduit_harness",
+        "label": "Arnés de Cables Lateral",
+        "type": "bool",
+        "default": true,
+        "group": "Detalles"
+      }
+    ],
+    "presets": [
+      {
+        "id": "stable_archive",
+        "name": "stable_archive",
+        "values": {
+          "bay_rows": 4,
+          "cartridge_density": 0.85,
+          "has_cooling_vent": true,
+          "has_conduit_harness": true
+        }
+      },
+      {
+        "id": "partial_purge",
+        "name": "partial_purge",
+        "values": {
+          "bay_rows": 4,
+          "cartridge_density": 0.35,
+          "has_cooling_vent": true,
+          "has_conduit_harness": true
+        }
+      },
+      {
+        "id": "derelict_bank",
+        "name": "derelict_bank",
+        "values": {
+          "bay_rows": 3,
+          "cartridge_density": 0.5,
+          "has_cooling_vent": false,
+          "has_conduit_harness": true
+        }
+      }
+    ],
+    "export_capabilities": {
+      "supports_collision": true,
+      "default_collision_suffix": "-convcolonly"
+    },
+    "has_model": true,
+    "model_url": "/models/consciousness_archive.glb",
+    "file_size_bytes": 144920,
+    "source_code": "import math\nimport hashlib\nimport bpy\nimport bmesh\nfrom ...core.base_generator import BaseAssetGenerator\nfrom ...core.mesh_builder import MeshBuilder\nfrom ...core.texture_atlas import PS1TextureAtlas\nfrom .config import ConsciousnessArchiveConfig\n\nclass ConsciousnessArchiveGenerator(BaseAssetGenerator[ConsciousnessArchiveConfig]):\n    \"\"\"\n    Procedural generator for Consciousness Archive:\n    Industrial bank of memory cartridge bays with coolant piping, status LEDs,\n    and modular memory cassettes storing human neural telemetry.\n    \"\"\"\n\n    def generate(self, config: ConsciousnessArchiveConfig = None) -> bpy.types.Object:\n        if config is not None:\n            self.config = config\n        self.clean_context()\n        self.material_manager = self.get_material_manager(self.config)\n        MeshBuilder.set_active_material_manager(self.material_manager)\n\n        obj, bm = self.create_mesh_object(self.config.name)\n        self.material_manager.assign_to_mesh(obj)\n        m_idx = self.material_manager.material_indices\n\n        w = self.config.width\n        d = self.config.depth\n        h = self.config.height\n\n        casing_mat = m_idx.get(\"casing\", 0)\n        metal_mat = m_idx.get(\"dark_metal\", m_idx.get(\"casing\", 0))\n        brass_mat = m_idx.get(\"brass\", m_idx.get(\"casing\", 0))\n        screen_mat = m_idx.get(\"screen\", m_idx.get(\"casing\", 0))\n\n        casing_rgba = self.material_manager.get_rgba(\"casing\")\n        metal_rgba = self.material_manager.get_rgba(\"dark_metal\")\n        brass_rgba = (0.85, 0.65, 0.18, 1.0)\n\n        # 1. Outer heavy rack chassis\n        wall_t = 0.08\n        base_h = 0.12\n        top_h = 0.18\n\n        # Base plinth\n        MeshBuilder.add_box(\n            bm,\n            size=(w, d, base_h),\n            offset=(0.0, 0.0, base_h / 2.0),\n            mat_idx=metal_mat,\n            rgba=metal_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n        )\n\n        # Side upright posts\n        shelf_h = h - base_h - top_h\n        shelf_center_z = base_h + shelf_h / 2.0\n        for sx in (-1, 1):\n            MeshBuilder.add_box(\n                bm,\n                size=(wall_t, d, shelf_h),\n                offset=(sx * (w / 2.0 - wall_t / 2.0), 0.0, shelf_center_z),\n                mat_idx=casing_mat,\n                rgba=casing_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n            )\n\n        # Back closure panel\n        MeshBuilder.add_box(\n            bm,\n            size=(w - 2.0 * wall_t, wall_t, shelf_h),\n            offset=(0.0, -d / 2.0 + wall_t / 2.0, shelf_center_z),\n            mat_idx=metal_mat,\n            rgba=metal_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"painted_metal_white\")\n        )\n\n        # Top exhaust / coolant manifold\n        MeshBuilder.add_box(\n            bm,\n            size=(w, d, top_h),\n            offset=(0.0, 0.0, h - top_h / 2.0),\n            mat_idx=casing_mat,\n            rgba=casing_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n        )\n\n        if self.config.has_cooling_vent:\n            # Vent grill on top manifold face\n            MeshBuilder.add_box(\n                bm,\n                size=(w * 0.75, 0.02, top_h * 0.7),\n                offset=(0.0, d / 2.0 + 0.005, h - top_h / 2.0),\n                mat_idx=metal_mat,\n                rgba=(0.15, 0.15, 0.18, 1.0),\n                uv_rect=PS1TextureAtlas.get_rect(\"vent_grill\")\n            )\n\n        # 2. Horizontal shelf dividers and memory cartridge bays\n        rows = max(2, min(6, int(self.config.bay_rows)))\n        row_span = shelf_h / float(rows)\n        slots_per_row = 4\n        slot_w = (w - 2.0 * wall_t - 0.05) / float(slots_per_row)\n\n        for r in range(rows):\n            shelf_z = base_h + r * row_span\n            # Shelf divider plate\n            MeshBuilder.add_box(\n                bm,\n                size=(w - 2.0 * wall_t, d - wall_t, 0.03),\n                offset=(0.0, 0.0, shelf_z + 0.015),\n                mat_idx=metal_mat,\n                rgba=metal_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"metal_light_brushed\")\n            )\n\n            # Cartridge bays in this row\n            bay_center_z = shelf_z + row_span / 2.0\n            for s in range(slots_per_row):\n                # Deterministic check if slot is filled\n                slot_key = f\"{self.config.seed}_{r}_{s}\"\n                h_val = int(hashlib.md5(slot_key.encode()).hexdigest()[:4], 16) / 65535.0\n                is_filled = h_val <= self.config.cartridge_density\n\n                slot_x = -(w / 2.0 - wall_t - 0.025) + s * slot_w + slot_w / 2.0\n\n                if is_filled:\n                    # Cartridge body protruding slightly from bay\n                    c_len = d * 0.8\n                    MeshBuilder.add_box(\n                        bm,\n                        size=(slot_w * 0.78, c_len, row_span * 0.65),\n                        offset=(slot_x, 0.05, bay_center_z),\n                        mat_idx=metal_mat,\n                        rgba=(0.25, 0.28, 0.32, 1.0),\n                        uv_rect=PS1TextureAtlas.get_rect(\"beige_plastic_worn\")\n                    )\n\n                    # Front gold/amber connector handle and status LED\n                    MeshBuilder.add_box(\n                        bm,\n                        size=(slot_w * 0.5, 0.04, row_span * 0.25),\n                        offset=(slot_x, d / 2.0 + 0.02, bay_center_z),\n                        mat_idx=brass_mat,\n                        rgba=brass_rgba,\n                        uv_rect=PS1TextureAtlas.get_rect(\"cartridge_amber\")\n                    )\n\n                    # Status LED (green or amber depending on slot hash)\n                    led_rect = PS1TextureAtlas.get_rect(\"led_green\" if (h_val % 0.3 < 0.2) else \"led_yellow\")\n                    MeshBuilder.add_box(\n                        bm,\n                        size=(0.02, 0.01, 0.02),\n                        offset=(slot_x + slot_w * 0.25, d / 2.0 + 0.015, bay_center_z + row_span * 0.2),\n                        mat_idx=screen_mat,\n                        rgba=(0.2, 0.9, 0.2, 1.0),\n                        uv_rect=led_rect\n                    )\n                else:\n                    # Empty bay guide rails\n                    MeshBuilder.add_box(\n                        bm,\n                        size=(slot_w * 0.85, 0.04, 0.02),\n                        offset=(slot_x, d / 2.0 - 0.04, bay_center_z - row_span * 0.3),\n                        mat_idx=metal_mat,\n                        rgba=(0.1, 0.1, 0.12, 1.0),\n                        uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n                    )\n\n        # 3. Conduit wiring harness running along one side\n        if self.config.has_conduit_harness:\n            harness_x = w / 2.0 + 0.03\n            MeshBuilder.add_cylinder(\n                bm,\n                radius=0.03,\n                depth=shelf_h * 0.95,\n                segments=6,\n                offset=(harness_x, 0.0, shelf_center_z),\n                axis='Z',\n                mat_idx=metal_mat,\n                rgba=(0.1, 0.1, 0.1, 1.0),\n                uv_rect=PS1TextureAtlas.get_rect(\"rubber_black\")\n            )\n            # Mounting brackets\n            for bz in (base_h + shelf_h * 0.25, base_h + shelf_h * 0.75):\n                MeshBuilder.add_box(\n                    bm,\n                    size=(0.06, 0.08, 0.04),\n                    offset=(w / 2.0, 0.0, bz),\n                    mat_idx=metal_mat,\n                    rgba=metal_rgba,\n                    uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n                )\n\n        self.finalize_mesh(obj, bm)\n        self.compact_materials(obj)\n        return obj\n",
+    "config_code": "from dataclasses import dataclass\nfrom ...core.base_config import BaseAssetConfig\n\n@dataclass\nclass ConsciousnessArchiveConfig(BaseAssetConfig):\n    \"\"\"Configuration for Consciousness Archive memory cartridge bank.\"\"\"\n    height: float = 2.0\n    width: float = 1.0\n    depth: float = 0.7\n    bay_rows: int = 4              # 2 to 6 rows of cartridge shelves\n    cartridge_density: float = 0.75 # 0.0 to 1.0 ratio of slots filled\n    has_cooling_vent: bool = True\n    has_conduit_harness: bool = True\n\n    name: str = \"consciousness_archive\"\n    palette_name: str = \"command_bridge\"\n    wear_level: float = 0.4\n    target_tri_budget: int = 900\n"
+  },
+  {
     "id": "below_nominal.medical.crash_cart",
     "family": "crash_cart",
     "name": "Carro de Paro / Emergencia Médica",
@@ -2336,6 +2601,156 @@
     "file_size_bytes": 108908,
     "source_code": "import math\nimport mathutils\nimport bmesh\nimport bpy\n\nfrom ...core.base_generator import BaseAssetGenerator, ValidationReport\nfrom ...core.mesh_builder import MeshBuilder\nfrom ...core.materials import MaterialManager\nfrom .config import CrewBedConfig\n\nclass CrewBedGenerator(BaseAssetGenerator):\n    \"\"\"Procedural generator for PSX-style station beds, cots, and infirmary gurneys.\"\"\"\n\n    def generate(self, config: CrewBedConfig) -> bpy.types.Object:\n        mesh = bpy.data.meshes.new(name=f\"{config.name}_mesh\")\n        obj = bpy.data.objects.new(name=config.name, object_data=mesh)\n        bpy.context.collection.objects.link(obj)\n\n        mat_mgr = self.get_material_manager(config)\n        mat_mgr.assign_to_mesh(obj)\n\n        bm = bmesh.new()\n        color_layer = bm.loops.layers.color.new(\"Col\")\n        uv_layer = bm.loops.layers.uv.new(\"UVMap\")\n\n        w = config.width\n        l = config.length\n        h = config.height\n        half_w = w * 0.5\n        half_l = l * 0.5\n\n        # Materials\n        m_frame = mat_mgr.get_index(\"wall_support_beam\")\n        r_frame = mat_mgr.get_rect(\"metal_light_brushed\")\n\n        m_dark = mat_mgr.get_index(\"wall_bulkhead\")\n        r_dark = mat_mgr.get_rect(\"metal_dark_grime\")\n\n        m_mattress = mat_mgr.get_index(\"mat_casing\")\n        r_mattress = mat_mgr.get_rect(\"beige_plastic_worn\")\n\n        # Blanket color\n        if config.blanket_color == \"medical_blue\":\n            m_blanket = mat_mgr.get_index(\"chemical_barrel_blue\")\n            r_blanket = mat_mgr.get_rect(\"button_blue\")\n            blanket_rgba = (0.15, 0.35, 0.55, 1.0)\n        elif config.blanket_color == \"emergency_orange\":\n            m_blanket = mat_mgr.get_index(\"hazard_yellow\")\n            r_blanket = mat_mgr.get_rect(\"hazard_stripes\")\n            blanket_rgba = (0.85, 0.55, 0.10, 1.0)\n        elif config.blanket_color == \"brown_wool\":\n            m_blanket = mat_mgr.get_index(\"chair_vinyl\")\n            r_blanket = mat_mgr.get_rect(\"chair_vinyl_dark\")\n            blanket_rgba = (0.28, 0.22, 0.18, 1.0)\n        else: # station_gray\n            m_blanket = mat_mgr.get_index(\"locker_gray\")\n            r_blanket = mat_mgr.get_rect(\"metal_dark_grime\")\n            blanket_rgba = (0.35, 0.37, 0.40, 1.0)\n\n        m_pillow = mat_mgr.get_index(\"button_gray\")\n        r_pillow = mat_mgr.get_rect(\"beige_plastic_worn\")\n\n        m_stain = mat_mgr.get_index(\"rust_patch\")\n        r_stain = mat_mgr.get_rect(\"rust_heavy\")\n\n        m_rubber = mat_mgr.get_index(\"rubber_tire\")\n        r_rubber = mat_mgr.get_rect(\"rubber_black\")\n\n        frame_h = h * 0.55\n        mattress_thick = 0.16\n\n        # -------------------------------------------------------------\n        # 1. BED FRAME & LEGS\n        # -------------------------------------------------------------\n        if config.bed_type == \"enclosed_pod\":\n            # Solid boxy bulkhead pod frame with headboard and footboard\n            MeshBuilder.add_box(\n                bm,\n                size=mathutils.Vector((w + 0.08, l + 0.12, frame_h)),\n                offset=mathutils.Vector((0.0, 0.0, frame_h * 0.5)),\n                mat_idx=m_dark,\n                uv_layer=uv_layer,\n                uv_rect=r_dark,\n                color_layer=color_layer,\n                rgba=(0.22, 0.24, 0.26, 1.0)\n            )\n            # Tall Headboard\n            MeshBuilder.add_box(\n                bm,\n                size=mathutils.Vector((w + 0.08, 0.12, h + 0.35)),\n                offset=mathutils.Vector((0.0, half_l + 0.06, (h + 0.35) * 0.5)),\n                mat_idx=m_frame,\n                uv_layer=uv_layer,\n                uv_rect=r_frame,\n                color_layer=color_layer,\n                rgba=(0.32, 0.35, 0.38, 1.0)\n            )\n            # Footboard\n            MeshBuilder.add_box(\n                bm,\n                size=mathutils.Vector((w + 0.08, 0.08, h + 0.10)),\n                offset=mathutils.Vector((0.0, -half_l - 0.04, (h + 0.10) * 0.5)),\n                mat_idx=m_frame,\n                uv_layer=uv_layer,\n                uv_rect=r_frame,\n                color_layer=color_layer\n            )\n\n        elif config.bed_type == \"medical_gurney\":\n            # Central pedestal with wheels and scissor struts\n            pedestal_w = w * 0.55\n            pedestal_l = l * 0.70\n            MeshBuilder.add_box(\n                bm,\n                size=mathutils.Vector((pedestal_w, pedestal_l, 0.08)),\n                offset=mathutils.Vector((0.0, 0.0, 0.14)),\n                mat_idx=m_dark,\n                uv_layer=uv_layer,\n                uv_rect=r_dark,\n                color_layer=color_layer\n            )\n            # Hydraulic central column\n            MeshBuilder.add_box(\n                bm,\n                size=mathutils.Vector((0.25, 0.40, frame_h - 0.14)),\n                offset=mathutils.Vector((0.0, 0.0, 0.14 + (frame_h - 0.14) * 0.5)),\n                mat_idx=m_frame,\n                uv_layer=uv_layer,\n                uv_rect=r_frame,\n                color_layer=color_layer\n            )\n            # 4 Caster Wheels\n            wheel_rad = 0.06\n            for cx in [-pedestal_w * 0.42, pedestal_w * 0.42]:\n                for cy in [-pedestal_l * 0.42, pedestal_l * 0.42]:\n                    MeshBuilder.add_cylinder(\n                        bm,\n                        radius=wheel_rad,\n                        depth=0.04,\n                        segments=6,\n                        offset=mathutils.Vector((cx, cy, wheel_rad)),\n                        axis='X',\n                        mat_idx=m_rubber,\n                        uv_layer=uv_layer,\n                        uv_rect=r_rubber,\n                        color_layer=color_layer\n                    )\n            # Mattress pan\n            MeshBuilder.add_box(\n                bm,\n                size=mathutils.Vector((w + 0.04, l + 0.04, 0.06)),\n                offset=mathutils.Vector((0.0, 0.0, frame_h + 0.03)),\n                mat_idx=m_frame,\n                uv_layer=uv_layer,\n                uv_rect=r_frame,\n                color_layer=color_layer\n            )\n\n        else: # crew_cot (tubular steel 4-legged cot)\n            leg_thick = 0.045\n            for lx in [-half_w + 0.03, half_w - 0.03]:\n                for ly in [-half_l + 0.03, half_l - 0.03]:\n                    MeshBuilder.add_box(\n                        bm,\n                        size=mathutils.Vector((leg_thick, leg_thick, frame_h)),\n                        offset=mathutils.Vector((lx, ly, frame_h * 0.5)),\n                        mat_idx=m_frame,\n                        uv_layer=uv_layer,\n                        uv_rect=r_frame,\n                        color_layer=color_layer\n                    )\n            # Longitudinal side rails\n            MeshBuilder.add_box(\n                bm,\n                size=mathutils.Vector((leg_thick, l, 0.06)),\n                offset=mathutils.Vector((-half_w + 0.03, 0.0, frame_h - 0.03)),\n                mat_idx=m_frame,\n                uv_layer=uv_layer,\n                uv_rect=r_frame,\n                color_layer=color_layer\n            )\n            MeshBuilder.add_box(\n                bm,\n                size=mathutils.Vector((leg_thick, l, 0.06)),\n                offset=mathutils.Vector((half_w - 0.03, 0.0, frame_h - 0.03)),\n                mat_idx=m_frame,\n                uv_layer=uv_layer,\n                uv_rect=r_frame,\n                color_layer=color_layer\n            )\n            # Headboard & Footboard arches\n            MeshBuilder.add_box(\n                bm,\n                size=mathutils.Vector((w, leg_thick, 0.35)),\n                offset=mathutils.Vector((0.0, half_l - 0.03, frame_h + 0.14)),\n                mat_idx=m_frame,\n                uv_layer=uv_layer,\n                uv_rect=r_frame,\n                color_layer=color_layer\n            )\n            MeshBuilder.add_box(\n                bm,\n                size=mathutils.Vector((w, leg_thick, 0.20)),\n                offset=mathutils.Vector((0.0, -half_l + 0.03, frame_h + 0.08)),\n                mat_idx=m_frame,\n                uv_layer=uv_layer,\n                uv_rect=r_frame,\n                color_layer=color_layer\n            )\n\n        # Under-bed drawers\n        if config.has_under_drawers and config.bed_type != \"medical_gurney\":\n            drw_w = w * 0.82\n            drw_l = l * 0.38\n            drw_h = frame_h * 0.70\n            for dy in [-l * 0.22, l * 0.22]:\n                MeshBuilder.add_box(\n                    bm,\n                    size=mathutils.Vector((drw_w, drw_l, drw_h)),\n                    offset=mathutils.Vector((0.0, dy, drw_h * 0.5 + 0.02)),\n                    mat_idx=m_dark,\n                    uv_layer=uv_layer,\n                    uv_rect=r_dark,\n                    color_layer=color_layer,\n                    rgba=(0.28, 0.30, 0.32, 1.0)\n                )\n                # Recessed handle lip\n                MeshBuilder.add_box(\n                    bm,\n                    size=mathutils.Vector((0.02, 0.20, 0.04)),\n                    offset=mathutils.Vector((-drw_w * 0.5 - 0.01, dy, drw_h * 0.65)),\n                    mat_idx=m_frame,\n                    uv_layer=uv_layer,\n                    uv_rect=r_frame,\n                    color_layer=color_layer\n                )\n\n        # -------------------------------------------------------------\n        # 2. MATTRESS\n        # -------------------------------------------------------------\n        mat_z = frame_h + mattress_thick * 0.5\n        if config.headrest_incline > 1.0:\n            # Split mattress: lower 2/3 flat, upper 1/3 inclined\n            flat_l = l * 0.65\n            head_l = l * 0.35\n            # Flat part\n            MeshBuilder.add_box(\n                bm,\n                size=mathutils.Vector((w * 0.94, flat_l, mattress_thick)),\n                offset=mathutils.Vector((0.0, -half_l + flat_l * 0.5, mat_z)),\n                mat_idx=m_mattress,\n                uv_layer=uv_layer,\n                uv_rect=r_mattress,\n                color_layer=color_layer,\n                rgba=(0.60, 0.58, 0.52, 1.0)\n            )\n            # Inclined head part\n            inc_rad = math.radians(min(45.0, config.headrest_incline))\n            head_z_lift = math.sin(inc_rad) * (head_l * 0.5)\n            MeshBuilder.add_box(\n                bm,\n                size=mathutils.Vector((w * 0.94, head_l, mattress_thick)),\n                offset=mathutils.Vector((0.0, half_l - head_l * 0.5, mat_z + head_z_lift)),\n                mat_idx=m_mattress,\n                uv_layer=uv_layer,\n                uv_rect=r_mattress,\n                color_layer=color_layer,\n                rgba=(0.60, 0.58, 0.52, 1.0)\n            )\n        else:\n            # Full flat mattress\n            MeshBuilder.add_box(\n                bm,\n                size=mathutils.Vector((w * 0.94, l * 0.96, mattress_thick)),\n                offset=mathutils.Vector((0.0, 0.0, mat_z)),\n                mat_idx=m_mattress,\n                uv_layer=uv_layer,\n                uv_rect=r_mattress,\n                color_layer=color_layer,\n                rgba=(0.60, 0.58, 0.52, 1.0)\n            )\n\n        # -------------------------------------------------------------\n        # 3. BEDDING, BLANKET & PILLOW\n        # -------------------------------------------------------------\n        top_z = frame_h + mattress_thick\n\n        if config.mattress_state == \"made_clean\":\n            # Neatly tucked blanket covering lower 70% of bed\n            b_len = l * 0.72\n            MeshBuilder.add_box(\n                bm,\n                size=mathutils.Vector((w * 0.96, b_len, 0.03)),\n                offset=mathutils.Vector((0.0, -half_l + b_len * 0.5, top_z + 0.015)),\n                mat_idx=m_blanket,\n                uv_layer=uv_layer,\n                uv_rect=r_blanket,\n                color_layer=color_layer,\n                rgba=blanket_rgba\n            )\n            # Folded sheet cuff\n            MeshBuilder.add_box(\n                bm,\n                size=mathutils.Vector((w * 0.96, 0.12, 0.035)),\n                offset=mathutils.Vector((0.0, -half_l + b_len, top_z + 0.017)),\n                mat_idx=m_pillow,\n                uv_layer=uv_layer,\n                uv_rect=r_pillow,\n                color_layer=color_layer,\n                rgba=(0.75, 0.75, 0.72, 1.0)\n            )\n\n        elif config.mattress_state == \"rumpled_disheveled\":\n            # Disordered bunched blanket thrown across the middle\n            b_len = l * 0.50\n            MeshBuilder.add_box(\n                bm,\n                size=mathutils.Vector((w * 0.85, b_len, 0.06)),\n                offset=mathutils.Vector((0.05, -0.15, top_z + 0.03)),\n                mat_idx=m_blanket,\n                uv_layer=uv_layer,\n                uv_rect=r_blanket,\n                color_layer=color_layer,\n                rgba=blanket_rgba\n            )\n            # Second bunched fold\n            MeshBuilder.add_box(\n                bm,\n                size=mathutils.Vector((w * 0.55, 0.35, 0.08)),\n                offset=mathutils.Vector((-0.10, -0.35, top_z + 0.05)),\n                mat_idx=m_blanket,\n                uv_layer=uv_layer,\n                uv_rect=r_blanket,\n                color_layer=color_layer,\n                rgba=blanket_rgba\n            )\n\n        elif config.mattress_state == \"bare_foam_stained\":\n            # Dark grim/blood stain on bare foam\n            MeshBuilder.add_box(\n                bm,\n                size=mathutils.Vector((w * 0.45, 0.65, 0.005)),\n                offset=mathutils.Vector((0.05, 0.10, top_z + 0.002)),\n                mat_idx=m_stain,\n                uv_layer=uv_layer,\n                uv_rect=r_stain,\n                color_layer=color_layer,\n                rgba=(0.45, 0.15, 0.10, 1.0)\n            )\n\n        # Pillow\n        if config.has_pillow:\n            p_len = 0.38\n            p_width = w * 0.75\n            p_thick = 0.09\n            p_y = half_l - p_len * 0.5 - 0.06\n            MeshBuilder.add_box(\n                bm,\n                size=mathutils.Vector((p_width, p_len, p_thick)),\n                offset=mathutils.Vector((0.0, p_y, top_z + p_thick * 0.5)),\n                mat_idx=m_pillow,\n                uv_layer=uv_layer,\n                uv_rect=r_pillow,\n                color_layer=color_layer,\n                rgba=(0.78, 0.78, 0.75, 1.0)\n            )\n\n        # Side Guardrails\n        if config.has_guardrails or config.bed_type == \"medical_gurney\":\n            rail_l = l * 0.65\n            rail_h = 0.22\n            rail_thick = 0.025\n            for rx in [-half_w - 0.015, half_w + 0.015]:\n                # Top rail\n                MeshBuilder.add_box(\n                    bm,\n                    size=mathutils.Vector((rail_thick, rail_l, rail_thick)),\n                    offset=mathutils.Vector((rx, 0.0, top_z + rail_h)),\n                    mat_idx=m_frame,\n                    uv_layer=uv_layer,\n                    uv_rect=r_frame,\n                    color_layer=color_layer\n                )\n                # Vertical uprights\n                for ry in [-rail_l * 0.42, 0.0, rail_l * 0.42]:\n                    MeshBuilder.add_box(\n                        bm,\n                        size=mathutils.Vector((rail_thick, rail_thick, rail_h)),\n                        offset=mathutils.Vector((rx, ry, top_z + rail_h * 0.5)),\n                        mat_idx=m_frame,\n                        uv_layer=uv_layer,\n                        uv_rect=r_frame,\n                        color_layer=color_layer\n                    )\n\n        bm.to_mesh(mesh)\n        bm.free()\n        mesh.update()\n        return obj\n\n    def validate(self, obj: bpy.types.Object, config: CrewBedConfig) -> ValidationReport:\n        return super().validate(obj, config)\n",
     "config_code": "from dataclasses import dataclass\nfrom ...core.base_config import BaseAssetConfig\n\n@dataclass\nclass CrewBedConfig(BaseAssetConfig):\n    \"\"\"Configuration for utilitarian space station crew beds and medical cots.\"\"\"\n    bed_type: str = \"crew_cot\"          # \"crew_cot\", \"medical_gurney\", \"enclosed_pod\"\n    width: float = 1.00                 # Mattress width in meters\n    length: float = 2.05                # Mattress length in meters\n    height: float = 0.65                # Bed height from floor in meters\n    mattress_state: str = \"made_clean\"  # \"made_clean\", \"rumpled_disheveled\", \"bare_foam_stained\"\n    has_pillow: bool = True\n    has_under_drawers: bool = True      # Storage compartments underneath\n    has_guardrails: bool = False        # Safety / turbulence side rails\n    headrest_incline: float = 0.0       # Angle in degrees (0 to 35)\n    blanket_color: str = \"station_gray\" # \"station_gray\", \"medical_blue\", \"emergency_orange\", \"brown_wool\"\n    palette_name: str = \"industrial_hazard\"\n    target_tri_budget: int = 380\n"
+  },
+  {
+    "id": "below_nominal.medical.cryo_stasis_pod",
+    "family": "cryo_stasis_pod",
+    "name": "Cápsula de Criostasis",
+    "version": "1.0.0",
+    "description": "Cápsula vertical de criostasis industrial para preservación de tripulación con visor reforzado, bisagras pesadas y tuberías criogénicas. Podés configurar altura, ángulo de escotilla, nivel de escarcha y estado en GLB.",
+    "category": "medical",
+    "tags": [
+      "psx",
+      "low-poly",
+      "cryo",
+      "stasis",
+      "medical",
+      "below-nominal"
+    ],
+    "author": {
+      "name": "ModelCoder Core Team",
+      "github": "FrancisCuarto"
+    },
+    "license": "CC-BY-4.0",
+    "compatibility": {},
+    "parameters": [
+      {
+        "key": "height",
+        "label": "Altura (m)",
+        "type": "float",
+        "default": 2.1,
+        "group": "Dimensiones",
+        "min": 1.8,
+        "max": 2.5,
+        "step": 0.05
+      },
+      {
+        "key": "width",
+        "label": "Ancho (m)",
+        "type": "float",
+        "default": 0.85,
+        "group": "Dimensiones",
+        "min": 0.7,
+        "max": 1.2,
+        "step": 0.05
+      },
+      {
+        "key": "depth",
+        "label": "Profundidad (m)",
+        "type": "float",
+        "default": 0.85,
+        "group": "Dimensiones",
+        "min": 0.7,
+        "max": 1.2,
+        "step": 0.05
+      },
+      {
+        "key": "door_open_angle",
+        "label": "Apertura Escotilla (°)",
+        "type": "float",
+        "default": 0.0,
+        "group": "Mecanismo",
+        "min": 0.0,
+        "max": 90.0,
+        "step": 5.0
+      },
+      {
+        "key": "frost_level",
+        "label": "Nivel de Escarcha",
+        "type": "float",
+        "default": 0.45,
+        "group": "Estado",
+        "min": 0.0,
+        "max": 1.0,
+        "step": 0.05
+      },
+      {
+        "key": "pod_state",
+        "label": "Estado de Cápsula",
+        "type": "enum",
+        "default": "occupied",
+        "group": "Estado",
+        "options": [
+          {
+            "value": "occupied",
+            "label": "Ocupada (Silueta)"
+          },
+          {
+            "value": "empty",
+            "label": "Vacía"
+          },
+          {
+            "value": "offline",
+            "label": "Sin Energía"
+          }
+        ]
+      },
+      {
+        "key": "has_cryo_pipes",
+        "label": "Tuberías Criogénicas",
+        "type": "bool",
+        "default": true,
+        "group": "Detalles"
+      },
+      {
+        "key": "has_status_monitor",
+        "label": "Monitor de Estado Lateral",
+        "type": "bool",
+        "default": true,
+        "group": "Detalles"
+      }
+    ],
+    "presets": [
+      {
+        "id": "clinical_stasis",
+        "name": "clinical_stasis",
+        "values": {
+          "pod_state": "occupied",
+          "door_open_angle": 0.0,
+          "frost_level": 0.45,
+          "has_cryo_pipes": true
+        }
+      },
+      {
+        "id": "emergency_evac",
+        "name": "emergency_evac",
+        "values": {
+          "pod_state": "empty",
+          "door_open_angle": 50.0,
+          "frost_level": 0.15,
+          "has_cryo_pipes": true
+        }
+      },
+      {
+        "id": "offline_containment",
+        "name": "offline_containment",
+        "values": {
+          "pod_state": "offline",
+          "door_open_angle": 0.0,
+          "frost_level": 0.9,
+          "has_cryo_pipes": true
+        }
+      }
+    ],
+    "export_capabilities": {
+      "supports_collision": true,
+      "default_collision_suffix": "-convcolonly"
+    },
+    "has_model": true,
+    "model_url": "/models/cryo_stasis_pod.glb",
+    "file_size_bytes": 100348,
+    "source_code": "import math\nimport mathutils\nimport bpy\nimport bmesh\nfrom ...core.base_generator import BaseAssetGenerator\nfrom ...core.mesh_builder import MeshBuilder\nfrom ...core.texture_atlas import PS1TextureAtlas\nfrom .config import CryoStasisPodConfig\n\nclass CryoStasisPodGenerator(BaseAssetGenerator[CryoStasisPodConfig]):\n    \"\"\"\n    Procedural generator for Cryo Stasis Pod:\n    Industrial retrofuturistic cryo-preservation chamber with heavy steel hatch,\n    inspection window, cooling conduits, and life support readouts.\n    \"\"\"\n\n    def generate(self, config: CryoStasisPodConfig = None) -> bpy.types.Object:\n        if config is not None:\n            self.config = config\n        self.clean_context()\n        self.material_manager = self.get_material_manager(self.config)\n        MeshBuilder.set_active_material_manager(self.material_manager)\n\n        obj, bm = self.create_mesh_object(self.config.name)\n        self.material_manager.assign_to_mesh(obj)\n        m_idx = self.material_manager.material_indices\n\n        uv_layer = MeshBuilder.get_or_create_uv_layer(bm)\n        col_layer = MeshBuilder.get_or_create_color_layer(bm)\n\n        h = self.config.height\n        w = self.config.width\n        d = self.config.depth\n\n        casing_mat = m_idx.get(\"casing\", 0)\n        metal_mat = m_idx.get(\"dark_metal\", m_idx.get(\"casing\", 0))\n        glass_mat = m_idx.get(\"glass\", m_idx.get(\"casing\", 0))\n        screen_mat = m_idx.get(\"screen\", m_idx.get(\"casing\", 0))\n        pipe_mat = m_idx.get(\"pipe\", m_idx.get(\"casing\", 0))\n        brass_mat = m_idx.get(\"brass\", m_idx.get(\"casing\", 0))\n\n        casing_rgba = self.material_manager.get_rgba(\"casing\")\n        metal_rgba = self.material_manager.get_rgba(\"dark_metal\")\n        glass_rgba = (0.35, 0.65, 0.75, 0.85) if self.config.pod_state != \"offline\" else (0.2, 0.25, 0.25, 0.9)\n        screen_rgba = (0.1, 0.8, 0.3, 1.0) if self.config.pod_state != \"offline\" else (0.05, 0.05, 0.05, 1.0)\n\n        # 1. Base pedestal (heavy octagonal foundation plate)\n        base_h = 0.15\n        MeshBuilder.add_box(\n            bm,\n            size=(w * 1.1, d * 1.1, base_h),\n            offset=(0.0, 0.0, base_h / 2.0),\n            mat_idx=metal_mat,\n            rgba=metal_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n        )\n\n        # 2. Main vertical chamber shell (rear and side enclosure)\n        chamber_h = h - base_h - 0.2\n        chamber_z = base_h + chamber_h / 2.0\n        wall_t = 0.1\n\n        # Rear back wall\n        MeshBuilder.add_box(\n            bm,\n            size=(w, wall_t, chamber_h),\n            offset=(0.0, -d / 2.0 + wall_t / 2.0, chamber_z),\n            mat_idx=casing_mat,\n            rgba=casing_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"painted_metal_white\")\n        )\n\n        # Left and Right walls\n        side_d = d - wall_t\n        for sx in (-1, 1):\n            MeshBuilder.add_box(\n                bm,\n                size=(wall_t, side_d, chamber_h),\n                offset=(sx * (w / 2.0 - wall_t / 2.0), -wall_t / 2.0, chamber_z),\n                mat_idx=casing_mat,\n                rgba=casing_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"painted_metal_white\")\n            )\n\n        # Interior rear padding / stasis cradle\n        MeshBuilder.add_box(\n            bm,\n            size=(w * 0.7, 0.06, chamber_h * 0.88),\n            offset=(0.0, -d / 2.0 + wall_t + 0.03, chamber_z),\n            mat_idx=metal_mat,\n            rgba=(0.18, 0.20, 0.22, 1.0),\n            uv_rect=PS1TextureAtlas.get_rect(\"chair_vinyl_dark\")\n        )\n\n        # Occupant cocoon silhouette (if occupied)\n        if self.config.pod_state == \"occupied\":\n            MeshBuilder.add_box(\n                bm,\n                size=(w * 0.45, d * 0.35, chamber_h * 0.72),\n                offset=(0.0, -0.05, chamber_z - 0.05),\n                mat_idx=metal_mat,\n                rgba=(0.12, 0.15, 0.18, 1.0),\n                uv_rect=PS1TextureAtlas.get_rect(\"rubber_black\")\n            )\n\n        # Top cap manifold\n        cap_h = 0.2\n        cap_z = base_h + chamber_h + cap_h / 2.0\n        MeshBuilder.add_box(\n            bm,\n            size=(w * 1.08, d * 1.08, cap_h),\n            offset=(0.0, 0.0, cap_z),\n            mat_idx=casing_mat,\n            rgba=casing_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n        )\n\n        # Top warning beacon / stasis status ring\n        beacon_rect = PS1TextureAtlas.get_rect(\"oxygen_cyan_glow\") if self.config.pod_state != \"offline\" else PS1TextureAtlas.get_rect(\"crt_screen_off\")\n        MeshBuilder.add_cylinder(\n            bm,\n            radius=w * 0.22,\n            depth=0.08,\n            segments=8,\n            offset=(0.0, 0.0, h + 0.04),\n            axis='Z',\n            mat_idx=screen_mat,\n            rgba=screen_rgba,\n            uv_rect=beacon_rect\n        )\n\n        # 3. Front door hatch with hinge rotation\n        angle_rad = math.radians(self.config.door_open_angle)\n        door_w = w * 0.96\n        door_h = chamber_h * 0.98\n        door_t = 0.09\n        hinge_x = -w / 2.0 + wall_t / 2.0\n        hinge_y = d / 2.0 - door_t / 2.0\n\n        # Construct door frame relative to hinge\n        # When angle == 0, door center is at (0, hinge_y, chamber_z)\n        door_rot = mathutils.Euler((0.0, 0.0, -angle_rad), 'XYZ')\n        \n        # Local vector from hinge to door center\n        local_door_offset = mathutils.Vector((w / 2.0 - wall_t / 2.0, 0.0, 0.0))\n        rotated_door_offset = door_rot.to_matrix() @ local_door_offset\n        door_center = mathutils.Vector((hinge_x, hinge_y, chamber_z)) + rotated_door_offset\n\n        # Door outer body\n        door_geom = bmesh.ops.create_cube(bm, size=1.0)\n        d_verts = [v for v in door_geom[\"verts\"] if isinstance(v, bmesh.types.BMVert)]\n        for v in d_verts:\n            # Scale locally\n            v.co.x *= door_w\n            v.co.y *= door_t\n            v.co.z *= door_h\n            # Rotate around Z by -angle_rad\n            v.co = door_rot.to_matrix() @ v.co\n            # Translate to door center\n            v.co += door_center\n\n        for f in bm.faces:\n            if all(v in d_verts for v in f.verts):\n                MeshBuilder.apply_face_attributes(f, casing_mat, casing_rgba, col_layer)\n                MeshBuilder.apply_box_face_uv(f, uv_layer, PS1TextureAtlas.get_rect(\"painted_metal_white\"))\n\n        # Inspection window on door\n        win_w = door_w * 0.4\n        win_h = door_h * 0.55\n        win_geom = bmesh.ops.create_cube(bm, size=1.0)\n        w_verts = [v for v in win_geom[\"verts\"] if isinstance(v, bmesh.types.BMVert)]\n        for v in w_verts:\n            v.co.x *= win_w\n            v.co.y *= door_t * 1.15\n            v.co.z *= win_h\n            v.co = door_rot.to_matrix() @ v.co\n            v.co += door_center + door_rot.to_matrix() @ mathutils.Vector((0.0, 0.0, chamber_h * 0.08))\n\n        frost_rect = PS1TextureAtlas.get_rect(\"glass_reinforced\") if self.config.frost_level < 0.6 else PS1TextureAtlas.get_rect(\"oxygen_cyan_glow\")\n        for f in bm.faces:\n            if all(v in w_verts for v in f.verts):\n                MeshBuilder.apply_face_attributes(f, glass_mat, glass_rgba, col_layer)\n                MeshBuilder.apply_face_uv_rect(f, uv_layer, frost_rect)\n\n        # 4. Cryo pipes on side\n        if self.config.has_cryo_pipes:\n            pipe_x = w / 2.0 + 0.04\n            MeshBuilder.add_cylinder(\n                bm,\n                radius=0.035,\n                depth=chamber_h * 0.9,\n                segments=6,\n                offset=(pipe_x, -d * 0.15, chamber_z),\n                axis='Z',\n                mat_idx=pipe_mat,\n                rgba=(0.35, 0.40, 0.45, 1.0),\n                uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n            )\n            MeshBuilder.add_cylinder(\n                bm,\n                radius=0.025,\n                depth=chamber_h * 0.85,\n                segments=6,\n                offset=(pipe_x, d * 0.15, chamber_z),\n                axis='Z',\n                mat_idx=brass_mat,\n                rgba=(0.75, 0.65, 0.25, 1.0),\n                uv_rect=PS1TextureAtlas.get_rect(\"cartridge_amber\")\n            )\n\n        # 5. Side status monitor\n        if self.config.has_status_monitor:\n            mon_x = -(w / 2.0 + 0.05)\n            MeshBuilder.add_box(\n                bm,\n                size=(0.08, 0.25, 0.35),\n                offset=(mon_x, 0.0, chamber_z + 0.2),\n                mat_idx=metal_mat,\n                rgba=metal_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n            )\n            # Screen face\n            MeshBuilder.add_box(\n                bm,\n                size=(0.01, 0.20, 0.28),\n                offset=(mon_x - 0.04, 0.0, chamber_z + 0.2),\n                mat_idx=screen_mat,\n                rgba=screen_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"crt_screen_green\")\n            )\n\n        self.finalize_mesh(obj, bm)\n        self.compact_materials(obj)\n        return obj\n",
+    "config_code": "from dataclasses import dataclass\nfrom ...core.base_config import BaseAssetConfig\n\n@dataclass\nclass CryoStasisPodConfig(BaseAssetConfig):\n    \"\"\"Configuration for Cryo Stasis Pod vertical cryo-preservation chamber.\"\"\"\n    height: float = 2.1\n    width: float = 0.85\n    depth: float = 0.85\n    door_open_angle: float = 0.0  # Degrees open (0.0 = sealed, 90.0 = fully open)\n    frost_level: float = 0.45     # 0.0 = clear, 1.0 = heavy cryo frost\n    pod_state: str = \"occupied\"   # \"empty\", \"occupied\", \"offline\"\n    has_cryo_pipes: bool = True\n    has_status_monitor: bool = True\n\n    name: str = \"cryo_stasis_pod\"\n    palette_name: str = \"medbay_clean\"\n    wear_level: float = 0.35\n    target_tri_budget: int = 950\n"
   },
   {
     "id": "below_nominal.architecture.door",
@@ -4926,6 +5341,143 @@
     "config_code": "from dataclasses import dataclass\nfrom ...core.base_config import BaseAssetConfig\n\n@dataclass\nclass MedicalScreenConfig(BaseAssetConfig):\n    \"\"\"Configuration for folding medical privacy screens and quarantine curtain dividers.\"\"\"\n    screen_type: str = \"three_panel\"        # \"three_panel\", \"four_panel\", \"single_partition\"\n    panel_count: int = 3                    # Number of folding panels (1 to 4)\n    fold_angle_deg: float = 30.0            # Accordion zig-zag angle in degrees\n    panel_width: float = 0.60               # Width of each panel in meters\n    panel_height: float = 1.75              # Height from floor in meters\n    caster_wheels: bool = True              # Floor caster wheels on leg posts\n    curtain_damage: str = \"intact\"          # \"intact\", \"torn_hanging\", \"blood_splatter\"\n    palette_name: str = \"industrial_hazard\"\n    target_tri_budget: int = 260\n"
   },
   {
+    "id": "below_nominal.infrastructure.memory_extraction_terminal",
+    "family": "memory_extraction_terminal",
+    "name": "Terminal de Extracción de Memoria",
+    "version": "1.0.0",
+    "description": "Consola de operaciones para lectura y transferencia de cartuchos de memoria neural, con monitor CRT angulado, teclado mecánico y bandeja de inserción de cartucho. Podés configurar tipo de soporte, inclinación, color de pantalla y accesorios en GLB.",
+    "category": "infrastructure",
+    "tags": [
+      "psx",
+      "low-poly",
+      "terminal",
+      "console",
+      "crt",
+      "below-nominal"
+    ],
+    "author": {
+      "name": "ModelCoder Core Team",
+      "github": "FrancisCuarto"
+    },
+    "license": "CC-BY-4.0",
+    "compatibility": {},
+    "parameters": [
+      {
+        "key": "mount_style",
+        "label": "Tipo de Montaje",
+        "type": "enum",
+        "default": "pedestal",
+        "group": "Estructura",
+        "options": [
+          {
+            "value": "pedestal",
+            "label": "Pedestal Industrial de Pie"
+          },
+          {
+            "value": "desktop",
+            "label": "Sobre Mueble / Sobremesa"
+          }
+        ]
+      },
+      {
+        "key": "crt_tilt",
+        "label": "Inclinación Pantalla (°)",
+        "type": "float",
+        "default": 20.0,
+        "group": "Mecanismo",
+        "min": 0.0,
+        "max": 35.0,
+        "step": 5.0
+      },
+      {
+        "key": "screen_color",
+        "label": "Fósforo de Pantalla",
+        "type": "enum",
+        "default": "amber",
+        "group": "Estado",
+        "options": [
+          {
+            "value": "amber",
+            "label": "Ámbar Cálido (CRT)"
+          },
+          {
+            "value": "green",
+            "label": "Verde Fósforo"
+          },
+          {
+            "value": "off",
+            "label": "Apagada / Sin Señal"
+          }
+        ]
+      },
+      {
+        "key": "cartridge_inserted",
+        "label": "Cartucho Insertado",
+        "type": "bool",
+        "default": true,
+        "group": "Estado"
+      },
+      {
+        "key": "has_side_tape_drive",
+        "label": "Unidad de Cinta Lateral",
+        "type": "bool",
+        "default": true,
+        "group": "Detalles"
+      },
+      {
+        "key": "has_rotary_dials",
+        "label": "Diales Potenciómetro",
+        "type": "bool",
+        "default": true,
+        "group": "Detalles"
+      }
+    ],
+    "presets": [
+      {
+        "id": "active_transfer",
+        "name": "active_transfer",
+        "values": {
+          "mount_style": "pedestal",
+          "crt_tilt": 20.0,
+          "screen_color": "amber",
+          "cartridge_inserted": true,
+          "has_side_tape_drive": true
+        }
+      },
+      {
+        "id": "desktop_diagnostic",
+        "name": "desktop_diagnostic",
+        "values": {
+          "mount_style": "desktop",
+          "crt_tilt": 15.0,
+          "screen_color": "green",
+          "cartridge_inserted": false,
+          "has_side_tape_drive": true
+        }
+      },
+      {
+        "id": "system_error",
+        "name": "system_error",
+        "values": {
+          "mount_style": "pedestal",
+          "crt_tilt": 25.0,
+          "screen_color": "off",
+          "cartridge_inserted": true,
+          "has_side_tape_drive": false
+        }
+      }
+    ],
+    "export_capabilities": {
+      "supports_collision": true,
+      "default_collision_suffix": "-convcolonly"
+    },
+    "has_model": true,
+    "model_url": "/models/memory_extraction_terminal.glb",
+    "file_size_bytes": 104320,
+    "source_code": "import math\nimport mathutils\nimport bpy\nimport bmesh\nfrom ...core.base_generator import BaseAssetGenerator\nfrom ...core.mesh_builder import MeshBuilder\nfrom ...core.texture_atlas import PS1TextureAtlas\nfrom .config import MemoryExtractionTerminalConfig\n\nclass MemoryExtractionTerminalGenerator(BaseAssetGenerator[MemoryExtractionTerminalConfig]):\n    \"\"\"\n    Procedural generator for Memory Extraction Terminal:\n    Station operation console with angled CRT, mechanical keyboard, neural cartridge\n    reader receptacle, and tape telemetry drive.\n    \"\"\"\n\n    def generate(self, config: MemoryExtractionTerminalConfig = None) -> bpy.types.Object:\n        if config is not None:\n            self.config = config\n        self.clean_context()\n        self.material_manager = self.get_material_manager(self.config)\n        MeshBuilder.set_active_material_manager(self.material_manager)\n\n        obj, bm = self.create_mesh_object(self.config.name)\n        self.material_manager.assign_to_mesh(obj)\n        m_idx = self.material_manager.material_indices\n\n        uv_layer = MeshBuilder.get_or_create_uv_layer(bm)\n        col_layer = MeshBuilder.get_or_create_color_layer(bm)\n\n        casing_mat = m_idx.get(\"casing\", 0)\n        metal_mat = m_idx.get(\"dark_metal\", m_idx.get(\"casing\", 0))\n        screen_mat = m_idx.get(\"screen\", m_idx.get(\"casing\", 0))\n        brass_mat = m_idx.get(\"brass\", m_idx.get(\"casing\", 0))\n\n        casing_rgba = self.material_manager.get_rgba(\"casing\")\n        metal_rgba = self.material_manager.get_rgba(\"dark_metal\")\n\n        # 1. Base / Support\n        desk_w = 0.75\n        desk_d = 0.55\n        if self.config.mount_style == \"pedestal\":\n            pedestal_h = 0.72\n            # Floor plate\n            MeshBuilder.add_box(\n                bm,\n                size=(0.55, 0.55, 0.04),\n                offset=(0.0, 0.0, 0.02),\n                mat_idx=metal_mat,\n                rgba=metal_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n            )\n            # Heavy column\n            MeshBuilder.add_box(\n                bm,\n                size=(0.24, 0.24, pedestal_h),\n                offset=(0.0, -0.05, pedestal_h / 2.0 + 0.02),\n                mat_idx=metal_mat,\n                rgba=metal_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n            )\n            shelf_z = pedestal_h + 0.02\n        else:\n            shelf_z = 0.04\n            MeshBuilder.add_box(\n                bm,\n                size=(desk_w, desk_d, 0.04),\n                offset=(0.0, 0.0, 0.02),\n                mat_idx=metal_mat,\n                rgba=metal_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"rubber_black\")\n            )\n\n        # 2. Main slanted console table\n        con_h = 0.12\n        MeshBuilder.add_box(\n            bm,\n            size=(desk_w, desk_d, con_h),\n            offset=(0.0, 0.0, shelf_z + con_h / 2.0),\n            mat_idx=casing_mat,\n            rgba=casing_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"beige_plastic_worn\")\n        )\n\n        # Slanted keyboard area\n        MeshBuilder.add_box(\n            bm,\n            size=(desk_w * 0.52, desk_d * 0.42, 0.03),\n            offset=(-desk_w * 0.18, -desk_d * 0.18, shelf_z + con_h + 0.015),\n            mat_idx=metal_mat,\n            rgba=(0.18, 0.18, 0.20, 1.0),\n            uv_rect=PS1TextureAtlas.get_rect(\"rubber_black\")\n        )\n\n        # Keyboard keys block\n        MeshBuilder.add_box(\n            bm,\n            size=(desk_w * 0.48, desk_d * 0.36, 0.02),\n            offset=(-desk_w * 0.18, -desk_d * 0.18, shelf_z + con_h + 0.03),\n            mat_idx=casing_mat,\n            rgba=(0.8, 0.8, 0.82, 1.0),\n            uv_rect=PS1TextureAtlas.get_rect(\"button_white\")\n        )\n\n        # Cartridge reader bay on right side of keyboard\n        slot_w = 0.14\n        slot_d = 0.22\n        MeshBuilder.add_box(\n            bm,\n            size=(slot_w + 0.04, slot_d + 0.04, 0.05),\n            offset=(desk_w * 0.24, -desk_d * 0.15, shelf_z + con_h + 0.025),\n            mat_idx=metal_mat,\n            rgba=metal_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n        )\n\n        if self.config.cartridge_inserted:\n            # Memory cartridge sticking out of reader slot\n            MeshBuilder.add_box(\n                bm,\n                size=(slot_w * 0.85, slot_d * 0.75, 0.06),\n                offset=(desk_w * 0.24, -desk_d * 0.12, shelf_z + con_h + 0.05),\n                mat_idx=brass_mat,\n                rgba=(0.85, 0.65, 0.18, 1.0),\n                uv_rect=PS1TextureAtlas.get_rect(\"cartridge_amber\")\n            )\n            # Gold edge contacts\n            MeshBuilder.add_box(\n                bm,\n                size=(slot_w * 0.6, 0.03, 0.03),\n                offset=(desk_w * 0.24, -desk_d * 0.12 + slot_d * 0.35, shelf_z + con_h + 0.07),\n                mat_idx=metal_mat,\n                rgba=(0.95, 0.8, 0.2, 1.0),\n                uv_rect=PS1TextureAtlas.get_rect(\"cartridge_amber\")\n            )\n\n        # 3. Bulky CRT monitor housing\n        crt_w = 0.46\n        crt_h = 0.36\n        crt_d = 0.38\n        crt_base_z = shelf_z + con_h + crt_h / 2.0 + 0.04\n        crt_base_y = desk_d * 0.12\n\n        tilt_rad = math.radians(self.config.crt_tilt)\n        rot_mat = mathutils.Euler((tilt_rad, 0.0, 0.0), 'XYZ').to_matrix()\n\n        crt_geom = bmesh.ops.create_cube(bm, size=1.0)\n        c_verts = [v for v in crt_geom[\"verts\"] if isinstance(v, bmesh.types.BMVert)]\n        for v in c_verts:\n            v.co.x *= crt_w\n            v.co.y *= crt_d\n            v.co.z *= crt_h\n            # Rotate tilt\n            v.co = rot_mat @ v.co\n            v.co.x += -desk_w * 0.10\n            v.co.y += crt_base_y\n            v.co.z += crt_base_z\n\n        for f in bm.faces:\n            if all(v in c_verts for v in f.verts):\n                MeshBuilder.apply_face_attributes(f, casing_mat, casing_rgba, col_layer)\n                MeshBuilder.apply_box_face_uv(f, uv_layer, PS1TextureAtlas.get_rect(\"beige_plastic_worn\"))\n\n        # CRT Screen face\n        screen_geom = bmesh.ops.create_cube(bm, size=1.0)\n        s_verts = [v for v in screen_geom[\"verts\"] if isinstance(v, bmesh.types.BMVert)]\n        for v in s_verts:\n            v.co.x *= crt_w * 0.78\n            v.co.y *= 0.02\n            v.co.z *= crt_h * 0.74\n            v.co = rot_mat @ v.co\n            # Offset to front of CRT housing\n            front_offset = rot_mat @ mathutils.Vector((0.0, -crt_d / 2.0 - 0.005, 0.0))\n            v.co.x += -desk_w * 0.10 + front_offset.x\n            v.co.y += crt_base_y + front_offset.y\n            v.co.z += crt_base_z + front_offset.z\n\n        if self.config.screen_color == \"amber\":\n            screen_rect = PS1TextureAtlas.get_rect(\"crt_screen_amber\")\n            screen_rgba = (0.9, 0.6, 0.1, 1.0)\n        elif self.config.screen_color == \"green\":\n            screen_rect = PS1TextureAtlas.get_rect(\"crt_screen_green\")\n            screen_rgba = (0.1, 0.85, 0.3, 1.0)\n        else:\n            screen_rect = PS1TextureAtlas.get_rect(\"crt_screen_off\")\n            screen_rgba = (0.05, 0.05, 0.05, 1.0)\n\n        for f in bm.faces:\n            if all(v in s_verts for v in f.verts):\n                MeshBuilder.apply_face_attributes(f, screen_mat, screen_rgba, col_layer)\n                MeshBuilder.apply_face_uv_rect(f, uv_layer, screen_rect)\n\n        # 4. Side magnetic tape telemetry drive / gauge\n        if self.config.has_side_tape_drive:\n            tape_x = desk_w * 0.25\n            tape_z = shelf_z + con_h + 0.18\n            MeshBuilder.add_box(\n                bm,\n                size=(0.20, 0.28, 0.34),\n                offset=(tape_x, crt_base_y, tape_z),\n                mat_idx=metal_mat,\n                rgba=metal_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n            )\n            # Dual tape reel hubs\n            for ry in (-0.06, 0.06):\n                MeshBuilder.add_cylinder(\n                    bm,\n                    radius=0.05,\n                    depth=0.03,\n                    segments=8,\n                    offset=(tape_x, crt_base_y + ry, tape_z + 0.02),\n                    axis='X',\n                    mat_idx=metal_mat,\n                    rgba=(0.85, 0.85, 0.90, 1.0),\n                    uv_rect=PS1TextureAtlas.get_rect(\"metal_light_brushed\")\n                )\n\n        # 5. Potentiometer dials and buttons\n        if self.config.has_rotary_dials:\n            for dx, dcol in [(-0.06, \"button_red\"), (0.0, \"button_yellow\"), (0.06, \"button_blue\")]:\n                MeshBuilder.add_cylinder(\n                    bm,\n                    radius=0.018,\n                    depth=0.02,\n                    segments=6,\n                    offset=(desk_w * 0.18 + dx, -desk_d * 0.02, shelf_z + con_h + 0.015),\n                    axis='Z',\n                    mat_idx=screen_mat,\n                    rgba=(0.8, 0.8, 0.8, 1.0),\n                    uv_rect=PS1TextureAtlas.get_rect(dcol)\n                )\n\n        self.finalize_mesh(obj, bm)\n        self.compact_materials(obj)\n        return obj\n",
+    "config_code": "from dataclasses import dataclass\nfrom ...core.base_config import BaseAssetConfig\n\n@dataclass\nclass MemoryExtractionTerminalConfig(BaseAssetConfig):\n    \"\"\"Configuration for Memory Extraction Terminal workstation.\"\"\"\n    mount_style: str = \"pedestal\"      # \"pedestal\", \"desktop\"\n    crt_tilt: float = 20.0             # Degrees tilted back\n    screen_color: str = \"amber\"        # \"amber\", \"green\", \"off\"\n    cartridge_inserted: bool = True\n    has_side_tape_drive: bool = True\n    has_rotary_dials: bool = True\n\n    name: str = \"memory_extraction_terminal\"\n    palette_name: str = \"command_bridge\"\n    wear_level: float = 0.4\n    target_tri_budget: int = 680\n"
+  },
+  {
     "id": "below_nominal.furniture.mess_table",
     "family": "mess_table",
     "name": "Mesa de Comedor con Bancos",
@@ -5414,6 +5966,119 @@
     "file_size_bytes": 126384,
     "source_code": "import random\nimport math\nimport bpy\nimport bmesh\nfrom mathutils import Vector\n\nfrom ...core.base_generator import BaseGenerator\nfrom ...core.mesh_builder import MeshBuilder\nfrom ...core.materials import MaterialManager\nfrom .config import MorgueGurneyConfig\n\nclass MorgueGurneyGenerator(BaseGenerator):\n    \"\"\"Generates mobile mortuary gurneys with scissor frames, wheels, and optional body bags.\"\"\"\n\n    def generate(self, config: MorgueGurneyConfig) -> bpy.types.Object:\n        random.seed(config.seed)\n\n        obj, bm = self.create_mesh_object(config.name)\n        mat_mgr = self.get_material_manager(config)\n\n        w = config.width\n        length = config.length\n        h = config.height\n\n        m_steel = mat_mgr.get_material_index(\"mounting\")\n        m_wheel = mat_mgr.get_material_index(\"rubber_tire\")\n        m_bag = mat_mgr.get_material_index(\"chair_vinyl\")\n        m_dark = mat_mgr.get_material_index(\"casing\")\n        m_zipper = mat_mgr.get_material_index(\"switch_metal\")\n\n        # 1. Base caster wheels & lower chassis rails\n        base_z = 0.08\n        wheel_r = 0.06\n        wheel_w = 0.04\n        x_wheel = (w / 2) - 0.07\n        y_wheel = (length / 2) - 0.15\n\n        for wx in (-x_wheel, x_wheel):\n            for wy in (-y_wheel, y_wheel):\n                # Rubber caster wheel\n                MeshBuilder.add_cylinder(bm, (wx, wy, wheel_r), wheel_r, wheel_w, sides=8, axis='X', mat_idx=m_wheel, name=\"wheel\")\n                # Swivel fork\n                MeshBuilder.add_cylinder(bm, (wx, wy, wheel_r + 0.04), 0.02, 0.06, sides=6, mat_idx=m_steel, name=\"fork\")\n                # Brake pedal\n                if config.caster_brake_pedals:\n                    MeshBuilder.add_box(bm, (wx, wy + 0.05, 0.04), (0.03, 0.05, 0.015), m_dark, \"pedal\")\n\n        # Lower longitudinal chassis bars\n        MeshBuilder.add_box(bm, (-x_wheel, 0, base_z + 0.06), (0.04, length - 0.20, 0.04), m_steel, \"lower_rail_L\")\n        MeshBuilder.add_box(bm, (x_wheel, 0, base_z + 0.06), (0.04, length - 0.20, 0.04), m_steel, \"lower_rail_R\")\n        # Lower crossbars\n        MeshBuilder.add_box(bm, (0, -y_wheel, base_z + 0.06), (w - 0.14, 0.04, 0.04), m_steel, \"lower_cross_1\")\n        MeshBuilder.add_box(bm, (0, y_wheel, base_z + 0.06), (w - 0.14, 0.04, 0.04), m_steel, \"lower_cross_2\")\n\n        # 2. Scissor elevation frame (X-braces on each side)\n        tray_z = h - 0.08\n        if config.has_scissor_lift:\n            scissor_z_mid = (base_z + tray_z) / 2\n            z_span = tray_z - base_z\n            y_span = length * 0.55\n            tube_r = 0.022\n\n            for sx in (-x_wheel + 0.01, x_wheel - 0.01):\n                # Diagonal strut 1\n                p1_start = Vector((sx, -y_span / 2, base_z + 0.08))\n                p1_end = Vector((sx, y_span / 2, tray_z - 0.02))\n                MeshBuilder.add_extruded_cable(bm, [p1_start, p1_end], radius=tube_r, sides=4, mat_idx=m_steel, name=\"scissor_strut_1\")\n\n                # Diagonal strut 2 (crossing)\n                p2_start = Vector((sx, y_span / 2, base_z + 0.08))\n                p2_end = Vector((sx, -y_span / 2, tray_z - 0.02))\n                MeshBuilder.add_extruded_cable(bm, [p2_start, p2_end], radius=tube_r, sides=4, mat_idx=m_steel, name=\"scissor_strut_2\")\n\n                # Central pivot pin\n                MeshBuilder.add_cylinder(bm, (sx, 0, scissor_z_mid), 0.035, 0.03, sides=6, axis='X', mat_idx=m_dark, name=\"pivot_pin\")\n        else:\n            # 4 Vertical straight struts\n            for sx in (-x_wheel, x_wheel):\n                for sy in (-y_wheel * 0.7, y_wheel * 0.7):\n                    MeshBuilder.add_cylinder(bm, (sx, sy, (base_z + tray_z) / 2), 0.025, tray_z - base_z, sides=6, mat_idx=m_steel, name=\"upright\")\n\n        # 3. Upper Tray Support Frame & Push Handles\n        MeshBuilder.add_box(bm, (0, 0, tray_z), (w - 0.06, length - 0.10, 0.04), m_steel, \"upper_frame\")\n\n        if config.has_push_handles:\n            # Tubular push handle loops on head & foot ends\n            for hy in (-(length / 2) + 0.02, (length / 2) - 0.02):\n                h_dir = -1 if hy < 0 else 1\n                # Upright posts\n                MeshBuilder.add_cylinder(bm, (-w / 3, hy + (h_dir * 0.04), tray_z + 0.12), 0.018, 0.24, sides=4, mat_idx=m_steel, name=\"handle_post_L\")\n                MeshBuilder.add_cylinder(bm, (w / 3, hy + (h_dir * 0.04), tray_z + 0.12), 0.018, 0.24, sides=4, mat_idx=m_steel, name=\"handle_post_R\")\n                # Top horizontal grip\n                MeshBuilder.add_cylinder(bm, (0, hy + (h_dir * 0.04), tray_z + 0.24), 0.018, w * 0.66, sides=4, axis='X', mat_idx=m_steel, name=\"handle_grip\")\n\n        # 4. Stainless Steel Body Tray\n        tray_top_z = tray_z + 0.04\n        tray_th = 0.03\n        MeshBuilder.add_box(bm, (0, 0, tray_top_z), (w, length, tray_th), m_steel, \"body_tray_slab\")\n        # Perimeter tray raised lip\n        lip_h = 0.04\n        lip_t = 0.025\n        MeshBuilder.add_box(bm, (-(w / 2 - lip_t / 2), 0, tray_top_z + lip_h / 2), (lip_t, length, lip_h), m_steel, \"tray_rim_L\")\n        MeshBuilder.add_box(bm, ((w / 2 - lip_t / 2), 0, tray_top_z + lip_h / 2), (lip_t, length, lip_h), m_steel, \"tray_rim_R\")\n        MeshBuilder.add_box(bm, (0, -(length / 2 - lip_t / 2), tray_top_z + lip_h / 2), (w - lip_t * 2, lip_t, lip_h), m_steel, \"tray_rim_bot\")\n        MeshBuilder.add_box(bm, (0, (length / 2 - lip_t / 2), tray_top_z + lip_h / 2), (w - lip_t * 2, lip_t, lip_h), m_steel, \"tray_rim_top\")\n\n        # 5. Body Bag Silhouette\n        if config.gurney_type in (\"body_bag_closed\", \"body_bag_ajar\"):\n            bag_h = config.body_silhouette_height\n            bag_w = w * 0.65\n            bag_l = length * 0.85\n            bag_z = tray_top_z + tray_th / 2 + bag_h / 2\n\n            # Main torso/body volume (tapered low-poly body bag)\n            MeshBuilder.add_box(bm, (0, -0.05, bag_z), (bag_w, bag_l, bag_h), m_bag, \"body_bag_main\")\n\n            # Raised chest / torso prominence\n            MeshBuilder.add_box(bm, (0, 0.15, bag_z + bag_h * 0.20), (bag_w * 0.85, bag_l * 0.35, bag_h * 0.40), m_bag, \"bag_chest\")\n\n            # Feet protrusion\n            MeshBuilder.add_box(bm, (0, -0.70, bag_z - bag_h * 0.15), (bag_w * 0.60, 0.25, bag_h * 0.50), m_bag, \"bag_feet\")\n\n            # Longitudinal zipper seam\n            zipper_z = bag_z + bag_h / 2 + 0.005\n            MeshBuilder.add_box(bm, (0, -0.05, zipper_z), (0.02, bag_l * 0.90, 0.01), m_zipper, \"zipper_track\")\n\n            if config.gurney_type == \"body_bag_ajar\":\n                # Peeled open flap exposing dark interior at the head\n                flap_x = bag_w * 0.22\n                flap_y = (bag_l / 2) - 0.20\n                MeshBuilder.add_box(bm, (flap_x, flap_y, zipper_z + 0.03), (0.12, 0.28, 0.02), m_dark, \"open_flap_reveal\")\n\n        mat_mgr.assign_to_mesh(obj)\n        self.finalize_mesh(obj, bm)\n        return obj\n",
     "config_code": "from dataclasses import dataclass\nfrom ...core.base_config import BaseAssetConfig\n\n@dataclass\nclass MorgueGurneyConfig(BaseAssetConfig):\n    \"\"\"Configuration for mobile morgue body trolleys, scissor gurneys, and body bag carriers.\"\"\"\n    gurney_type: str = \"tray_open\"          # \"tray_open\", \"body_bag_closed\", \"body_bag_ajar\"\n    width: float = 0.75                     # Frame width in meters\n    length: float = 2.05                    # Frame length in meters\n    height: float = 0.80                    # Tray top height in meters\n    has_scissor_lift: bool = True           # Tubular scissor X-brace elevation frame\n    has_push_handles: bool = True           # Ergonomic loop push bars at both ends\n    caster_brake_pedals: bool = True        # Foot pedal brakes on caster wheels\n    body_silhouette_height: float = 0.22    # Height profile of bagged corpse\n    palette_name: str = \"industrial_hazard\"\n    target_tri_budget: int = 480\n"
+  },
+  {
+    "id": "below_nominal.medical.neural_interface_chair",
+    "family": "neural_interface_chair",
+    "name": "Silla de Interfaz Neuronal",
+    "version": "1.0.0",
+    "description": "Silla técnica ergonómica para procedimientos de enlace cognitivo e interfaz humano-máquina, con electrodos facetados, arco sensor y cableado diegético. Podés configurar inclinación de respaldo, altura y accesorios en GLB.",
+    "category": "medical",
+    "tags": [
+      "psx",
+      "low-poly",
+      "chair",
+      "neural",
+      "medical",
+      "below-nominal"
+    ],
+    "author": {
+      "name": "ModelCoder Core Team",
+      "github": "FrancisCuarto"
+    },
+    "license": "CC-BY-4.0",
+    "compatibility": {},
+    "parameters": [
+      {
+        "key": "seat_height",
+        "label": "Altura Asiento (m)",
+        "type": "float",
+        "default": 0.52,
+        "group": "Dimensiones",
+        "min": 0.4,
+        "max": 0.65,
+        "step": 0.02
+      },
+      {
+        "key": "backrest_angle",
+        "label": "Inclinación Respaldo (°)",
+        "type": "float",
+        "default": 18.0,
+        "group": "Mecanismo",
+        "min": 0.0,
+        "max": 45.0,
+        "step": 5.0
+      },
+      {
+        "key": "has_sensor_arch",
+        "label": "Arco Sensor Superior",
+        "type": "bool",
+        "default": true,
+        "group": "Detalles"
+      },
+      {
+        "key": "has_restraint_straps",
+        "label": "Brazaderas de Sujeción",
+        "type": "bool",
+        "default": true,
+        "group": "Detalles"
+      },
+      {
+        "key": "has_side_operator_panel",
+        "label": "Botonera de Operador",
+        "type": "bool",
+        "default": true,
+        "group": "Detalles"
+      },
+      {
+        "key": "has_umbilical_cables",
+        "label": "Cables Umbilicales",
+        "type": "bool",
+        "default": true,
+        "group": "Detalles"
+      }
+    ],
+    "presets": [
+      {
+        "id": "procedure_ready",
+        "name": "procedure_ready",
+        "values": {
+          "backrest_angle": 18.0,
+          "has_sensor_arch": true,
+          "has_restraint_straps": true,
+          "has_side_operator_panel": true
+        }
+      },
+      {
+        "id": "recline_transfer",
+        "name": "recline_transfer",
+        "values": {
+          "backrest_angle": 35.0,
+          "has_sensor_arch": true,
+          "has_restraint_straps": true,
+          "has_side_operator_panel": true
+        }
+      },
+      {
+        "id": "abandoned_rig",
+        "name": "abandoned_rig",
+        "values": {
+          "backrest_angle": 25.0,
+          "has_sensor_arch": false,
+          "has_restraint_straps": false,
+          "has_side_operator_panel": true
+        }
+      }
+    ],
+    "export_capabilities": {
+      "supports_collision": true,
+      "default_collision_suffix": "-convcolonly"
+    },
+    "has_model": true,
+    "model_url": "/models/neural_interface_chair.glb",
+    "file_size_bytes": 110604,
+    "source_code": "import math\nimport mathutils\nimport bpy\nimport bmesh\nfrom ...core.base_generator import BaseAssetGenerator\nfrom ...core.mesh_builder import MeshBuilder\nfrom ...core.texture_atlas import PS1TextureAtlas\nfrom .config import NeuralInterfaceChairConfig\n\nclass NeuralInterfaceChairGenerator(BaseAssetGenerator[NeuralInterfaceChairConfig]):\n    \"\"\"\n    Procedural generator for Neural Interface Chair:\n    Ergonomic technical procedure chair with hydraulic base, overhead sensor arch,\n    electrode headrest, and wrist restraint cuffs.\n    \"\"\"\n\n    def generate(self, config: NeuralInterfaceChairConfig = None) -> bpy.types.Object:\n        if config is not None:\n            self.config = config\n        self.clean_context()\n        self.material_manager = self.get_material_manager(self.config)\n        MeshBuilder.set_active_material_manager(self.material_manager)\n\n        obj, bm = self.create_mesh_object(self.config.name)\n        self.material_manager.assign_to_mesh(obj)\n        m_idx = self.material_manager.material_indices\n\n        uv_layer = MeshBuilder.get_or_create_uv_layer(bm)\n        col_layer = MeshBuilder.get_or_create_color_layer(bm)\n\n        seat_h = self.config.seat_height\n        casing_mat = m_idx.get(\"casing\", 0)\n        metal_mat = m_idx.get(\"dark_metal\", m_idx.get(\"casing\", 0))\n        vinyl_mat = m_idx.get(\"casing\", 0)\n        brass_mat = m_idx.get(\"brass\", m_idx.get(\"casing\", 0))\n        screen_mat = m_idx.get(\"screen\", m_idx.get(\"casing\", 0))\n\n        metal_rgba = self.material_manager.get_rgba(\"dark_metal\")\n        vinyl_rgba = (0.16, 0.18, 0.22, 1.0)\n        casing_rgba = self.material_manager.get_rgba(\"casing\")\n\n        # 1. Base pedestal and floor flange\n        MeshBuilder.add_box(\n            bm,\n            size=(0.65, 0.75, 0.05),\n            offset=(0.0, 0.0, 0.025),\n            mat_idx=metal_mat,\n            rgba=metal_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n        )\n\n        # Hydraulic vertical cylinder\n        MeshBuilder.add_cylinder(\n            bm,\n            radius=0.10,\n            depth=seat_h - 0.05,\n            segments=8,\n            offset=(0.0, 0.0, (seat_h - 0.05) / 2.0 + 0.05),\n            axis='Z',\n            mat_idx=metal_mat,\n            rgba=metal_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"metal_light_brushed\")\n        )\n\n        # Seat frame carriage\n        seat_w = 0.55\n        seat_d = 0.52\n        seat_t = 0.10\n        MeshBuilder.add_box(\n            bm,\n            size=(seat_w, seat_d, 0.04),\n            offset=(0.0, 0.0, seat_h),\n            mat_idx=metal_mat,\n            rgba=metal_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n        )\n\n        # Seat cushion\n        MeshBuilder.add_box(\n            bm,\n            size=(seat_w * 0.92, seat_d * 0.92, seat_t),\n            offset=(0.0, 0.02, seat_h + seat_t / 2.0 + 0.02),\n            mat_idx=vinyl_mat,\n            rgba=vinyl_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"chair_vinyl_dark\")\n        )\n\n        # 2. Backrest (tilted backwards)\n        angle_rad = math.radians(self.config.backrest_angle)\n        back_w = 0.50\n        back_h = 0.68\n        back_t = 0.08\n\n        # Pivot point at rear of seat\n        pivot_y = -seat_d / 2.0 + 0.02\n        pivot_z = seat_h + 0.06\n        rot_mat = mathutils.Euler((angle_rad, 0.0, 0.0), 'XYZ').to_matrix()\n\n        back_geom = bmesh.ops.create_cube(bm, size=1.0)\n        b_verts = [v for v in back_geom[\"verts\"] if isinstance(v, bmesh.types.BMVert)]\n        for v in b_verts:\n            v.co.x *= back_w\n            v.co.y *= back_t\n            v.co.z *= back_h\n            # Translate local center relative to bottom hinge\n            v.co.z += back_h / 2.0\n            # Rotate\n            v.co = rot_mat @ v.co\n            # Translate to pivot\n            v.co.y += pivot_y\n            v.co.z += pivot_z\n\n        for f in bm.faces:\n            if all(v in b_verts for v in f.verts):\n                MeshBuilder.apply_face_attributes(f, vinyl_mat, vinyl_rgba, col_layer)\n                MeshBuilder.apply_box_face_uv(f, uv_layer, PS1TextureAtlas.get_rect(\"chair_vinyl_dark\"))\n\n        # Padded headrest\n        head_w = 0.26\n        head_h = 0.22\n        head_t = 0.09\n        head_geom = bmesh.ops.create_cube(bm, size=1.0)\n        h_verts = [v for v in head_geom[\"verts\"] if isinstance(v, bmesh.types.BMVert)]\n        for v in h_verts:\n            v.co.x *= head_w\n            v.co.y *= head_t\n            v.co.z *= head_h\n            v.co.z += back_h + head_h / 2.0 + 0.02\n            v.co = rot_mat @ v.co\n            v.co.y += pivot_y\n            v.co.z += pivot_z\n\n        for f in bm.faces:\n            if all(v in h_verts for v in f.verts):\n                MeshBuilder.apply_face_attributes(f, metal_mat, (0.2, 0.22, 0.26, 1.0), col_layer)\n                MeshBuilder.apply_box_face_uv(f, uv_layer, PS1TextureAtlas.get_rect(\"rubber_black\"))\n\n        # Headrest electrode contact nodes\n        for sx in (-1, 1):\n            e_node = bmesh.ops.create_cube(bm, size=1.0)\n            e_verts = [v for v in e_node[\"verts\"] if isinstance(v, bmesh.types.BMVert)]\n            for v in e_verts:\n                v.co.x *= 0.04\n                v.co.y *= 0.04\n                v.co.z *= 0.04\n                v.co.x += sx * (head_w / 2.0 + 0.02)\n                v.co.y += 0.02\n                v.co.z += back_h + head_h / 2.0 + 0.02\n                v.co = rot_mat @ v.co\n                v.co.y += pivot_y\n                v.co.z += pivot_z\n            for f in bm.faces:\n                if all(v in e_verts for v in f.verts):\n                    MeshBuilder.apply_face_attributes(f, brass_mat, (0.85, 0.7, 0.2, 1.0), col_layer)\n                    MeshBuilder.apply_box_face_uv(f, uv_layer, PS1TextureAtlas.get_rect(\"cartridge_amber\"))\n\n        # 3. Overhead cognitive sensor arch\n        if self.config.has_sensor_arch:\n            arch_top_z = pivot_z + (rot_mat @ mathutils.Vector((0.0, 0.0, back_h + head_h + 0.18))).z\n            arch_top_y = pivot_y + (rot_mat @ mathutils.Vector((0.0, 0.0, back_h + head_h + 0.18))).y\n            \n            # Curved crown above head\n            MeshBuilder.add_box(\n                bm,\n                size=(0.42, 0.12, 0.05),\n                offset=(0.0, arch_top_y + 0.05, arch_top_z),\n                mat_idx=casing_mat,\n                rgba=casing_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"painted_metal_white\")\n            )\n            # Electrode sensors hanging down\n            for ex in (-0.14, 0.0, 0.14):\n                MeshBuilder.add_cylinder(\n                    bm,\n                    radius=0.025,\n                    depth=0.06,\n                    segments=6,\n                    offset=(ex, arch_top_y + 0.05, arch_top_z - 0.04),\n                    axis='Z',\n                    mat_idx=brass_mat,\n                    rgba=(0.8, 0.7, 0.2, 1.0),\n                    uv_rect=PS1TextureAtlas.get_rect(\"cartridge_amber\")\n                )\n\n        # 4. Armrests with restraint cuffs\n        arm_h = seat_h + seat_t + 0.12\n        for sx in (-1, 1):\n            arm_x = sx * (seat_w / 2.0 + 0.04)\n            # Support strut\n            MeshBuilder.add_cylinder(\n                bm,\n                radius=0.025,\n                depth=0.18,\n                segments=6,\n                offset=(arm_x, 0.0, seat_h + 0.08),\n                axis='Z',\n                mat_idx=metal_mat,\n                rgba=metal_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n            )\n            # Armrest pad\n            MeshBuilder.add_box(\n                bm,\n                size=(0.09, 0.38, 0.04),\n                offset=(arm_x, 0.05, arm_h),\n                mat_idx=vinyl_mat,\n                rgba=vinyl_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"chair_vinyl_dark\")\n            )\n            if self.config.has_restraint_straps:\n                # Restraint cuff clamp\n                MeshBuilder.add_box(\n                    bm,\n                    size=(0.10, 0.07, 0.06),\n                    offset=(arm_x, 0.12, arm_h + 0.03),\n                    mat_idx=metal_mat,\n                    rgba=(0.1, 0.1, 0.1, 1.0),\n                    uv_rect=PS1TextureAtlas.get_rect(\"rubber_black\")\n                )\n\n        # 5. Side operator keypad panel\n        if self.config.has_side_operator_panel:\n            MeshBuilder.add_box(\n                bm,\n                size=(0.06, 0.14, 0.12),\n                offset=(seat_w / 2.0 + 0.10, 0.18, arm_h + 0.02),\n                mat_idx=casing_mat,\n                rgba=casing_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"painted_metal_white\")\n            )\n            # Buttons\n            MeshBuilder.add_box(\n                bm,\n                size=(0.01, 0.04, 0.04),\n                offset=(seat_w / 2.0 + 0.135, 0.18, arm_h + 0.03),\n                mat_idx=screen_mat,\n                rgba=(0.9, 0.2, 0.2, 1.0),\n                uv_rect=PS1TextureAtlas.get_rect(\"button_red\")\n            )\n\n        # 6. Umbilical cables running to floor\n        if self.config.has_umbilical_cables:\n            cable_top = pivot_z + (rot_mat @ mathutils.Vector((0.0, 0.0, back_h * 0.8))).z\n            cable_y = pivot_y + (rot_mat @ mathutils.Vector((0.0, 0.0, back_h * 0.8))).y\n            MeshBuilder.add_cylinder(\n                bm,\n                radius=0.02,\n                depth=cable_top - 0.05,\n                segments=6,\n                offset=(0.0, cable_y - 0.08, (cable_top - 0.05) / 2.0 + 0.05),\n                axis='Z',\n                mat_idx=metal_mat,\n                rgba=(0.08, 0.08, 0.08, 1.0),\n                uv_rect=PS1TextureAtlas.get_rect(\"rubber_black\")\n            )\n\n        self.finalize_mesh(obj, bm)\n        self.compact_materials(obj)\n        return obj\n",
+    "config_code": "from dataclasses import dataclass\nfrom ...core.base_config import BaseAssetConfig\n\n@dataclass\nclass NeuralInterfaceChairConfig(BaseAssetConfig):\n    \"\"\"Configuration for Neural Interface Procedure Chair.\"\"\"\n    seat_height: float = 0.52\n    backrest_angle: float = 18.0     # Degrees tilted back (0.0 = upright, 45.0 = fully reclined)\n    has_sensor_arch: bool = True     # Overhead cognitive sensor crown\n    has_restraint_straps: bool = True\n    has_side_operator_panel: bool = True\n    has_umbilical_cables: bool = True\n\n    name: str = \"neural_interface_chair\"\n    palette_name: str = \"medbay_clean\"\n    wear_level: float = 0.4\n    target_tri_budget: int = 750\n"
   },
   {
     "id": "below_nominal.furniture.nightstand",
@@ -6552,6 +7217,253 @@
     "config_code": "from dataclasses import dataclass\nfrom ...core.base_config import BaseAssetConfig\n\n@dataclass\nclass OfficeDoorConfig(BaseAssetConfig):\n    \"\"\"Configuration for glazed office, laboratory, and clinic doors with reinforced glass.\"\"\"\n    door_style: str = \"single_swing\"        # \"single_swing\", \"double_swing\", \"sliding_pocket\"\n    glass_type: str = \"wired_safety_glass\"  # \"wired_safety_glass\", \"clear_tinted\", \"frosted_privacy\"\n    width: float = 1.20                     # Overall frame width in meters\n    height: float = 2.40                    # Overall frame height in meters\n    frame_depth: float = 0.22               # Wall jamb thickness in meters\n    open_angle_deg: float = 0.0             # 0.0 = closed, 20.0 = ajar, 85.0 = open\n    glass_damage: str = \"intact\"            # \"intact\", \"cracked_spiderweb\", \"shattered_missing\"\n    handle_type: str = \"horizontal_push_bar\"# \"horizontal_push_bar\", \"industrial_lever\", \"recessed_pull\"\n    has_kickplate: bool = True              # Heavy steel bottom kickplate\n    has_transom: bool = False               # Upper observation transom window above door header\n    palette_name: str = \"industrial_hazard\"\n    target_tri_budget: int = 420\n"
   },
   {
+    "id": "below_nominal.fixtures.oxygen_regulator",
+    "family": "oxygen_regulator",
+    "name": "Regulador de Oxígeno Mural",
+    "version": "1.0.0",
+    "description": "Regulador de presión mural para el circuito de soporte vital, con manómetros analógicos Bourdon, válvulas de corte en bronce y acoples de tubería. Podés configurar cantidad de manómetros, llaves de paso y corte de emergencia en GLB.",
+    "category": "fixtures",
+    "tags": [
+      "psx",
+      "low-poly",
+      "oxygen",
+      "regulator",
+      "gauge",
+      "valve",
+      "below-nominal"
+    ],
+    "author": {
+      "name": "ModelCoder Core Team",
+      "github": "FrancisCuarto"
+    },
+    "license": "CC-BY-4.0",
+    "compatibility": {},
+    "parameters": [
+      {
+        "key": "width",
+        "label": "Ancho Placa (m)",
+        "type": "float",
+        "default": 0.45,
+        "group": "Dimensiones",
+        "min": 0.35,
+        "max": 0.65,
+        "step": 0.05
+      },
+      {
+        "key": "height",
+        "label": "Altura Placa (m)",
+        "type": "float",
+        "default": 0.55,
+        "group": "Dimensiones",
+        "min": 0.4,
+        "max": 0.8,
+        "step": 0.05
+      },
+      {
+        "key": "gauge_count",
+        "label": "Cantidad de Manómetros",
+        "type": "int",
+        "default": 2,
+        "group": "Instrumentación",
+        "min": 1.0,
+        "max": 3.0,
+        "step": 1.0
+      },
+      {
+        "key": "has_brass_valves",
+        "label": "Válvulas de Ajuste en Bronce",
+        "type": "bool",
+        "default": true,
+        "group": "Detalles"
+      },
+      {
+        "key": "has_emergency_shutoff",
+        "label": "Palanca de Corte de Emergencia",
+        "type": "bool",
+        "default": true,
+        "group": "Seguridad"
+      },
+      {
+        "key": "has_flow_meter",
+        "label": "Flujómetro Tubular de Cristal",
+        "type": "bool",
+        "default": true,
+        "group": "Instrumentación"
+      }
+    ],
+    "presets": [
+      {
+        "id": "nominal_pressure",
+        "name": "nominal_pressure",
+        "values": {
+          "gauge_count": 2,
+          "has_brass_valves": true,
+          "has_emergency_shutoff": true,
+          "has_flow_meter": true
+        }
+      },
+      {
+        "id": "emergency_cutoff",
+        "name": "emergency_cutoff",
+        "values": {
+          "gauge_count": 2,
+          "has_brass_valves": true,
+          "has_emergency_shutoff": true,
+          "has_flow_meter": false
+        }
+      },
+      {
+        "id": "compact_bypass",
+        "name": "compact_bypass",
+        "values": {
+          "gauge_count": 1,
+          "has_brass_valves": true,
+          "has_emergency_shutoff": false,
+          "has_flow_meter": false
+        }
+      }
+    ],
+    "export_capabilities": {
+      "supports_collision": true,
+      "default_collision_suffix": "-convcolonly"
+    },
+    "has_model": true,
+    "model_url": "/models/oxygen_regulator.glb",
+    "file_size_bytes": 115800,
+    "source_code": "import math\nimport bpy\nimport bmesh\nfrom ...core.base_generator import BaseAssetGenerator\nfrom ...core.mesh_builder import MeshBuilder\nfrom ...core.texture_atlas import PS1TextureAtlas\nfrom .config import OxygenRegulatorConfig\n\nclass OxygenRegulatorGenerator(BaseAssetGenerator[OxygenRegulatorConfig]):\n    \"\"\"\n    Procedural generator for Oxygen Regulator:\n    Mural pressure reduction manifold with dual analog Bourdon gauges,\n    brass needle valves, and high-pressure supply line fittings.\n    \"\"\"\n\n    def generate(self, config: OxygenRegulatorConfig = None) -> bpy.types.Object:\n        if config is not None:\n            self.config = config\n        self.clean_context()\n        self.material_manager = self.get_material_manager(self.config)\n        MeshBuilder.set_active_material_manager(self.material_manager)\n\n        obj, bm = self.create_mesh_object(self.config.name)\n        self.material_manager.assign_to_mesh(obj)\n        m_idx = self.material_manager.material_indices\n\n        uv_layer = MeshBuilder.get_or_create_uv_layer(bm)\n        col_layer = MeshBuilder.get_or_create_color_layer(bm)\n\n        w = self.config.width\n        h = self.config.height\n\n        metal_mat = m_idx.get(\"dark_metal\", m_idx.get(\"casing\", 0))\n        brass_mat = m_idx.get(\"brass\", m_idx.get(\"casing\", 0))\n        pipe_mat = m_idx.get(\"pipe\", m_idx.get(\"casing\", 0))\n        screen_mat = m_idx.get(\"screen\", m_idx.get(\"casing\", 0))\n        glass_mat = m_idx.get(\"glass\", m_idx.get(\"casing\", 0))\n\n        metal_rgba = self.material_manager.get_rgba(\"dark_metal\")\n        brass_rgba = (0.85, 0.68, 0.22, 1.0)\n\n        # 1. Wall backplate\n        plate_t = 0.02\n        MeshBuilder.add_box(\n            bm,\n            size=(w, plate_t, h),\n            offset=(0.0, -plate_t / 2.0, h / 2.0),\n            mat_idx=metal_mat,\n            rgba=metal_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n        )\n\n        # Corner mounting bolts\n        for sx in (-1, 1):\n            for sz in (-1, 1):\n                bx = sx * (w / 2.0 - 0.04)\n                bz = h / 2.0 + sz * (h / 2.0 - 0.04)\n                MeshBuilder.add_cylinder(\n                    bm,\n                    radius=0.015,\n                    depth=0.015,\n                    segments=6,\n                    offset=(bx, 0.008, bz),\n                    axis='Y',\n                    mat_idx=metal_mat,\n                    rgba=(0.7, 0.7, 0.75, 1.0),\n                    uv_rect=PS1TextureAtlas.get_rect(\"metal_light_brushed\")\n                )\n\n        # Stamped caution label on backplate\n        MeshBuilder.add_box(\n            bm,\n            size=(0.14, 0.005, 0.06),\n            offset=(0.0, 0.003, h * 0.82),\n            mat_idx=screen_mat,\n            rgba=(0.95, 0.8, 0.1, 1.0),\n            uv_rect=PS1TextureAtlas.get_rect(\"caution_label\")\n        )\n\n        # 2. Central brass manifold block\n        mani_w = w * 0.65\n        mani_h = 0.12\n        mani_d = 0.12\n        mani_z = h * 0.42\n        MeshBuilder.add_box(\n            bm,\n            size=(mani_w, mani_d, mani_h),\n            offset=(0.0, mani_d / 2.0, mani_z),\n            mat_idx=brass_mat,\n            rgba=brass_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"cartridge_amber\")\n        )\n\n        # 3. Pressure gauges mounted on top of manifold\n        num_gauges = max(1, min(3, int(self.config.gauge_count)))\n        gauge_rad = 0.075\n        gauge_depth = 0.045\n        g_spacing = mani_w / float(num_gauges + 1)\n\n        for i in range(num_gauges):\n            gx = -mani_w / 2.0 + (i + 1) * g_spacing\n            gz = mani_z + mani_h / 2.0 + gauge_rad + 0.02\n            gy = mani_d / 2.0 + 0.02\n\n            # Gauge stem\n            MeshBuilder.add_cylinder(\n                bm,\n                radius=0.015,\n                depth=0.04,\n                segments=6,\n                offset=(gx, gy, mani_z + mani_h / 2.0 + 0.02),\n                axis='Z',\n                mat_idx=brass_mat,\n                rgba=brass_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"cartridge_amber\")\n            )\n\n            # Circular gauge bezel\n            MeshBuilder.add_cylinder(\n                bm,\n                radius=gauge_rad,\n                depth=gauge_depth,\n                segments=10,\n                offset=(gx, gy, gz),\n                axis='Y',\n                mat_idx=metal_mat,\n                rgba=metal_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n            )\n\n            # Dial meter face\n            MeshBuilder.add_cylinder(\n                bm,\n                radius=gauge_rad * 0.85,\n                depth=0.005,\n                segments=10,\n                offset=(gx, gy + gauge_depth / 2.0 + 0.003, gz),\n                axis='Y',\n                mat_idx=screen_mat,\n                rgba=(0.95, 0.95, 0.95, 1.0),\n                uv_rect=PS1TextureAtlas.get_rect(\"gauge_meter\")\n            )\n\n        # 4. Fluted brass / red control valves\n        if self.config.has_brass_valves:\n            # Front adjustment knob\n            MeshBuilder.add_cylinder(\n                bm,\n                radius=0.04,\n                depth=0.05,\n                segments=8,\n                offset=(0.0, mani_d + 0.03, mani_z),\n                axis='Y',\n                mat_idx=metal_mat,\n                rgba=(0.85, 0.15, 0.12, 1.0),\n                uv_rect=PS1TextureAtlas.get_rect(\"button_red\")\n            )\n\n        # 5. Flow-meter vertical tube\n        if self.config.has_flow_meter:\n            flow_x = mani_w / 2.0 + 0.05\n            flow_z = mani_z + 0.08\n            MeshBuilder.add_cylinder(\n                bm,\n                radius=0.02,\n                depth=0.18,\n                segments=6,\n                offset=(flow_x, mani_d * 0.6, flow_z),\n                axis='Z',\n                mat_idx=glass_mat,\n                rgba=(0.4, 0.8, 0.9, 0.8),\n                uv_rect=PS1TextureAtlas.get_rect(\"oxygen_cyan_glow\")\n            )\n\n        # 6. Inlet and outlet pipe couplings\n        # Bottom inlet pipe\n        MeshBuilder.add_cylinder(\n            bm,\n            radius=0.025,\n            depth=h * 0.35,\n            segments=6,\n            offset=(-mani_w * 0.25, mani_d * 0.4, h * 0.18),\n            axis='Z',\n            mat_idx=pipe_mat,\n            rgba=(0.4, 0.45, 0.5, 1.0),\n            uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n        )\n        # Top outlet fitting\n        MeshBuilder.add_cylinder(\n            bm,\n            radius=0.022,\n            depth=0.12,\n            segments=6,\n            offset=(mani_w * 0.25, mani_d * 0.4, h * 0.75),\n            axis='Z',\n            mat_idx=pipe_mat,\n            rgba=(0.4, 0.45, 0.5, 1.0),\n            uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n        )\n\n        # 7. Emergency shutoff lever\n        if self.config.has_emergency_shutoff:\n            lever_x = -mani_w / 2.0 - 0.04\n            MeshBuilder.add_box(\n                bm,\n                size=(0.03, 0.08, 0.03),\n                offset=(lever_x, mani_d * 0.5, mani_z),\n                mat_idx=metal_mat,\n                rgba=(0.9, 0.1, 0.1, 1.0),\n                uv_rect=PS1TextureAtlas.get_rect(\"button_red\")\n            )\n\n        self.finalize_mesh(obj, bm)\n        self.compact_materials(obj)\n        return obj\n",
+    "config_code": "from dataclasses import dataclass\nfrom ...core.base_config import BaseAssetConfig\n\n@dataclass\nclass OxygenRegulatorConfig(BaseAssetConfig):\n    \"\"\"Configuration for Oxygen Regulator mural pressure manifold.\"\"\"\n    width: float = 0.45\n    height: float = 0.55\n    gauge_count: int = 2               # 1 to 3 circular gauges\n    has_brass_valves: bool = True\n    has_emergency_shutoff: bool = True\n    has_flow_meter: bool = True\n\n    name: str = \"oxygen_regulator\"\n    palette_name: str = \"industrial_hazard\"\n    wear_level: float = 0.4\n    target_tri_budget: int = 420\n"
+  },
+  {
+    "id": "below_nominal.fixtures.oxygen_tank",
+    "family": "oxygen_tank",
+    "name": "Cilindro de Oxígeno Industrial",
+    "version": "1.0.0",
+    "description": "Botella de alta presión recargable para recarga de estaciones de soporte vital, carritos de emergencia y armarios. Con cuello abovedado, collar protector y manómetro. Podés personalizar altura, radio, color y accesorios en GLB.",
+    "category": "fixtures",
+    "tags": [
+      "psx",
+      "low-poly",
+      "oxygen",
+      "tank",
+      "canister",
+      "below-nominal"
+    ],
+    "author": {
+      "name": "ModelCoder Core Team",
+      "github": "FrancisCuarto"
+    },
+    "license": "CC-BY-4.0",
+    "compatibility": {},
+    "parameters": [
+      {
+        "key": "tank_height",
+        "label": "Altura del Cilindro (m)",
+        "type": "float",
+        "default": 1.1,
+        "group": "Dimensiones",
+        "min": 0.6,
+        "max": 1.5,
+        "step": 0.05
+      },
+      {
+        "key": "tank_radius",
+        "label": "Radio del Cilindro (m)",
+        "type": "float",
+        "default": 0.14,
+        "group": "Dimensiones",
+        "min": 0.09,
+        "max": 0.22,
+        "step": 0.01
+      },
+      {
+        "key": "tank_color",
+        "label": "Color y Función",
+        "type": "enum",
+        "default": "cyan",
+        "group": "Acabado",
+        "options": [
+          {
+            "value": "cyan",
+            "label": "Cian Médico (O2 Vital)"
+          },
+          {
+            "value": "white",
+            "label": "Blanco Puro (EVA)"
+          },
+          {
+            "value": "yellow",
+            "label": "Amarillo Industrial"
+          }
+        ]
+      },
+      {
+        "key": "has_top_handle_cage",
+        "label": "Jaula Protectora de Válvula",
+        "type": "bool",
+        "default": true,
+        "group": "Seguridad"
+      },
+      {
+        "key": "has_mini_gauge",
+        "label": "Manómetro en Cuello",
+        "type": "bool",
+        "default": true,
+        "group": "Detalles"
+      },
+      {
+        "key": "has_hazard_collar",
+        "label": "Banda de Advertencia",
+        "type": "bool",
+        "default": true,
+        "group": "Detalles"
+      }
+    ],
+    "presets": [
+      {
+        "id": "standard_cyan",
+        "name": "standard_cyan",
+        "values": {
+          "tank_height": 1.1,
+          "tank_radius": 0.14,
+          "tank_color": "cyan",
+          "has_top_handle_cage": true,
+          "has_mini_gauge": true
+        }
+      },
+      {
+        "id": "portable_compact",
+        "name": "portable_compact",
+        "values": {
+          "tank_height": 0.75,
+          "tank_radius": 0.11,
+          "tank_color": "white",
+          "has_top_handle_cage": true,
+          "has_mini_gauge": false
+        }
+      },
+      {
+        "id": "industrial_heavy",
+        "name": "industrial_heavy",
+        "values": {
+          "tank_height": 1.35,
+          "tank_radius": 0.18,
+          "tank_color": "yellow",
+          "has_top_handle_cage": true,
+          "has_mini_gauge": true
+        }
+      }
+    ],
+    "export_capabilities": {
+      "supports_collision": true,
+      "default_collision_suffix": "-convcolonly"
+    },
+    "has_model": true,
+    "model_url": "/models/oxygen_tank.glb",
+    "file_size_bytes": 104372,
+    "source_code": "import math\nimport bpy\nimport bmesh\nfrom ...core.base_generator import BaseAssetGenerator\nfrom ...core.mesh_builder import MeshBuilder\nfrom ...core.texture_atlas import PS1TextureAtlas\nfrom .config import OxygenTankConfig\n\nclass OxygenTankGenerator(BaseAssetGenerator[OxygenTankConfig]):\n    \"\"\"\n    Procedural generator for Oxygen Tank:\n    Faceted high-pressure industrial gas canister with roll-cage valve protector,\n    foot ring, shoulder gauge, and hazard markings.\n    \"\"\"\n\n    def generate(self, config: OxygenTankConfig = None) -> bpy.types.Object:\n        if config is not None:\n            self.config = config\n        self.clean_context()\n        self.material_manager = self.get_material_manager(self.config)\n        MeshBuilder.set_active_material_manager(self.material_manager)\n\n        obj, bm = self.create_mesh_object(self.config.name)\n        self.material_manager.assign_to_mesh(obj)\n        m_idx = self.material_manager.material_indices\n\n        uv_layer = MeshBuilder.get_or_create_uv_layer(bm)\n        col_layer = MeshBuilder.get_or_create_color_layer(bm)\n\n        r = self.config.tank_radius\n        h = self.config.tank_height\n\n        casing_mat = m_idx.get(\"casing\", 0)\n        metal_mat = m_idx.get(\"dark_metal\", m_idx.get(\"casing\", 0))\n        brass_mat = m_idx.get(\"brass\", m_idx.get(\"casing\", 0))\n        screen_mat = m_idx.get(\"screen\", m_idx.get(\"casing\", 0))\n\n        metal_rgba = self.material_manager.get_rgba(\"dark_metal\")\n        brass_rgba = (0.85, 0.68, 0.22, 1.0)\n\n        # Body color & texture selection\n        if self.config.tank_color == \"cyan\":\n            tank_rect = PS1TextureAtlas.get_rect(\"oxygen_cyan_glow\")\n            tank_rgba = (0.2, 0.75, 0.85, 1.0)\n        elif self.config.tank_color == \"white\":\n            tank_rect = PS1TextureAtlas.get_rect(\"painted_metal_white\")\n            tank_rgba = (0.9, 0.92, 0.94, 1.0)\n        else:\n            tank_rect = PS1TextureAtlas.get_rect(\"hazard_stripes\")\n            tank_rgba = (0.9, 0.75, 0.15, 1.0)\n\n        # 1. Base foot ring\n        foot_h = 0.08\n        MeshBuilder.add_cylinder(\n            bm,\n            radius=r * 1.05,\n            depth=foot_h,\n            segments=8,\n            offset=(0.0, 0.0, foot_h / 2.0),\n            axis='Z',\n            mat_idx=metal_mat,\n            rgba=metal_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n        )\n\n        # 2. Main cylindrical tank body\n        body_h = h - foot_h - 0.25\n        body_z = foot_h + body_h / 2.0\n        MeshBuilder.add_cylinder(\n            bm,\n            radius=r,\n            depth=body_h,\n            segments=8,\n            offset=(0.0, 0.0, body_z),\n            axis='Z',\n            mat_idx=casing_mat,\n            rgba=tank_rgba,\n            uv_rect=tank_rect\n        )\n\n        # 3. Tapered domed shoulder\n        shoulder_h = 0.14\n        shoulder_z = foot_h + body_h + shoulder_h / 2.0\n        MeshBuilder.add_cylinder(\n            bm,\n            radius=r * 0.75,\n            depth=shoulder_h,\n            segments=8,\n            offset=(0.0, 0.0, shoulder_z),\n            axis='Z',\n            mat_idx=casing_mat,\n            rgba=tank_rgba,\n            uv_rect=tank_rect\n        )\n\n        # Hazard collar band\n        if self.config.has_hazard_collar:\n            collar_h = 0.06\n            MeshBuilder.add_cylinder(\n                bm,\n                radius=r * 1.02,\n                depth=collar_h,\n                segments=8,\n                offset=(0.0, 0.0, foot_h + body_h - collar_h / 2.0),\n                axis='Z',\n                mat_idx=screen_mat,\n                rgba=(0.95, 0.8, 0.1, 1.0),\n                uv_rect=PS1TextureAtlas.get_rect(\"hazard_stripes\")\n            )\n\n        # 4. Top brass neck & valve\n        neck_h = 0.10\n        neck_z = foot_h + body_h + shoulder_h + neck_h / 2.0\n        MeshBuilder.add_cylinder(\n            bm,\n            radius=r * 0.32,\n            depth=neck_h,\n            segments=6,\n            offset=(0.0, 0.0, neck_z),\n            axis='Z',\n            mat_idx=brass_mat,\n            rgba=brass_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"cartridge_amber\")\n        )\n\n        # Cross valve handwheel on top\n        MeshBuilder.add_cylinder(\n            bm,\n            radius=r * 0.40,\n            depth=0.03,\n            segments=6,\n            offset=(0.0, 0.0, neck_z + neck_h / 2.0 + 0.015),\n            axis='Z',\n            mat_idx=metal_mat,\n            rgba=(0.85, 0.15, 0.12, 1.0),\n            uv_rect=PS1TextureAtlas.get_rect(\"button_red\")\n        )\n\n        # Threaded outlet nozzle\n        MeshBuilder.add_cylinder(\n            bm,\n            radius=0.02,\n            depth=0.06,\n            segments=6,\n            offset=(0.0, r * 0.35, neck_z),\n            axis='Y',\n            mat_idx=brass_mat,\n            rgba=brass_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"metal_light_brushed\")\n        )\n\n        # 5. Shoulder mini gauge\n        if self.config.has_mini_gauge:\n            gauge_rad = 0.035\n            MeshBuilder.add_cylinder(\n                bm,\n                radius=gauge_rad,\n                depth=0.025,\n                segments=8,\n                offset=(0.0, -r * 0.85, shoulder_z + 0.02),\n                axis='Y',\n                mat_idx=screen_mat,\n                rgba=(0.95, 0.95, 0.95, 1.0),\n                uv_rect=PS1TextureAtlas.get_rect(\"gauge_meter\")\n            )\n\n        # 6. Protective tubular roll-cage collar handle\n        if self.config.has_top_handle_cage:\n            cage_rad = r * 0.80\n            cage_top_z = neck_z + neck_h / 2.0 + 0.06\n            # Tubular top ring\n            MeshBuilder.add_cylinder(\n                bm,\n                radius=cage_rad,\n                depth=0.025,\n                segments=8,\n                offset=(0.0, 0.0, cage_top_z),\n                axis='Z',\n                mat_idx=metal_mat,\n                rgba=metal_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n            )\n            # 3 vertical support struts\n            for i in range(3):\n                ang = i * (2.0 * math.pi / 3.0)\n                sx = math.cos(ang) * (cage_rad * 0.9)\n                sy = math.sin(ang) * (cage_rad * 0.9)\n                strut_h = cage_top_z - shoulder_z\n                MeshBuilder.add_cylinder(\n                    bm,\n                    radius=0.012,\n                    depth=strut_h,\n                    segments=4,\n                    offset=(sx, sy, shoulder_z + strut_h / 2.0),\n                    axis='Z',\n                    mat_idx=metal_mat,\n                    rgba=metal_rgba,\n                    uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n                )\n\n        self.finalize_mesh(obj, bm)\n        self.compact_materials(obj)\n        return obj\n",
+    "config_code": "from dataclasses import dataclass\nfrom ...core.base_config import BaseAssetConfig\n\n@dataclass\nclass OxygenTankConfig(BaseAssetConfig):\n    \"\"\"Configuration for Oxygen Tank industrial compressed gas cylinder.\"\"\"\n    tank_height: float = 1.1\n    tank_radius: float = 0.14\n    tank_color: str = \"cyan\"           # \"cyan\", \"white\", \"yellow\"\n    has_top_handle_cage: bool = True   # Roll cage protecting the brass valve\n    has_mini_gauge: bool = True        # Neck pressure indicator dial\n    has_hazard_collar: bool = True     # Contrast stripe around cylinder neck\n\n    name: str = \"oxygen_tank\"\n    palette_name: str = \"industrial_hazard\"\n    wear_level: float = 0.35\n    target_tri_budget: int = 340\n"
+  },
+  {
     "id": "below_nominal.medical.oxypod",
     "family": "oxypod",
     "name": "Cápsula de Oxígeno / Soporte Vital",
@@ -7042,6 +7954,256 @@
     "file_size_bytes": 103496,
     "source_code": "import math\nimport mathutils\nimport bmesh\nimport bpy\nimport random\nfrom typing import Optional\n\nfrom ...core.base_generator import BaseAssetGenerator\nfrom ...core.materials import MaterialManager\nfrom ...core.mesh_builder import MeshBuilder\nfrom .config import PipeConfig\n\nclass PipeGenerator(BaseAssetGenerator[PipeConfig]):\n    \"\"\"Procedural generator for industrial pipes, valves and pressure assemblies (PSX low-poly).\"\"\"\n\n    def generate(self, config: PipeConfig) -> bpy.types.Object:\n        self.clean_context()\n        rng = random.Random(config.seed)\n\n        self.material_manager = self.get_material_manager(config)\n        mesh_name = f\"{config.name}_mesh\"\n        obj_name = config.name\n\n        if obj_name in bpy.data.objects:\n            bpy.data.objects.remove(bpy.data.objects[obj_name], do_unlink=True)\n        if mesh_name in bpy.data.meshes:\n            bpy.data.meshes.remove(bpy.data.meshes[mesh_name], do_unlink=True)\n\n        mesh = bpy.data.meshes.new(mesh_name)\n        obj = bpy.data.objects.new(obj_name, mesh)\n        bpy.context.collection.objects.link(obj)\n\n        self.material_manager.assign_to_mesh(obj)\n        m_idx = self.material_manager.material_indices\n        rgba = {k: self.material_manager.get_rgba(k) for k in self.material_manager.palette.keys()}\n\n        bm = bmesh.new()\n        col_layer = bm.loops.layers.color.new(\"Color\")\n\n        rad = config.radius * (1.3 if config.has_insulation_layer else 1.0)\n        pipe_len = config.length\n        pipe_mat = \"casing_inner\" if config.has_insulation_layer else \"pipe_industrial\"\n\n        # 1. Geometry based on pipe_type\n        if config.pipe_type == \"elbow_90\":\n            # Horizontal run (half length)\n            h_len = pipe_len * 0.5\n            MeshBuilder.add_cylinder(\n                bm=bm,\n                radius=rad,\n                depth=h_len,\n                segments=6,\n                offset=mathutils.Vector((h_len / 2.0, 0.0, 0.0)),\n                axis='X',\n                mat_idx=m_idx.get(pipe_mat, 0),\n                rgba=rgba.get(pipe_mat, (0.35, 0.38, 0.4, 1.0)),\n                color_layer=col_layer,\n                smooth=False\n            )\n            # Corner junction cube\n            MeshBuilder.add_box(\n                bm=bm,\n                size=mathutils.Vector((rad * 2.4, rad * 2.4, rad * 2.4)),\n                offset=mathutils.Vector((0.0, 0.0, 0.0)),\n                mat_idx=m_idx.get(\"casing\", 0),\n                rgba=rgba.get(\"casing\", (0.2, 0.2, 0.2, 1.0)),\n                color_layer=col_layer\n            )\n            # Vertical downward run\n            v_len = pipe_len * 0.5\n            MeshBuilder.add_cylinder(\n                bm=bm,\n                radius=rad,\n                depth=v_len,\n                segments=6,\n                offset=mathutils.Vector((0.0, -v_len / 2.0, 0.0)),\n                axis='Y',\n                mat_idx=m_idx.get(pipe_mat, 0),\n                rgba=rgba.get(pipe_mat, (0.35, 0.38, 0.4, 1.0)),\n                color_layer=col_layer,\n                smooth=False\n            )\n\n        elif config.pipe_type == \"t_junction\":\n            # Main horizontal run\n            MeshBuilder.add_cylinder(\n                bm=bm,\n                radius=rad,\n                depth=pipe_len,\n                segments=6,\n                offset=mathutils.Vector((0.0, 0.0, 0.0)),\n                axis='X',\n                mat_idx=m_idx.get(pipe_mat, 0),\n                rgba=rgba.get(pipe_mat, (0.35, 0.38, 0.4, 1.0)),\n                color_layer=col_layer,\n                smooth=False\n            )\n            # Perpendicular Tee branch\n            tee_len = pipe_len * 0.38\n            MeshBuilder.add_cylinder(\n                bm=bm,\n                radius=rad * 0.85,\n                depth=tee_len,\n                segments=6,\n                offset=mathutils.Vector((0.0, tee_len / 2.0, 0.0)),\n                axis='Y',\n                mat_idx=m_idx.get(pipe_mat, 0),\n                rgba=rgba.get(pipe_mat, (0.35, 0.38, 0.4, 1.0)),\n                color_layer=col_layer,\n                smooth=False\n            )\n\n        else:\n            # Straight run / valve assembly\n            MeshBuilder.add_cylinder(\n                bm=bm,\n                radius=rad,\n                depth=pipe_len,\n                segments=6,\n                offset=mathutils.Vector((0.0, 0.0, 0.0)),\n                axis='X',\n                mat_idx=m_idx.get(pipe_mat, 0),\n                rgba=rgba.get(pipe_mat, (0.35, 0.38, 0.4, 1.0)),\n                color_layer=col_layer,\n                smooth=False\n            )\n\n        # 2. Bolted Flange Couplings\n        if config.has_flange_couplings:\n            for side in (-1.0, 1.0):\n                fx = side * ((pipe_len / 2.0) - 0.03)\n                MeshBuilder.add_cylinder(\n                    bm=bm,\n                    radius=rad * 1.55,\n                    depth=0.04,\n                    segments=6,\n                    offset=mathutils.Vector((fx, 0.0, 0.0)),\n                    axis='X',\n                    mat_idx=m_idx.get(\"screw\", 0),\n                    rgba=rgba.get(\"screw\", (0.4, 0.4, 0.4, 1.0)),\n                    color_layer=col_layer,\n                    smooth=False\n                )\n\n        # 3. Valve Assembly (Handwheel vs Lever)\n        if config.pipe_type == \"valve_assembly\" or config.valve_type != \"none\":\n            # Central valve body block\n            MeshBuilder.add_box(\n                bm=bm,\n                size=mathutils.Vector((rad * 2.8, rad * 2.4, rad * 2.4)),\n                offset=mathutils.Vector((0.0, 0.0, 0.0)),\n                mat_idx=m_idx.get(\"casing\", 0),\n                rgba=rgba.get(\"casing\", (0.2, 0.2, 0.2, 1.0)),\n                color_layer=col_layer\n            )\n\n            spindle_h = rad * 2.6\n            MeshBuilder.add_cylinder(\n                bm=bm,\n                radius=rad * 0.25,\n                depth=spindle_h,\n                segments=5,\n                offset=mathutils.Vector((0.0, (spindle_h / 2.0) + rad, 0.0)),\n                axis='Y',\n                mat_idx=m_idx.get(\"switch_metal\", 0),\n                rgba=rgba.get(\"switch_metal\", (0.7, 0.7, 0.7, 1.0)),\n                color_layer=col_layer,\n                smooth=False\n            )\n\n            wheel_y = rad + spindle_h\n\n            if config.valve_type == \"lever_quarter_turn\":\n                # Quarter-turn Lever Handle\n                MeshBuilder.add_box(\n                    bm=bm,\n                    size=mathutils.Vector((rad * 2.5, 0.02, 0.04)),\n                    offset=mathutils.Vector((rad * 1.0, wheel_y, 0.0)),\n                    mat_idx=m_idx.get(\"hazard_yellow\", 0),\n                    rgba=rgba.get(\"hazard_yellow\", (0.85, 0.62, 0.08, 1.0)),\n                    color_layer=col_layer\n                )\n            else:\n                # Spoked Handwheel (Red)\n                wheel_rad = rad * 1.85\n                MeshBuilder.add_cylinder(\n                    bm=bm,\n                    radius=wheel_rad,\n                    depth=0.025,\n                    segments=6,\n                    offset=mathutils.Vector((0.0, wheel_y, 0.0)),\n                    axis='Y',\n                    mat_idx=m_idx.get(\"valve_red\", 0),\n                    rgba=rgba.get(\"valve_red\", (0.8, 0.15, 0.1, 1.0)),\n                    color_layer=col_layer,\n                    smooth=False\n                )\n                MeshBuilder.add_cylinder(\n                    bm=bm,\n                    radius=rad * 0.4,\n                    depth=0.04,\n                    segments=5,\n                    offset=mathutils.Vector((0.0, wheel_y, 0.0)),\n                    axis='Y',\n                    mat_idx=m_idx.get(\"screw\", 0),\n                    rgba=rgba.get(\"screw\", (0.3, 0.3, 0.3, 1.0)),\n                    color_layer=col_layer,\n                    smooth=False\n                )\n                MeshBuilder.add_box(\n                    bm=bm,\n                    size=mathutils.Vector((wheel_rad * 1.8, 0.02, 0.02)),\n                    offset=mathutils.Vector((0.0, wheel_y, 0.0)),\n                    mat_idx=m_idx.get(\"valve_red\", 0),\n                    rgba=rgba.get(\"valve_red\", (0.8, 0.15, 0.1, 1.0)),\n                    color_layer=col_layer\n                )\n                MeshBuilder.add_box(\n                    bm=bm,\n                    size=mathutils.Vector((0.02, 0.02, wheel_rad * 1.8)),\n                    offset=mathutils.Vector((0.0, wheel_y, 0.0)),\n                    mat_idx=m_idx.get(\"valve_red\", 0),\n                    rgba=rgba.get(\"valve_red\", (0.8, 0.15, 0.1, 1.0)),\n                    color_layer=col_layer\n                )\n\n        # 4. Pressure Gauge Dial\n        if config.has_pressure_gauge:\n            gauge_x = pipe_len * 0.28\n            gauge_pos = mathutils.Vector((gauge_x, rad + 0.08, 0.0))\n\n            MeshBuilder.add_cylinder(\n                bm=bm,\n                radius=0.015,\n                depth=0.08,\n                segments=4,\n                offset=mathutils.Vector((gauge_x, rad + 0.04, 0.0)),\n                axis='Y',\n                mat_idx=m_idx.get(\"screw\", 0),\n                rgba=rgba.get(\"screw\", (0.4, 0.4, 0.4, 1.0)),\n                color_layer=col_layer,\n                smooth=False\n            )\n            MeshBuilder.add_cylinder(\n                bm=bm,\n                radius=0.07,\n                depth=0.03,\n                segments=6,\n                offset=gauge_pos,\n                axis='Z',\n                mat_idx=m_idx.get(\"screw\", 0),\n                rgba=rgba.get(\"screw\", (0.35, 0.35, 0.35, 1.0)),\n                color_layer=col_layer,\n                smooth=False\n            )\n            MeshBuilder.add_circle(\n                bm=bm,\n                radius=0.058,\n                segments=6,\n                offset=mathutils.Vector((gauge_x, gauge_pos.y, 0.016)),\n                axis='Z',\n                mat_idx=m_idx.get(\"casing_inner\", 0),\n                rgba=rgba.get(\"casing_inner\", (0.85, 0.85, 0.8, 1.0)),\n                color_layer=col_layer,\n                smooth=False\n            )\n\n        bm.to_mesh(mesh)\n        bm.free()\n        mesh.update()\n        return obj\n",
     "config_code": "from dataclasses import dataclass\nfrom ...core.base_config import BaseAssetConfig\n\n@dataclass\nclass PipeConfig(BaseAssetConfig):\n    \"\"\"Configuration for industrial pipe networks, elbows, valves and bypasses.\"\"\"\n    pipe_type: str = \"valve_assembly\"  # \"valve_assembly\", \"straight\", \"elbow_90\", \"t_junction\"\n    radius: float = 0.09\n    length: float = 1.80\n\n    valve_type: str = \"handwheel_red\"  # \"handwheel_red\", \"lever_quarter_turn\", \"none\"\n    has_pressure_gauge: bool = True\n    has_insulation_layer: bool = False  # Thermal lagging insulation jacket\n    has_flange_couplings: bool = True\n\n    name: str = \"pipe_assembly\"\n    target_tri_budget: int = 400\n"
+  },
+  {
+    "id": "below_nominal.fixtures.pressure_door_control",
+    "family": "pressure_door_control",
+    "name": "Panel de Control de Presión",
+    "version": "1.0.0",
+    "description": "Panel mural montado junto a compuertas herméticas con lectura diegética de presión bar/psi, teclado de acceso, lector de tarjeta y luces de estado. Podés configurar estado de luz, teclado, lector y dimensiones en GLB.",
+    "category": "fixtures",
+    "tags": [
+      "psx",
+      "low-poly",
+      "door_control",
+      "pressure",
+      "security",
+      "below-nominal"
+    ],
+    "author": {
+      "name": "ModelCoder Core Team",
+      "github": "FrancisCuarto"
+    },
+    "license": "CC-BY-4.0",
+    "compatibility": {},
+    "parameters": [
+      {
+        "key": "width",
+        "label": "Ancho Panel (m)",
+        "type": "float",
+        "default": 0.28,
+        "group": "Dimensiones",
+        "min": 0.2,
+        "max": 0.4,
+        "step": 0.02
+      },
+      {
+        "key": "height",
+        "label": "Altura Panel (m)",
+        "type": "float",
+        "default": 0.42,
+        "group": "Dimensiones",
+        "min": 0.3,
+        "max": 0.6,
+        "step": 0.02
+      },
+      {
+        "key": "depth",
+        "label": "Profundidad (m)",
+        "type": "float",
+        "default": 0.08,
+        "group": "Dimensiones",
+        "min": 0.05,
+        "max": 0.14,
+        "step": 0.01
+      },
+      {
+        "key": "status_light",
+        "label": "Luz de Estado",
+        "type": "enum",
+        "default": "green",
+        "group": "Estado",
+        "options": [
+          {
+            "value": "green",
+            "label": "Verde (Presurizado Nominal)"
+          },
+          {
+            "value": "yellow",
+            "label": "Ámbar (Alerta / Ciclo)"
+          },
+          {
+            "value": "red",
+            "label": "Rojo (Bloqueo / Fuga)"
+          }
+        ]
+      },
+      {
+        "key": "has_keypad",
+        "label": "Teclado Numérico",
+        "type": "bool",
+        "default": true,
+        "group": "Acceso"
+      },
+      {
+        "key": "has_card_slot",
+        "label": "Ranura Lector de Tarjetas",
+        "type": "bool",
+        "default": true,
+        "group": "Acceso"
+      },
+      {
+        "key": "has_emergency_vent_button",
+        "label": "Botón de Venteo Rápido",
+        "type": "bool",
+        "default": true,
+        "group": "Seguridad"
+      }
+    ],
+    "presets": [
+      {
+        "id": "pressurized_nominal",
+        "name": "pressurized_nominal",
+        "values": {
+          "status_light": "green",
+          "has_keypad": true,
+          "has_card_slot": true,
+          "has_emergency_vent_button": true
+        }
+      },
+      {
+        "id": "lockout_alarm",
+        "name": "lockout_alarm",
+        "values": {
+          "status_light": "red",
+          "has_keypad": true,
+          "has_card_slot": true,
+          "has_emergency_vent_button": true
+        }
+      },
+      {
+        "id": "maintenance_override",
+        "name": "maintenance_override",
+        "values": {
+          "status_light": "yellow",
+          "has_keypad": false,
+          "has_card_slot": true,
+          "has_emergency_vent_button": false
+        }
+      }
+    ],
+    "export_capabilities": {
+      "supports_collision": true,
+      "default_collision_suffix": "-convcolonly"
+    },
+    "has_model": true,
+    "model_url": "/models/pressure_door_control.glb",
+    "file_size_bytes": 96436,
+    "source_code": "import math\nimport bpy\nimport bmesh\nfrom ...core.base_generator import BaseAssetGenerator\nfrom ...core.mesh_builder import MeshBuilder\nfrom ...core.texture_atlas import PS1TextureAtlas\nfrom .config import PressureDoorControlConfig\n\nclass PressureDoorControlGenerator(BaseAssetGenerator[PressureDoorControlConfig]):\n    \"\"\"\n    Procedural generator for Pressure Door Control:\n    Diegetic bulkhead control panel with bar/psi pressure display, access keypad,\n    keycard slot, and status alarm lights.\n    \"\"\"\n\n    def generate(self, config: PressureDoorControlConfig = None) -> bpy.types.Object:\n        if config is not None:\n            self.config = config\n        self.clean_context()\n        self.material_manager = self.get_material_manager(self.config)\n        MeshBuilder.set_active_material_manager(self.material_manager)\n\n        obj, bm = self.create_mesh_object(self.config.name)\n        self.material_manager.assign_to_mesh(obj)\n        m_idx = self.material_manager.material_indices\n\n        uv_layer = MeshBuilder.get_or_create_uv_layer(bm)\n        col_layer = MeshBuilder.get_or_create_color_layer(bm)\n\n        w = self.config.width\n        h = self.config.height\n        d = self.config.depth\n\n        casing_mat = m_idx.get(\"casing\", 0)\n        metal_mat = m_idx.get(\"dark_metal\", m_idx.get(\"casing\", 0))\n        screen_mat = m_idx.get(\"screen\", m_idx.get(\"casing\", 0))\n\n        casing_rgba = self.material_manager.get_rgba(\"casing\")\n        metal_rgba = self.material_manager.get_rgba(\"dark_metal\")\n\n        # 1. Main wall-mount chassis box\n        MeshBuilder.add_box(\n            bm,\n            size=(w, d, h),\n            offset=(0.0, d / 2.0, h / 2.0),\n            mat_idx=casing_mat,\n            rgba=casing_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"painted_metal_white\")\n        )\n\n        # Recessed front face bezel\n        face_w = w * 0.90\n        face_h = h * 0.92\n        face_y = d + 0.005\n        MeshBuilder.add_box(\n            bm,\n            size=(face_w, 0.01, face_h),\n            offset=(0.0, face_y, h / 2.0),\n            mat_idx=metal_mat,\n            rgba=metal_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n        )\n\n        # 2. Status light lamp at top\n        lamp_w = face_w * 0.75\n        lamp_h = 0.04\n        lamp_z = h * 0.88\n        if self.config.status_light == \"green\":\n            led_rect = PS1TextureAtlas.get_rect(\"led_green\")\n            led_rgba = (0.1, 0.9, 0.2, 1.0)\n        elif self.config.status_light == \"red\":\n            led_rect = PS1TextureAtlas.get_rect(\"led_red\")\n            led_rgba = (0.9, 0.1, 0.1, 1.0)\n        else:\n            led_rect = PS1TextureAtlas.get_rect(\"led_yellow\")\n            led_rgba = (0.95, 0.8, 0.1, 1.0)\n\n        MeshBuilder.add_box(\n            bm,\n            size=(lamp_w, 0.015, lamp_h),\n            offset=(0.0, face_y + 0.008, lamp_z),\n            mat_idx=screen_mat,\n            rgba=led_rgba,\n            uv_rect=led_rect\n        )\n\n        # 3. Pressure digital readout screen\n        screen_w = face_w * 0.82\n        screen_h = 0.09\n        screen_z = h * 0.72\n        disp_rect = PS1TextureAtlas.get_rect(\"crt_screen_green\" if self.config.status_light == \"green\" else \"crt_screen_amber\")\n        MeshBuilder.add_box(\n            bm,\n            size=(screen_w, 0.015, screen_h),\n            offset=(0.0, face_y + 0.008, screen_z),\n            mat_idx=screen_mat,\n            rgba=(0.1, 0.8, 0.25, 1.0) if self.config.status_light == \"green\" else (0.9, 0.6, 0.1, 1.0),\n            uv_rect=disp_rect\n        )\n\n        # 4. Access keypad\n        if self.config.has_keypad:\n            keypad_w = face_w * 0.48\n            keypad_h = 0.16\n            keypad_z = h * 0.44\n            keypad_x = -face_w * 0.18\n            MeshBuilder.add_box(\n                bm,\n                size=(keypad_w, 0.015, keypad_h),\n                offset=(keypad_x, face_y + 0.008, keypad_z),\n                mat_idx=casing_mat,\n                rgba=(0.85, 0.85, 0.88, 1.0),\n                uv_rect=PS1TextureAtlas.get_rect(\"button_white\")\n            )\n\n        # 5. Keycard reader slot\n        if self.config.has_card_slot:\n            card_x = face_w * 0.26\n            card_z = h * 0.44\n            # Reader housing\n            MeshBuilder.add_box(\n                bm,\n                size=(0.045, 0.02, 0.18),\n                offset=(card_x, face_y + 0.01, card_z),\n                mat_idx=metal_mat,\n                rgba=(0.15, 0.15, 0.18, 1.0),\n                uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n            )\n            # Slot groove\n            MeshBuilder.add_box(\n                bm,\n                size=(0.008, 0.01, 0.14),\n                offset=(card_x, face_y + 0.021, card_z),\n                mat_idx=metal_mat,\n                rgba=(0.05, 0.05, 0.05, 1.0),\n                uv_rect=PS1TextureAtlas.get_rect(\"rubber_black\")\n            )\n\n        # 6. Emergency vent button\n        if self.config.has_emergency_vent_button:\n            vent_z = h * 0.18\n            # Guard collar\n            MeshBuilder.add_cylinder(\n                bm,\n                radius=0.038,\n                depth=0.02,\n                segments=8,\n                offset=(0.0, face_y + 0.01, vent_z),\n                axis='Y',\n                mat_idx=screen_mat,\n                rgba=(0.9, 0.8, 0.1, 1.0),\n                uv_rect=PS1TextureAtlas.get_rect(\"hazard_stripes\")\n            )\n            # Red push button\n            MeshBuilder.add_cylinder(\n                bm,\n                radius=0.025,\n                depth=0.025,\n                segments=8,\n                offset=(0.0, face_y + 0.018, vent_z),\n                axis='Y',\n                mat_idx=screen_mat,\n                rgba=(0.9, 0.15, 0.15, 1.0),\n                uv_rect=PS1TextureAtlas.get_rect(\"button_red\")\n            )\n\n        # 7. Bottom electrical conduit fitting\n        MeshBuilder.add_cylinder(\n            bm,\n            radius=0.018,\n            depth=0.06,\n            segments=6,\n            offset=(0.0, d * 0.5, -0.03),\n            axis='Z',\n            mat_idx=metal_mat,\n            rgba=metal_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n        )\n\n        self.finalize_mesh(obj, bm)\n        self.compact_materials(obj)\n        return obj\n",
+    "config_code": "from dataclasses import dataclass\nfrom ...core.base_config import BaseAssetConfig\n\n@dataclass\nclass PressureDoorControlConfig(BaseAssetConfig):\n    \"\"\"Configuration for Pressure Door Control bulkhead access panel.\"\"\"\n    width: float = 0.28\n    height: float = 0.42\n    depth: float = 0.08\n    status_light: str = \"green\"        # \"green\", \"red\", \"yellow\"\n    has_keypad: bool = True\n    has_card_slot: bool = True\n    has_emergency_vent_button: bool = True\n\n    name: str = \"pressure_door_control\"\n    palette_name: str = \"industrial_hazard\"\n    wear_level: float = 0.35\n    target_tri_budget: int = 360\n"
+  },
+  {
+    "id": "below_nominal.fixtures.pressure_indicator",
+    "family": "pressure_indicator",
+    "name": "Indicador de Presión de Sector",
+    "version": "1.0.0",
+    "description": "Instrumento mural de gran tamaño con dial analógico circular, aguja mecánica, cuadrante de advertencia y bisel reforzado con pernos. Podés configurar el ángulo de la aguja, diámetro y cristal protector en GLB.",
+    "category": "fixtures",
+    "tags": [
+      "psx",
+      "low-poly",
+      "gauge",
+      "pressure",
+      "meter",
+      "below-nominal"
+    ],
+    "author": {
+      "name": "ModelCoder Core Team",
+      "github": "FrancisCuarto"
+    },
+    "license": "CC-BY-4.0",
+    "compatibility": {},
+    "parameters": [
+      {
+        "key": "diameter",
+        "label": "Diámetro Dial (m)",
+        "type": "float",
+        "default": 0.45,
+        "group": "Dimensiones",
+        "min": 0.3,
+        "max": 0.7,
+        "step": 0.05
+      },
+      {
+        "key": "depth",
+        "label": "Profundidad (m)",
+        "type": "float",
+        "default": 0.12,
+        "group": "Dimensiones",
+        "min": 0.08,
+        "max": 0.2,
+        "step": 0.01
+      },
+      {
+        "key": "needle_angle",
+        "label": "Ángulo de Aguja (°)",
+        "type": "float",
+        "default": 35.0,
+        "group": "Lectura",
+        "min": -120.0,
+        "max": 120.0,
+        "step": 5.0
+      },
+      {
+        "key": "has_warning_zones",
+        "label": "Zonas de Advertencia en Dial",
+        "type": "bool",
+        "default": true,
+        "group": "Detalles"
+      },
+      {
+        "key": "has_protective_glass",
+        "label": "Cristal Protector Frontal",
+        "type": "bool",
+        "default": true,
+        "group": "Detalles"
+      },
+      {
+        "key": "has_bottom_pipe_fitting",
+        "label": "Acople Inferior de Sensor",
+        "type": "bool",
+        "default": true,
+        "group": "Detalles"
+      }
+    ],
+    "presets": [
+      {
+        "id": "sector_nominal",
+        "name": "sector_nominal",
+        "values": {
+          "needle_angle": 0.0,
+          "has_protective_glass": true,
+          "has_bottom_pipe_fitting": true
+        }
+      },
+      {
+        "id": "critical_overpressure",
+        "name": "critical_overpressure",
+        "values": {
+          "needle_angle": 95.0,
+          "has_protective_glass": true,
+          "has_bottom_pipe_fitting": true
+        }
+      },
+      {
+        "id": "vacuum_decompression",
+        "name": "vacuum_decompression",
+        "values": {
+          "needle_angle": -110.0,
+          "has_protective_glass": false,
+          "has_bottom_pipe_fitting": true
+        }
+      }
+    ],
+    "export_capabilities": {
+      "supports_collision": true,
+      "default_collision_suffix": "-convcolonly"
+    },
+    "has_model": true,
+    "model_url": "/models/pressure_indicator.glb",
+    "file_size_bytes": 101564,
+    "source_code": "import math\nimport mathutils\nimport bpy\nimport bmesh\nfrom ...core.base_generator import BaseAssetGenerator\nfrom ...core.mesh_builder import MeshBuilder\nfrom ...core.texture_atlas import PS1TextureAtlas\nfrom .config import PressureIndicatorConfig\n\nclass PressureIndicatorGenerator(BaseAssetGenerator[PressureIndicatorConfig]):\n    \"\"\"\n    Procedural generator for Pressure Indicator:\n    Large mural analog dial gauge with rotating needle, cast bezel rim,\n    warning sectors, and conduit sensor connection.\n    \"\"\"\n\n    def generate(self, config: PressureIndicatorConfig = None) -> bpy.types.Object:\n        if config is not None:\n            self.config = config\n        self.clean_context()\n        self.material_manager = self.get_material_manager(self.config)\n        MeshBuilder.set_active_material_manager(self.material_manager)\n\n        obj, bm = self.create_mesh_object(self.config.name)\n        self.material_manager.assign_to_mesh(obj)\n        m_idx = self.material_manager.material_indices\n\n        uv_layer = MeshBuilder.get_or_create_uv_layer(bm)\n        col_layer = MeshBuilder.get_or_create_color_layer(bm)\n\n        rad = self.config.diameter / 2.0\n        depth = self.config.depth\n\n        metal_mat = m_idx.get(\"dark_metal\", m_idx.get(\"casing\", 0))\n        screen_mat = m_idx.get(\"screen\", m_idx.get(\"casing\", 0))\n        glass_mat = m_idx.get(\"glass\", m_idx.get(\"casing\", 0))\n        pipe_mat = m_idx.get(\"pipe\", m_idx.get(\"casing\", 0))\n\n        metal_rgba = self.material_manager.get_rgba(\"dark_metal\")\n        glass_rgba = (0.35, 0.65, 0.75, 0.7)\n\n        # 1. Main wall-mount cylindrical bucket\n        MeshBuilder.add_cylinder(\n            bm,\n            radius=rad,\n            depth=depth,\n            segments=8,\n            offset=(0.0, depth / 2.0, rad),\n            axis='Y',\n            mat_idx=metal_mat,\n            rgba=metal_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n        )\n\n        # Front outer bezel rim (raised flange)\n        MeshBuilder.add_cylinder(\n            bm,\n            radius=rad * 1.05,\n            depth=0.02,\n            segments=8,\n            offset=(0.0, depth + 0.01, rad),\n            axis='Y',\n            mat_idx=metal_mat,\n            rgba=metal_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n        )\n\n        # Hex bolts on rim (4 cardinal bolts)\n        for i in range(4):\n            ang = i * (math.pi / 2.0) + (math.pi / 4.0)\n            bx = math.cos(ang) * (rad * 0.96)\n            bz = rad + math.sin(ang) * (rad * 0.96)\n            MeshBuilder.add_cylinder(\n                bm,\n                radius=0.012,\n                depth=0.015,\n                segments=4,\n                offset=(bx, depth + 0.02, bz),\n                axis='Y',\n                mat_idx=metal_mat,\n                rgba=(0.75, 0.75, 0.8, 1.0),\n                uv_rect=PS1TextureAtlas.get_rect(\"metal_light_brushed\")\n            )\n\n        # 2. Recessed dial face\n        dial_rad = rad * 0.88\n        MeshBuilder.add_cylinder(\n            bm,\n            radius=dial_rad,\n            depth=0.005,\n            segments=8,\n            offset=(0.0, depth + 0.003, rad),\n            axis='Y',\n            mat_idx=screen_mat,\n            rgba=(0.95, 0.95, 0.95, 1.0),\n            uv_rect=PS1TextureAtlas.get_rect(\"gauge_meter\")\n        )\n\n        # 3. Rotating 3D Needle\n        needle_rot = math.radians(self.config.needle_angle)\n        needle_len = dial_rad * 0.78\n        needle_w = 0.018\n        needle_t = 0.006\n\n        rot_mat = mathutils.Euler((0.0, -needle_rot, 0.0), 'XYZ').to_matrix()\n\n        needle_geom = bmesh.ops.create_cube(bm, size=1.0)\n        n_verts = [v for v in needle_geom[\"verts\"] if isinstance(v, bmesh.types.BMVert)]\n        for v in n_verts:\n            v.co.x *= needle_w\n            v.co.y *= needle_t\n            v.co.z *= needle_len\n            # Pivot around bottom\n            v.co.z += needle_len / 2.0\n            v.co = rot_mat @ v.co\n            v.co.y += depth + 0.01\n            v.co.z += rad\n\n        for f in bm.faces:\n            if all(v in n_verts for v in f.verts):\n                MeshBuilder.apply_face_attributes(f, screen_mat, (0.85, 0.15, 0.12, 1.0), col_layer)\n                MeshBuilder.apply_box_face_uv(f, uv_layer, PS1TextureAtlas.get_rect(\"button_red\"))\n\n        # Central needle spindle cap\n        MeshBuilder.add_cylinder(\n            bm,\n            radius=0.025,\n            depth=0.012,\n            segments=6,\n            offset=(0.0, depth + 0.012, rad),\n            axis='Y',\n            mat_idx=metal_mat,\n            rgba=(0.15, 0.15, 0.18, 1.0),\n            uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n        )\n\n        # 4. Protective lens glass\n        if self.config.has_protective_glass:\n            MeshBuilder.add_cylinder(\n                bm,\n                radius=dial_rad * 0.98,\n                depth=0.004,\n                segments=8,\n                offset=(0.0, depth + 0.018, rad),\n                axis='Y',\n                mat_idx=glass_mat,\n                rgba=glass_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"glass_reinforced\")\n            )\n\n\n        # 5. Bottom sensor conduit fitting\n        if self.config.has_bottom_pipe_fitting:\n            MeshBuilder.add_cylinder(\n                bm,\n                radius=0.03,\n                depth=0.08,\n                segments=6,\n                offset=(0.0, depth * 0.5, -0.04),\n                axis='Z',\n                mat_idx=pipe_mat,\n                rgba=(0.35, 0.4, 0.45, 1.0),\n                uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n            )\n\n        # Sector placard plate\n        MeshBuilder.add_box(\n            bm,\n            size=(0.14, 0.006, 0.05),\n            offset=(0.0, depth + 0.015, rad * 2.0 + 0.01),\n            mat_idx=screen_mat,\n            rgba=(0.2, 0.5, 0.8, 1.0),\n            uv_rect=PS1TextureAtlas.get_rect(\"sign_sector_blue\")\n        )\n\n        self.finalize_mesh(obj, bm)\n        self.compact_materials(obj)\n        return obj\n",
+    "config_code": "from dataclasses import dataclass\nfrom ...core.base_config import BaseAssetConfig\n\n@dataclass\nclass PressureIndicatorConfig(BaseAssetConfig):\n    \"\"\"Configuration for Pressure Indicator large mural dial gauge.\"\"\"\n    diameter: float = 0.45\n    depth: float = 0.12\n    needle_angle: float = 35.0         # Degrees (-120.0 to 120.0)\n    has_warning_zones: bool = True     # Colored arc zones (green/yellow/red)\n    has_protective_glass: bool = True\n    has_bottom_pipe_fitting: bool = True\n\n    name: str = \"pressure_indicator\"\n    palette_name: str = \"industrial_hazard\"\n    wear_level: float = 0.35\n    target_tri_budget: int = 280\n"
   },
   {
     "id": "below_nominal.furniture.radiator_heater",
@@ -10225,7 +11387,7 @@
     },
     "has_model": true,
     "model_url": "/models/terminal.glb",
-    "file_size_bytes": 26080,
+    "file_size_bytes": 104320,
     "source_code": "import math\nimport mathutils\nimport bmesh\nimport bpy\nimport random\nfrom typing import Optional\n\nfrom ...core.base_generator import BaseAssetGenerator\nfrom ...core.materials import MaterialManager\nfrom ...core.mesh_builder import MeshBuilder\nfrom ...core.transform_utils import generate_catenary_cable_points\nfrom .config import TerminalConfig\n\nclass TerminalGenerator(BaseAssetGenerator[TerminalConfig]):\n    \"\"\"Procedural generator for diegetic computer terminals with rich retrofuturistic variants.\"\"\"\n\n    def generate(self, config: TerminalConfig) -> bpy.types.Object:\n        self.clean_context()\n        rng = random.Random(config.seed)\n\n        self.material_manager = self.get_material_manager(config)\n        mesh_name = f\"{config.name}_mesh\"\n        obj_name = config.name\n\n        if obj_name in bpy.data.objects:\n            bpy.data.objects.remove(bpy.data.objects[obj_name], do_unlink=True)\n        if mesh_name in bpy.data.meshes:\n            bpy.data.meshes.remove(bpy.data.meshes[mesh_name], do_unlink=True)\n\n        mesh = bpy.data.meshes.new(mesh_name)\n        obj = bpy.data.objects.new(obj_name, mesh)\n        bpy.context.collection.objects.link(obj)\n\n        self.material_manager.assign_to_mesh(obj)\n        m_idx = self.material_manager.material_indices\n        rgba = {k: self.material_manager.get_rgba(k) for k in self.material_manager.palette.keys()}\n\n        bm = bmesh.new()\n        col_layer = bm.loops.layers.color.new(\"Color\")\n\n        chassis_w = config.width\n        chassis_h = config.height\n        chassis_d = config.depth\n\n        # 1. Main Enclosure & Mounting Base\n        MeshBuilder.add_box(\n            bm=bm,\n            size=mathutils.Vector((chassis_w, chassis_h, chassis_d)),\n            offset=mathutils.Vector((0.0, 0.0, chassis_d / 2.0)),\n            mat_idx=m_idx.get(\"casing\", 0),\n            rgba=rgba.get(\"casing\", (0.15, 0.15, 0.15, 1.0)),\n            color_layer=col_layer\n        )\n\n        if config.terminal_type == \"pedestal\":\n            # Pedestal support column underneath\n            MeshBuilder.add_cylinder(\n                bm=bm,\n                radius=0.065,\n                depth=0.85,\n                segments=6,\n                offset=mathutils.Vector((0.0, -(chassis_h / 2.0) - 0.425, chassis_d * 0.4)),\n                axis='Y',\n                mat_idx=m_idx.get(\"mounting\", 0),\n                rgba=rgba.get(\"mounting\", (0.25, 0.25, 0.25, 1.0)),\n                color_layer=col_layer,\n                smooth=False\n            )\n            # Floor circular base plate\n            MeshBuilder.add_cylinder(\n                bm=bm,\n                radius=0.25,\n                depth=0.03,\n                segments=6,\n                offset=mathutils.Vector((0.0, -(chassis_h / 2.0) - 0.85, chassis_d * 0.4)),\n                axis='Y',\n                mat_idx=m_idx.get(\"casing\", 0),\n                rgba=rgba.get(\"casing\", (0.2, 0.2, 0.2, 1.0)),\n                color_layer=col_layer,\n                smooth=False\n            )\n        elif config.terminal_type == \"desktop\":\n            # Rubber feet under console\n            for fx in (-chassis_w * 0.4, chassis_w * 0.4):\n                for fz in (chassis_d * 0.2, chassis_d * 0.8):\n                    MeshBuilder.add_cylinder(\n                        bm=bm,\n                        radius=0.025,\n                        depth=0.018,\n                        segments=4,\n                        offset=mathutils.Vector((fx, -(chassis_h / 2.0) - 0.009, fz)),\n                        axis='Y',\n                        mat_idx=m_idx.get(\"switch_base\", 0),\n                        rgba=rgba.get(\"switch_base\", (0.1, 0.1, 0.1, 1.0)),\n                        color_layer=col_layer,\n                        smooth=False\n                    )\n\n        # 2. CRT Screen with State Variation\n        crt_center = mathutils.Vector((0.0, chassis_h * 0.14, chassis_d + 0.02))\n\n        if config.state == \"powered_off\":\n            screen_mat = \"crt_frame\"\n        elif config.state == \"alarm\":\n            screen_mat = \"led_red\"\n        elif config.state == \"damaged\":\n            screen_mat = \"crt_frame\" if rng.random() > 0.5 else \"crt_screen_green\"\n        else:\n            screen_mat = \"crt_screen_green\" if config.phosphor_color == \"green\" else \"crt_screen_amber\"\n\n        MeshBuilder.add_crt_screen(\n            bm=bm,\n            width=config.screen_w,\n            height=config.screen_h,\n            bulge=config.crt_bulge,\n            offset=crt_center,\n            screen_mat_idx=m_idx.get(screen_mat, 0),\n            screen_rgba=rgba.get(screen_mat, (0.1, 0.9, 0.3, 1.0)),\n            frame_mat_idx=m_idx.get(\"crt_frame\", 0),\n            frame_rgba=rgba.get(\"crt_frame\", (0.1, 0.1, 0.1, 1.0)),\n            color_layer=col_layer\n        )\n\n        # 3. Keycard Reader Slot (Left or Right)\n        if config.has_card_reader:\n            slot_side = -1.0 if config.card_reader_side == \"left\" else 1.0\n            card_slot_x = slot_side * ((config.screen_w / 2.0) + 0.05)\n            card_slot_y = crt_center.y - 0.02\n            card_pos = mathutils.Vector((card_slot_x, card_slot_y, chassis_d + 0.025))\n\n            MeshBuilder.add_box(\n                bm=bm,\n                size=mathutils.Vector((0.035, 0.09, 0.02)),\n                offset=card_pos,\n                mat_idx=m_idx.get(\"hazard_yellow\", 0),\n                rgba=rgba.get(\"hazard_yellow\", (0.8, 0.6, 0.1, 1.0)),\n                color_layer=col_layer\n            )\n            MeshBuilder.add_box(\n                bm=bm,\n                size=mathutils.Vector((0.012, 0.065, 0.025)),\n                offset=mathutils.Vector((card_slot_x, card_slot_y, chassis_d + 0.03)),\n                mat_idx=m_idx.get(\"switch_base\", 0),\n                rgba=rgba.get(\"switch_base\", (0.05, 0.05, 0.05, 1.0)),\n                color_layer=col_layer\n            )\n\n        # 4. Floppy / Tape Data Drive Slot\n        if config.has_floppy_drive:\n            drive_side = 1.0 if config.card_reader_side == \"left\" else -1.0\n            drive_x = drive_side * ((config.screen_w / 2.0) + 0.05)\n            drive_y = crt_center.y + 0.05\n            MeshBuilder.add_box(\n                bm=bm,\n                size=mathutils.Vector((0.045, 0.022, 0.02)),\n                offset=mathutils.Vector((drive_x, drive_y, chassis_d + 0.025)),\n                mat_idx=m_idx.get(\"casing_inner\", 0),\n                rgba=rgba.get(\"casing_inner\", (0.2, 0.2, 0.2, 1.0)),\n                color_layer=col_layer\n            )\n            # Eject button\n            MeshBuilder.add_box(\n                bm=bm,\n                size=mathutils.Vector((0.012, 0.010, 0.025)),\n                offset=mathutils.Vector((drive_x + (drive_side * 0.025), drive_y, chassis_d + 0.026)),\n                mat_idx=m_idx.get(\"button_gray\", 0),\n                rgba=rgba.get(\"button_gray\", (0.5, 0.5, 0.5, 1.0)),\n                color_layer=col_layer\n            )\n\n        # 5. Speaker Grill\n        if config.has_speaker_grill:\n            spk_side = 1.0 if config.card_reader_side == \"left\" else -1.0\n            spk_x = spk_side * ((config.screen_w / 2.0) + 0.05)\n            for i in range(3):\n                spk_y = crt_center.y - 0.05 - (i * 0.022)\n                MeshBuilder.add_box(\n                    bm=bm,\n                    size=mathutils.Vector((0.04, 0.008, 0.015)),\n                    offset=mathutils.Vector((spk_x, spk_y, chassis_d + 0.022)),\n                    mat_idx=m_idx.get(\"switch_base\", 0),\n                    rgba=rgba.get(\"switch_base\", (0.05, 0.05, 0.05, 1.0)),\n                    color_layer=col_layer\n                )\n\n        # 6. Keyboard Styles\n        if config.keyboard_style in (\"integrated\", \"tray_projecting\"):\n            kb_w = config.screen_w * 1.15\n            kb_h = chassis_h * 0.26\n            kb_d = 0.04 if config.keyboard_style == \"integrated\" else 0.08\n            kb_y = -(chassis_h / 2.0) + (kb_h / 2.0) + 0.04\n            kb_offset = mathutils.Vector((0.0, kb_y, chassis_d + (kb_d / 2.0)))\n\n            MeshBuilder.add_box(\n                bm=bm,\n                size=mathutils.Vector((kb_w, kb_h, kb_d)),\n                offset=kb_offset,\n                mat_idx=m_idx.get(\"casing_inner\", 0),\n                rgba=rgba.get(\"casing_inner\", (0.25, 0.25, 0.25, 1.0)),\n                color_layer=col_layer\n            )\n\n            # Key block rows\n            key_rows = 3\n            dy = (kb_h * 0.65) / key_rows\n            for r in range(key_rows):\n                ky = kb_y - (kb_h * 0.22) + (r * dy)\n                key_strip_pos = mathutils.Vector((0.0, ky, chassis_d + kb_d + 0.008))\n                MeshBuilder.add_box(\n                    bm=bm,\n                    size=mathutils.Vector((kb_w * 0.85, dy * 0.65, 0.012)),\n                    offset=key_strip_pos,\n                    mat_idx=m_idx.get(\"button_gray\", 0),\n                    rgba=rgba.get(\"button_gray\", (0.4, 0.4, 0.4, 1.0)),\n                    color_layer=col_layer\n                )\n        elif config.keyboard_style == \"keypad_numeric\":\n            pad_w = 0.12\n            pad_h = 0.15\n            pad_y = -(chassis_h / 2.0) + 0.12\n            MeshBuilder.add_box(\n                bm=bm,\n                size=mathutils.Vector((pad_w, pad_h, 0.03)),\n                offset=mathutils.Vector((0.0, pad_y, chassis_d + 0.015)),\n                mat_idx=m_idx.get(\"casing_inner\", 0),\n                rgba=rgba.get(\"casing_inner\", (0.25, 0.25, 0.25, 1.0)),\n                color_layer=col_layer\n            )\n            # Numeric keys\n            for r in range(3):\n                for c in range(3):\n                    kx = -0.03 + (c * 0.03)\n                    ky = pad_y - 0.03 + (r * 0.03)\n                    MeshBuilder.add_box(\n                        bm=bm,\n                        size=mathutils.Vector((0.02, 0.02, 0.015)),\n                        offset=mathutils.Vector((kx, ky, chassis_d + 0.035)),\n                        mat_idx=m_idx.get(\"button_gray\", 0),\n                        rgba=rgba.get(\"button_gray\", (0.4, 0.4, 0.4, 1.0)),\n                        color_layer=col_layer\n                    )\n\n        # 7. Status LEDs & Alarms\n        led_mat = \"led_red\" if config.state == \"alarm\" else (\"led_green\" if config.state == \"active\" else \"switch_base\")\n        for i in range(2):\n            led_pos = mathutils.Vector((\n                (config.screen_w / 2.0) - 0.02 + (i * 0.03),\n                crt_center.y + (config.screen_h / 2.0) + 0.03,\n                chassis_d + 0.02\n            ))\n            MeshBuilder.add_cylinder(\n                bm=bm,\n                radius=0.01,\n                depth=0.012,\n                segments=4,\n                offset=led_pos,\n                axis='Z',\n                mat_idx=m_idx.get(led_mat, 0),\n                rgba=rgba.get(led_mat, (0.2, 0.9, 0.2, 1.0)),\n                color_layer=col_layer,\n                smooth=False\n            )\n\n        # 8. Hanging Cables\n        if config.has_hanging_cables:\n            count = max(1, config.cable_count)\n            for i in range(count):\n                cx = -0.06 + (i * 0.12)\n                cable_start = mathutils.Vector((cx, -(chassis_h / 2.0), chassis_d * 0.5))\n                drift = rng.uniform(-0.06, 0.06)\n                cable_end = mathutils.Vector((cx + drift, -(chassis_h / 2.0) - 0.35, -0.05))\n                pts = generate_catenary_cable_points(cable_start, cable_end, segments=4, sag=0.08)\n                c_mat = \"cable_black\" if i == 0 else \"cable_hazard\"\n                MeshBuilder.add_extruded_cable(\n                    bm=bm,\n                    points=pts,\n                    radius=0.011,\n                    sides=3,\n                    mat_idx=m_idx.get(c_mat, 0),\n                    rgba=rgba.get(c_mat, (0.1, 0.1, 0.1, 1.0)),\n                    color_layer=col_layer\n                )\n\n        bm.to_mesh(mesh)\n        bm.free()\n        mesh.update()\n        return obj\n",
     "config_code": "from dataclasses import dataclass\nfrom ...core.base_config import BaseAssetConfig\n\n@dataclass\nclass TerminalConfig(BaseAssetConfig):\n    \"\"\"Configuration for diegetic computer terminals with rich retrofuturistic variants.\"\"\"\n    terminal_type: str = \"wall\"  # \"wall\", \"desktop\", \"pedestal\"\n    state: str = \"active\"  # \"active\", \"alarm\", \"damaged\", \"powered_off\"\n\n    width: float = 0.55\n    height: float = 0.65\n    depth: float = 0.35\n\n    screen_w: float = 0.36\n    screen_h: float = 0.26\n    phosphor_color: str = \"green\"  # \"green\", \"amber\", \"blue_scan\"\n    crt_bulge: float = 0.025\n\n    keyboard_style: str = \"integrated\"  # \"integrated\", \"tray_projecting\", \"keypad_numeric\", \"none\"\n    has_card_reader: bool = True\n    card_reader_side: str = \"right\"  # \"right\", \"left\"\n    has_floppy_drive: bool = True  # Retro 3.5\" disk or consciousness cartridge slot\n    has_speaker_grill: bool = True\n    has_hanging_cables: bool = True\n    cable_count: int = 2\n\n    name: str = \"terminal\"\n    target_tri_budget: int = 450\n"
   },
