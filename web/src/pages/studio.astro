@@ -46,7 +46,7 @@ import catalog from '../data/catalog.json';
         <div style="display: flex; align-items: center; gap: 0.5rem;">
           <span class="ai-status-pulse"></span>
           <span>// MODELCODER_AI_COPILOT: GENERADOR_3D_POR_PROMPT</span>
-          <span class="ai-badge-gemini">GEMINI 2.5 FLASH</span>
+          <span class="ai-badge-gemini">GEMINI 3.8 FLASH</span>
         </div>
         <div class="ai-titlebar-tools">
           <button type="button" id="toggle-gemini-key-btn" class="ps1-ctrl-btn" title="Configurar API Key de Gemini">
@@ -1298,7 +1298,7 @@ class EnergyCoreConfig(BaseAssetConfig):
     if (aiLoadingStatus) {
       aiLoadingStatus.style.display = 'block';
       aiLoadingStatus.className = 'ai-status-indicator status-loading';
-      aiLoadingStatus.innerHTML = `🧠 <strong>[ GEMINI 2.5 FLASH PROCESANDO ]</strong><br>Diseñando geometría procedural, dataclass de configuración y contrato JSON...`;
+      aiLoadingStatus.innerHTML = `🧠 <strong>[ GEMINI 3.8 FLASH PROCESANDO ]</strong><br>Diseñando geometría procedural, dataclass de configuración y contrato JSON...`;
     }
 
     const SYSTEM_PROMPT = `Eres el generador oficial de código procedural 3D de ModelCoder para Blender 5.0 y el juego retro Below Nominal (PlayStation 1 / PSX low-poly).
@@ -1321,7 +1321,13 @@ REGLAS TÉCNICAS:
 Responde ÚNICAMENTE con el objeto JSON estructurado.`;
 
     try {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+      const candidateModels = [
+        'gemini-3.8-flash',
+        'gemini-3.5-flash',
+        'gemini-3-flash-preview',
+        'gemini-2.5-flash'
+      ];
+
       const payload = {
         contents: [
           {
@@ -1336,20 +1342,36 @@ Responde ÚNICAMENTE con el objeto JSON estructurado.`;
         }
       };
 
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
+      let rawText = '';
+      let lastError: any = null;
 
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData?.error?.message || `Error HTTP ${res.status}`);
+      for (const model of candidateModels) {
+        try {
+          const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+          const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+
+          if (res.ok) {
+            const resJson = await res.json();
+            rawText = resJson?.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (rawText) break;
+          } else {
+            const errData = await res.json().catch(() => ({}));
+            lastError = new Error(errData?.error?.message || `HTTP ${res.status} en ${model}`);
+            // If the model is not found or deprecated, continue to next fallback
+            console.warn(`[ModelCoder AI] ${model} no disponible:`, lastError.message);
+          }
+        } catch (fetchErr) {
+          lastError = fetchErr;
+        }
       }
 
-      const resJson = await res.json();
-      const rawText = resJson?.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (!rawText) throw new Error('Respuesta vacía de Gemini.');
+      if (!rawText) {
+        throw lastError || new Error('No se pudo obtener respuesta estructurada de Gemini.');
+      }
 
       const parsed = JSON.parse(rawText);
       applyGeneratedData(parsed);
