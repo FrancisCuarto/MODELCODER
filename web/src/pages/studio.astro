@@ -623,9 +623,6 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     ]
   };
 
-  // Push Initial Spec to History
-  pushHistoryState(currentSpec);
-
   // DOM Elements
   const studioWorkspace = document.getElementById('studio-workspace') as HTMLElement;
   const threeMountEl = document.getElementById('three-canvas-mount') as HTMLElement;
@@ -811,10 +808,14 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     const canUndo = historyIndex > 0;
     const canRedo = historyIndex < historyStack.length - 1;
 
-    if (btnTopbarUndo) btnTopbarUndo.disabled = !canUndo;
-    if (btnTopbarRedo) btnTopbarRedo.disabled = !canRedo;
-    if (btnOutlinerUndo) btnOutlinerUndo.disabled = !canUndo;
-    if (btnOutlinerRedo) btnOutlinerRedo.disabled = !canRedo;
+    try {
+      if (btnTopbarUndo) btnTopbarUndo.disabled = !canUndo;
+      if (btnTopbarRedo) btnTopbarRedo.disabled = !canRedo;
+      if (btnOutlinerUndo) btnOutlinerUndo.disabled = !canUndo;
+      if (btnOutlinerRedo) btnOutlinerRedo.disabled = !canRedo;
+    } catch {
+      // safe fallback
+    }
   }
 
   btnTopbarUndo?.addEventListener('click', () => undo());
@@ -2361,6 +2362,7 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
   });
 
   // Initial Load
+  pushHistoryState(currentSpec);
   setStudioMode('visual');
   renderCurrentSpec('visual', false);
 </script>
