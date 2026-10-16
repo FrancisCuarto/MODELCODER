@@ -370,6 +370,65 @@ gen.parameters.forEach((param: any) => {
         </div>
       </div>
     </div>
+
+    <!-- Community Comments & Feedback (GitHub Discussions) -->
+    <div class="ps1-window community-comments-window" style="margin-top: 2rem;">
+      <div class="ps1-titlebar" style="background: linear-gradient(90deg, #112233, #08111e);">
+        <span>// COMMUNITY_LOG: COMENTARIOS Y DISCUSIÓN DE LA COMUNIDAD</span>
+        <span class="ps1-telemetry-tag" style="color: var(--ps1-cyan);">GITHUB POWERED</span>
+      </div>
+      <div style="padding: 1.5rem; background: #070c18;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.25rem;">
+          <div>
+            <h3 style="font-family: var(--font-pixel); font-size: 0.85rem; color: var(--ps1-gold); margin-bottom: 0.3rem;">
+              DISCUSIÓN DE LA COMUNIDAD SOBRE {gen.name.toUpperCase()}
+            </h3>
+            <p style="font-size: 0.8rem; color: var(--text-dim); margin: 0;">
+              Comparte capturas de cómo integraste este objeto en tu videojuego, sugiere nuevos parámetros o reporta ajustes de colisión.
+            </p>
+          </div>
+          <div style="display: flex; gap: 0.6rem; flex-wrap: wrap;">
+            <a 
+              href={`https://github.com/FrancisCuarto/MODELCODER/issues/new?title=%5BFeedback%5D+${encodeURIComponent(gen.name)}&body=Familia%3A+${gen.family}%0A%0AComentario+o+sugerencia%3A%0A`}
+              target="_blank" 
+              rel="noopener noreferrer"
+              class="btn btn-outline"
+              style="font-size: 0.72rem; padding: 0.4rem 0.8rem; text-decoration: none;"
+            >
+              💬 DEJAR COMENTARIO EN GITHUB
+            </a>
+            <a 
+              href="https://github.com/FrancisCuarto/MODELCODER/discussions" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              class="btn btn-cyan"
+              style="font-size: 0.72rem; padding: 0.4rem 0.8rem; text-decoration: none;"
+            >
+              🌐 VER TODAS LAS DISCUSIONES
+            </a>
+          </div>
+        </div>
+
+        <!-- Embedded Giscus Discussions Frame -->
+        <div class="giscus-frame-box ps1-inset" style="padding: 1rem; background: #040710; min-height: 120px;">
+          <script
+            src="https://giscus.app/client.js"
+            data-repo="FrancisCuarto/MODELCODER"
+            data-repo-id="R_kgDON7uY5g"
+            data-category="General"
+            data-mapping="pathname"
+            data-strict="0"
+            data-reactions-enabled="1"
+            data-emit-metadata="0"
+            data-input-position="top"
+            data-theme="dark"
+            data-lang="es"
+            crossorigin="anonymous"
+            async>
+          </script>
+        </div>
+      </div>
+    </div>
   </div>
 </Layout>
 

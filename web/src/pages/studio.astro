@@ -40,6 +40,91 @@ import catalog from '../data/catalog.json';
       </div>
     </div>
 
+    <!-- AI Co-Pilot Command Center -->
+    <div class="ps1-window ai-copilot-window" id="ai-copilot-box">
+      <div class="ps1-titlebar ai-titlebar">
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <span class="ai-status-pulse"></span>
+          <span>// MODELCODER_AI_COPILOT: GENERADOR_3D_POR_PROMPT</span>
+          <span class="ai-badge-gemini">GEMINI 2.5 FLASH</span>
+        </div>
+        <div class="ai-titlebar-tools">
+          <button type="button" id="toggle-gemini-key-btn" class="ps1-ctrl-btn" title="Configurar API Key de Gemini">
+            🔑 API KEY
+          </button>
+          <button type="button" id="toggle-copilot-btn" class="ps1-ctrl-btn">
+            [ MINIMIZAR ]
+          </button>
+        </div>
+      </div>
+
+      <div class="ai-copilot-body" id="ai-copilot-body">
+        <!-- API Key Drawer (Initially Hidden if Key is Saved) -->
+        <div id="gemini-key-drawer" class="gemini-key-drawer" style="display: none;">
+          <div class="ps1-inset key-inset">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem; flex-wrap: wrap; gap: 0.3rem;">
+              <label for="gemini-api-key-input" class="field-label" style="color: var(--ps1-gold); font-size: 0.72rem; margin: 0;">
+                CLAVE DE GOOGLE GEMINI API (100% GRATIS):
+              </label>
+              <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" style="color: var(--ps1-cyan); font-size: 0.68rem; text-decoration: underline;">
+                ➜ Obtener clave gratis en Google AI Studio
+              </a>
+            </div>
+            <div style="display: flex; gap: 0.5rem;">
+              <input 
+                type="password" 
+                id="gemini-api-key-input" 
+                placeholder="Pega aquí tu clave: AIzaSy..." 
+                class="form-input" 
+                style="flex: 1; font-family: var(--font-mono); font-size: 0.75rem;"
+              />
+              <button type="button" id="save-gemini-key-btn" class="btn btn-gold" style="font-size: 0.7rem; padding: 0.35rem 0.8rem;">
+                Guardar Clave
+              </button>
+            </div>
+            <small style="color: var(--text-dim); font-size: 0.65rem; margin-top: 0.3rem; display: block;">
+              Tu clave se almacena exclusivamente en tu navegador (localStorage) y nunca pasa por servidores de terceros.
+            </small>
+          </div>
+        </div>
+
+        <!-- Prompt Input and Action Row -->
+        <div class="ai-prompt-row">
+          <div class="prompt-input-wrap">
+            <span class="prompt-prefix">&gt; PROMPT:</span>
+            <input 
+              type="text" 
+              id="ai-prompt-input" 
+              placeholder="ej. Diseña una torreta de vigilancia de pared con sensor rojo, doble cañón y soporte angular..." 
+              class="ai-prompt-input"
+            />
+          </div>
+          <button type="button" id="generate-ai-btn" class="btn btn-cyan ai-generate-btn">
+            ⚡ GENERAR CON IA
+          </button>
+        </div>
+
+        <!-- Quick Inspiration Chips -->
+        <div class="ai-chips-row">
+          <span class="chips-label">SUGERENCIAS:</span>
+          <button type="button" class="ai-chip" data-preset="turret" data-prompt="Torreta de vigilancia robótica para pared con sensor láser rojo, cañón doble y soporte angular">
+            🛸 Torreta de Pared
+          </button>
+          <button type="button" class="ai-chip" data-preset="cryo" data-prompt="Cápsula criogénica vertical con ventana de observación, tubos de refrigerante superiores y panel de signos vitales">
+            🧊 Cápsula Criogénica
+          </button>
+          <button type="button" class="ai-chip" data-preset="crt_console" data-prompt="Consola de mando de seguridad con 3 pantallas CRT inclinadas, teclado angular y módulo de cinta">
+            🖥️ Consola CRT Triple
+          </button>
+          <button type="button" class="ai-chip" data-preset="energy_core" data-prompt="Generador de escudo de energía con núcleo cilíndrico rotatorio, aletas de ventilación y jaula de seguridad">
+            ⚡ Núcleo de Energía
+          </button>
+        </div>
+
+        <div id="ai-loading-status" class="ai-status-indicator" style="display: none;"></div>
+      </div>
+    </div>
+
     <!-- Main Studio Split View (Left: Editor, Right: Viewport & Tests) -->
     <div class="studio-workspace">
       <!-- Left: Code Editor Window -->
@@ -816,6 +901,470 @@ Nuevo generador procedural creado con ModelCoder Web Studio.
     }
   });
 
+  // ==========================================
+  // MODELCODER AI CO-PILOT: GEMINI INTEGRATION
+  // ==========================================
+  const toggleGeminiKeyBtn = document.getElementById('toggle-gemini-key-btn');
+  const toggleCopilotBtn = document.getElementById('toggle-copilot-btn');
+  const geminiKeyDrawer = document.getElementById('gemini-key-drawer');
+  const geminiApiKeyInput = document.getElementById('gemini-api-key-input') as HTMLInputElement;
+  const saveGeminiKeyBtn = document.getElementById('save-gemini-key-btn');
+  const aiPromptInput = document.getElementById('ai-prompt-input') as HTMLInputElement;
+  const generateAiBtn = document.getElementById('generate-ai-btn') as HTMLButtonElement;
+  const aiLoadingStatus = document.getElementById('ai-loading-status');
+  const aiChips = document.querySelectorAll('.ai-chip');
+  const aiCopilotBody = document.getElementById('ai-copilot-body');
+
+  // Load saved Gemini Key if available
+  const savedGeminiKey = localStorage.getItem('modelcoder_gemini_key') || '';
+  if (geminiApiKeyInput && savedGeminiKey) {
+    geminiApiKeyInput.value = savedGeminiKey;
+  }
+
+  toggleGeminiKeyBtn?.addEventListener('click', () => {
+    if (geminiKeyDrawer) {
+      const isHidden = geminiKeyDrawer.style.display === 'none';
+      geminiKeyDrawer.style.display = isHidden ? 'block' : 'none';
+    }
+  });
+
+  saveGeminiKeyBtn?.addEventListener('click', () => {
+    const val = geminiApiKeyInput?.value.trim() || '';
+    if (val) {
+      localStorage.setItem('modelcoder_gemini_key', val);
+      alert('✅ Clave de Gemini guardada de forma segura en tu navegador.');
+      if (geminiKeyDrawer) geminiKeyDrawer.style.display = 'none';
+    } else {
+      localStorage.removeItem('modelcoder_gemini_key');
+      alert('Clave eliminada. Se usará el generador de plantillas.');
+    }
+  });
+
+  toggleCopilotBtn?.addEventListener('click', () => {
+    if (aiCopilotBody) {
+      const isHidden = aiCopilotBody.style.display === 'none';
+      aiCopilotBody.style.display = isHidden ? 'block' : 'none';
+      toggleCopilotBtn.textContent = isHidden ? '[ MINIMIZAR ]' : '[ EXPANDIR ]';
+    }
+  });
+
+  // Curated AI Generator Presets (Instant & Offline-capable)
+  const AI_FALLBACK_PRESETS: Record<string, { family: string; name: string; generator: string; config: string; manifest: any; readme: string }> = {
+    turret: {
+      family: "wall_turret",
+      name: "Torreta de Vigilancia",
+      generator: `import bpy
+import math
+from ...core.base_generator import BaseAssetGenerator
+from ...materials.palette import get_or_create_material
+from .config import WallTurretConfig
+
+class WallTurretGenerator(BaseAssetGenerator):
+    """Generador procedural de torreta de vigilancia de pared (PSX Low-Poly)."""
+    def generate(self) -> bpy.types.Object:
+        cfg = self.config
+        
+        # 1. Base octogonal de montaje en pared
+        bpy.ops.mesh.primitive_cylinder_add(
+            vertices=8,
+            radius=cfg.mount_radius,
+            depth=0.12,
+            location=(0, 0, 0)
+        )
+        base_obj = bpy.context.active_object
+        base_obj.name = f"{cfg.name}_base"
+        
+        # 2. Pivote esférico central
+        bpy.ops.mesh.primitive_uv_sphere_add(
+            segments=8,
+            ring_count=6,
+            radius=cfg.mount_radius * 0.65,
+            location=(0, 0, 0.15)
+        )
+        pivot_obj = bpy.context.active_object
+        
+        # 3. Doble cañón láser
+        barrel_len = cfg.barrel_length
+        for offset in [-0.08, 0.08]:
+            bpy.ops.mesh.primitive_cylinder_add(
+                vertices=6,
+                radius=0.035,
+                depth=barrel_len,
+                location=(offset, barrel_len * 0.5, 0.18),
+                rotation=(math.radians(90), 0, 0)
+            )
+            barrel = bpy.context.active_object
+            
+            # Unir con pivote
+            ctx = bpy.context.copy()
+            ctx['active_object'] = pivot_obj
+            ctx['selected_editable_objects'] = [pivot_obj, barrel]
+            bpy.ops.object.join(ctx)
+
+        # 4. Asignar materiales temáticos
+        mat_casing = get_or_create_material("casing", palette_name=cfg.palette_name)
+        base_obj.data.materials.append(mat_casing)
+        
+        self.compact_materials(base_obj)
+        return base_obj
+`,
+      config: `from dataclasses import dataclass
+from ...core.base_config import BaseAssetConfig
+
+@dataclass
+class WallTurretConfig(BaseAssetConfig):
+    name: str = "wall_turret"
+    mount_radius: float = 0.45
+    barrel_length: float = 0.60
+    has_shield_plate: bool = True
+    sensor_glow: bool = True
+    palette_name: str = "industrial_hazard"
+`,
+      manifest: {
+        "$schema": "https://raw.githubusercontent.com/FrancisCuarto/MODELCODER/main/schemas/generator-v1.json",
+        "id": "below_nominal.devices.wall_turret",
+        "version": "1.0.0",
+        "name": "Torreta de Vigilancia",
+        "description": "Sistema de seguridad de estación montado en pared o techo con sensor óptico.",
+        "author": { "name": "AI Co-Pilot", "github": "modelcoder-ai" },
+        "license": "CC-BY-4.0",
+        "category": "devices",
+        "tags": ["security", "turret", "psx", "defense"],
+        "parameters": [
+          { "key": "barrel_length", "label": "Largo de Cañones (m)", "type": "float", "default": 0.60, "min": 0.30, "max": 1.20, "step": 0.05, "group": "Morfología" },
+          { "key": "mount_radius", "label": "Radio de Base (m)", "type": "float", "default": 0.45, "min": 0.25, "max": 0.80, "step": 0.05, "group": "Dimensiones" },
+          { "key": "has_shield_plate", "label": "Placa de Blindaje", "type": "boolean", "default": true, "group": "Accesorios" },
+          { "key": "palette_name", "label": "Paleta de Sector", "type": "enum", "default": "industrial_hazard", "options": [{"value":"industrial_hazard","label":"Industrial Hazard"},{"value":"medbay_clean","label":"Medbay Clean"},{"value":"command_bridge","label":"Command Bridge"},{"value":"derelict_decay","label":"Derelict Decay"}], "group": "Materiales" }
+        ],
+        "presets": [
+          { "id": "compact_sentry", "name": "Centinela Compacto", "values": { "barrel_length": 0.40, "mount_radius": 0.35, "has_shield_plate": false } },
+          { "id": "heavy_defense", "name": "Defensa Pesada", "values": { "barrel_length": 0.95, "mount_radius": 0.65, "has_shield_plate": true } }
+        ],
+        "export_capabilities": { "target_tri_budget": 380, "supports_collision": true, "default_collision_suffix": "-colonly" }
+      },
+      readme: `# Torreta de Vigilancia Procedural (PSX Low-Poly)
+
+Generador de torreta de vigilancia espacial automatizada. Diseñada para su colocación en muros y techos de esclusas o pasillos principales.
+
+## Presupuesto y Especificaciones
+- **Polígonos:** ~320 triángulos
+- **Atlas UV:** 256×256 px
+- **Colisión:** Cilindro convexo simplificado (-colonly)
+`
+    },
+    cryo: {
+      family: "cryo_capsule",
+      name: "Cápsula Criogénica",
+      generator: `import bpy
+from ...core.base_generator import BaseAssetGenerator
+from ...materials.palette import get_or_create_material
+from .config import CryoCapsuleConfig
+
+class CryoCapsuleGenerator(BaseAssetGenerator):
+    """Generador de cámara criogénica de estasis médica."""
+    def generate(self) -> bpy.types.Object:
+        cfg = self.config
+        
+        # 1. Cuerpo cilíndrico de estasis
+        bpy.ops.mesh.primitive_cylinder_add(
+            vertices=12,
+            radius=cfg.capsule_radius,
+            depth=cfg.capsule_height,
+            location=(0, 0, cfg.capsule_height * 0.5)
+        )
+        pod = bpy.context.active_object
+        pod.name = cfg.name
+        
+        # 2. Material
+        mat = get_or_create_material("casing", palette_name=cfg.palette_name)
+        pod.data.materials.append(mat)
+        
+        self.compact_materials(pod)
+        return pod
+`,
+      config: `from dataclasses import dataclass
+from ...core.base_config import BaseAssetConfig
+
+@dataclass
+class CryoCapsuleConfig(BaseAssetConfig):
+    name: str = "cryo_capsule"
+    capsule_height: float = 2.20
+    capsule_radius: float = 0.55
+    frost_level: float = 0.75
+    palette_name: str = "medbay_clean"
+`,
+      manifest: {
+        "$schema": "https://raw.githubusercontent.com/FrancisCuarto/MODELCODER/main/schemas/generator-v1.json",
+        "id": "below_nominal.medical.cryo_capsule",
+        "version": "1.0.0",
+        "name": "Cápsula Criogénica",
+        "description": "Unidad vertical de estasis biológica con visor térmico y controles médicos.",
+        "author": { "name": "AI Co-Pilot", "github": "modelcoder-ai" },
+        "license": "CC-BY-4.0",
+        "category": "furniture",
+        "tags": ["medical", "cryo", "stasis", "psx"],
+        "parameters": [
+          { "key": "capsule_height", "label": "Altura Cápsula (m)", "type": "float", "default": 2.20, "min": 1.80, "max": 2.80, "step": 0.10, "group": "Dimensiones" },
+          { "key": "capsule_radius", "label": "Radio (m)", "type": "float", "default": 0.55, "min": 0.40, "max": 0.85, "step": 0.05, "group": "Dimensiones" },
+          { "key": "palette_name", "label": "Paleta de Sector", "type": "enum", "default": "medbay_clean", "options": [{"value":"medbay_clean","label":"Medbay Clean"},{"value":"industrial_hazard","label":"Industrial Hazard"},{"value":"habitation_worn","label":"Habitation Worn"}], "group": "Materiales" }
+        ],
+        "presets": [
+          { "id": "standard_pod", "name": "Cápsula Estándar", "values": { "capsule_height": 2.20, "capsule_radius": 0.55 } }
+        ],
+        "export_capabilities": { "target_tri_budget": 420, "supports_collision": true }
+      },
+      readme: `# Cápsula Criogénica (PSX Low-Poly)\n\nCámara de preservación biológica para enfermería de la estación.`
+    },
+    crt_console: {
+      family: "triple_crt_console",
+      name: "Consola CRT Triple",
+      generator: `import bpy
+from ...core.base_generator import BaseAssetGenerator
+from ...materials.palette import get_or_create_material
+from .config import TripleCrtConsoleConfig
+
+class TripleCrtConsoleGenerator(BaseAssetGenerator):
+    def generate(self) -> bpy.types.Object:
+        cfg = self.config
+        bpy.ops.mesh.primitive_cube_add(
+            size=1.0,
+            scale=(cfg.console_width, 0.80, 0.95),
+            location=(0, 0, 0.475)
+        )
+        desk = bpy.context.active_object
+        desk.name = cfg.name
+        mat = get_or_create_material("casing", palette_name=cfg.palette_name)
+        desk.data.materials.append(mat)
+        self.compact_materials(desk)
+        return desk
+`,
+      config: `from dataclasses import dataclass
+from ...core.base_config import BaseAssetConfig
+
+@dataclass
+class TripleCrtConsoleConfig(BaseAssetConfig):
+    name: str = "triple_crt_console"
+    console_width: float = 1.60
+    tape_module: bool = True
+    palette_name: str = "command_bridge"
+`,
+      manifest: {
+        "$schema": "https://raw.githubusercontent.com/FrancisCuarto/MODELCODER/main/schemas/generator-v1.json",
+        "id": "below_nominal.devices.triple_crt_console",
+        "version": "1.0.0",
+        "name": "Consola CRT Triple",
+        "description": "Estación de monitoreo de radar y comunicaciones con 3 monitores fósforo verde.",
+        "author": { "name": "AI Co-Pilot", "github": "modelcoder-ai" },
+        "license": "CC-BY-4.0",
+        "category": "devices",
+        "tags": ["console", "crt", "computer", "bridge"],
+        "parameters": [
+          { "key": "console_width", "label": "Ancho Consola (m)", "type": "float", "default": 1.60, "min": 1.20, "max": 2.40, "step": 0.10, "group": "Dimensiones" },
+          { "key": "tape_module", "label": "Lector de Cinta Magnética", "type": "boolean", "default": true, "group": "Accesorios" },
+          { "key": "palette_name", "label": "Paleta de Sector", "type": "enum", "default": "command_bridge", "options": [{"value":"command_bridge","label":"Command Bridge"},{"value":"industrial_hazard","label":"Industrial Hazard"}], "group": "Materiales" }
+        ],
+        "presets": [{ "id": "standard", "name": "Operaciones Puente", "values": { "console_width": 1.60, "tape_module": true } }],
+        "export_capabilities": { "target_tri_budget": 480, "supports_collision": true }
+      },
+      readme: `# Consola CRT Triple (PSX Low-Poly)\n\nConsola de comunicaciones navales retro.`
+    },
+    energy_core: {
+      family: "energy_core",
+      name: "Núcleo de Energía",
+      generator: `import bpy
+from ...core.base_generator import BaseAssetGenerator
+from ...materials.palette import get_or_create_material
+from .config import EnergyCoreConfig
+
+class EnergyCoreGenerator(BaseAssetGenerator):
+    def generate(self) -> bpy.types.Object:
+        cfg = self.config
+        bpy.ops.mesh.primitive_cylinder_add(
+            vertices=10,
+            radius=cfg.core_radius,
+            depth=cfg.core_height,
+            location=(0, 0, cfg.core_height * 0.5)
+        )
+        reactor = bpy.context.active_object
+        reactor.name = cfg.name
+        mat = get_or_create_material("casing", palette_name=cfg.palette_name)
+        reactor.data.materials.append(mat)
+        self.compact_materials(reactor)
+        return reactor
+`,
+      config: `from dataclasses import dataclass
+from ...core.base_config import BaseAssetConfig
+
+@dataclass
+class EnergyCoreConfig(BaseAssetConfig):
+    name: str = "energy_core"
+    core_height: float = 1.80
+    core_radius: float = 0.50
+    has_hazard_cage: bool = True
+    palette_name: str = "industrial_hazard"
+`,
+      manifest: {
+        "$schema": "https://raw.githubusercontent.com/FrancisCuarto/MODELCODER/main/schemas/generator-v1.json",
+        "id": "below_nominal.structural.energy_core",
+        "version": "1.0.0",
+        "name": "Núcleo de Energía",
+        "description": "Reactor auxiliar de plasma para subestación eléctrica de ingeniería.",
+        "author": { "name": "AI Co-Pilot", "github": "modelcoder-ai" },
+        "license": "CC-BY-4.0",
+        "category": "structural",
+        "tags": ["reactor", "energy", "core", "plasma"],
+        "parameters": [
+          { "key": "core_height", "label": "Altura del Reactor (m)", "type": "float", "default": 1.80, "min": 1.20, "max": 3.00, "step": 0.10, "group": "Dimensiones" },
+          { "key": "core_radius", "label": "Radio (m)", "type": "float", "default": 0.50, "min": 0.30, "max": 0.90, "step": 0.05, "group": "Dimensiones" },
+          { "key": "has_hazard_cage", "label": "Jaula de Seguridad", "type": "boolean", "default": true, "group": "Seguridad" },
+          { "key": "palette_name", "label": "Paleta de Sector", "type": "enum", "default": "industrial_hazard", "options": [{"value":"industrial_hazard","label":"Industrial Hazard"},{"value":"derelict_decay","label":"Derelict Decay"}], "group": "Materiales" }
+        ],
+        "presets": [{ "id": "standard", "name": "Reactor Nominal", "values": { "core_height": 1.80, "core_radius": 0.50 } }],
+        "export_capabilities": { "target_tri_budget": 450, "supports_collision": true }
+      },
+      readme: `# Núcleo de Energía Reactor (PSX Low-Poly)\n\nUnidad generadora de plasma auxiliar para ingeniería.`
+    }
+  };
+
+  function applyGeneratedData(data: { family: string; name?: string; generator: string; config: string; manifest: any; readme: string }) {
+    activeTemplate = 'custom';
+    if (templateSelect) templateSelect.value = 'custom';
+    
+    fileContents['generator'] = data.generator;
+    fileContents['config'] = data.config;
+    fileContents['manifest'] = typeof data.manifest === 'string' ? data.manifest : JSON.stringify(data.manifest, null, 2);
+    fileContents['readme'] = data.readme;
+
+    if (codeTextarea) {
+      codeTextarea.value = fileContents[currentFile];
+    }
+    updateLineNumbers();
+    scanSecurityAST();
+    rebuildParamFormFromManifest();
+
+    if (viewportModelName) {
+      viewportModelName.textContent = (data.name || data.family).toUpperCase();
+    }
+
+    if (aiLoadingStatus) {
+      aiLoadingStatus.style.display = 'block';
+      aiLoadingStatus.className = 'ai-status-indicator status-ok';
+      aiLoadingStatus.innerHTML = `✅ [ GENERACIÓN EXITOSA ] Generador de <strong>"${data.name || data.family}"</strong> cargado con 4 archivos en el Studio.`;
+    }
+  }
+
+  // Handle Quick Chips
+  aiChips.forEach((chipEl) => {
+    chipEl.addEventListener('click', () => {
+      const chip = chipEl as HTMLElement;
+      const presetKey = chip.dataset.preset;
+      const promptText = chip.dataset.prompt || '';
+      if (aiPromptInput) aiPromptInput.value = promptText;
+
+      const userKey = localStorage.getItem('modelcoder_gemini_key');
+      if (!userKey && presetKey && AI_FALLBACK_PRESETS[presetKey]) {
+        // Instant curated fallback
+        applyGeneratedData(AI_FALLBACK_PRESETS[presetKey]);
+      } else {
+        // Trigger live generation
+        triggerAiGeneration(promptText);
+      }
+    });
+  });
+
+  generateAiBtn?.addEventListener('click', () => {
+    const promptText = aiPromptInput?.value.trim() || '';
+    if (!promptText) {
+      alert('Por favor escribe una descripción del modelo 3D que quieres generar.');
+      return;
+    }
+    triggerAiGeneration(promptText);
+  });
+
+  async function triggerAiGeneration(userPrompt: string) {
+    const apiKey = localStorage.getItem('modelcoder_gemini_key');
+    if (!apiKey) {
+      if (geminiKeyDrawer) geminiKeyDrawer.style.display = 'block';
+      if (aiLoadingStatus) {
+        aiLoadingStatus.style.display = 'block';
+        aiLoadingStatus.className = 'ai-status-indicator status-info';
+        aiLoadingStatus.innerHTML = `ℹ️ Para generar modelos libres con cualquier prompt, por favor pega tu clave de Gemini arriba (es gratuita). O haz clic en una de las sugerencias preconfiguradas.`;
+      }
+      return;
+    }
+
+    generateAiBtn.disabled = true;
+    generateAiBtn.textContent = '⏳ COMPUTANDO CON IA...';
+    if (aiLoadingStatus) {
+      aiLoadingStatus.style.display = 'block';
+      aiLoadingStatus.className = 'ai-status-indicator status-loading';
+      aiLoadingStatus.innerHTML = `🧠 <strong>[ GEMINI 2.5 FLASH PROCESANDO ]</strong><br>Diseñando geometría procedural, dataclass de configuración y contrato JSON...`;
+    }
+
+    const SYSTEM_PROMPT = `Eres el generador oficial de código procedural 3D de ModelCoder para Blender 5.0 y el juego retro Below Nominal (PlayStation 1 / PSX low-poly).
+Diseña un paquete de 4 archivos completo en un único JSON:
+{
+  "family": "nombre_en_snake_case",
+  "name": "Nombre Humano",
+  "generator": "código python completo heredando de BaseAssetGenerator",
+  "config": "código python completo heredando de BaseAssetConfig con dataclass",
+  "manifest": { ...objeto json válido cumpliendo schemas/generator-v1.json... },
+  "readme": "documentación markdown"
+}
+
+REGLAS TÉCNICAS:
+- generator.py debe importar 'from ...core.base_generator import BaseAssetGenerator' y 'from ...materials.palette import get_or_create_material'.
+- Debe tener 'def generate(self) -> bpy.types.Object:' y llamar a 'self.compact_materials(obj)'.
+- Presupuesto low-poly: 80 a 500 triángulos.
+- En config.py incluir 'palette_name: str = "industrial_hazard"'.
+- En manifest.json incluir parámetros lógicos con min, max, default y group.
+Responde ÚNICAMENTE con el objeto JSON estructurado.`;
+
+    try {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+      const payload = {
+        contents: [
+          {
+            parts: [
+              { text: `${SYSTEM_PROMPT}\n\nPetición del usuario: "${userPrompt}"` }
+            ]
+          }
+        ],
+        generationConfig: {
+          responseMimeType: "application/json",
+          temperature: 0.2
+        }
+      };
+
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData?.error?.message || `Error HTTP ${res.status}`);
+      }
+
+      const resJson = await res.json();
+      const rawText = resJson?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!rawText) throw new Error('Respuesta vacía de Gemini.');
+
+      const parsed = JSON.parse(rawText);
+      applyGeneratedData(parsed);
+
+    } catch (err: any) {
+      if (aiLoadingStatus) {
+        aiLoadingStatus.className = 'ai-status-indicator status-error';
+        aiLoadingStatus.innerHTML = `⚠️ <strong>[ ERROR EN GENERACIÓN ]</strong> ${err.message || err}<br><small>Verifica tu clave de API en Google AI Studio.</small>`;
+      }
+    } finally {
+      generateAiBtn.disabled = false;
+      generateAiBtn.textContent = '⚡ GENERAR CON IA';
+    }
+  }
+
   // Init
   loadTemplate('crate');
 </script>
@@ -1085,5 +1634,167 @@ Nuevo generador procedural creado con ModelCoder Web Studio.
       flex-direction: column;
       align-items: stretch;
     }
+  }
+
+  /* AI Co-Pilot Window */
+  .ai-copilot-window {
+    border-color: var(--ps1-cyan);
+    box-shadow: 0 4px 18px rgba(0, 240, 255, 0.12);
+  }
+
+  .ai-titlebar {
+    background: linear-gradient(90deg, #003847, #06152b);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .ai-status-pulse {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--ps1-cyan);
+    box-shadow: 0 0 8px var(--ps1-cyan);
+    display: inline-block;
+    animation: aiPulse 1.8s infinite ease-in-out;
+  }
+
+  @keyframes aiPulse {
+    0%, 100% { opacity: 0.4; transform: scale(0.9); }
+    50% { opacity: 1; transform: scale(1.15); box-shadow: 0 0 12px var(--ps1-cyan); }
+  }
+
+  .ai-badge-gemini {
+    font-family: var(--font-pixel);
+    font-size: 0.65rem;
+    color: var(--ps1-gold);
+    border: 1px solid var(--ps1-gold);
+    padding: 0.1rem 0.4rem;
+    background: rgba(255, 204, 0, 0.08);
+  }
+
+  .ai-titlebar-tools {
+    display: flex;
+    gap: 0.4rem;
+  }
+
+  .ai-copilot-body {
+    padding: 0.85rem 1rem;
+    background: #080d1a;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .gemini-key-drawer {
+    margin-bottom: 0.25rem;
+  }
+
+  .key-inset {
+    padding: 0.75rem;
+    background: #050810;
+    border: 1px dashed rgba(255, 204, 0, 0.4);
+  }
+
+  .ai-prompt-row {
+    display: flex;
+    gap: 0.6rem;
+    align-items: stretch;
+  }
+
+  .prompt-input-wrap {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    background: #03050a;
+    border: 2px inset var(--ps1-steel);
+    padding: 0 0.6rem;
+  }
+
+  .prompt-prefix {
+    font-family: var(--font-pixel);
+    font-size: 0.72rem;
+    color: var(--ps1-cyan);
+    margin-right: 0.5rem;
+    white-space: nowrap;
+  }
+
+  .ai-prompt-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: #ffffff;
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    outline: none;
+    padding: 0.5rem 0;
+  }
+
+  .ai-generate-btn {
+    white-space: nowrap;
+    padding: 0.5rem 1rem;
+    font-size: 0.75rem;
+  }
+
+  .ai-chips-row {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    flex-wrap: wrap;
+  }
+
+  .chips-label {
+    font-family: var(--font-pixel);
+    font-size: 0.68rem;
+    color: var(--text-dim);
+  }
+
+  .ai-chip {
+    background: #0d1527;
+    border: 1px solid var(--ps1-steel-light);
+    color: #c0d4ec;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    padding: 0.2rem 0.5rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .ai-chip:hover {
+    border-color: var(--ps1-cyan);
+    color: var(--ps1-cyan);
+    background: #0a1f33;
+    transform: translateY(-1px);
+  }
+
+  .ai-status-indicator {
+    padding: 0.6rem 0.8rem;
+    font-size: 0.75rem;
+    border: 1px solid;
+    margin-top: 0.25rem;
+  }
+
+  .ai-status-indicator.status-loading {
+    background: rgba(0, 240, 255, 0.08);
+    border-color: var(--ps1-cyan);
+    color: var(--ps1-cyan);
+  }
+
+  .ai-status-indicator.status-ok {
+    background: rgba(51, 255, 136, 0.08);
+    border-color: #33ff88;
+    color: #33ff88;
+  }
+
+  .ai-status-indicator.status-info {
+    background: rgba(255, 204, 0, 0.08);
+    border-color: var(--ps1-gold);
+    color: var(--ps1-gold);
+  }
+
+  .ai-status-indicator.status-error {
+    background: rgba(255, 68, 68, 0.1);
+    border-color: #ff4444;
+    color: #ff8888;
   }
 </style>
