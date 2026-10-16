@@ -1,0 +1,120 @@
+{
+  "id": "below_nominal.security.security_camera",
+  "name": "Cámara de Seguridad CCTV",
+  "version": "1.0.0",
+  "description": "Cámara de vigilancia orientable tipo bullet o domo con brazo articulado, visera parasol, lente de cristal y LED de grabación.",
+  "category": "security",
+  "tags": ["security", "camera", "cctv", "surveillance", "facility", "retro"],
+  "author": {
+    "name": "ModelCoder Core Team",
+    "github": "FrancisCuarto"
+  },
+  "license": "CC-BY-4.0",
+  "parameters": [
+    {
+      "key": "camera_type",
+      "label": "Tipo de Carcasa",
+      "type": "select",
+      "default": "bullet",
+      "options": ["bullet", "dome", "heavy_enclosure"],
+      "group": "Geometría"
+    },
+    {
+      "key": "pan_angle",
+      "label": "Giro Horizontal Pan (°)",
+      "type": "float",
+      "default": 25.0,
+      "min": -75.0,
+      "max": 75.0,
+      "step": 5.0,
+      "group": "Orientación"
+    },
+    {
+      "key": "tilt_angle",
+      "label": "Inclinación Vertical Tilt (°)",
+      "type": "float",
+      "default": -20.0,
+      "min": -60.0,
+      "max": 10.0,
+      "step": 5.0,
+      "group": "Orientación"
+    },
+    {
+      "key": "has_sun_shield",
+      "label": "Visera Parasol",
+      "type": "bool",
+      "default": true,
+      "group": "Componentes"
+    },
+    {
+      "key": "has_status_led",
+      "label": "LED Rojo de Grabación",
+      "type": "bool",
+      "default": true,
+      "group": "Componentes"
+    },
+    {
+      "key": "has_ir_ring",
+      "label": "Corona LEDs Infrarrojos",
+      "type": "bool",
+      "default": true,
+      "group": "Componentes"
+    },
+    {
+      "key": "mount_type",
+      "label": "Tipo de Anclaje",
+      "type": "select",
+      "default": "wall",
+      "options": ["wall", "ceiling", "corner"],
+      "group": "Montaje"
+    }
+  ],
+  "presets": [
+    {
+      "id": "active_surveillance",
+      "label": "Vigilancia Activa",
+      "description": "Cámara tubular orientada hacia el pasillo con visera superior, LED rojo encendido y anillo IR.",
+      "values": {
+        "camera_type": "bullet",
+        "pan_angle": 25.0,
+        "tilt_angle": -20.0,
+        "has_sun_shield": true,
+        "has_status_led": true,
+        "has_ir_ring": true,
+        "mount_type": "wall"
+      }
+    },
+    {
+      "id": "corridor_dome",
+      "label": "Domo de Techo / Esquina",
+      "description": "Carcasa semiesférica antivandálica con cúpula ahumada para supervisión discreta de techos.",
+      "values": {
+        "camera_type": "dome",
+        "pan_angle": 0.0,
+        "tilt_angle": -45.0,
+        "has_sun_shield": false,
+        "has_status_led": true,
+        "has_ir_ring": false,
+        "mount_type": "ceiling"
+      }
+    },
+    {
+      "id": "vandalized_offline",
+      "label": "Desconectada / Dañada",
+      "description": "Cámara descolgada apuntando al suelo con LED apagado y cables de señal colgando.",
+      "values": {
+        "camera_type": "bullet",
+        "pan_angle": -45.0,
+        "tilt_angle": -55.0,
+        "has_sun_shield": true,
+        "has_status_led": false,
+        "has_ir_ring": true,
+        "mount_type": "wall"
+      }
+    }
+  ],
+  "export_capabilities": {
+    "supports_collision": true,
+    "default_collision_suffix": "-convcolonly"
+  }
+}

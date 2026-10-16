@@ -1,0 +1,98 @@
+{
+  "generator": "ConveyorSegmentGenerator",
+  "model_name": "conveyor_segment",
+  "seed": 42,
+  "timestamp": "2026-10-16T15:41:27.200595Z",
+  "mesh_metrics": {
+    "triangle_count": 560,
+    "vertex_count": 358,
+    "target_tri_budget": 500,
+    "budget_compliance_ratio": 1.12,
+    "dimensions_meters": {
+      "width": 1.125,
+      "height": 2.03,
+      "depth": 0.945
+    },
+    "has_vertex_colors": true,
+    "materials_assigned": [
+      "mat_psx_industrial_hazard_casing_w40"
+    ]
+  },
+  "config_parameters": {
+    "seed": 42,
+    "target_tri_budget": 500,
+    "name": "conveyor_segment",
+    "wear_level": 0.4,
+    "add_collision_mesh": false,
+    "collision_type": "box",
+    "collision_suffix": "-convcolonly",
+    "pivot_rule": "floor_center",
+    "export_subcomponents": false,
+    "palette_name": "industrial_hazard",
+    "emission_scale": 1.0,
+    "extra_params": {},
+    "family_id": "conveyor_segment",
+    "category": "cargo",
+    "length": 2.0,
+    "width": 0.8,
+    "height": 0.75,
+    "incline_angle": 0.0,
+    "roller_density": 10,
+    "has_side_rails": true,
+    "has_motor": true,
+    "conveyor_type": "rollers"
+  },
+  "sockets": [
+    {
+      "name": "socket_player_interact",
+      "position": [
+        0.0,
+        -1.565,
+        0.0
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "Standard player character interaction stand point"
+    },
+    {
+      "name": "socket_item_spawn",
+      "position": [
+        0.0,
+        0.0,
+        0.965
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "Prop or pickup spawn snap position (keycards, ammo, medical items)"
+    },
+    {
+      "name": "socket_light",
+      "position": [
+        0.0,
+        0.0,
+        0.803
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "OmniLight3D / SpotLight3D mount anchor point"
+    }
+  ],
+  "godot_4_compatibility": {
+    "format": "glTF 2.0 Binary (.glb)",
+    "unit": "meters (1.0 Blender unit = 1.0 Godot unit)",
+    "forward_axis": "-Z",
+    "up_axis": "+Y",
+    "collision_mesh_convention": "Child node with -col or -colonly creates Godot StaticBody3D collision shape",
+    "vertex_colors": "Exported in COLOR_0 accessor (usable with StandardMaterial3D or PSX shader)",
+    "pbr_materials": "Exported as glTF PBR metallic/roughness + emissive"
+  }
+}

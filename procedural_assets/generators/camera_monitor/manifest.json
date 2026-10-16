@@ -1,0 +1,84 @@
+{
+  "id": "below_nominal.security.camera_monitor",
+  "name": "Monitor de Cámaras CCTV",
+  "version": "1.0.0",
+  "description": "Monitor industrial CRT de vigilancia con pantalla dividida en 4 cuadrantes, diales de ajuste de canal, soporte giratorio y rejillas de ventilación.",
+  "category": "security",
+  "tags": ["cctv", "monitor", "crt", "surveillance", "security", "display", "console", "retro"],
+  "author": {
+    "name": "ModelCoder Core Team",
+    "github": "FrancisCuarto"
+  },
+  "license": "CC-BY-4.0",
+  "parameters": [
+    {
+      "key": "screen_layout",
+      "label": "Composición de Pantalla",
+      "type": "select",
+      "default": "quad_split",
+      "options": ["quad_split", "single_large", "dual_stack"],
+      "group": "Pantalla"
+    },
+    {
+      "key": "display_state",
+      "label": "Señal de Entrada",
+      "type": "select",
+      "default": "cctv_feed",
+      "options": ["cctv_feed", "static_noise", "no_signal", "standby"],
+      "group": "Lógica"
+    },
+    {
+      "key": "has_desk_swivel_stand",
+      "label": "Soporte Giratorio de Sobremesa",
+      "type": "bool",
+      "default": true,
+      "group": "Montaje"
+    },
+    {
+      "key": "has_control_deck",
+      "label": "Panel de Botonera y Diales",
+      "type": "bool",
+      "default": true,
+      "group": "Componentes"
+    }
+  ],
+  "presets": [
+    {
+      "id": "security_desk_quad",
+      "label": "Puesto de Vigilancia Cuádruple",
+      "description": "Pantalla CRT de seguridad con cuadrícula 2x2 activa de cámaras, soporte de escritorio y luces LED de canal.",
+      "values": {
+        "screen_layout": "quad_split",
+        "display_state": "cctv_feed",
+        "has_desk_swivel_stand": true,
+        "has_control_deck": true
+      }
+    },
+    {
+      "id": "rackmount_single",
+      "label": "Monitor de Rack Canal Único",
+      "description": "Vista ampliada en pantalla completa sin peana para integración en consolas de control.",
+      "values": {
+        "screen_layout": "single_large",
+        "display_state": "cctv_feed",
+        "has_desk_swivel_stand": false,
+        "has_control_deck": true
+      }
+    },
+    {
+      "id": "broken_interference",
+      "label": "Interferencia / Pérdida de Señal",
+      "description": "Pantalla con ruido estático analógico y LED rojo de alerta por pérdida de telemetría.",
+      "values": {
+        "screen_layout": "quad_split",
+        "display_state": "static_noise",
+        "has_desk_swivel_stand": true,
+        "has_control_deck": true
+      }
+    }
+  ],
+  "export_capabilities": {
+    "supports_collision": true,
+    "default_collision_suffix": "-convcolonly"
+  }
+}

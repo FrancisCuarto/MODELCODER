@@ -1,0 +1,115 @@
+{
+  "id": "below_nominal.cargo.forklift_cart",
+  "name": "Carro Elevador Manual / Transpaleta",
+  "version": "1.0.0",
+  "description": "Transpaleta hidráulica manual para carga de palés con horquillas reforzadas, rodillos tándem y timón de tracción orientable.",
+  "category": "cargo",
+  "tags": ["forklift", "pallet_jack", "cargo", "warehouse", "logistics", "industrial"],
+  "author": {
+    "name": "ModelCoder Core Team",
+    "github": "FrancisCuarto"
+  },
+  "license": "CC-BY-4.0",
+  "parameters": [
+    {
+      "key": "fork_length",
+      "label": "Largo de Horquillas (m)",
+      "type": "float",
+      "default": 1.15,
+      "min": 0.8,
+      "max": 1.5,
+      "step": 0.05,
+      "group": "Geometría"
+    },
+    {
+      "key": "fork_spread",
+      "label": "Separación Total (m)",
+      "type": "float",
+      "default": 0.55,
+      "min": 0.4,
+      "max": 0.8,
+      "step": 0.05,
+      "group": "Geometría"
+    },
+    {
+      "key": "fork_height",
+      "label": "Elevación de Horquillas (m)",
+      "type": "float",
+      "default": 0.085,
+      "min": 0.085,
+      "max": 0.20,
+      "step": 0.01,
+      "group": "Posición"
+    },
+    {
+      "key": "tiller_angle",
+      "label": "Inclinación del Timón (°)",
+      "type": "float",
+      "default": 35.0,
+      "min": 0.0,
+      "max": 65.0,
+      "step": 5.0,
+      "group": "Posición"
+    },
+    {
+      "key": "has_load_backrest",
+      "label": "Rejilla Apoyo de Carga",
+      "type": "bool",
+      "default": false,
+      "group": "Componentes"
+    },
+    {
+      "key": "condition",
+      "label": "Estado de Desgaste",
+      "type": "select",
+      "default": "nominal",
+      "options": ["nominal", "worn", "derelict"],
+      "group": "Variante"
+    }
+  ],
+  "presets": [
+    {
+      "id": "warehouse_ready",
+      "label": "Operativa en Almacén",
+      "description": "Transpaleta bajada con timón ergonómico inclinable y pintura amarilla de seguridad intacta.",
+      "values": {
+        "fork_length": 1.15,
+        "fork_spread": 0.55,
+        "fork_height": 0.085,
+        "tiller_angle": 35.0,
+        "has_load_backrest": false,
+        "condition": "nominal"
+      }
+    },
+    {
+      "id": "elevated_heavy",
+      "label": "Carga Elevada",
+      "description": "Horquillas subidas al máximo con rejilla vertical de protección y ruedas bloqueadas.",
+      "values": {
+        "fork_length": 1.25,
+        "fork_spread": 0.65,
+        "fork_height": 0.18,
+        "tiller_angle": 15.0,
+        "has_load_backrest": true,
+        "condition": "worn"
+      }
+    },
+    {
+      "id": "derelict",
+      "label": "Abandonada en Pasillo",
+      "description": "Timón abatido hacia el suelo, bomba hidráulica con fugas y pintura decapada.",
+      "values": {
+        "fork_length": 1.10,
+        "fork_spread": 0.52,
+        "fork_height": 0.085,
+        "tiller_angle": 55.0,
+        "has_load_backrest": false,
+        "condition": "derelict"
+      }
+    }
+  ],
+  "export_capabilities": {
+    "supports_collision": true,
+    "default_collision_suffix": "-convcolonly"
+  }
+}

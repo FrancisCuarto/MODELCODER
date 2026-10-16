@@ -1,0 +1,94 @@
+{
+  "id": "below_nominal.security.access_card_reader",
+  "name": "Lector de Tarjetas y Teclado de Acceso",
+  "version": "1.0.0",
+  "description": "Terminal mural de control de accesos con ranura para banda magnética, zona de proximidad RFID, teclado numérico y barra LED bicolor.",
+  "category": "security",
+  "tags": ["security", "access_card", "keypad", "rfid", "door_lock", "retro"],
+  "author": {
+    "name": "ModelCoder Core Team",
+    "github": "FrancisCuarto"
+  },
+  "license": "CC-BY-4.0",
+  "parameters": [
+    {
+      "key": "reader_style",
+      "label": "Tipo de Lectura",
+      "type": "select",
+      "default": "swipe_and_keypad",
+      "options": ["swipe_and_keypad", "rfid_tap", "keypad_only"],
+      "group": "Variante"
+    },
+    {
+      "key": "status_state",
+      "label": "Estado de Autorización",
+      "type": "select",
+      "default": "granted",
+      "options": ["standby", "granted", "denied", "offline"],
+      "group": "Lógica"
+    },
+    {
+      "key": "has_keypad",
+      "label": "Teclado Numérico",
+      "type": "bool",
+      "default": true,
+      "group": "Componentes"
+    },
+    {
+      "key": "has_status_screen",
+      "label": "Pantalla LCD Monocromo",
+      "type": "bool",
+      "default": true,
+      "group": "Componentes"
+    },
+    {
+      "key": "weather_shroud",
+      "label": "Visera Protectora Exterior",
+      "type": "bool",
+      "default": false,
+      "group": "Montaje"
+    }
+  ],
+  "presets": [
+    {
+      "id": "nominal_access",
+      "label": "Acceso Permitido",
+      "description": "Lector con ranura lateral y teclado activo, barra LED verde iluminada indicando puerta desbloqueada.",
+      "values": {
+        "reader_style": "swipe_and_keypad",
+        "status_state": "granted",
+        "has_keypad": true,
+        "has_status_screen": true,
+        "weather_shroud": false
+      }
+    },
+    {
+      "id": "lockdown_denied",
+      "label": "Acceso Denegado / Cierre",
+      "description": "Terminal con visera metálica, barra LED roja de bloqueo e indicador de sector restringido.",
+      "values": {
+        "reader_style": "swipe_and_keypad",
+        "status_state": "denied",
+        "has_keypad": true,
+        "has_status_screen": true,
+        "weather_shroud": true
+      }
+    },
+    {
+      "id": "unpowered_keypad",
+      "label": "Sin Energía / Averiado",
+      "description": "Carcasa descolorida, pantalla oscura y luces de estado completamente apagadas.",
+      "values": {
+        "reader_style": "keypad_only",
+        "status_state": "offline",
+        "has_keypad": true,
+        "has_status_screen": true,
+        "weather_shroud": false
+      }
+    }
+  ],
+  "export_capabilities": {
+    "supports_collision": true,
+    "default_collision_suffix": "-convcolonly"
+  }
+}

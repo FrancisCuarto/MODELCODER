@@ -1,0 +1,95 @@
+{
+  "generator": "AccessCardReaderGenerator",
+  "model_name": "access_card_reader",
+  "seed": 42,
+  "timestamp": "2026-10-16T15:41:26.008440Z",
+  "mesh_metrics": {
+    "triangle_count": 288,
+    "vertex_count": 192,
+    "target_tri_budget": 260,
+    "budget_compliance_ratio": 1.11,
+    "dimensions_meters": {
+      "width": 0.16,
+      "height": 0.0805,
+      "depth": 0.26
+    },
+    "has_vertex_colors": true,
+    "materials_assigned": [
+      "mat_psx_industrial_hazard_casing_w30"
+    ]
+  },
+  "config_parameters": {
+    "seed": 42,
+    "target_tri_budget": 260,
+    "name": "access_card_reader",
+    "wear_level": 0.3,
+    "add_collision_mesh": false,
+    "collision_type": "box",
+    "collision_suffix": "-convcolonly",
+    "pivot_rule": "floor_center",
+    "export_subcomponents": false,
+    "palette_name": "industrial_hazard",
+    "emission_scale": 1.0,
+    "extra_params": {},
+    "family_id": "access_card_reader",
+    "category": "security",
+    "reader_style": "swipe_and_keypad",
+    "status_state": "granted",
+    "has_keypad": true,
+    "has_status_screen": true,
+    "weather_shroud": false
+  },
+  "sockets": [
+    {
+      "name": "socket_player_interact",
+      "position": [
+        0.0,
+        -0.59,
+        0.0
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "Standard player character interaction stand point"
+    },
+    {
+      "name": "socket_item_spawn",
+      "position": [
+        0.0,
+        0.0,
+        0.28
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "Prop or pickup spawn snap position (keycards, ammo, medical items)"
+    },
+    {
+      "name": "socket_light",
+      "position": [
+        0.0,
+        0.0,
+        0.221
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "OmniLight3D / SpotLight3D mount anchor point"
+    }
+  ],
+  "godot_4_compatibility": {
+    "format": "glTF 2.0 Binary (.glb)",
+    "unit": "meters (1.0 Blender unit = 1.0 Godot unit)",
+    "forward_axis": "-Z",
+    "up_axis": "+Y",
+    "collision_mesh_convention": "Child node with -col or -colonly creates Godot StaticBody3D collision shape",
+    "vertex_colors": "Exported in COLOR_0 accessor (usable with StandardMaterial3D or PSX shader)",
+    "pbr_materials": "Exported as glTF PBR metallic/roughness + emissive"
+  }
+}

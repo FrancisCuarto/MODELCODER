@@ -1,0 +1,138 @@
+{
+  "id": "below_nominal.cargo.conveyor_segment",
+  "name": "Tramo de Cinta / Rodillos Transportadores",
+  "version": "1.0.0",
+  "description": "Segmento modular de transporte logístico con rodillos de acero, bastidor C, patas telescópicas y motorización lateral.",
+  "category": "cargo",
+  "tags": ["conveyor", "logistics", "cargo", "rollers", "warehouse", "industrial"],
+  "author": {
+    "name": "ModelCoder Core Team",
+    "github": "FrancisCuarto"
+  },
+  "license": "CC-BY-4.0",
+  "parameters": [
+    {
+      "key": "length",
+      "label": "Longitud (m)",
+      "type": "float",
+      "default": 2.0,
+      "min": 1.0,
+      "max": 4.0,
+      "step": 0.2,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "width",
+      "label": "Ancho de Pista (m)",
+      "type": "float",
+      "default": 0.8,
+      "min": 0.5,
+      "max": 1.4,
+      "step": 0.1,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "height",
+      "label": "Altura de Trabajo (m)",
+      "type": "float",
+      "default": 0.75,
+      "min": 0.4,
+      "max": 1.2,
+      "step": 0.05,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "incline_angle",
+      "label": "Inclinación (°)",
+      "type": "float",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 20.0,
+      "step": 2.5,
+      "group": "Geometría"
+    },
+    {
+      "key": "roller_density",
+      "label": "Cantidad de Rodillos",
+      "type": "int",
+      "default": 10,
+      "min": 4,
+      "max": 16,
+      "step": 1,
+      "group": "Componentes"
+    },
+    {
+      "key": "has_side_rails",
+      "label": "Guías Laterales",
+      "type": "bool",
+      "default": true,
+      "group": "Componentes"
+    },
+    {
+      "key": "has_motor",
+      "label": "Módulo Motor Reductor",
+      "type": "bool",
+      "default": true,
+      "group": "Componentes"
+    },
+    {
+      "key": "conveyor_type",
+      "label": "Tipo de Tracción",
+      "type": "select",
+      "default": "rollers",
+      "options": ["rollers", "belt", "powered_incline"],
+      "group": "Variante"
+    }
+  ],
+  "presets": [
+    {
+      "id": "logistics",
+      "label": "Logística Nominal",
+      "description": "Tramo recto horizontal de 2m con rodillos giratorios, barandillas guía y motorreductor de tracción.",
+      "values": {
+        "length": 2.0,
+        "width": 0.8,
+        "height": 0.75,
+        "incline_angle": 0.0,
+        "roller_density": 10,
+        "has_side_rails": true,
+        "has_motor": true,
+        "conveyor_type": "rollers"
+      }
+    },
+    {
+      "id": "maintenance",
+      "label": "Inclinado de Mantenimiento",
+      "description": "Segmento en rampa de subida con motor reforzado y guías abiertas para mantenimiento de carga.",
+      "values": {
+        "length": 2.4,
+        "width": 0.9,
+        "height": 0.85,
+        "incline_angle": 12.5,
+        "roller_density": 12,
+        "has_side_rails": true,
+        "has_motor": true,
+        "conveyor_type": "powered_incline"
+      }
+    },
+    {
+      "id": "gravity_idle",
+      "label": "Gravedad Pasiva",
+      "description": "Módulo sin motor para descenso por gravedad con rodillos libres y estructura aligerada.",
+      "values": {
+        "length": 1.6,
+        "width": 0.7,
+        "height": 0.65,
+        "incline_angle": 5.0,
+        "roller_density": 8,
+        "has_side_rails": false,
+        "has_motor": false,
+        "conveyor_type": "rollers"
+      }
+    }
+  ],
+  "export_capabilities": {
+    "supports_collision": true,
+    "default_collision_suffix": "-convcolonly"
+  }
+}

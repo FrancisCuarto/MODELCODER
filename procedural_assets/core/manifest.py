@@ -110,12 +110,16 @@ class AuthorDef:
     url: Optional[str] = None
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "AuthorDef":
-        return cls(
-            name=data["name"],
-            github=data.get("github"),
-            url=data.get("url")
-        )
+    def from_dict(cls, data: Any) -> "AuthorDef":
+        if isinstance(data, str):
+            return cls(name=data)
+        if isinstance(data, dict):
+            return cls(
+                name=data.get("name", "Unknown Author"),
+                github=data.get("github"),
+                url=data.get("url")
+            )
+        return cls(name=str(data))
 
     def to_dict(self) -> Dict[str, Any]:
         d = {"name": self.name}

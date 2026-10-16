@@ -1,0 +1,95 @@
+{
+  "generator": "AlarmSirenGenerator",
+  "model_name": "alarm_siren",
+  "seed": 42,
+  "timestamp": "2026-10-16T15:41:26.293086Z",
+  "mesh_metrics": {
+    "triangle_count": 220,
+    "vertex_count": 136,
+    "target_tri_budget": 250,
+    "budget_compliance_ratio": 0.88,
+    "dimensions_meters": {
+      "width": 0.22,
+      "height": 0.235,
+      "depth": 0.323
+    },
+    "has_vertex_colors": true,
+    "materials_assigned": [
+      "mat_psx_industrial_hazard_casing_w40"
+    ]
+  },
+  "config_parameters": {
+    "seed": 42,
+    "target_tri_budget": 250,
+    "name": "alarm_siren",
+    "wear_level": 0.4,
+    "add_collision_mesh": false,
+    "collision_type": "box",
+    "collision_suffix": "-convcolonly",
+    "pivot_rule": "floor_center",
+    "export_subcomponents": false,
+    "palette_name": "industrial_hazard",
+    "emission_scale": 1.0,
+    "extra_params": {},
+    "family_id": "alarm_siren",
+    "category": "security",
+    "siren_type": "horn_and_strobe",
+    "strobe_color": "red",
+    "has_wire_guard": true,
+    "mount_orientation": "wall",
+    "is_active": true
+  },
+  "sockets": [
+    {
+      "name": "socket_player_interact",
+      "position": [
+        0.0,
+        -0.668,
+        0.0
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "Standard player character interaction stand point"
+    },
+    {
+      "name": "socket_item_spawn",
+      "position": [
+        0.0,
+        0.0,
+        0.343
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "Prop or pickup spawn snap position (keycards, ammo, medical items)"
+    },
+    {
+      "name": "socket_light",
+      "position": [
+        0.0,
+        0.0,
+        0.275
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "OmniLight3D / SpotLight3D mount anchor point"
+    }
+  ],
+  "godot_4_compatibility": {
+    "format": "glTF 2.0 Binary (.glb)",
+    "unit": "meters (1.0 Blender unit = 1.0 Godot unit)",
+    "forward_axis": "-Z",
+    "up_axis": "+Y",
+    "collision_mesh_convention": "Child node with -col or -colonly creates Godot StaticBody3D collision shape",
+    "vertex_colors": "Exported in COLOR_0 accessor (usable with StandardMaterial3D or PSX shader)",
+    "pbr_materials": "Exported as glTF PBR metallic/roughness + emissive"
+  }
+}

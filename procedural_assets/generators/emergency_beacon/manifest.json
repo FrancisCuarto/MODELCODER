@@ -1,0 +1,95 @@
+{
+  "id": "below_nominal.security.emergency_beacon",
+  "name": "Baliza Giratoria de Emergencia",
+  "version": "1.0.0",
+  "description": "Luz estroboscópica y giratoria de advertencia con base de brida circular, lente facetada de policarbonato y jaula protectora antichoques.",
+  "category": "security",
+  "tags": ["beacon", "emergency", "warning", "strobe", "lighting", "hazard", "retro"],
+  "author": {
+    "name": "ModelCoder Core Team",
+    "github": "FrancisCuarto"
+  },
+  "license": "CC-BY-4.0",
+  "parameters": [
+    {
+      "key": "beacon_color",
+      "label": "Color de Destello",
+      "type": "select",
+      "default": "amber",
+      "options": ["amber", "red", "blue", "green"],
+      "group": "Iluminación"
+    },
+    {
+      "key": "base_style",
+      "label": "Tipo de Base",
+      "type": "select",
+      "default": "flange",
+      "options": ["flange", "pedestal", "magnetic"],
+      "group": "Montaje"
+    },
+    {
+      "key": "has_protective_cage",
+      "label": "Jaula de Acero Protectora",
+      "type": "bool",
+      "default": true,
+      "group": "Componentes"
+    },
+    {
+      "key": "lens_shape",
+      "label": "Forma de la Lente",
+      "type": "select",
+      "default": "dome",
+      "options": ["dome", "cylindrical_fresnel"],
+      "group": "Geometría"
+    },
+    {
+      "key": "is_active",
+      "label": "Emisión Activa",
+      "type": "bool",
+      "default": true,
+      "group": "Estado"
+    }
+  ],
+  "presets": [
+    {
+      "id": "hazard_amber",
+      "label": "Advertencia Ámbar Industrial",
+      "description": "Baliza clásica amarilla sobre maquinaria o esclusa con lente Fresnel y jaula antivuelco.",
+      "values": {
+        "beacon_color": "amber",
+        "base_style": "flange",
+        "has_protective_cage": true,
+        "lens_shape": "dome",
+        "is_active": true
+      }
+    },
+    {
+      "id": "containment_red_pole",
+      "label": "Brecha de Contención Roja",
+      "description": "Luz roja crítica montada sobre mástil elevado con jaula tubular de alta resistencia.",
+      "values": {
+        "beacon_color": "red",
+        "base_style": "pedestal",
+        "has_protective_cage": true,
+        "lens_shape": "cylindrical_fresnel",
+        "is_active": true
+      }
+    },
+    {
+      "id": "offline_unpowered",
+      "label": "Baliza Apagada / Averiada",
+      "description": "Lente translúcida sin iluminación interna, base oxidada y jaula retirada.",
+      "values": {
+        "beacon_color": "amber",
+        "base_style": "flange",
+        "has_protective_cage": false,
+        "lens_shape": "dome",
+        "is_active": false
+      }
+    }
+  ],
+  "export_capabilities": {
+    "supports_collision": true,
+    "default_collision_suffix": "-convcolonly"
+  }
+}

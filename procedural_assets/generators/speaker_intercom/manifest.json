@@ -1,0 +1,94 @@
+{
+  "id": "below_nominal.comms.speaker_intercom",
+  "name": "Intercomunicador Mural de Dos Vías",
+  "version": "1.0.0",
+  "description": "Estación de comunicaciones para pasillos técnicos con rejilla perforada de altavoz, botón de llamada PTT, placa de sector y LED de estado.",
+  "category": "comms",
+  "tags": ["intercom", "comms", "speaker", "audio", "facility", "retro"],
+  "author": {
+    "name": "ModelCoder Core Team",
+    "github": "FrancisCuarto"
+  },
+  "license": "CC-BY-4.0",
+  "parameters": [
+    {
+      "key": "intercom_shape",
+      "label": "Formato de Carcasa",
+      "type": "select",
+      "default": "rectangular",
+      "options": ["rectangular", "slant_face", "rugged_box"],
+      "group": "Geometría"
+    },
+    {
+      "key": "has_push_to_talk",
+      "label": "Pulsador Push-To-Talk (PTT)",
+      "type": "bool",
+      "default": true,
+      "group": "Componentes"
+    },
+    {
+      "key": "has_call_speaker",
+      "label": "Rejilla de Altavoz",
+      "type": "bool",
+      "default": true,
+      "group": "Componentes"
+    },
+    {
+      "key": "status_light",
+      "label": "Luz de Estado",
+      "type": "select",
+      "default": "online",
+      "options": ["online", "calling", "muted", "dead"],
+      "group": "Lógica"
+    },
+    {
+      "key": "has_station_label",
+      "label": "Placa de Identificación",
+      "type": "bool",
+      "default": true,
+      "group": "Componentes"
+    }
+  ],
+  "presets": [
+    {
+      "id": "station_dispatch",
+      "label": "Despacho Operativo",
+      "description": "Intercomunicador mural estándar con LED verde de línea disponible, botón rojo PTT y placa de sector.",
+      "values": {
+        "intercom_shape": "rectangular",
+        "has_push_to_talk": true,
+        "has_call_speaker": true,
+        "status_light": "online",
+        "has_station_label": true
+      }
+    },
+    {
+      "id": "emergency_callbox",
+      "label": "Poste de Auxilio Inclinado",
+      "description": "Caja frontal inclinada con botón de llamada en curso iluminado en ámbar y gran rejilla de audio.",
+      "values": {
+        "intercom_shape": "slant_face",
+        "has_push_to_talk": true,
+        "has_call_speaker": true,
+        "status_light": "calling",
+        "has_station_label": true
+      }
+    },
+    {
+      "id": "abandoned_comms",
+      "label": "Canal Fuera de Servicio",
+      "description": "Terminal vandalizada con rejilla golpeada, LED apagado y placa desprendida.",
+      "values": {
+        "intercom_shape": "rugged_box",
+        "has_push_to_talk": false,
+        "has_call_speaker": true,
+        "status_light": "dead",
+        "has_station_label": false
+      }
+    }
+  ],
+  "export_capabilities": {
+    "supports_collision": true,
+    "default_collision_suffix": "-convcolonly"
+  }
+}

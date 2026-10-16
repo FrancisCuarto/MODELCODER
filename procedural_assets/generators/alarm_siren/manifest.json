@@ -1,0 +1,95 @@
+{
+  "id": "below_nominal.security.alarm_siren",
+  "name": "Sirena de Alarma Estroboscópica",
+  "version": "1.0.0",
+  "description": "Unidad de evacuación sonora y visual con bocina acústica cónica, lente estroboscópica facetada, rejilla de alambre y caja mural estanca.",
+  "category": "security",
+  "tags": ["siren", "alarm", "emergency", "strobe", "evacuation", "hazard", "retro"],
+  "author": {
+    "name": "ModelCoder Core Team",
+    "github": "FrancisCuarto"
+  },
+  "license": "CC-BY-4.0",
+  "parameters": [
+    {
+      "key": "siren_type",
+      "label": "Configuración Acústica",
+      "type": "select",
+      "default": "horn_and_strobe",
+      "options": ["horn_and_strobe", "dual_horn", "motor_siren"],
+      "group": "Variante"
+    },
+    {
+      "key": "strobe_color",
+      "label": "Color del Estroboscopio",
+      "type": "select",
+      "default": "red",
+      "options": ["red", "amber", "blue"],
+      "group": "Iluminación"
+    },
+    {
+      "key": "has_wire_guard",
+      "label": "Rejilla Protectora de Alambre",
+      "type": "bool",
+      "default": true,
+      "group": "Componentes"
+    },
+    {
+      "key": "mount_orientation",
+      "label": "Orientación de Montaje",
+      "type": "select",
+      "default": "wall",
+      "options": ["wall", "ceiling"],
+      "group": "Montaje"
+    },
+    {
+      "key": "is_active",
+      "label": "Alarma en Emisión",
+      "type": "bool",
+      "default": true,
+      "group": "Estado"
+    }
+  ],
+  "presets": [
+    {
+      "id": "general_evacuation",
+      "label": "Evacuación General",
+      "description": "Bocina de audio orientada hacia abajo con estroboscopio rojo brillante y jaula protectora.",
+      "values": {
+        "siren_type": "horn_and_strobe",
+        "strobe_color": "red",
+        "has_wire_guard": true,
+        "mount_orientation": "wall",
+        "is_active": true
+      }
+    },
+    {
+      "id": "hazmat_containment",
+      "label": "Contención de Riesgo Químico",
+      "description": "Bocina doble con destello ámbar de advertencia y carcasa amarilla de peligro.",
+      "values": {
+        "siren_type": "dual_horn",
+        "strobe_color": "amber",
+        "has_wire_guard": true,
+        "mount_orientation": "wall",
+        "is_active": true
+      }
+    },
+    {
+      "id": "silent_offline",
+      "label": "Desconectada / Sin Tensión",
+      "description": "Unidad de alarma apagada, lente gris oscura y cable de alimentación cortado.",
+      "values": {
+        "siren_type": "horn_and_strobe",
+        "strobe_color": "red",
+        "has_wire_guard": false,
+        "mount_orientation": "wall",
+        "is_active": false
+      }
+    }
+  ],
+  "export_capabilities": {
+    "supports_collision": true,
+    "default_collision_suffix": "-convcolonly"
+  }
+}

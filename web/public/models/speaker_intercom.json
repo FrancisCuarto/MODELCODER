@@ -1,0 +1,95 @@
+{
+  "generator": "SpeakerIntercomGenerator",
+  "model_name": "speaker_intercom",
+  "seed": 42,
+  "timestamp": "2026-10-16T15:41:28.386521Z",
+  "mesh_metrics": {
+    "triangle_count": 236,
+    "vertex_count": 144,
+    "target_tri_budget": 240,
+    "budget_compliance_ratio": 0.98,
+    "dimensions_meters": {
+      "width": 0.2,
+      "height": 0.094,
+      "depth": 0.28
+    },
+    "has_vertex_colors": true,
+    "materials_assigned": [
+      "mat_psx_industrial_hazard_casing_w35"
+    ]
+  },
+  "config_parameters": {
+    "seed": 42,
+    "target_tri_budget": 240,
+    "name": "speaker_intercom",
+    "wear_level": 0.35,
+    "add_collision_mesh": false,
+    "collision_type": "box",
+    "collision_suffix": "-convcolonly",
+    "pivot_rule": "floor_center",
+    "export_subcomponents": false,
+    "palette_name": "industrial_hazard",
+    "emission_scale": 1.0,
+    "extra_params": {},
+    "family_id": "speaker_intercom",
+    "category": "comms",
+    "intercom_shape": "rectangular",
+    "has_push_to_talk": true,
+    "has_call_speaker": true,
+    "status_light": "online",
+    "has_station_label": true
+  },
+  "sockets": [
+    {
+      "name": "socket_player_interact",
+      "position": [
+        0.0,
+        -0.597,
+        0.0
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "Standard player character interaction stand point"
+    },
+    {
+      "name": "socket_item_spawn",
+      "position": [
+        0.0,
+        0.0,
+        0.3
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "Prop or pickup spawn snap position (keycards, ammo, medical items)"
+    },
+    {
+      "name": "socket_light",
+      "position": [
+        0.0,
+        0.0,
+        0.238
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "OmniLight3D / SpotLight3D mount anchor point"
+    }
+  ],
+  "godot_4_compatibility": {
+    "format": "glTF 2.0 Binary (.glb)",
+    "unit": "meters (1.0 Blender unit = 1.0 Godot unit)",
+    "forward_axis": "-Z",
+    "up_axis": "+Y",
+    "collision_mesh_convention": "Child node with -col or -colonly creates Godot StaticBody3D collision shape",
+    "vertex_colors": "Exported in COLOR_0 accessor (usable with StandardMaterial3D or PSX shader)",
+    "pbr_materials": "Exported as glTF PBR metallic/roughness + emissive"
+  }
+}

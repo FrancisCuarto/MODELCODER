@@ -89,6 +89,17 @@ from .service_lift_door import ServiceLiftDoorConfig, ServiceLiftDoorGenerator
 from .cargo_pallet import CargoPalletConfig, CargoPalletGenerator
 from .cargo_container import CargoContainerConfig, CargoContainerGenerator
 
+# Lote F: Seguridad y Comunicaciones (Familias 81-89)
+from .conveyor_segment import ConveyorSegmentConfig, ConveyorSegmentGenerator
+from .forklift_cart import ForkliftCartConfig, ForkliftCartGenerator
+from .security_camera import SecurityCameraConfig, SecurityCameraGenerator
+from .access_card_reader import AccessCardReaderConfig, AccessCardReaderGenerator
+from .biometric_scanner import BiometricScannerConfig, BiometricScannerGenerator
+from .alarm_siren import AlarmSirenConfig, AlarmSirenGenerator
+from .speaker_intercom import SpeakerIntercomConfig, SpeakerIntercomGenerator
+from .emergency_beacon import EmergencyBeaconConfig, EmergencyBeaconGenerator
+from .camera_monitor import CameraMonitorConfig, CameraMonitorGenerator
+
 GENERATOR_REGISTRY = {
     # Environment & Architectural Tiles
     "station_corridor": (StationCorridorConfig, StationCorridorGenerator),
@@ -191,6 +202,17 @@ GENERATOR_REGISTRY = {
     "service_lift_door": (ServiceLiftDoorConfig, ServiceLiftDoorGenerator),
     "cargo_pallet": (CargoPalletConfig, CargoPalletGenerator),
     "cargo_container": (CargoContainerConfig, CargoContainerGenerator),
+
+    # Lote F: Seguridad y Comunicaciones
+    "conveyor_segment": (ConveyorSegmentConfig, ConveyorSegmentGenerator),
+    "forklift_cart": (ForkliftCartConfig, ForkliftCartGenerator),
+    "security_camera": (SecurityCameraConfig, SecurityCameraGenerator),
+    "access_card_reader": (AccessCardReaderConfig, AccessCardReaderGenerator),
+    "biometric_scanner": (BiometricScannerConfig, BiometricScannerGenerator),
+    "alarm_siren": (AlarmSirenConfig, AlarmSirenGenerator),
+    "speaker_intercom": (SpeakerIntercomConfig, SpeakerIntercomGenerator),
+    "emergency_beacon": (EmergencyBeaconConfig, EmergencyBeaconGenerator),
+    "camera_monitor": (CameraMonitorConfig, CameraMonitorGenerator),
 }
 
 # Dynamic auto-discovery for community-contributed generator families
@@ -297,5 +319,14 @@ __all__ = [
     "ServiceLiftDoorConfig", "ServiceLiftDoorGenerator",
     "CargoPalletConfig", "CargoPalletGenerator",
     "CargoContainerConfig", "CargoContainerGenerator",
+    "ConveyorSegmentConfig", "ConveyorSegmentGenerator",
+    "ForkliftCartConfig", "ForkliftCartGenerator",
+    "SecurityCameraConfig", "SecurityCameraGenerator",
+    "AccessCardReaderConfig", "AccessCardReaderGenerator",
+    "BiometricScannerConfig", "BiometricScannerGenerator",
+    "AlarmSirenConfig", "AlarmSirenGenerator",
+    "SpeakerIntercomConfig", "SpeakerIntercomGenerator",
+    "EmergencyBeaconConfig", "EmergencyBeaconGenerator",
+    "CameraMonitorConfig", "CameraMonitorGenerator",
 ]
 

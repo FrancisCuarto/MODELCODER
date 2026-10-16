@@ -1,0 +1,95 @@
+{
+  "id": "below_nominal.security.biometric_scanner",
+  "name": "Escáner Biométrico de Huella / Palma",
+  "version": "1.0.0",
+  "description": "Terminal de identificación de alta seguridad con placa de lectura dactilar y palmar, haz láser de escaneo, visor facial y rejilla de audio.",
+  "category": "security",
+  "tags": ["biometrics", "palm_scanner", "security", "fingerprint", "retina", "facility"],
+  "author": {
+    "name": "ModelCoder Core Team",
+    "github": "FrancisCuarto"
+  },
+  "license": "CC-BY-4.0",
+  "parameters": [
+    {
+      "key": "scanner_type",
+      "label": "Sensor Biométrico",
+      "type": "select",
+      "default": "palm_pad",
+      "options": ["palm_pad", "fingerprint_dock", "multi_auth"],
+      "group": "Variante"
+    },
+    {
+      "key": "mount_style",
+      "label": "Tipo de Montaje",
+      "type": "select",
+      "default": "wall",
+      "options": ["wall", "pedestal"],
+      "group": "Montaje"
+    },
+    {
+      "key": "scan_state",
+      "label": "Modo de Escaneo",
+      "type": "select",
+      "default": "active_laser",
+      "options": ["idle", "active_laser", "verified", "alarm"],
+      "group": "Lógica"
+    },
+    {
+      "key": "has_face_reticle",
+      "label": "Cámara de Reconocimiento Facial",
+      "type": "bool",
+      "default": true,
+      "group": "Componentes"
+    },
+    {
+      "key": "has_intercom_mic",
+      "label": "Micrófono Intercomunicador",
+      "type": "bool",
+      "default": true,
+      "group": "Componentes"
+    }
+  ],
+  "presets": [
+    {
+      "id": "security_checkpoint",
+      "label": "Control de Personal Mural",
+      "description": "Terminal mural con cristal de lectura de palma iluminado por haz cian y cámara ocular superior.",
+      "values": {
+        "scanner_type": "palm_pad",
+        "mount_style": "wall",
+        "scan_state": "active_laser",
+        "has_face_reticle": true,
+        "has_intercom_mic": true
+      }
+    },
+    {
+      "id": "restricted_pedestal",
+      "label": "Pedestal de Bóveda",
+      "description": "Columna exenta de suelo con soporte inclinado, autenticación múltiple y luz verde de validación.",
+      "values": {
+        "scanner_type": "multi_auth",
+        "mount_style": "pedestal",
+        "scan_state": "verified",
+        "has_face_reticle": true,
+        "has_intercom_mic": true
+      }
+    },
+    {
+      "id": "alarm_lockdown",
+      "label": "Bloqueo por Intrusión",
+      "description": "Terminal en alerta roja con placa de escaneo parpadeante y visor facial desconectado.",
+      "values": {
+        "scanner_type": "palm_pad",
+        "mount_style": "wall",
+        "scan_state": "alarm",
+        "has_face_reticle": true,
+        "has_intercom_mic": false
+      }
+    }
+  ],
+  "export_capabilities": {
+    "supports_collision": true,
+    "default_collision_suffix": "-convcolonly"
+  }
+}
