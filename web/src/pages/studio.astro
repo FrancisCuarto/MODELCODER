@@ -55,14 +55,14 @@ import catalog from '../data/catalog.json';
         <div id="ai-mode-container" class="mode-panel active">
           <div class="ps1-window">
             <div class="ps1-titlebar ai-titlebar">
-              <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
                 <span class="ai-status-pulse"></span>
                 <span>// MODELCODER_AI: CREACIÓN_POR_LENGUAJE_NATURAL</span>
-                <span class="ai-badge-gemini">GEMINI 2.5 / 3.8 FLASH</span>
+                <span id="ai-engine-badge" class="ai-badge-gemini">🤖 MOTOR PROCEDURAL LOCAL</span>
               </div>
               <div class="ai-titlebar-tools">
-                <button type="button" id="toggle-gemini-key-btn" class="ps1-ctrl-btn" title="Configurar API Key de Gemini">
-                  🔑 API KEY
+                <button type="button" id="toggle-gemini-key-btn" class="ps1-ctrl-btn" title="Configurar API Key de Google Gemini">
+                  🔑 CONECTAR GEMINI (GRATIS)
                 </button>
               </div>
             </div>
@@ -73,10 +73,10 @@ import catalog from '../data/catalog.json';
                 <div class="ps1-inset key-inset">
                   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem; flex-wrap: wrap; gap: 0.3rem;">
                     <label for="gemini-api-key-input" class="field-label" style="color: var(--ps1-gold); font-size: 0.72rem; margin: 0;">
-                      CLAVE DE GOOGLE GEMINI API (OPCIONAL - GENERADOR LOCAL ACTIVO):
+                      CLAVE DE GOOGLE GEMINI API (DESBLOQUEA RAZONAMIENTO ILIMITADO):
                     </label>
                     <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" style="color: var(--ps1-cyan); font-size: 0.68rem; text-decoration: underline;">
-                      ➜ Obtener clave gratis en Google AI Studio
+                      ➜ Obtener clave gratis en Google AI Studio (100% gratuita)
                     </a>
                   </div>
                   <div style="display: flex; gap: 0.5rem;">
@@ -92,7 +92,7 @@ import catalog from '../data/catalog.json';
                     </button>
                   </div>
                   <small style="color: var(--text-dim); font-size: 0.65rem; margin-top: 0.3rem; display: block;">
-                    Si no tienes clave, el estudio utiliza el sintetizador procedural geométrico local sin conexión.
+                    💡 Sin clave, el estudio utiliza el sintetizador procedural geométrico local con más de 25 categorías (autos, naves, robots, armas, muebles, etc.) sin límite ni costos.
                   </small>
                 </div>
               </div>
@@ -104,7 +104,7 @@ import catalog from '../data/catalog.json';
                   <input 
                     type="text" 
                     id="ai-prompt-input" 
-                    placeholder="ej. tarjeta de acceso con chip y banda magnética / esfera roja de 1.5m / consola con dos pantallas" 
+                    placeholder="ej. auto deportivo rojo con ruedas / caza espacial con alas / robot mech / tarjeta de acceso" 
                     class="ai-prompt-input"
                   />
                 </div>
@@ -116,23 +116,29 @@ import catalog from '../data/catalog.json';
               <!-- Quick Chips -->
               <div class="ai-chips-row">
                 <span class="chips-label">PRUEBAS RÁPIDAS:</span>
-                <button type="button" class="ai-chip" data-prompt="Cubo metálico de 1x1x1 metro con bordes oscuros">
-                  📦 Cubo 1m
+                <button type="button" class="ai-chip" data-prompt="Auto deportivo retro con chasis bajo y cuatro ruedas con llantas metálicas">
+                  🚗 Auto Sci-Fi
                 </button>
-                <button type="button" class="ai-chip" data-prompt="Esfera roja de 1.5 metros de diámetro">
-                  🔴 Esfera Roja
+                <button type="button" class="ai-chip" data-prompt="Nave espacial interceptora orbital con alas en cuña y propulsores dobles">
+                  🚀 Caza Espacial
+                </button>
+                <button type="button" class="ai-chip" data-prompt="Robot bípedo de seguridad con torso acorazado y visor óptico">
+                  🤖 Robot Mech
                 </button>
                 <button type="button" class="ai-chip" data-prompt="Tarjeta de acceso de seguridad con chip dorado y banda magnética">
                   💳 Tarjeta de Acceso
                 </button>
+                <button type="button" class="ai-chip" data-prompt="Blaster de plasma con cañón cilíndrico y celda de energía">
+                  🔫 Blaster Láser
+                </button>
                 <button type="button" class="ai-chip" data-prompt="Consola de navegación espacial con dos pantallas CRT inclinadas">
                   🖥️ Consola CRT
                 </button>
-                <button type="button" class="ai-chip" data-prompt="Mesa de trabajo de 1.4m con cuatro patas tubulares">
-                  🪑 Mesa de Trabajo
+                <button type="button" class="ai-chip" data-prompt="Silla de mando ergonómica con respaldo y cuatro patas tubulares">
+                  🪑 Silla de Mando
                 </button>
-                <button type="button" class="ai-chip" data-prompt="Cilindro de columna industrial de 2 metros con base metálica">
-                  🏛️ Cilindro Columna
+                <button type="button" class="ai-chip" data-prompt="Contenedor de carga reforzado con cantoneras metálicas">
+                  📦 Contenedor Carga
                 </button>
               </div>
 
@@ -535,6 +541,7 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
   const closeModalBtn = document.getElementById('close-modal-btn');
 
   // AI Elements
+  const aiEngineBadge = document.getElementById('ai-engine-badge');
   const aiPromptInput = document.getElementById('ai-prompt-input') as HTMLInputElement;
   const generateAiBtn = document.getElementById('generate-ai-btn') as HTMLButtonElement;
   const aiLoadingStatus = document.getElementById('ai-loading-status');
@@ -543,6 +550,22 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
   const saveGeminiKeyBtn = document.getElementById('save-gemini-key-btn');
   const geminiApiKeyInput = document.getElementById('gemini-api-key-input') as HTMLInputElement;
   const aiChips = document.querySelectorAll('.ai-chip');
+
+  function updateAIEngineBadge(): void {
+    const key = localStorage.getItem('modelcoder_gemini_key');
+    if (aiEngineBadge) {
+      if (key && key.trim().length > 10) {
+        aiEngineBadge.textContent = '⚡ GEMINI 2.5 FLASH CONECTADO';
+        aiEngineBadge.style.borderColor = 'var(--ps1-gold)';
+        aiEngineBadge.style.color = 'var(--ps1-gold)';
+      } else {
+        aiEngineBadge.textContent = '🤖 MOTOR PROCEDURAL LOCAL';
+        aiEngineBadge.style.borderColor = 'var(--ps1-cyan)';
+        aiEngineBadge.style.color = 'var(--ps1-cyan)';
+      }
+    }
+  }
+  updateAIEngineBadge();
 
   // Visual Builder Elements
   const visualComponentsList = document.getElementById('visual-components-list');
@@ -693,13 +716,14 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     const apiKey = localStorage.getItem('modelcoder_gemini_key') || undefined;
 
     try {
-      const { spec } = await AIGenerator.generateModel(prompt, apiKey);
+      const { spec, source } = await AIGenerator.generateModel(prompt, apiKey);
       currentSpec = spec;
       renderCurrentSpec('ai');
 
       if (aiLoadingStatus) {
         aiLoadingStatus.className = 'ai-status-indicator status-ok';
-        aiLoadingStatus.textContent = `✅ [ GENERACIÓN EXITOSA ] ${spec.name} (${spec.components.length} componentes) renderizado en el visor.`;
+        const engineLabel = source === 'gemini' ? '⚡ GOOGLE GEMINI' : '🤖 MOTOR PROCEDURAL';
+        aiLoadingStatus.textContent = `✅ [ ${engineLabel} ] ${spec.name} (${spec.components.length} componentes) renderizado en el visor.`;
       }
     } catch (err: any) {
       if (aiLoadingStatus) {
@@ -733,10 +757,12 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     const key = geminiApiKeyInput?.value.trim() || '';
     if (key) {
       localStorage.setItem('modelcoder_gemini_key', key);
-      alert('Clave de Gemini guardada de forma segura en tu navegador.');
+      updateAIEngineBadge();
+      alert('Clave de Gemini guardada de forma segura en tu navegador. El estudio ahora usará Google Gemini para cualquier consulta.');
       if (geminiKeyDrawer) geminiKeyDrawer.style.display = 'none';
     } else {
       localStorage.removeItem('modelcoder_gemini_key');
+      updateAIEngineBadge();
       alert('Clave eliminada. El estudio usará el generador procedural local.');
     }
   });

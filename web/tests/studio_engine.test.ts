@@ -166,3 +166,51 @@ test('Criterion 6: Una generación antigua no puede sustituir una generación m�
   assert.equal(activeId, 'GEN-002', 'Active generation must remain the newer version');
   assert.equal(activeTriangles, 250, 'Triangles must remain from newer version');
 });
+
+test('Procedural Blueprints: Solicitar un "auto" genera chasis, cabina y 4 ruedas reales con llantas', () => {
+  const carSpec = AIGenerator.synthesizeProceduralSpec('auto');
+  assert.equal(carSpec.id, 'below_nominal.vehicles.retro_car');
+  assert.ok(carSpec.components.length >= 10, 'Car must contain chassis, cabin, windshield, wheels and lights');
+
+  const compNames = carSpec.components.map(c => c.name);
+  assert.ok(compNames.includes('chassis_body'), 'Must contain chassis');
+  assert.ok(compNames.includes('cabin_roof'), 'Must contain cabin');
+  assert.ok(compNames.includes('windshield'), 'Must contain windshield');
+  assert.ok(compNames.includes('wheel_front_left'), 'Must contain front left wheel');
+  assert.ok(compNames.includes('wheel_front_right'), 'Must contain front right wheel');
+  assert.ok(compNames.includes('wheel_rear_left'), 'Must contain rear left wheel');
+  assert.ok(compNames.includes('wheel_rear_right'), 'Must contain rear right wheel');
+
+  const { group, stats } = ProceduralEngine.buildModelFromSpec(carSpec);
+  assert.ok(stats.triangles > 80, 'Car must be detailed low-poly mesh');
+  assert.ok(stats.dimensions.z > 2.5, 'Car depth must reflect a real vehicle length (>2.5m)');
+  assert.ok(stats.dimensions.x > 1.2, 'Car width must reflect a real vehicle width (>1.2m)');
+
+  ProceduralEngine.disposeHierarchy(group);
+});
+
+test('Procedural Blueprints: Solicitar "nave espacial" y "robot" genera objetos únicos y diferenciados', () => {
+  const shipSpec = AIGenerator.synthesizeProceduralSpec('nave espacial con alas y propulsores');
+  assert.equal(shipSpec.id, 'below_nominal.vehicles.space_fighter');
+  const shipNames = shipSpec.components.map(c => c.name);
+  assert.ok(shipNames.includes('fuselage_core'));
+  assert.ok(shipNames.includes('wing_left'));
+  assert.ok(shipNames.includes('thruster_left'));
+
+  const robotSpec = AIGenerator.synthesizeProceduralSpec('robot androide');
+  assert.equal(robotSpec.id, 'below_nominal.security.service_droid');
+  const robotNames = robotSpec.components.map(c => c.name);
+  assert.ok(robotNames.includes('torso_chassis'));
+  assert.ok(robotNames.includes('optical_visor'));
+  assert.ok(robotNames.includes('leg_left'));
+
+  const { stats: shipStats, group: shipGroup } = ProceduralEngine.buildModelFromSpec(shipSpec);
+  const { stats: robotStats, group: robotGroup } = ProceduralEngine.buildModelFromSpec(robotSpec);
+
+  assert.notEqual(shipStats.triangles, robotStats.triangles);
+  assert.notEqual(shipStats.dimensions.y, robotStats.dimensions.y);
+
+  ProceduralEngine.disposeHierarchy(shipGroup);
+  ProceduralEngine.disposeHierarchy(robotGroup);
+});
+
