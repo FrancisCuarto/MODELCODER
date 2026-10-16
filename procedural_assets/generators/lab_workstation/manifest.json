@@ -1,0 +1,124 @@
+{
+  "id": "below_nominal.laboratory.lab_workstation",
+  "name": "Puesto de Laboratorio Químico",
+  "version": "1.0.0",
+  "description": "Estación de trabajo técnica modular para análisis bioquímico y ensayos de materiales. Dispone de encimera de resina química con reborde marítimo, cajoneras modulares inferiores con tiradores embutidos, salpicadero trasero, estantes para reactivos con barras de contención, pila de lavado con grifo cuello de cisne y monitor CRT articulado.",
+  "author": {
+    "name": "ModelCoder Core Team",
+    "github": "FrancisCuarto"
+  },
+  "license": "CC-BY-4.0",
+  "category": "laboratory",
+  "tags": [
+    "psx",
+    "low-poly",
+    "laboratory",
+    "workstation",
+    "bench",
+    "chemical",
+    "research",
+    "below-nominal"
+  ],
+  "parameters": [
+    {
+      "key": "width",
+      "label": "Ancho de la Mesa (m)",
+      "type": "float",
+      "default": 1.6,
+      "min": 1.2,
+      "max": 2.2,
+      "step": 0.05,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "depth",
+      "label": "Profundidad (m)",
+      "type": "float",
+      "default": 0.8,
+      "min": 0.65,
+      "max": 1.0,
+      "step": 0.05,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "height",
+      "label": "Altura Total (m)",
+      "type": "float",
+      "default": 1.8,
+      "min": 1.4,
+      "max": 2.1,
+      "step": 0.05,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "has_sink",
+      "label": "Fregadero Químico con Grifo",
+      "type": "bool",
+      "default": true,
+      "group": "Módulos"
+    },
+    {
+      "key": "has_upper_shelf",
+      "label": "Repisas Superiores para Reactivos",
+      "type": "bool",
+      "default": true,
+      "group": "Módulos"
+    },
+    {
+      "key": "has_terminal_screen",
+      "label": "Terminal CRT Articulado",
+      "type": "bool",
+      "default": true,
+      "group": "Equipamiento"
+    },
+    {
+      "key": "drawer_units",
+      "label": "Bloques de Cajoneras",
+      "type": "int",
+      "default": 2,
+      "min": 1,
+      "max": 3,
+      "step": 1,
+      "group": "Almacenaje"
+    }
+  ],
+  "presets": [
+    {
+      "id": "full_analytical",
+      "label": "Análisis Químico Completo",
+      "values": {
+        "width": 1.6,
+        "has_sink": true,
+        "has_upper_shelf": true,
+        "has_terminal_screen": true,
+        "drawer_units": 2
+      }
+    },
+    {
+      "id": "compact_inspection",
+      "label": "Puesto de Inspección Compacto",
+      "values": {
+        "width": 1.3,
+        "has_sink": false,
+        "has_upper_shelf": true,
+        "has_terminal_screen": true,
+        "drawer_units": 1
+      }
+    },
+    {
+      "id": "derelict_stripped",
+      "label": "Puesto Desmantelado",
+      "values": {
+        "width": 1.6,
+        "has_sink": true,
+        "has_upper_shelf": false,
+        "has_terminal_screen": false,
+        "drawer_units": 1
+      }
+    }
+  ],
+  "export_capabilities": {
+    "supports_collision": true,
+    "default_collision_suffix": "-convcolonly"
+  }
+}

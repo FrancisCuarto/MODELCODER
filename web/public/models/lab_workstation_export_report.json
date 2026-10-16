@@ -1,0 +1,239 @@
+{
+  "export_metadata": {
+    "generator": "LabWorkstationGenerator",
+    "asset_name": "lab_workstation",
+    "timestamp": "2026-10-16T05:24:14.938570Z",
+    "format": "glTF 2.0 Binary (.glb)",
+    "output_file": "D:\\MODELCODER\\web\\public\\models\\lab_workstation.glb",
+    "file_size_bytes": 138160,
+    "file_size_kb": 134.92
+  },
+  "normalization": {
+    "units": "Meters (1 Blender unit = 1.0 Godot unit)",
+    "scale_applied": true,
+    "rotation_applied": true,
+    "location_applied": true,
+    "pivot_rule": "floor_center",
+    "pivot_offset_applied": [
+      -0.0,
+      -0.0,
+      -0.0
+    ],
+    "normals_shading": "Flat (poly.use_smooth = False, PS1 low-poly crisp)",
+    "normals_recalculated": true,
+    "uv_mapping": "TEXCOORD_0 (Component-mapped to PS1 Weathered Texture Atlas)",
+    "vertex_colors": "COLOR_0 (Col / PS1 Gouraud tinting and wear)"
+  },
+  "dimensions_meters": {
+    "x": 1.6,
+    "y": 0.8,
+    "z": 1.75
+  },
+  "geometry_metrics": {
+    "total_triangles": 616,
+    "total_vertices": 396,
+    "target_tri_budget": 750,
+    "budget_compliance_ratio": 0.82,
+    "object_count": 4,
+    "hierarchy": [
+      {
+        "name": "lab_workstation",
+        "type": "MESH",
+        "parent": null,
+        "triangles": 572,
+        "vertices": 396
+      },
+      {
+        "name": "socket_item_spawn",
+        "type": "EMPTY",
+        "parent": "lab_workstation",
+        "triangles": 0,
+        "vertices": 0
+      },
+      {
+        "name": "socket_light",
+        "type": "EMPTY",
+        "parent": "lab_workstation",
+        "triangles": 0,
+        "vertices": 0
+      },
+      {
+        "name": "socket_player_interact",
+        "type": "EMPTY",
+        "parent": "lab_workstation",
+        "triangles": 0,
+        "vertices": 0
+      }
+    ]
+  },
+  "materials": {
+    "count": 1,
+    "compacted": true,
+    "list": [
+      {
+        "name": "mat_psx_medbay_clean_casing_w35",
+        "roughness": 0.55,
+        "metallic": 0.05,
+        "emission": "None"
+      }
+    ]
+  },
+  "collision": {
+    "enabled": false,
+    "node_name": "None",
+    "shape_type": "box",
+    "godot_suffix": "-convcolonly",
+    "extents": [
+      1.6,
+      0.8,
+      1.75
+    ]
+  },
+  "sockets": [
+    {
+      "name": "socket_player_interact",
+      "position": [
+        0.0,
+        -0.95,
+        0.0
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "Standard player character interaction stand point"
+    },
+    {
+      "name": "socket_item_spawn",
+      "position": [
+        0.0,
+        0.0,
+        1.77
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "Prop or pickup spawn snap position (keycards, ammo, medical items)"
+    },
+    {
+      "name": "socket_light",
+      "position": [
+        0.0,
+        0.0,
+        1.488
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "OmniLight3D / SpotLight3D mount anchor point"
+    }
+  ],
+  "godot_4_validation": {
+    "bounds_aabb": {
+      "position": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "size": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "collision_shape_count": 0,
+    "errors": [],
+    "file": "D:\\MODELCODER\\web\\public\\models\\lab_workstation.glb",
+    "materials": [
+      "mat_psx_medbay_clean_casing_w35"
+    ],
+    "mesh_count": 1,
+    "nodes": [
+      {
+        "class": "Node3D",
+        "depth": 0,
+        "name": "lab_workstation2"
+      },
+      {
+        "aabb": {
+          "position": [
+            -0.8,
+            0.0,
+            -0.4
+          ],
+          "size": [
+            1.6,
+            1.75,
+            0.8
+          ]
+        },
+        "class": "MeshInstance3D",
+        "depth": 1,
+        "has_uv": true,
+        "materials": [
+          "mat_psx_medbay_clean_casing_w35"
+        ],
+        "name": "lab_workstation",
+        "surface_count": 1
+      },
+      {
+        "class": "Node3D",
+        "depth": 2,
+        "name": "socket_item_spawn"
+      },
+      {
+        "class": "Node3D",
+        "depth": 2,
+        "name": "socket_light"
+      },
+      {
+        "class": "Node3D",
+        "depth": 2,
+        "name": "socket_player_interact"
+      }
+    ],
+    "root_class": "Node3D",
+    "root_name": "lab_workstation2",
+    "socket_count": 3,
+    "sockets": [
+      {
+        "name": "socket_item_spawn",
+        "position": [
+          0.0,
+          1.77,
+          0.0
+        ]
+      },
+      {
+        "name": "socket_light",
+        "position": [
+          0.0,
+          1.488,
+          0.0
+        ]
+      },
+      {
+        "name": "socket_player_interact",
+        "position": [
+          0.0,
+          0.0,
+          0.95
+        ]
+      }
+    ],
+    "static_body_count": 0,
+    "total_surfaces": 1,
+    "valid": true,
+    "warnings": [],
+    "tested_in_godot": true,
+    "success": true,
+    "exit_code": 0,
+    "godot_binary": "C:\\Users\\lopez\\Downloads\\Godot_v4.5.1-stable_win64.exe\\Godot_v4.5.1-stable_win64_console.exe"
+  },
+  "warnings": []
+}

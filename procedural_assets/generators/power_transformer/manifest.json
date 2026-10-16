@@ -1,0 +1,115 @@
+{
+  "id": "below_nominal.engineering.power_transformer",
+  "name": "Transformador de Potencia de Subestación",
+  "version": "1.0.0",
+  "description": "Transformador reductor industrial para distribución eléctrica de alta y media tensión en sectores de ingeniería. Cuenta con bancada de vigas en doble T con toma de tierra de cobre, cuba blindada en baño de aceite mineral, baterías laterales de radiadores de enfriamiento convectivo, bornes pasatapas cerámicos acanalados con terminales de latón, depósito superior de expansión/conservador con mirilla de nivel y armario frontal de conexiones.",
+  "author": {
+    "name": "ModelCoder Core Team",
+    "github": "FrancisCuarto"
+  },
+  "license": "CC-BY-4.0",
+  "category": "engineering",
+  "tags": [
+    "psx",
+    "low-poly",
+    "transformer",
+    "electrical",
+    "power",
+    "substation",
+    "high-voltage",
+    "engineering",
+    "below-nominal"
+  ],
+  "parameters": [
+    {
+      "key": "transformer_width",
+      "label": "Ancho del Conjunto (m)",
+      "type": "float",
+      "default": 1.1,
+      "min": 0.85,
+      "max": 1.50,
+      "step": 0.05,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "transformer_depth",
+      "label": "Profundidad del Conjunto (m)",
+      "type": "float",
+      "default": 0.85,
+      "min": 0.65,
+      "max": 1.20,
+      "step": 0.05,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "transformer_height",
+      "label": "Altura del Conjunto (m)",
+      "type": "float",
+      "default": 1.45,
+      "min": 1.15,
+      "max": 1.85,
+      "step": 0.05,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "insulator_count",
+      "label": "Pasatapas Cerámicos de Alta Tensión",
+      "type": "int",
+      "default": 3,
+      "min": 2,
+      "max": 4,
+      "step": 1,
+      "group": "Aisladores"
+    },
+    {
+      "key": "cooling_radiators_sides",
+      "label": "Bancos de Radiadores Laterales",
+      "type": "bool",
+      "default": true,
+      "group": "Refrigeración"
+    },
+    {
+      "key": "has_expansion_tank",
+      "label": "Depósito Conservador Superior",
+      "type": "bool",
+      "default": true,
+      "group": "Refrigeración"
+    }
+  ],
+  "presets": [
+    {
+      "id": "substation_primary",
+      "label": "Subestación Principal de Sector",
+      "values": {
+        "transformer_width": 1.1,
+        "insulator_count": 3,
+        "cooling_radiators_sides": true,
+        "has_expansion_tank": true
+      }
+    },
+    {
+      "id": "compact_distribution",
+      "label": "Transformador de Distribución Compacto",
+      "values": {
+        "transformer_width": 0.95,
+        "insulator_count": 2,
+        "cooling_radiators_sides": false,
+        "has_expansion_tank": true
+      }
+    },
+    {
+      "id": "overhaul_stripped",
+      "label": "Transformador en Revisión / Despiece",
+      "values": {
+        "transformer_width": 1.1,
+        "insulator_count": 3,
+        "cooling_radiators_sides": true,
+        "has_expansion_tank": false
+      }
+    }
+  ],
+  "export_capabilities": {
+    "supports_collision": true,
+    "default_collision_suffix": "-convcolonly"
+  }
+}

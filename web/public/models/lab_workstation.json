@@ -1,0 +1,95 @@
+{
+  "generator": "LabWorkstationGenerator",
+  "model_name": "lab_workstation",
+  "seed": 42,
+  "timestamp": "2026-10-16T05:24:14.731357Z",
+  "mesh_metrics": {
+    "triangle_count": 616,
+    "vertex_count": 396,
+    "target_tri_budget": 750,
+    "budget_compliance_ratio": 0.82,
+    "dimensions_meters": {
+      "width": 1.6,
+      "height": 0.8,
+      "depth": 1.75
+    },
+    "has_vertex_colors": true,
+    "materials_assigned": [
+      "mat_psx_medbay_clean_casing_w35"
+    ]
+  },
+  "config_parameters": {
+    "seed": 42,
+    "target_tri_budget": 750,
+    "name": "lab_workstation",
+    "wear_level": 0.35,
+    "add_collision_mesh": false,
+    "collision_type": "box",
+    "collision_suffix": "-convcolonly",
+    "pivot_rule": "floor_center",
+    "export_subcomponents": false,
+    "palette_name": "medbay_clean",
+    "emission_scale": 1.0,
+    "extra_params": {},
+    "width": 1.6,
+    "depth": 0.8,
+    "height": 1.8,
+    "has_sink": true,
+    "has_upper_shelf": true,
+    "has_terminal_screen": true,
+    "drawer_units": 2
+  },
+  "sockets": [
+    {
+      "name": "socket_player_interact",
+      "position": [
+        0.0,
+        -0.95,
+        0.0
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "Standard player character interaction stand point"
+    },
+    {
+      "name": "socket_item_spawn",
+      "position": [
+        0.0,
+        0.0,
+        1.77
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "Prop or pickup spawn snap position (keycards, ammo, medical items)"
+    },
+    {
+      "name": "socket_light",
+      "position": [
+        0.0,
+        0.0,
+        1.488
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "OmniLight3D / SpotLight3D mount anchor point"
+    }
+  ],
+  "godot_4_compatibility": {
+    "format": "glTF 2.0 Binary (.glb)",
+    "unit": "meters (1.0 Blender unit = 1.0 Godot unit)",
+    "forward_axis": "-Z",
+    "up_axis": "+Y",
+    "collision_mesh_convention": "Child node with -col or -colonly creates Godot StaticBody3D collision shape",
+    "vertex_colors": "Exported in COLOR_0 accessor (usable with StandardMaterial3D or PSX shader)",
+    "pbr_materials": "Exported as glTF PBR metallic/roughness + emissive"
+  }
+}

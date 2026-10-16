@@ -67,6 +67,18 @@ from .biohazard_bin import BiohazardBinConfig, BiohazardBinGenerator
 from .surgical_light import SurgicalLightConfig, SurgicalLightGenerator
 from .microscope import MicroscopeConfig, MicroscopeGenerator
 
+# Lote D: Ingeniería y Energía (Familias 63-72)
+from .lab_workstation import LabWorkstationConfig, LabWorkstationGenerator
+from .sample_analyzer import SampleAnalyzerConfig, SampleAnalyzerGenerator
+from .chemical_drum import ChemicalDrumConfig, ChemicalDrumGenerator
+from .coolant_pump import CoolantPumpConfig, CoolantPumpGenerator
+from .reactor_control_console import ReactorControlConsoleConfig, ReactorControlConsoleGenerator
+from .power_transformer import PowerTransformerConfig, PowerTransformerGenerator
+from .fuse_box import FuseBoxConfig, FuseBoxGenerator
+from .battery_bank import BatteryBankConfig, BatteryBankGenerator
+from .generator_unit import GeneratorUnitConfig, GeneratorUnitGenerator
+from .coolant_pipe_junction import CoolantPipeJunctionConfig, CoolantPipeJunctionGenerator
+
 GENERATOR_REGISTRY = {
     # Environment & Architectural Tiles
     "station_corridor": (StationCorridorConfig, StationCorridorGenerator),
@@ -147,6 +159,18 @@ GENERATOR_REGISTRY = {
     "biohazard_bin": (BiohazardBinConfig, BiohazardBinGenerator),
     "surgical_light": (SurgicalLightConfig, SurgicalLightGenerator),
     "microscope": (MicroscopeConfig, MicroscopeGenerator),
+
+    # Lote D: Ingeniería y Energía (Familias 63-72)
+    "lab_workstation": (LabWorkstationConfig, LabWorkstationGenerator),
+    "sample_analyzer": (SampleAnalyzerConfig, SampleAnalyzerGenerator),
+    "chemical_drum": (ChemicalDrumConfig, ChemicalDrumGenerator),
+    "coolant_pump": (CoolantPumpConfig, CoolantPumpGenerator),
+    "reactor_control_console": (ReactorControlConsoleConfig, ReactorControlConsoleGenerator),
+    "power_transformer": (PowerTransformerConfig, PowerTransformerGenerator),
+    "fuse_box": (FuseBoxConfig, FuseBoxGenerator),
+    "battery_bank": (BatteryBankConfig, BatteryBankGenerator),
+    "generator_unit": (GeneratorUnitConfig, GeneratorUnitGenerator),
+    "coolant_pipe_junction": (CoolantPipeJunctionConfig, CoolantPipeJunctionGenerator),
 }
 
 # Dynamic auto-discovery for community-contributed generator families
@@ -235,5 +259,15 @@ __all__ = [
     "BiohazardBinConfig", "BiohazardBinGenerator",
     "SurgicalLightConfig", "SurgicalLightGenerator",
     "MicroscopeConfig", "MicroscopeGenerator",
+    "LabWorkstationConfig", "LabWorkstationGenerator",
+    "SampleAnalyzerConfig", "SampleAnalyzerGenerator",
+    "ChemicalDrumConfig", "ChemicalDrumGenerator",
+    "CoolantPumpConfig", "CoolantPumpGenerator",
+    "ReactorControlConsoleConfig", "ReactorControlConsoleGenerator",
+    "PowerTransformerConfig", "PowerTransformerGenerator",
+    "FuseBoxConfig", "FuseBoxGenerator",
+    "BatteryBankConfig", "BatteryBankGenerator",
+    "GeneratorUnitConfig", "GeneratorUnitGenerator",
+    "CoolantPipeJunctionConfig", "CoolantPipeJunctionGenerator",
 ]
 

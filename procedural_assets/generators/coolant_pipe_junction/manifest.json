@@ -1,0 +1,114 @@
+{
+  "id": "below_nominal.infrastructure.coolant_pipe_junction",
+  "name": "Distribuidor de Tuberías de Refrigerante",
+  "version": "1.0.0",
+  "description": "Nodo distribuidor de bucles de refrigeración primaria y secundaria en 3 vías (T) o 4 vías (cruz) para circuitos térmicos de estación espacial. Montado sobre soporte pedestal de fijación al suelo, tuberías de acero al carbono con coquilla aislante térmica y flejes tensores de precinto, bridas normalizadas con orificios de tornillería en cada ramal, válvulas de seccionamiento con volante manual y manómetro de esfera superior.",
+  "author": {
+    "name": "ModelCoder Core Team",
+    "github": "FrancisCuarto"
+  },
+  "license": "CC-BY-4.0",
+  "category": "infrastructure",
+  "tags": [
+    "psx",
+    "low-poly",
+    "pipe",
+    "junction",
+    "manifold",
+    "coolant",
+    "valves",
+    "engineering",
+    "infrastructure",
+    "below-nominal"
+  ],
+  "parameters": [
+    {
+      "key": "pipe_diameter",
+      "label": "Diámetro de Tubería (m)",
+      "type": "float",
+      "default": 0.22,
+      "min": 0.16,
+      "max": 0.35,
+      "step": 0.02,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "arm_length",
+      "label": "Longitud de Ramal (m)",
+      "type": "float",
+      "default": 0.70,
+      "min": 0.50,
+      "max": 1.10,
+      "step": 0.05,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "junction_type",
+      "label": "Tipo de Distribuidor",
+      "type": "enum",
+      "default": "cross_4way",
+      "options": [
+        { "value": "cross_4way", "label": "Distribuidor en Cruz (4 Vías)" },
+        { "value": "tee_3way", "label": "Derivación en T (3 Vías)" }
+      ],
+      "group": "Configuración"
+    },
+    {
+      "key": "has_isolation_valves",
+      "label": "Válvulas de Seccionamiento con Volante",
+      "type": "bool",
+      "default": true,
+      "group": "Control"
+    },
+    {
+      "key": "has_pressure_sensor",
+      "label": "Manómetro Analógico Central",
+      "type": "bool",
+      "default": true,
+      "group": "Instrumentación"
+    },
+    {
+      "key": "has_thermal_insulation",
+      "label": "Coquilla de Aislamiento Térmico",
+      "type": "bool",
+      "default": true,
+      "group": "Aislamiento"
+    }
+  ],
+  "presets": [
+    {
+      "id": "cross_manifold",
+      "label": "Distribuidor en Cruz (4 Vías Activas)",
+      "values": {
+        "junction_type": "cross_4way",
+        "has_isolation_valves": true,
+        "has_pressure_sensor": true,
+        "has_thermal_insulation": true
+      }
+    },
+    {
+      "id": "tee_derivation",
+      "label": "Derivación en T (3 Vías con Aislamiento)",
+      "values": {
+        "junction_type": "tee_3way",
+        "has_isolation_valves": true,
+        "has_pressure_sensor": true,
+        "has_thermal_insulation": true
+      }
+    },
+    {
+      "id": "bare_maintenance",
+      "label": "Nodo Desnudo sin Aislamiento",
+      "values": {
+        "junction_type": "cross_4way",
+        "has_isolation_valves": false,
+        "has_pressure_sensor": false,
+        "has_thermal_insulation": false
+      }
+    }
+  ],
+  "export_capabilities": {
+    "supports_collision": true,
+    "default_collision_suffix": "-convcolonly"
+  }
+}

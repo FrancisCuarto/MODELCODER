@@ -1,0 +1,138 @@
+{
+  "id": "below_nominal.engineering.fuse_box",
+  "name": "Caja Mural de Fusibles Industriales",
+  "version": "1.0.0",
+  "description": "Armario mural estanco de distribución eléctrica y protección de circuitos secundarios en pasillos y salas de máquinas. Incorpora pasatubos metálicos superiores e inferiores para cables armados, raíles interiores con portafusibles y cartuchos cerámicos cilíndricos con contactos de cobre, puerta abatible con mirilla acrílica y palanca lateral de corte general de cuchilla.",
+  "author": {
+    "name": "ModelCoder Core Team",
+    "github": "FrancisCuarto"
+  },
+  "license": "CC-BY-4.0",
+  "category": "engineering",
+  "tags": [
+    "psx",
+    "low-poly",
+    "fuse",
+    "electrical",
+    "breaker",
+    "switch",
+    "engineering",
+    "wall",
+    "below-nominal"
+  ],
+  "parameters": [
+    {
+      "key": "box_width",
+      "label": "Ancho de la Caja (m)",
+      "type": "float",
+      "default": 0.55,
+      "min": 0.40,
+      "max": 0.80,
+      "step": 0.05,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "box_height",
+      "label": "Altura de la Caja (m)",
+      "type": "float",
+      "default": 0.70,
+      "min": 0.50,
+      "max": 0.95,
+      "step": 0.05,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "box_depth",
+      "label": "Profundidad de la Caja (m)",
+      "type": "float",
+      "default": 0.22,
+      "min": 0.16,
+      "max": 0.32,
+      "step": 0.02,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "door_open_angle",
+      "label": "Apertura de la Puerta (grados)",
+      "type": "float",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 85.0,
+      "step": 5.0,
+      "group": "Estado"
+    },
+    {
+      "key": "fuse_rows",
+      "label": "Filas de Fusibles",
+      "type": "int",
+      "default": 2,
+      "min": 1,
+      "max": 3,
+      "step": 1,
+      "group": "Circuito"
+    },
+    {
+      "key": "fuses_per_row",
+      "label": "Fusibles por Fila",
+      "type": "int",
+      "default": 4,
+      "min": 3,
+      "max": 5,
+      "step": 1,
+      "group": "Circuito"
+    },
+    {
+      "key": "missing_fuse",
+      "label": "Fusible Fundido / Extraído",
+      "type": "bool",
+      "default": false,
+      "group": "Estado"
+    },
+    {
+      "key": "has_main_switch",
+      "label": "Palanca Lateral de Corte General",
+      "type": "bool",
+      "default": true,
+      "group": "Mecanismo"
+    }
+  ],
+  "presets": [
+    {
+      "id": "operational_sealed",
+      "label": "Caja Cerrada Operativa",
+      "values": {
+        "door_open_angle": 0.0,
+        "fuse_rows": 2,
+        "fuses_per_row": 4,
+        "missing_fuse": false,
+        "has_main_switch": true
+      }
+    },
+    {
+      "id": "open_inspection",
+      "label": "Inspección de Mantenimiento (Abierta)",
+      "values": {
+        "door_open_angle": 75.0,
+        "fuse_rows": 2,
+        "fuses_per_row": 4,
+        "missing_fuse": false,
+        "has_main_switch": true
+      }
+    },
+    {
+      "id": "tripped_blown",
+      "label": "Fusible Fundido / Circuito Abierto",
+      "values": {
+        "door_open_angle": 30.0,
+        "fuse_rows": 2,
+        "fuses_per_row": 4,
+        "missing_fuse": true,
+        "has_main_switch": true
+      }
+    }
+  ],
+  "export_capabilities": {
+    "supports_collision": true,
+    "default_collision_suffix": "-convcolonly"
+  }
+}

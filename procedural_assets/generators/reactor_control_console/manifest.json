@@ -1,0 +1,131 @@
+{
+  "id": "below_nominal.engineering.reactor_control_console",
+  "name": "Consola de Control de Reactor",
+  "version": "1.0.0",
+  "description": "Consola de mando maestra para supervisión y regulación del reactor nuclear o térmico de la estación espacial. Dispone de chasis brutalista con reposapiés tubular, tablero inferior inclinado con manómetros y potenciómetros analógicos, pulsador de parada de emergencia SCRAM protegido con guarda de peligro rayada, puente superior con múltiples pantallas CRT y barra de baldosas anunciadoras de alarma.",
+  "author": {
+    "name": "ModelCoder Core Team",
+    "github": "FrancisCuarto"
+  },
+  "license": "CC-BY-4.0",
+  "category": "engineering",
+  "tags": [
+    "psx",
+    "low-poly",
+    "console",
+    "reactor",
+    "scram",
+    "nuclear",
+    "terminal",
+    "engineering",
+    "below-nominal"
+  ],
+  "parameters": [
+    {
+      "key": "console_width",
+      "label": "Ancho de la Consola (m)",
+      "type": "float",
+      "default": 1.4,
+      "min": 1.1,
+      "max": 2.0,
+      "step": 0.05,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "console_depth",
+      "label": "Profundidad de la Consola (m)",
+      "type": "float",
+      "default": 0.95,
+      "min": 0.75,
+      "max": 1.25,
+      "step": 0.05,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "console_height",
+      "label": "Altura Total del Puente (m)",
+      "type": "float",
+      "default": 1.35,
+      "min": 1.15,
+      "max": 1.60,
+      "step": 0.05,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "screen_count",
+      "label": "Monitores CRT en Puente",
+      "type": "int",
+      "default": 3,
+      "min": 2,
+      "max": 4,
+      "step": 1,
+      "group": "Pantallas"
+    },
+    {
+      "key": "dial_gauge_count",
+      "label": "Diales Analógicos en Tablero",
+      "type": "int",
+      "default": 4,
+      "min": 2,
+      "max": 6,
+      "step": 1,
+      "group": "Instrumentación"
+    },
+    {
+      "key": "has_scram_switch",
+      "label": "Pulsador de Emergencia SCRAM",
+      "type": "bool",
+      "default": true,
+      "group": "Seguridad"
+    },
+    {
+      "key": "reactor_state",
+      "label": "Estado Operativo del Núcleo",
+      "type": "enum",
+      "default": "nominal",
+      "options": [
+        { "value": "nominal", "label": "Operación Nominal (Fósforo Verde)" },
+        { "value": "overload", "label": "Sobrecarga Térmica (Alerta Ámbar)" },
+        { "value": "scram", "label": "Disparo SCRAM / Emergencia (Rojo)" },
+        { "value": "offline", "label": "Núcleo Apagado (Pantallas Apagadas)" }
+      ],
+      "group": "Estado"
+    }
+  ],
+  "presets": [
+    {
+      "id": "reactor_nominal",
+      "label": "Generación Nominal de Planta",
+      "values": {
+        "screen_count": 3,
+        "dial_gauge_count": 4,
+        "has_scram_switch": true,
+        "reactor_state": "nominal"
+      }
+    },
+    {
+      "id": "core_overload",
+      "label": "Alarma de Sobrecarga Térmica",
+      "values": {
+        "screen_count": 3,
+        "dial_gauge_count": 5,
+        "has_scram_switch": true,
+        "reactor_state": "overload"
+      }
+    },
+    {
+      "id": "emergency_scrammed",
+      "label": "Disparo Manual de Emergencia SCRAM",
+      "values": {
+        "screen_count": 3,
+        "dial_gauge_count": 4,
+        "has_scram_switch": true,
+        "reactor_state": "scram"
+      }
+    }
+  ],
+  "export_capabilities": {
+    "supports_collision": true,
+    "default_collision_suffix": "-convcolonly"
+  }
+}

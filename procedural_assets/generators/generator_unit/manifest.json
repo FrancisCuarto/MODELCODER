@@ -1,0 +1,128 @@
+{
+  "id": "below_nominal.engineering.generator_unit",
+  "name": "Grupo Electrógeno Diésel Encapsulado",
+  "version": "1.0.0",
+  "description": "Generador eléctrico auxiliar de respaldo insonorizado para emergencias de corte de suministro en la estación. Montado sobre bancada estructural antivibratoria con huecos para carretilla elevadora, carcasa acústica con rejilla frontal de admisión de aire, chimenea superior con silenciador horizontal y tapa de lluvia articulada, panel de arranque y control eléctrico empotrado con parada de emergencia de seta y portezuelas laterales de registro.",
+  "author": {
+    "name": "ModelCoder Core Team",
+    "github": "FrancisCuarto"
+  },
+  "license": "CC-BY-4.0",
+  "category": "engineering",
+  "tags": [
+    "psx",
+    "low-poly",
+    "generator",
+    "power",
+    "diesel",
+    "engine",
+    "exhaust",
+    "emergency",
+    "engineering",
+    "below-nominal"
+  ],
+  "parameters": [
+    {
+      "key": "gen_length",
+      "label": "Largo del Conjunto (m)",
+      "type": "float",
+      "default": 1.45,
+      "min": 1.15,
+      "max": 1.95,
+      "step": 0.05,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "gen_width",
+      "label": "Ancho del Conjunto (m)",
+      "type": "float",
+      "default": 0.85,
+      "min": 0.65,
+      "max": 1.15,
+      "step": 0.05,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "gen_height",
+      "label": "Altura del Chasis (m)",
+      "type": "float",
+      "default": 1.15,
+      "min": 0.90,
+      "max": 1.45,
+      "step": 0.05,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "has_exhaust_stack",
+      "label": "Chimenea Superior con Silenciador",
+      "type": "bool",
+      "default": true,
+      "group": "Escape"
+    },
+    {
+      "key": "has_control_panel",
+      "label": "Panel Posterior de Control y Diales",
+      "type": "bool",
+      "default": true,
+      "group": "Control"
+    },
+    {
+      "key": "has_service_hatch",
+      "label": "Compuertas Laterales de Mantenimiento",
+      "type": "bool",
+      "default": true,
+      "group": "Estructura"
+    },
+    {
+      "key": "generator_status",
+      "label": "Estado de Funcionamiento",
+      "type": "enum",
+      "default": "running",
+      "options": [
+        { "value": "running", "label": "En Marcha / Carga Plena (Led Verde)" },
+        { "value": "standby", "label": "En Espera / Reserva (Led Rojo)" },
+        { "value": "overheat", "label": "Sobrecalentamiento del Motor (Led Ámbar)" }
+      ],
+      "group": "Estado"
+    }
+  ],
+  "presets": [
+    {
+      "id": "auxiliary_running",
+      "label": "Generación Activa en Red",
+      "values": {
+        "gen_length": 1.45,
+        "has_exhaust_stack": true,
+        "has_control_panel": true,
+        "has_service_hatch": true,
+        "generator_status": "running"
+      }
+    },
+    {
+      "id": "standby_ready",
+      "label": "En Espera / Arranque Automático",
+      "values": {
+        "gen_length": 1.45,
+        "has_exhaust_stack": true,
+        "has_control_panel": true,
+        "has_service_hatch": true,
+        "generator_status": "standby"
+      }
+    },
+    {
+      "id": "derelict_offline",
+      "label": "Generador Gripado / Abandonado",
+      "values": {
+        "gen_length": 1.35,
+        "has_exhaust_stack": false,
+        "has_control_panel": true,
+        "has_service_hatch": false,
+        "generator_status": "overheat"
+      }
+    }
+  ],
+  "export_capabilities": {
+    "supports_collision": true,
+    "default_collision_suffix": "-convcolonly"
+  }
+}

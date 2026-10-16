@@ -1,0 +1,96 @@
+{
+  "generator": "FuseBoxGenerator",
+  "model_name": "fuse_box",
+  "seed": 42,
+  "timestamp": "2026-10-16T05:24:14.139907Z",
+  "mesh_metrics": {
+    "triangle_count": 392,
+    "vertex_count": 248,
+    "target_tri_budget": 520,
+    "budget_compliance_ratio": 0.75,
+    "dimensions_meters": {
+      "width": 0.6691,
+      "height": 0.275,
+      "depth": 0.86
+    },
+    "has_vertex_colors": true,
+    "materials_assigned": [
+      "mat_psx_industrial_hazard_casing_w45"
+    ]
+  },
+  "config_parameters": {
+    "seed": 42,
+    "target_tri_budget": 520,
+    "name": "fuse_box",
+    "wear_level": 0.45,
+    "add_collision_mesh": false,
+    "collision_type": "box",
+    "collision_suffix": "-convcolonly",
+    "pivot_rule": "wall_back",
+    "export_subcomponents": false,
+    "palette_name": "industrial_hazard",
+    "emission_scale": 1.0,
+    "extra_params": {},
+    "box_width": 0.55,
+    "box_height": 0.7,
+    "box_depth": 0.22,
+    "door_open_angle": 0.0,
+    "fuse_rows": 2,
+    "fuses_per_row": 4,
+    "missing_fuse": false,
+    "has_main_switch": true
+  },
+  "sockets": [
+    {
+      "name": "socket_player_interact",
+      "position": [
+        0.0,
+        -0.687,
+        0.0
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "Standard player character interaction stand point"
+    },
+    {
+      "name": "socket_item_spawn",
+      "position": [
+        0.0,
+        0.0,
+        0.88
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "Prop or pickup spawn snap position (keycards, ammo, medical items)"
+    },
+    {
+      "name": "socket_light",
+      "position": [
+        0.0,
+        0.0,
+        0.731
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "OmniLight3D / SpotLight3D mount anchor point"
+    }
+  ],
+  "godot_4_compatibility": {
+    "format": "glTF 2.0 Binary (.glb)",
+    "unit": "meters (1.0 Blender unit = 1.0 Godot unit)",
+    "forward_axis": "-Z",
+    "up_axis": "+Y",
+    "collision_mesh_convention": "Child node with -col or -colonly creates Godot StaticBody3D collision shape",
+    "vertex_colors": "Exported in COLOR_0 accessor (usable with StandardMaterial3D or PSX shader)",
+    "pbr_materials": "Exported as glTF PBR metallic/roughness + emissive"
+  }
+}

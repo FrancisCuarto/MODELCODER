@@ -1,0 +1,131 @@
+{
+  "id": "below_nominal.engineering.battery_bank",
+  "name": "Banco de Baterías de Emergencia",
+  "version": "1.0.0",
+  "description": "Estantería industrial reforzada con celdas acumuladoras de respaldo energético continuo para sistemas críticos de soporte vital y computación de la estación. Construida en perfil angular de acero con bandejas de retención de derrames, celdas de alta capacidad con bornes polarizados, pletinas puente de cobre para conexión en serie y controlador digital superior con monitor de telemetría de carga.",
+  "author": {
+    "name": "ModelCoder Core Team",
+    "github": "FrancisCuarto"
+  },
+  "license": "CC-BY-4.0",
+  "category": "engineering",
+  "tags": [
+    "psx",
+    "low-poly",
+    "battery",
+    "power",
+    "backup",
+    "energy",
+    "accumulator",
+    "engineering",
+    "below-nominal"
+  ],
+  "parameters": [
+    {
+      "key": "rack_width",
+      "label": "Ancho del Rack (m)",
+      "type": "float",
+      "default": 1.30,
+      "min": 1.0,
+      "max": 1.80,
+      "step": 0.05,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "rack_depth",
+      "label": "Profundidad del Rack (m)",
+      "type": "float",
+      "default": 0.65,
+      "min": 0.50,
+      "max": 0.85,
+      "step": 0.05,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "rack_height",
+      "label": "Altura del Rack (m)",
+      "type": "float",
+      "default": 1.65,
+      "min": 1.25,
+      "max": 2.10,
+      "step": 0.05,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "tier_count",
+      "label": "Niveles de Bandejas",
+      "type": "int",
+      "default": 3,
+      "min": 2,
+      "max": 4,
+      "step": 1,
+      "group": "Capacidad"
+    },
+    {
+      "key": "batteries_per_tier",
+      "label": "Celdas por Nivel",
+      "type": "int",
+      "default": 4,
+      "min": 3,
+      "max": 5,
+      "step": 1,
+      "group": "Capacidad"
+    },
+    {
+      "key": "has_busbars",
+      "label": "Pletinas Colectoras de Cobre",
+      "type": "bool",
+      "default": true,
+      "group": "Conexión"
+    },
+    {
+      "key": "charge_state",
+      "label": "Estado de Carga",
+      "type": "enum",
+      "default": "nominal",
+      "options": [
+        { "value": "nominal", "label": "Carga Plena (Pantalla Verde)" },
+        { "value": "discharging", "label": "Descargando en Red (Pantalla Ámbar)" },
+        { "value": "alarm", "label": "Alarma de Bajo Voltaje (Pantalla Roja)" },
+        { "value": "depleted", "label": "Baterías Agotadas (Pantalla Apagada)" }
+      ],
+      "group": "Estado"
+    }
+  ],
+  "presets": [
+    {
+      "id": "full_reserve",
+      "label": "Reserva Energética Nominal",
+      "values": {
+        "tier_count": 3,
+        "batteries_per_tier": 4,
+        "has_busbars": true,
+        "charge_state": "nominal"
+      }
+    },
+    {
+      "id": "emergency_discharge",
+      "label": "Suministro Crítico de Emergencia",
+      "values": {
+        "tier_count": 3,
+        "batteries_per_tier": 4,
+        "has_busbars": true,
+        "charge_state": "discharging"
+      }
+    },
+    {
+      "id": "depleted_offline",
+      "label": "Banco Agotado / Fuera de Red",
+      "values": {
+        "tier_count": 2,
+        "batteries_per_tier": 3,
+        "has_busbars": false,
+        "charge_state": "depleted"
+      }
+    }
+  ],
+  "export_capabilities": {
+    "supports_collision": true,
+    "default_collision_suffix": "-convcolonly"
+  }
+}

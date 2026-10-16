@@ -1,0 +1,127 @@
+{
+  "id": "below_nominal.engineering.coolant_pump",
+  "name": "Bomba Centrífuga de Refrigerante",
+  "version": "1.0.0",
+  "description": "Unidad de bombeo centrífugo de alta presión montada sobre bancada de acero para circulación de bucles de refrigerante criogénico o térmico en el reactor. Consta de motor eléctrico con aletas disipadoras y caja de bornes, acoplamiento intermedio protegido, voluta centrífuga con bridas de aspiración e impulsión, manómetro analógico de esfera y válvula manual de corte con volante.",
+  "author": {
+    "name": "ModelCoder Core Team",
+    "github": "FrancisCuarto"
+  },
+  "license": "CC-BY-4.0",
+  "category": "engineering",
+  "tags": [
+    "psx",
+    "low-poly",
+    "pump",
+    "coolant",
+    "engineering",
+    "centrifugal",
+    "pipes",
+    "reactor",
+    "below-nominal"
+  ],
+  "parameters": [
+    {
+      "key": "pump_length",
+      "label": "Largo de la Bancada (m)",
+      "type": "float",
+      "default": 0.95,
+      "min": 0.75,
+      "max": 1.30,
+      "step": 0.05,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "pump_width",
+      "label": "Ancho de la Bancada (m)",
+      "type": "float",
+      "default": 0.55,
+      "min": 0.40,
+      "max": 0.75,
+      "step": 0.05,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "pump_height",
+      "label": "Altura del Conjunto (m)",
+      "type": "float",
+      "default": 0.65,
+      "min": 0.50,
+      "max": 0.85,
+      "step": 0.05,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "motor_fins_count",
+      "label": "Aletas de Refrigeración del Motor",
+      "type": "int",
+      "default": 5,
+      "min": 3,
+      "max": 7,
+      "step": 1,
+      "group": "Motor"
+    },
+    {
+      "key": "has_pressure_gauge",
+      "label": "Manómetro Analógico de Presión",
+      "type": "bool",
+      "default": true,
+      "group": "Instrumentación"
+    },
+    {
+      "key": "has_bypass_valve",
+      "label": "Válvula de Corte con Volante",
+      "type": "bool",
+      "default": true,
+      "group": "Tuberías"
+    },
+    {
+      "key": "pump_status",
+      "label": "Estado de la Bomba",
+      "type": "enum",
+      "default": "nominal",
+      "options": [
+        { "value": "nominal", "label": "Operación Nominal (Led Verde)" },
+        { "value": "cavitation", "label": "Alerta de Cavitación (Led Ámbar)" },
+        { "value": "offline", "label": "Bomba Apagada / Fallo (Led Rojo)" }
+      ],
+      "group": "Estado"
+    }
+  ],
+  "presets": [
+    {
+      "id": "cooling_nominal",
+      "label": "Refrigeración Nominal Activa",
+      "values": {
+        "motor_fins_count": 5,
+        "has_pressure_gauge": true,
+        "has_bypass_valve": true,
+        "pump_status": "nominal"
+      }
+    },
+    {
+      "id": "thermal_cavitation",
+      "label": "Cavitación por Calor Elevado",
+      "values": {
+        "motor_fins_count": 5,
+        "has_pressure_gauge": true,
+        "has_bypass_valve": true,
+        "pump_status": "cavitation"
+      }
+    },
+    {
+      "id": "offline_maintenance",
+      "label": "Fuera de Servicio / En Reparación",
+      "values": {
+        "motor_fins_count": 3,
+        "has_pressure_gauge": false,
+        "has_bypass_valve": true,
+        "pump_status": "offline"
+      }
+    }
+  ],
+  "export_capabilities": {
+    "supports_collision": true,
+    "default_collision_suffix": "-convcolonly"
+  }
+}

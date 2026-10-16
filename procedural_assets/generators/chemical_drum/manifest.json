@@ -1,0 +1,117 @@
+{
+  "id": "below_nominal.cargo.chemical_drum",
+  "name": "Bidón Químico Industrial",
+  "version": "1.0.0",
+  "description": "Bidón estándar de 55 galones para transporte y estiba de sustancias corrosivas, refrigerantes y compuestos tóxicos en la estación. Incluye pestaña de cierre superior e inferior (chimes), nervaduras anulares de rodadura para rodado por suelo, tapón roscado hexagonal de 2 pulgadas y tapón de venteo de 3/4, rombo de advertencia de materiales peligrosos y variante con residuo de derrame químico.",
+  "author": {
+    "name": "ModelCoder Core Team",
+    "github": "FrancisCuarto"
+  },
+  "license": "CC-BY-4.0",
+  "category": "cargo",
+  "tags": [
+    "psx",
+    "low-poly",
+    "drum",
+    "barrel",
+    "chemical",
+    "cargo",
+    "hazardous",
+    "below-nominal"
+  ],
+  "parameters": [
+    {
+      "key": "diameter",
+      "label": "Diámetro del Bidón (m)",
+      "type": "float",
+      "default": 0.58,
+      "min": 0.45,
+      "max": 0.75,
+      "step": 0.02,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "height",
+      "label": "Altura del Bidón (m)",
+      "type": "float",
+      "default": 0.90,
+      "min": 0.70,
+      "max": 1.15,
+      "step": 0.05,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "rib_count",
+      "label": "Aros de Rodadura / Nervaduras",
+      "type": "int",
+      "default": 2,
+      "min": 1,
+      "max": 3,
+      "step": 1,
+      "group": "Estructura"
+    },
+    {
+      "key": "has_bung_caps",
+      "label": "Tapones Roscados de Cierre",
+      "type": "bool",
+      "default": true,
+      "group": "Detalles"
+    },
+    {
+      "key": "has_spill_residue",
+      "label": "Mancha / Residuo de Derrame",
+      "type": "bool",
+      "default": false,
+      "group": "Estado"
+    },
+    {
+      "key": "hazard_type",
+      "label": "Tipo de Sustancia Peligrosa",
+      "type": "enum",
+      "default": "corrosive",
+      "options": [
+        { "value": "corrosive", "label": "Corrosivo (Acero Grime / Rombo Ácido)" },
+        { "value": "flammable", "label": "Inflamable (Esmalte Rojo / Rombo Fuego)" },
+        { "value": "toxic", "label": "Tóxico / Biológico (Franjas Amarillas)" },
+        { "value": "coolant", "label": "Refrigerante Criogénico (Blanco / Cian)" }
+      ],
+      "group": "Peligro"
+    }
+  ],
+  "presets": [
+    {
+      "id": "sealed_corrosive",
+      "label": "Reactivo Sellado en Almacén",
+      "values": {
+        "rib_count": 2,
+        "has_bung_caps": true,
+        "has_spill_residue": false,
+        "hazard_type": "corrosive"
+      }
+    },
+    {
+      "id": "leaking_toxic",
+      "label": "Fuga / Derrame de Sustancia Tóxica",
+      "values": {
+        "rib_count": 2,
+        "has_bung_caps": true,
+        "has_spill_residue": true,
+        "hazard_type": "toxic"
+      }
+    },
+    {
+      "id": "flammable_fuel",
+      "label": "Combustible Volátil Inflamable",
+      "values": {
+        "rib_count": 2,
+        "has_bung_caps": true,
+        "has_spill_residue": false,
+        "hazard_type": "flammable"
+      }
+    }
+  ],
+  "export_capabilities": {
+    "supports_collision": true,
+    "default_collision_suffix": "-convcolonly"
+  }
+}

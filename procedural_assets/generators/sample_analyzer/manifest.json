@@ -1,0 +1,126 @@
+{
+  "id": "below_nominal.laboratory.sample_analyzer",
+  "name": "Analizador Automatizado de Muestras",
+  "version": "1.0.0",
+  "description": "Espectrómetro digital de sobremesa para análisis espectroscópico y secuenciación rápida de reactivos y patógenos en el laboratorio. Cuenta con bandeja motorizada expulsable con gradilla para viales de muestra, pantalla CRT integrada con botonera de operador, leds tricolores de diagnóstico, ranura para impresora térmica de tickets y lector óptico de códigos de barras en soporte lateral.",
+  "author": {
+    "name": "ModelCoder Core Team",
+    "github": "FrancisCuarto"
+  },
+  "license": "CC-BY-4.0",
+  "category": "laboratory",
+  "tags": [
+    "psx",
+    "low-poly",
+    "analyzer",
+    "spectrometer",
+    "laboratory",
+    "samples",
+    "vials",
+    "below-nominal"
+  ],
+  "parameters": [
+    {
+      "key": "width",
+      "label": "Ancho del Chasis (m)",
+      "type": "float",
+      "default": 0.55,
+      "min": 0.45,
+      "max": 0.75,
+      "step": 0.05,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "depth",
+      "label": "Profundidad (m)",
+      "type": "float",
+      "default": 0.60,
+      "min": 0.45,
+      "max": 0.75,
+      "step": 0.05,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "height",
+      "label": "Altura del Chasis (m)",
+      "type": "float",
+      "default": 0.38,
+      "min": 0.28,
+      "max": 0.50,
+      "step": 0.02,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "tray_extended",
+      "label": "Extensión de Bandeja de Muestras (m)",
+      "type": "float",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 0.18,
+      "step": 0.02,
+      "group": "Mecanismo"
+    },
+    {
+      "key": "analyzer_state",
+      "label": "Estado Operativo",
+      "type": "enum",
+      "default": "processing",
+      "options": [
+        { "value": "idle", "label": "Reposo (Pantalla Inactiva / Led Verde)" },
+        { "value": "processing", "label": "Procesando Análisis (Pantalla Verde / Led Ámbar)" },
+        { "value": "alarm", "label": "Alarma Crítica / Error de Lectura (Pantalla Ámbar / Led Rojo)" }
+      ],
+      "group": "Estado"
+    },
+    {
+      "key": "has_barcode_scanner",
+      "label": "Lector Óptico de Código de Barras",
+      "type": "bool",
+      "default": true,
+      "group": "Accesorios"
+    },
+    {
+      "key": "has_thermal_printer",
+      "label": "Impresora Térmica de Resultados",
+      "type": "bool",
+      "default": true,
+      "group": "Accesorios"
+    }
+  ],
+  "presets": [
+    {
+      "id": "active_run",
+      "label": "Corrida Analítica en Curso",
+      "values": {
+        "tray_extended": 0.0,
+        "analyzer_state": "processing",
+        "has_barcode_scanner": true,
+        "has_thermal_printer": true
+      }
+    },
+    {
+      "id": "ejected_loading",
+      "label": "Carga de Gradilla (Bandeja Abierta)",
+      "values": {
+        "tray_extended": 0.14,
+        "analyzer_state": "idle",
+        "has_barcode_scanner": true,
+        "has_thermal_printer": true
+      }
+    },
+    {
+      "id": "fault_alarm",
+      "label": "Fallo Crítico de Reactivo",
+      "values": {
+        "tray_extended": 0.05,
+        "analyzer_state": "alarm",
+        "has_barcode_scanner": false,
+        "has_thermal_printer": true
+      }
+    }
+  ],
+  "export_capabilities": {
+    "supports_collision": true,
+    "default_collision_suffix": "-convcolonly"
+  }
+}

@@ -1,0 +1,95 @@
+{
+  "generator": "CoolantPumpGenerator",
+  "model_name": "coolant_pump",
+  "seed": 42,
+  "timestamp": "2026-10-16T05:24:13.850959Z",
+  "mesh_metrics": {
+    "triangle_count": 452,
+    "vertex_count": 276,
+    "target_tri_budget": 650,
+    "budget_compliance_ratio": 0.7,
+    "dimensions_meters": {
+      "width": 0.959,
+      "height": 0.55,
+      "depth": 0.7221
+    },
+    "has_vertex_colors": true,
+    "materials_assigned": [
+      "mat_psx_industrial_hazard_casing_w45"
+    ]
+  },
+  "config_parameters": {
+    "seed": 42,
+    "target_tri_budget": 650,
+    "name": "coolant_pump",
+    "wear_level": 0.45,
+    "add_collision_mesh": false,
+    "collision_type": "box",
+    "collision_suffix": "-convcolonly",
+    "pivot_rule": "floor_center",
+    "export_subcomponents": false,
+    "palette_name": "industrial_hazard",
+    "emission_scale": 1.0,
+    "extra_params": {},
+    "pump_length": 0.95,
+    "pump_width": 0.55,
+    "pump_height": 0.65,
+    "has_pressure_gauge": true,
+    "has_bypass_valve": true,
+    "motor_fins_count": 5,
+    "pump_status": "nominal"
+  },
+  "sockets": [
+    {
+      "name": "socket_player_interact",
+      "position": [
+        0.0,
+        -0.825,
+        0.0
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "Standard player character interaction stand point"
+    },
+    {
+      "name": "socket_item_spawn",
+      "position": [
+        0.0,
+        0.0,
+        0.742
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "Prop or pickup spawn snap position (keycards, ammo, medical items)"
+    },
+    {
+      "name": "socket_light",
+      "position": [
+        0.0,
+        0.0,
+        0.614
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "OmniLight3D / SpotLight3D mount anchor point"
+    }
+  ],
+  "godot_4_compatibility": {
+    "format": "glTF 2.0 Binary (.glb)",
+    "unit": "meters (1.0 Blender unit = 1.0 Godot unit)",
+    "forward_axis": "-Z",
+    "up_axis": "+Y",
+    "collision_mesh_convention": "Child node with -col or -colonly creates Godot StaticBody3D collision shape",
+    "vertex_colors": "Exported in COLOR_0 accessor (usable with StandardMaterial3D or PSX shader)",
+    "pbr_materials": "Exported as glTF PBR metallic/roughness + emissive"
+  }
+}
