@@ -1,32 +1,45 @@
-import type { ModelSpec, ComponentDef } from './types';
+import type { ModelSpec, ComponentDef } from './types.ts';
+import { ProceduralMemory } from './procedural-memory.ts';
 
 export class AIGenerator {
   /**
    * Generates a structured ModelSpec from a natural language user prompt.
-   * Uses Gemini API if an API key is available; otherwise uses an extensive,
-   * intelligent procedural semantic engine that creates genuine 3D components
-   * corresponding to the prompt without ever falling back to a dummy placeholder.
+   * 1. Checks persistent learned memory (Local Browser Cache & Supabase Cloud).
+   * 2. Uses Gemini API if an API key is available.
+   * 3. Uses an extensive procedural semantic engine (+25 blueprints & dynamic synthesis).
+   * 4. Automatically persists new blueprints so future requests immediately reuse them!
    */
   public static async generateModel(
     prompt: string,
     apiKey?: string
-  ): Promise<{ spec: ModelSpec; rawResponse?: string; source: 'gemini' | 'local' }> {
+  ): Promise<{ spec: ModelSpec; rawResponse?: string; source: 'gemini' | 'local' | 'local_memory' | 'cloud_memory' }> {
     const cleanPrompt = prompt.trim();
     if (!cleanPrompt) {
       throw new Error('El prompt no puede estar vacío.');
     }
 
+    // 1. Check persistent memory (Local cache or Supabase cloud)
+    const learned = await ProceduralMemory.findLearnedModel(cleanPrompt);
+    if (learned) {
+      return { spec: learned.spec, source: learned.source };
+    }
+
+    // 2. Call Gemini API if key is present
     if (apiKey && apiKey.trim().length > 10) {
       try {
         const geminiRes = await this.callGeminiAPI(cleanPrompt, apiKey.trim());
+        // Automatically persist learned model
+        await ProceduralMemory.recordLearnedModel(cleanPrompt, geminiRes.spec);
         return { ...geminiRes, source: 'gemini' };
       } catch (err: any) {
         console.warn('Fallo llamada a Gemini API, usando motor procedural local:', err);
       }
     }
 
-    // Local deterministic procedural AI generator with rich semantic blueprints
+    // 3. Local procedural generator
     const spec = this.synthesizeProceduralSpec(cleanPrompt);
+    // Automatically persist learned model so future queries stay saved
+    await ProceduralMemory.recordLearnedModel(cleanPrompt, spec);
     return { spec, source: 'local' };
   }
 

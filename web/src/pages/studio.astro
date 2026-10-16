@@ -722,7 +722,10 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
 
       if (aiLoadingStatus) {
         aiLoadingStatus.className = 'ai-status-indicator status-ok';
-        const engineLabel = source === 'gemini' ? '⚡ GOOGLE GEMINI' : '🤖 MOTOR PROCEDURAL';
+        let engineLabel = '🤖 MOTOR PROCEDURAL';
+        if (source === 'gemini') engineLabel = '⚡ GOOGLE GEMINI';
+        else if (source === 'local_memory') engineLabel = '💾 MEMORIA LOCAL APRENDIDA';
+        else if (source === 'cloud_memory') engineLabel = '☁️ NUBE COMUNITARIA RECUPERADA';
         aiLoadingStatus.textContent = `✅ [ ${engineLabel} ] ${spec.name} (${spec.components.length} componentes) renderizado en el visor.`;
       }
     } catch (err: any) {

@@ -32,10 +32,24 @@ if (typeof globalThis.FileReader === 'undefined') {
   (globalThis as any).FileReader = NodeFileReader;
 }
 
+// Node.js test environment polyfill for localStorage
+if (typeof (globalThis as any).window === 'undefined') {
+  const store = new Map<string, string>();
+  const mockLocalStorage = {
+    getItem: (key: string) => store.get(key) || null,
+    setItem: (key: string, val: string) => store.set(key, String(val)),
+    removeItem: (key: string) => store.delete(key),
+    clear: () => store.clear()
+  };
+  (globalThis as any).window = { localStorage: mockLocalStorage };
+  (globalThis as any).localStorage = mockLocalStorage;
+}
+
 import { ProceduralEngine } from '../src/lib/studio/procedural-engine.ts';
 import { CodeSandbox } from '../src/lib/studio/code-sandbox.ts';
 import { AIGenerator } from '../src/lib/studio/ai-generator.ts';
 import { GLBExporterService } from '../src/lib/studio/glb-exporter.ts';
+import { ProceduralMemory } from '../src/lib/studio/procedural-memory.ts';
 
 test('Criterion 1 & 2: Solicitar un cubo y luego una esfera genera geometrías distintas y dimensiones reales', () => {
   // 1. Generate cube
@@ -213,4 +227,23 @@ test('Procedural Blueprints: Solicitar "nave espacial" y "robot" genera objetos 
   ProceduralEngine.disposeHierarchy(shipGroup);
   ProceduralEngine.disposeHierarchy(robotGroup);
 });
+
+test('Procedural Memory: Cuando se genera un modelo nuevo, se almacena y se recupera en las siguientes peticiones', async () => {
+  const prompt = 'submarino militar amarillo con periscopio';
+  
+  // First generation: synthesized fresh
+  const res1 = await AIGenerator.generateModel(prompt);
+  assert.equal(res1.source, 'local');
+  assert.ok(res1.spec.components.length > 0);
+
+  // Second generation with same prompt: must hit 'local_memory'
+  const res2 = await AIGenerator.generateModel(prompt);
+  assert.equal(res2.source, 'local_memory', 'Second call must hit learned memory');
+  assert.equal(res2.spec.name, res1.spec.name);
+  assert.equal(res2.spec.components.length, res1.spec.components.length);
+
+  // Clean memory for other tests
+  ProceduralMemory.clearLocalMemory();
+});
+
 
