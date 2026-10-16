@@ -1,0 +1,160 @@
+import * as THREE from 'three';
+import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+
+export interface ExportVerificationResult {
+  verified: boolean;
+  sizeBytes: number;
+  triangleCount: number;
+  vertexCount: number;
+  error?: string;
+}
+
+export class GLBExporterService {
+  /**
+   * Exports an exact Three.js object hierarchy to binary GLB,
+   * performs a MANDATORY test-import verification, and triggers browser download.
+   */
+  public static async exportAndVerifyGLB(
+    rootObj: THREE.Object3D,
+    filename = 'modelcoder_asset'
+  ): Promise<ExportVerificationResult> {
+    if (!rootObj) {
+      throw new Error('No hay ningún objeto 3D activo para exportar.');
+    }
+
+    // 1. Export scene to binary GLB ArrayBuffer
+    const glbBuffer = await this.exportToArrayBuffer(rootObj);
+
+    // 2. Mandatory Verification Step: Test-import the exported GLB buffer
+    const verification = await this.verifyGLBBuffer(glbBuffer);
+    if (!verification.verified) {
+      throw new Error(`Fallo de verificación en exportación GLB: ${verification.error}`);
+    }
+
+    // 3. Trigger clean browser download of the verified file
+    const blob = new Blob([glbBuffer], { type: 'model/gltf-binary' });
+    const blobUrl = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = blobUrl;
+    link.download = filename.endsWith('.glb') ? filename : `${filename}.glb`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 15000);
+
+    return verification;
+  }
+
+  /**
+   * Converts a Three.js hierarchy to an ArrayBuffer using GLTFExporter.
+   */
+  public static exportToArrayBuffer(obj: THREE.Object3D): Promise<ArrayBuffer> {
+    return new Promise((resolve, reject) => {
+      const exporter = new GLTFExporter();
+      exporter.parse(
+        obj,
+        (result) => {
+          if (result instanceof ArrayBuffer) {
+            resolve(result);
+          } else {
+            // Convert string JSON to buffer if not binary
+            const jsonStr = JSON.stringify(result);
+            const enc = new TextEncoder();
+            resolve(enc.encode(jsonStr).buffer as ArrayBuffer);
+          }
+        },
+        (error) => {
+          reject(new Error(`Error durante exportación GLTFExporter: ${error}`));
+        },
+        {
+          binary: true,
+          embedImages: true,
+          includeCustomExtensions: true
+        }
+      );
+    });
+  }
+
+  /**
+   * Performs an immediate round-trip test import using GLTFLoader
+   * to guarantee the GLB binary is well-formed, readable, and retains geometry.
+   */
+  public static async verifyGLBBuffer(buffer: ArrayBuffer): Promise<ExportVerificationResult> {
+    if (!buffer || buffer.byteLength < 20) {
+      return {
+        verified: false,
+        sizeBytes: buffer ? buffer.byteLength : 0,
+        triangleCount: 0,
+        vertexCount: 0,
+        error: 'El búfer GLB está vacío o corrupto (menor a 20 bytes).'
+      };
+    }
+
+    // Validate GLB Magic Header 'glTF' (0x46546C67)
+    const view = new DataView(buffer);
+    const magic = view.getUint32(0, true);
+    if (magic !== 0x46546c67) {
+      return {
+        verified: false,
+        sizeBytes: buffer.byteLength,
+        triangleCount: 0,
+        vertexCount: 0,
+        error: 'El archivo generado no contiene la cabecera binaria mágica válida de glTF (glTF).'
+      };
+    }
+
+    try {
+      const loader = new GLTFLoader();
+      const gltf = await loader.parseAsync(buffer, '');
+
+      if (!gltf.scene) {
+        return {
+          verified: false,
+          sizeBytes: buffer.byteLength,
+          triangleCount: 0,
+          vertexCount: 0,
+          error: 'El archivo GLB no contiene una escena 3D válida tras importación de prueba.'
+        };
+      }
+
+      let triCount = 0;
+      let vertCount = 0;
+
+      gltf.scene.traverse((node: any) => {
+        if (node.isMesh && node.geometry) {
+          const pos = node.geometry.getAttribute('position');
+          if (pos) {
+            vertCount += pos.count;
+            triCount += node.geometry.index ? node.geometry.index.count / 3 : pos.count / 3;
+          }
+        }
+      });
+
+      if (vertCount === 0) {
+        return {
+          verified: false,
+          sizeBytes: buffer.byteLength,
+          triangleCount: 0,
+          vertexCount: 0,
+          error: 'El modelo GLB importado de prueba no contiene vértices.'
+        };
+      }
+
+      return {
+        verified: true,
+        sizeBytes: buffer.byteLength,
+        triangleCount: Math.round(triCount),
+        vertexCount: Math.round(vertCount)
+      };
+    } catch (err: any) {
+      return {
+        verified: false,
+        sizeBytes: buffer.byteLength,
+        triangleCount: 0,
+        vertexCount: 0,
+        error: `Fallo durante el análisis de re-importación con GLTFLoader: ${err.message}`
+      };
+    }
+  }
+}

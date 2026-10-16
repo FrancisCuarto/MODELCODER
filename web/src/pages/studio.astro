@@ -9,226 +9,398 @@ import catalog from '../data/catalog.json';
     <div class="ps1-window studio-topbar">
       <div class="ps1-titlebar">
         <span>// MODELCODER_WEB_STUDIO // IN-BROWSER 3D PROCEDURAL IDE</span>
-        <span class="ps1-telemetry-tag">ENGINE: BLENDER 5.0 CORE</span>
+        <span class="ps1-telemetry-tag">ENGINE: THREE.JS PROCEDURAL CORE</span>
       </div>
 
       <div class="topbar-actions">
-        <!-- Template / Fork Selector -->
-        <div class="template-selector-box">
-          <label for="template-select" class="action-lbl">&gt; PLANTILLA / FORK:</label>
-          <select id="template-select" class="form-select topbar-select">
-            <option value="custom">NUEVO GENERADOR EN BLANCO</option>
-            <option value="crate" selected>CLONAR: Crate (Contenedor)</option>
-            <option value="terminal">CLONAR: Terminal (Computadora)</option>
-            <option value="bunk_bed">CLONAR: Bunk Bed (Camas)</option>
-            <option value="office_chair">CLONAR: Office Chair (Silla)</option>
-          </select>
+        <!-- Mode Switcher Tabs -->
+        <div class="mode-switcher-group">
+          <button id="mode-tab-ai" class="btn-mode-tab active" data-mode="ai" title="Creación de modelos mediante lenguaje natural">
+            ⚡ MODO IA
+          </button>
+          <button id="mode-tab-visual" class="btn-mode-tab" data-mode="visual" title="Constructor visual paramétrico">
+            🛠️ CONSTRUCTOR VISUAL
+          </button>
+          <button id="mode-tab-code" class="btn-mode-tab" data-mode="code" title="Editor de código procedural y especificaciones">
+            💻 EDITOR DE CÓDIGO
+          </button>
         </div>
 
         <!-- Action Buttons -->
         <div class="topbar-btn-group">
-          <button id="run-compile-btn" class="btn btn-cyan" title="Compilar y Actualizar Visor 3D">
+          <button id="run-compile-btn" class="btn btn-cyan" title="Compilar código actual y actualizar visor 3D">
             ⚡ COMPILAR & VER 3D
           </button>
-          <button id="export-zip-btn" class="btn btn-primary" title="Descargar paquete de 4 archivos listo para Pull Request">
-            💾 DESCARGAR PAQUETE (.ZIP)
+          <button id="export-glb-btn" class="btn btn-gold" title="Exportar modelo exactamente visible en formato GLB verificado">
+            💾 EXPORTAR GLB
+          </button>
+          <button id="export-zip-btn" class="btn btn-primary" title="Descargar paquete de código para Blender (.ZIP)">
+            📦 PAQUETE (.ZIP)
+          </button>
+          <button id="open-docs-btn" class="btn btn-outline" title="Guía y Documentación de Modelado Procedural">
+            📖 GUÍA
           </button>
           <button id="github-pr-btn" class="btn btn-green" title="Publicar o proponer tu modelo en la comunidad de GitHub">
-            🚀 PUBLICAR MODELO
+            🚀 PUBLICAR
           </button>
         </div>
       </div>
     </div>
 
-    <!-- AI Co-Pilot Command Center -->
-    <div class="ps1-window ai-copilot-window" id="ai-copilot-box">
-      <div class="ps1-titlebar ai-titlebar">
-        <div style="display: flex; align-items: center; gap: 0.5rem;">
-          <span class="ai-status-pulse"></span>
-          <span>// MODELCODER_AI_COPILOT: GENERADOR_3D_POR_PROMPT</span>
-          <span class="ai-badge-gemini">GEMINI 3.8 FLASH</span>
-        </div>
-        <div class="ai-titlebar-tools">
-          <button type="button" id="toggle-gemini-key-btn" class="ps1-ctrl-btn" title="Configurar API Key de Gemini">
-            🔑 API KEY
-          </button>
-          <button type="button" id="toggle-copilot-btn" class="ps1-ctrl-btn">
-            [ MINIMIZAR ]
-          </button>
-        </div>
-      </div>
-
-      <div class="ai-copilot-body" id="ai-copilot-body">
-        <!-- API Key Drawer (Initially Hidden if Key is Saved) -->
-        <div id="gemini-key-drawer" class="gemini-key-drawer" style="display: none;">
-          <div class="ps1-inset key-inset">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem; flex-wrap: wrap; gap: 0.3rem;">
-              <label for="gemini-api-key-input" class="field-label" style="color: var(--ps1-gold); font-size: 0.72rem; margin: 0;">
-                CLAVE DE GOOGLE GEMINI API (100% GRATIS):
-              </label>
-              <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" style="color: var(--ps1-cyan); font-size: 0.68rem; text-decoration: underline;">
-                ➜ Obtener clave gratis en Google AI Studio
-              </a>
+    <!-- Main Studio Split View (Left: Creation Modes, Right: Viewport & Stats) -->
+    <div class="studio-workspace">
+      <!-- Left Column: Creation Modes (AI / Visual / Code) -->
+      <div class="creation-column">
+        <!-- MODE A: AI COPILOT WINDOW -->
+        <div id="ai-mode-container" class="mode-panel active">
+          <div class="ps1-window">
+            <div class="ps1-titlebar ai-titlebar">
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <span class="ai-status-pulse"></span>
+                <span>// MODELCODER_AI: CREACIÓN_POR_LENGUAJE_NATURAL</span>
+                <span class="ai-badge-gemini">GEMINI 2.5 / 3.8 FLASH</span>
+              </div>
+              <div class="ai-titlebar-tools">
+                <button type="button" id="toggle-gemini-key-btn" class="ps1-ctrl-btn" title="Configurar API Key de Gemini">
+                  🔑 API KEY
+                </button>
+              </div>
             </div>
-            <div style="display: flex; gap: 0.5rem;">
-              <input 
-                type="password" 
-                id="gemini-api-key-input" 
-                placeholder="Pega aquí tu clave: AIzaSy..." 
-                class="form-input" 
-                style="flex: 1; font-family: var(--font-mono); font-size: 0.75rem;"
-              />
-              <button type="button" id="save-gemini-key-btn" class="btn btn-gold" style="font-size: 0.7rem; padding: 0.35rem 0.8rem;">
-                Guardar Clave
+
+            <div class="ai-copilot-body">
+              <!-- API Key Drawer -->
+              <div id="gemini-key-drawer" class="gemini-key-drawer" style="display: none;">
+                <div class="ps1-inset key-inset">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem; flex-wrap: wrap; gap: 0.3rem;">
+                    <label for="gemini-api-key-input" class="field-label" style="color: var(--ps1-gold); font-size: 0.72rem; margin: 0;">
+                      CLAVE DE GOOGLE GEMINI API (OPCIONAL - GENERADOR LOCAL ACTIVO):
+                    </label>
+                    <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" style="color: var(--ps1-cyan); font-size: 0.68rem; text-decoration: underline;">
+                      ➜ Obtener clave gratis en Google AI Studio
+                    </a>
+                  </div>
+                  <div style="display: flex; gap: 0.5rem;">
+                    <input 
+                      type="password" 
+                      id="gemini-api-key-input" 
+                      placeholder="Pega aquí tu clave: AIzaSy..." 
+                      class="form-input" 
+                      style="flex: 1; font-family: var(--font-mono); font-size: 0.75rem;"
+                    />
+                    <button type="button" id="save-gemini-key-btn" class="btn btn-gold" style="font-size: 0.7rem; padding: 0.35rem 0.8rem;">
+                      Guardar Clave
+                    </button>
+                  </div>
+                  <small style="color: var(--text-dim); font-size: 0.65rem; margin-top: 0.3rem; display: block;">
+                    Si no tienes clave, el estudio utiliza el sintetizador procedural geométrico local sin conexión.
+                  </small>
+                </div>
+              </div>
+
+              <!-- Prompt Input Row -->
+              <div class="ai-prompt-row">
+                <div class="prompt-input-wrap">
+                  <span class="prompt-prefix">&gt; DESCRIBE TU MODELO:</span>
+                  <input 
+                    type="text" 
+                    id="ai-prompt-input" 
+                    placeholder="ej. tarjeta de acceso con chip y banda magnética / esfera roja de 1.5m / consola con dos pantallas" 
+                    class="ai-prompt-input"
+                  />
+                </div>
+                <button type="button" id="generate-ai-btn" class="btn btn-cyan ai-generate-btn">
+                  ⚡ GENERAR GEOMETRÍA
+                </button>
+              </div>
+
+              <!-- Quick Chips -->
+              <div class="ai-chips-row">
+                <span class="chips-label">PRUEBAS RÁPIDAS:</span>
+                <button type="button" class="ai-chip" data-prompt="Cubo metálico de 1x1x1 metro con bordes oscuros">
+                  📦 Cubo 1m
+                </button>
+                <button type="button" class="ai-chip" data-prompt="Esfera roja de 1.5 metros de diámetro">
+                  🔴 Esfera Roja
+                </button>
+                <button type="button" class="ai-chip" data-prompt="Tarjeta de acceso de seguridad con chip dorado y banda magnética">
+                  💳 Tarjeta de Acceso
+                </button>
+                <button type="button" class="ai-chip" data-prompt="Consola de navegación espacial con dos pantallas CRT inclinadas">
+                  🖥️ Consola CRT
+                </button>
+                <button type="button" class="ai-chip" data-prompt="Mesa de trabajo de 1.4m con cuatro patas tubulares">
+                  🪑 Mesa de Trabajo
+                </button>
+                <button type="button" class="ai-chip" data-prompt="Cilindro de columna industrial de 2 metros con base metálica">
+                  🏛️ Cilindro Columna
+                </button>
+              </div>
+
+              <div id="ai-loading-status" class="ai-status-indicator" style="display: none;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- MODE B: VISUAL BUILDER WINDOW -->
+        <div id="visual-mode-container" class="mode-panel">
+          <div class="ps1-window">
+            <div class="ps1-titlebar">
+              <span>// CONSTRUCTOR_VISUAL: COMPONENTES_GEOMÉTRICOS</span>
+              <div class="visual-builder-actions">
+                <button type="button" id="btn-add-box" class="btn-mini btn-cyan">+ CUBO</button>
+                <button type="button" id="btn-add-cylinder" class="btn-mini btn-cyan">+ CILINDRO</button>
+                <button type="button" id="btn-add-sphere" class="btn-mini btn-cyan">+ ESFERA</button>
+                <button type="button" id="btn-add-wedge" class="btn-mini btn-cyan">+ CUÑA</button>
+              </div>
+            </div>
+
+            <div class="visual-builder-body" id="visual-components-list">
+              <!-- Dynamically populated component cards -->
+            </div>
+          </div>
+        </div>
+
+        <!-- MODE C: CODE EDITOR WINDOW -->
+        <div id="code-mode-container" class="mode-panel">
+          <div class="ps1-window editor-window">
+            <!-- Tab Bar -->
+            <div class="editor-tabs">
+              <button class="editor-tab active" data-file="spec">
+                model_spec.json <span class="tab-badge">GEOMETRÍA REAL</span>
+              </button>
+              <button class="editor-tab" data-file="script">
+                procedural_script.js <span class="tab-badge">DSL SCRIPT</span>
+              </button>
+              <button class="editor-tab" data-file="generator_py">
+                generator.py <span class="tab-badge">BLENDER 5.0</span>
               </button>
             </div>
-            <small style="color: var(--text-dim); font-size: 0.65rem; margin-top: 0.3rem; display: block;">
-              Tu clave se almacena exclusivamente en tu navegador (localStorage) y nunca pasa por servidores de terceros.
-            </small>
-          </div>
-        </div>
 
-        <!-- AI Scope and Pre-requisites Information -->
-        <div class="ai-briefing-box ps1-inset">
-          <div class="briefing-lead">
-            <span class="briefing-badge">[ CREACIÓN POR TEXTO ]</span>
-            <strong class="briefing-title">Creá un generador 3D describiéndolo con tus palabras:</strong>
-          </div>
-          <p class="briefing-text">
-            Por ejemplo: <em>"una consola metálica con tres pantallas y botones rojos"</em> o <em>"cápsula vertical con visor térmico"</em>. La IA genera el código Python paramétrico y el manifiesto con estética retro PSX (bajo conteo de polígonos).
-          </p>
-          <div class="briefing-req-row">
-            <span class="req-label">⚙️ Requisito:</span>
-            <span class="req-desc">Clave gratuita de <strong>Google AI Studio</strong> (se guarda de forma segura únicamente en tu navegador).</span>
-            <button type="button" id="btn-quick-key-open" class="btn btn-outline" style="font-size: 0.65rem; padding: 0.2rem 0.5rem;">
-              🔑 Configurar Clave
-            </button>
-          </div>
-        </div>
+            <!-- Editor Surface -->
+            <div class="editor-surface">
+              <div class="line-numbers" id="line-numbers">1</div>
+              <textarea id="code-textarea" spellcheck="false" autocomplete="off"></textarea>
+            </div>
 
-        <!-- Prompt Input and Action Row -->
-        <div class="ai-prompt-row">
-          <div class="prompt-input-wrap">
-            <span class="prompt-prefix">&gt; PROMPT:</span>
-            <input 
-              type="text" 
-              id="ai-prompt-input" 
-              placeholder="ej. Diseña una torreta de vigilancia de pared con sensor rojo, doble cañón y soporte angular..." 
-              class="ai-prompt-input"
-            />
-          </div>
-          <button type="button" id="generate-ai-btn" class="btn btn-cyan ai-generate-btn">
-            ⚡ GENERAR CON IA
-          </button>
-        </div>
-
-        <!-- Quick Inspiration Chips -->
-        <div class="ai-chips-row">
-          <span class="chips-label">SUGERENCIAS:</span>
-          <button type="button" class="ai-chip" data-preset="turret" data-prompt="Torreta de vigilancia robótica para pared con sensor láser rojo, cañón doble y soporte angular">
-            🛸 Torreta de Pared
-          </button>
-          <button type="button" class="ai-chip" data-preset="cryo" data-prompt="Cápsula criogénica vertical con ventana de observación, tubos de refrigerante superiores y panel de signos vitales">
-            🧊 Cápsula Criogénica
-          </button>
-          <button type="button" class="ai-chip" data-preset="crt_console" data-prompt="Consola de mando de seguridad con 3 pantallas CRT inclinadas, teclado angular y módulo de cinta">
-            🖥️ Consola CRT Triple
-          </button>
-          <button type="button" class="ai-chip" data-preset="energy_core" data-prompt="Generador de escudo de energía con núcleo cilíndrico rotatorio, aletas de ventilación y jaula de seguridad">
-            ⚡ Núcleo de Energía
-          </button>
-        </div>
-
-        <div id="ai-loading-status" class="ai-status-indicator" style="display: none;"></div>
-      </div>
-    </div>
-
-    <!-- Main Studio Split View (Left: Editor, Right: Viewport & Tests) -->
-    <div class="studio-workspace">
-      <!-- Left: Code Editor Window -->
-      <div class="ps1-window editor-window">
-        <!-- Tab Bar -->
-        <div class="editor-tabs">
-          <button class="editor-tab active" data-file="generator">
-            generator.py <span class="tab-badge">MALLA</span>
-          </button>
-          <button class="editor-tab" data-file="config">
-            config.py <span class="tab-badge">TYPES</span>
-          </button>
-          <button class="editor-tab" data-file="manifest">
-            manifest.json <span class="tab-badge">SPEC</span>
-          </button>
-          <button class="editor-tab" data-file="readme">
-            README.md <span class="tab-badge">DOCS</span>
-          </button>
-        </div>
-
-        <!-- Editor Surface -->
-        <div class="editor-surface">
-          <div class="line-numbers" id="line-numbers">1</div>
-          <textarea id="code-textarea" spellcheck="false" autocomplete="off"></textarea>
-        </div>
-
-        <!-- Editor Status & AST Security Linter -->
-        <div class="editor-statusbar">
-          <div class="status-left">
-            <span id="cursor-pos">LN 1, COL 1</span>
-            <span class="status-sep">|</span>
-            <span id="active-filename">generator.py</span>
-          </div>
-          <div class="status-right" id="linter-badge">
-            <span class="status-dot"></span>
-            <span id="linter-text">AST_SECURITY: VALID // 0 ERRORS</span>
+            <!-- Editor Statusbar -->
+            <div class="editor-statusbar">
+              <div class="status-left">
+                <span id="cursor-pos">LN 1, COL 1</span>
+                <span class="status-sep">|</span>
+                <span id="active-filename">model_spec.json</span>
+              </div>
+              <div class="status-right" id="linter-badge">
+                <span class="status-dot"></span>
+                <span id="linter-text">SINTAXIS: VÁLIDA // 0 ERRORES</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- Right: Live 3D Viewport & Parameter Inspector -->
+      <!-- Right Column: Live 3D Viewport & Geometric Stats -->
       <div class="preview-column">
         <!-- 3D Viewport Window -->
         <div class="ps1-window studio-viewport-window">
           <div class="ps1-titlebar">
-            <span>// 3D_PREVIEW: [<span id="viewport-model-name">CRATE</span>]</span>
+            <span>// 3D_VIEWPORT: [<span id="viewport-model-name">MODELO ACTIVO</span>]</span>
             <div class="viewport-quick-tools">
-              <button id="studio-rotate-toggle" class="ps1-ctrl-btn">🔄 ROTACIÓN</button>
-              <button id="studio-reset-cam" class="ps1-ctrl-btn">🎯 CENTRAR</button>
+              <button id="studio-reset-cam" class="ps1-ctrl-btn" title="Centrar cámara en el objeto">🎯 ENCUADRAR</button>
             </div>
           </div>
 
-          <div class="ps1-inset studio-viewport-surface">
-            <model-viewer
-              id="studio-viewer"
-              src="/models/crate.glb"
-              alt="ModelCoder Studio Preview"
-              camera-controls
-              auto-rotate
-              rotation-per-second="20deg"
-              shadow-intensity="1.0"
-              class="studio-model-viewer"
-            ></model-viewer>
+          <div class="ps1-inset studio-viewport-surface" id="three-viewport-container">
+            <!-- Three.js Canvas Mount Point -->
+            <div id="three-canvas-mount" class="three-canvas-mount"></div>
+
+            <!-- Viewport Controls Overlay (Shading, Wireframe, Status) -->
+            <div class="viewport-overlay-controls">
+              <div class="shading-toggles" id="shading-toggles-group">
+                <button type="button" class="btn-shading active" data-shading="shaded" title="Sombreado estándar retro PSX">🎨 Sombreado</button>
+                <button type="button" class="btn-shading" data-shading="wireframe" title="Ver estructura de malla poligonal">🕸️ Malla</button>
+                <button type="button" class="btn-shading" data-shading="normals" title="Visualizar vectores normales">🧭 Normales</button>
+                <button type="button" class="btn-shading" data-shading="vertex_colors" title="Colores de vértice PSX">🌈 Vértices</button>
+                <button type="button" class="btn-shading" data-shading="unlit" title="Color puro sin sombreado">💡 Plana</button>
+              </div>
+
+              <!-- Generation State Badge -->
+              <div class="generation-status-badge" id="viewport-status-badge">
+                <span class="badge-dot dot-completed"></span>
+                <span class="badge-text" id="status-badge-text">COMPLETADO</span>
+              </div>
+            </div>
+
+            <!-- Geometric Statistics HUD -->
+            <div class="viewport-stats-hud" id="viewport-stats-hud">
+              <div class="hud-row"><span class="hud-lbl">GENERACIÓN:</span> <span class="hud-val" id="hud-gen-id">GEN-INIT v1</span></div>
+              <div class="hud-row"><span class="hud-lbl">TRIÁNGULOS:</span> <span class="hud-val" id="hud-tris">--</span></div>
+              <div class="hud-row"><span class="hud-lbl">VÉRTICES:</span> <span class="hud-val" id="hud-verts">--</span></div>
+              <div class="hud-row"><span class="hud-lbl">DIMENSIONES:</span> <span class="hud-val" id="hud-dims">--</span></div>
+            </div>
+
+            <!-- Diagnostic Error Banner (Only shown on compile/generation error) -->
+            <div id="viewport-error-banner" class="viewport-error-banner" style="display: none;">
+              <div class="error-banner-header">
+                <span class="error-icon">⚠️</span>
+                <strong id="error-banner-title">Error de Compilación</strong>
+                <button type="button" id="btn-close-error" class="btn-mini-close">✕</button>
+              </div>
+              <div class="error-banner-body" id="error-banner-body"></div>
+              <div class="error-banner-footer" id="error-banner-fallback-note">
+                ℹ️ Mostrando el último modelo válido anterior como referencia.
+              </div>
+            </div>
           </div>
         </div>
 
-        <!-- Live Dynamic Parameter Inspector (Parsed from manifest.json) -->
+        <!-- Parameters / Preset Fine-tuning Panel -->
         <div class="ps1-window inspector-window">
           <div class="ps1-titlebar">
-            <span>// PARAMETERS_TEST_BENCH</span>
-            <span class="ps1-telemetry-tag">REACTIVO EN TIEMPO REAL</span>
+            <span>// AJUSTES_RÁPIDOS_EN_VIVO</span>
+            <span class="ps1-telemetry-tag">PARÁMETROS GEOMÉTRICOS</span>
           </div>
 
           <div class="inspector-body">
-            <p class="inspector-subtext">
-              Los controles de abajo se generan automáticamente a partir del archivo <code>manifest.json</code> activo.
-            </p>
-
-            <form id="studio-param-form" class="studio-param-form">
-              <!-- Dynamically populated from active manifest -->
-            </form>
+            <div class="quick-adjust-grid">
+              <div class="param-row">
+                <label class="param-label">Escala Global (Métrico):</label>
+                <input type="range" id="param-global-scale" min="0.2" max="3.0" step="0.1" value="1.0" class="param-slider" />
+                <span id="param-global-scale-val" class="param-val-disp">1.0x</span>
+              </div>
+              <div class="param-row">
+                <label class="param-label">Rugosidad de Superficie:</label>
+                <input type="range" id="param-roughness" min="0.0" max="1.0" step="0.05" value="0.75" class="param-slider" />
+                <span id="param-roughness-val" class="param-val-disp">0.75</span>
+              </div>
+              <div class="param-row">
+                <label class="param-label">Aspecto Metálico:</label>
+                <input type="range" id="param-metalness" min="0.0" max="1.0" step="0.05" value="0.25" class="param-slider" />
+                <span id="param-metalness-val" class="param-val-disp">0.25</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
     </div>
   </div>
+
+  <!-- Documentation Modal -->
+  <dialog id="docs-modal" class="ps1-window docs-modal">
+    <div class="ps1-titlebar">
+      <span>// GUÍA_DE_APRENDIZAJE // MODELADO_PROCEDURAL_3D</span>
+      <button id="close-docs-btn" class="ps1-ctrl-btn">X</button>
+    </div>
+    <div class="docs-modal-body">
+      <div class="docs-nav-tabs">
+        <button class="doc-tab active" data-section="doc-quickstart">1. Inicio Rápido</button>
+        <button class="doc-tab" data-section="doc-ai">2. Describir para IA</button>
+        <button class="doc-tab" data-section="doc-geometry">3. Geometría Procedural</button>
+        <button class="doc-tab" data-section="doc-transforms">4. Ejes y Dimensiones</button>
+        <button class="doc-tab" data-section="doc-materials">5. Materiales y Luces</button>
+        <button class="doc-tab" data-section="doc-errors">6. Corregir Errores</button>
+        <button class="doc-tab" data-section="doc-advanced">7. Editor Avanzado</button>
+        <button class="doc-tab" data-section="doc-export">8. Exportar a Blender/Godot</button>
+        <button class="doc-tab" data-section="doc-community">9. Contribuciones</button>
+      </div>
+
+      <div class="docs-content-area">
+        <section id="doc-quickstart" class="doc-section active">
+          <h3>1. Tu Primer Modelo en Cinco Minutos</h3>
+          <p>ModelCoder te permite crear geometría 3D real sin necesidad de software complejo. Sigue estos tres pasos:</p>
+          <ol>
+            <li>En <strong>Modo IA</strong>, escribe una descripción clara como <code>"cubo de 1 metro rojo"</code> o <code>"tarjeta de acceso con chip"</code> y presiona <strong>⚡ Generar Geometría</strong>.</li>
+            <li>El visor mostrará inmediatamente el objeto tridimensional real. Puedes rotarlo arrastrando el ratón, hacer zoom con la rueda y cambiar a vista de <strong>Malla</strong> para ver su topología.</li>
+            <li>Haz clic en <strong>💾 Exportar GLB</strong>. El modelo visible se verificará y descargará como archivo <code>.glb</code> estándar para tus proyectos.</li>
+          </ol>
+        </section>
+
+        <section id="doc-ai" class="doc-section">
+          <h3>2. Cómo Describir Objetos para la IA</h3>
+          <p>Para obtener los mejores resultados, sé específico sobre las formas y dimensiones:</p>
+          <ul>
+            <li><strong>Menciona dimensiones:</strong> <code>"consola de 1.2m de ancho por 1 metro de alto"</code>.</li>
+            <li><strong>Desglosa componentes:</strong> <code>"mesa con tablero cuadrado y cuatro patas cilíndricas"</code>.</li>
+            <li><strong>Indica colores y materiales:</strong> <code>"cápsula azul oscuro con panel de control cyan y detalles dorados"</code>.</li>
+            <li><strong>Estilo retro PSX:</strong> El motor está calibrado para modelos de bajo poligonaje (100 a 500 triángulos) ideales para juegos de estilo PS1 / PSX.</li>
+          </ul>
+        </section>
+
+        <section id="doc-geometry" class="doc-section">
+          <h3>3. Fundamentos de Geometría Procedural</h3>
+          <p>En el modelado procedural, los objetos se definen mediante reglas matemáticas y parámetros en lugar de esculpirlos manualmente vértice a vértice.</p>
+          <p>Las primitivas base admitidas son:</p>
+          <ul>
+            <li><code>box</code>: Prismas rectangulares (cubos, paneles, cajas, tableros).</li>
+            <li><code>cylinder</code>: Tubos, columnas, botones, patas, cables, tanques.</li>
+            <li><code>sphere</code>: Domos, sensores, balizas, articulaciones esféricas.</li>
+            <li><code>wedge</code>: Cuñas prismáticas para rampas, biseles y teclados inclinados.</li>
+            <li><code>capsule / torus</code>: Contenedores presurizados y anillos de sellado.</li>
+          </ul>
+        </section>
+
+        <section id="doc-transforms" class="doc-section">
+          <h3>4. Dimensiones, Ejes y Transformaciones</h3>
+          <p>ModelCoder utiliza el sistema de coordenadas estándar métrico:</p>
+          <ul>
+            <li><strong>Eje X (Rojo / Ancho):</strong> De izquierda (-) a derecha (+).</li>
+            <li><strong>Eje Y (Verde / Altura):</strong> De abajo (-) a arriba (+). El suelo se ubica en Y = 0.</li>
+            <li><strong>Eje Z (Azul / Profundidad):</strong> De atrás (-) al frente (+).</li>
+            <li>Las rotaciones se expresan en grados (0 a 360°).</li>
+          </ul>
+        </section>
+
+        <section id="doc-materials" class="doc-section">
+          <h3>5. Materiales, Colores de Vértice y Luces</h3>
+          <p>El estudio utiliza <strong>Flat Shading</strong> con paletas de colores por vértice (Vertex Colors), fiel a la estética PlayStation 1:</p>
+          <ul>
+            <li>No requiere mapas de texturas pesados; los colores se asignan a nivel de vértice.</li>
+            <li>El visor incluye modos para inspeccionar el sombreado estándar, la estructura de alambre (Wireframe), las normales y los colores planos sin iluminación.</li>
+          </ul>
+        </section>
+
+        <section id="doc-errors" class="doc-section">
+          <h3>6. Cómo Corregir Errores de Generación</h3>
+          <p>Si la compilación de código o especificación falla:</p>
+          <ul>
+            <li>El visor no te mostrará un modelo falso ni de ejemplo: mantendrá el último modelo válido e indicará claramente el error en la barra roja de diagnóstico.</li>
+            <li>Revisa el número de línea indicado en el reporte de error (por ejemplo, comas faltantes o llaves sin cerrar en JSON).</li>
+            <li>Corrige la sintaxis en el editor y presiona <strong>⚡ COMPILAR & VER 3D</strong> para actualizar la geometría.</li>
+          </ul>
+        </section>
+
+        <section id="doc-advanced" class="doc-section">
+          <h3>7. Cómo Utilizar el Editor Avanzado</h3>
+          <p>En la pestaña <strong>💻 Editor de Código</strong> puedes programar directamente:</p>
+          <pre><code>// Ejemplo con el Builder Procedural:
+builder.setName("Mi Torreta");
+builder.addBox(&#123; size: [0.8, 0.2, 0.8], position: [0, 0.1, 0], color: "metal" &#125;);
+builder.addCylinder(&#123; radius: 0.15, height: 1.0, segments: 8, position: [0, 0.6, 0], color: "hazard" &#125;);
+builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color: "accent" &#125;);
+</code></pre>
+          <p>Presiona <strong>⚡ COMPILAR & VER 3D</strong> para ver el resultado de tu código en tiempo real.</p>
+        </section>
+
+        <section id="doc-export" class="doc-section">
+          <h3>8. Cómo Exportar Modelos a Blender y Godot</h3>
+          <p>Tus modelos son 100% compatibles con motores modernos:</p>
+          <ul>
+            <li><strong>Exportación Directa (.GLB):</strong> Presiona <strong>💾 EXPORTAR GLB</strong>. El archivo incluye toda la geometría, materiales y colores de vértice listos para arrastrar a Godot 4, Unity o Unreal Engine.</li>
+            <li><strong>Generador Nativo (.ZIP):</strong> Presiona <strong>📦 PAQUETE (.ZIP)</strong> para descargar el código Python de Blender 5.0 con colisiones automáticas <code>-convcolonly</code> para Godot.</li>
+          </ul>
+        </section>
+
+        <section id="doc-community" class="doc-section">
+          <h3>9. Cómo Enviar Contribuciones a la Comunidad</h3>
+          <p>ModelCoder es un proyecto de código abierto. Para que tu modelo aparezca en el catálogo oficial:</p>
+          <ol>
+            <li>Haz clic en <strong>🚀 PUBLICAR</strong> en la barra superior.</li>
+            <li>Usa la opción <strong>⭐ Propuesta en GitHub (1-Clic)</strong>. Se creará automáticamente un Issue con tu código formateado y especificación.</li>
+            <li>El equipo revisará tu generador y lo integrará en la siguiente versión de la biblioteca.</li>
+          </ol>
+        </section>
+      </div>
+    </div>
+  </dialog>
 
   <!-- GitHub Contribution Modal -->
   <dialog id="github-modal" class="ps1-window gh-modal">
@@ -241,717 +413,581 @@ import catalog from '../data/catalog.json';
         PUBLICAR EN FrancisCuarto/MODELCODER
       </h3>
       <p style="font-size: 0.82rem; color: #b0c0d4; margin-bottom: 1.25rem; line-height: 1.5;">
-        Tu modelo puede incorporarse al catálogo oficial abierto para que todos puedan usarlo en sus juegos. Elige la opción que prefieras:
+        Tu modelo puede incorporarse al catálogo oficial abierto para que todos puedan usarlo en sus juegos:
       </p>
 
-      <!-- Option 1: 1-Click Issue / Proposal on GitHub (Zero Setup) -->
       <div class="ps1-inset" style="padding: 1rem; margin-bottom: 1rem; background: #080e1c; border-left: 3px solid var(--ps1-green);">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
-          <span style="font-family: var(--font-pixel); font-size: 0.8rem; color: var(--ps1-green);">
-            ⭐ OPCIÓN RECOMENDADA (1-CLIC SIN CONFIGURACIÓN)
-          </span>
-        </div>
+        <span style="font-family: var(--font-pixel); font-size: 0.8rem; color: var(--ps1-green); display: block; margin-bottom: 0.35rem;">
+          ⭐ PROPUESTA EN GITHUB (1-CLIC)
+        </span>
         <p style="font-size: 0.8rem; color: var(--text-dim); margin-bottom: 0.85rem; line-height: 1.45;">
-          Abre automáticamente una propuesta en GitHub con el código de tu modelo formateado, listo para ser revisado e incorporado a la biblioteca oficial.
+          Abre automáticamente un Issue en GitHub con la especificación y código de tu modelo para su revisión e integración en el catálogo.
         </p>
         <button id="btn-quick-github-proposal" type="button" class="btn btn-green" style="width: 100%; font-size: 0.8rem; padding: 0.65rem;">
           🚀 ENVIAR PROPUESTA A GITHUB (1-CLIC)
         </button>
       </div>
 
-      <!-- Option 2: Download ZIP Package -->
-      <div class="ps1-inset" style="padding: 1rem; margin-bottom: 1rem; background: #060912; border-left: 3px solid var(--ps1-gold);">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
-          <span style="font-family: var(--font-pixel); font-size: 0.8rem; color: var(--ps1-gold);">
-            💾 DESCARGAR PAQUETE LOCAL (.ZIP)
-          </span>
-        </div>
+      <div class="ps1-inset" style="padding: 1rem; background: #080e1c; border-left: 3px solid var(--ps1-cyan);">
+        <span style="font-family: var(--font-pixel); font-size: 0.8rem; color: var(--ps1-cyan); display: block; margin-bottom: 0.35rem;">
+          📦 DESCARGAR PAQUETE (.ZIP)
+        </span>
         <p style="font-size: 0.8rem; color: var(--text-dim); margin-bottom: 0.85rem; line-height: 1.45;">
-          Descarga los 4 archivos (código Python, configuración y manifiesto) empaquetados en tu computadora para usarlos en tu propio proyecto o abrirlos en Blender.
+          Descarga el paquete completo con generator.py, config.py y manifest.json para abrir un Pull Request manual.
         </p>
-        <button id="btn-modal-download-zip" type="button" class="btn btn-gold" style="width: 100%; font-size: 0.8rem; padding: 0.65rem;">
-          📥 DESCARGAR PAQUETE (.ZIP)
+        <button id="btn-modal-download-zip" type="button" class="btn btn-cyan" style="width: 100%; font-size: 0.8rem; padding: 0.65rem;">
+          💾 DESCARGAR PAQUETE (.ZIP)
         </button>
       </div>
-
-      <!-- Option 3: Advanced PAT (Folded Collapsible for Developers) -->
-      <details style="margin-top: 1rem; font-size: 0.75rem;">
-        <summary style="cursor: pointer; color: var(--text-dim); font-family: var(--font-pixel); font-size: 0.68rem; user-select: none;">
-          ⚙️ Opcional para desarrolladores: Crear Pull Request directo con Token (PAT)
-        </summary>
-        <div class="ps1-inset" style="padding: 0.85rem; margin-top: 0.5rem; background: #040710;">
-          <label for="gh-token-input" class="field-label" style="font-size: 0.72rem;">GitHub Personal Access Token (PAT):</label>
-          <input type="password" id="gh-token-input" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" class="form-input" style="width: 100%; margin-top: 0.35rem; font-size: 0.75rem;" />
-          <button id="submit-pr-btn" class="btn btn-outline" style="width: 100%; margin-top: 0.6rem; font-size: 0.72rem;">
-            Subir vía API directa de GitHub
-          </button>
-        </div>
-      </details>
-
-      <div style="display: flex; justify-content: flex-end; margin-top: 1.25rem;">
-        <button id="modal-cancel-btn" class="btn btn-outline" style="font-size: 0.75rem;">
-          CERRAR
-        </button>
-      </div>
-
-      <div id="pr-status-box" class="live-status-box" style="display: none; margin-top: 0.85rem;"></div>
     </div>
   </dialog>
 </Layout>
 
-<!-- Load JSZip for client-side packaging -->
 <script is:inline src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
 <script>
-  // ==============================================================================
-  // BUILT-IN TEMPLATES FOR FAST FORKING & AUTHORING
-  // ==============================================================================
-  const TEMPLATES: Record<string, { model: string; generator: string; config: string; manifest: string; readme: string }> = {
-    crate: {
-      model: '/models/crate.glb',
-      generator: `import bpy
-from ...core.base_generator import BaseAssetGenerator
-from ...materials.palette import get_or_create_material
-from .config import CrateConfig
+  import { ProceduralEngine } from '../lib/studio/procedural-engine';
+  import { CodeSandbox } from '../lib/studio/code-sandbox';
+  import { AIGenerator } from '../lib/studio/ai-generator';
+  import { GLBExporterService } from '../lib/studio/glb-exporter';
+  import { StudioViewport } from '../lib/studio/three-viewport';
+  import type { ModelSpec, ComponentDef, GeometricStats, GenerationResult, ShadingMode } from '../lib/studio/types';
 
-class CrateGenerator(BaseAssetGenerator):
-    """Generates procedural sci-fi cargo crates for Below Nominal."""
-    def generate(self) -> bpy.types.Object:
-        cfg = self.config
-        mesh = bpy.data.meshes.new(f"{cfg.name}_mesh")
-        obj = bpy.data.objects.new(cfg.name, mesh)
-        bpy.context.collection.objects.link(obj)
+  // State Management
+  let generationCounter = 1;
+  let activeMode: 'ai' | 'visual' | 'code' = 'ai';
+  let activeFile: 'spec' | 'script' | 'generator_py' = 'spec';
 
-        # Procedural casing and reinforced corner brackets
-        mat_casing = get_or_create_material("casing", palette_name=cfg.palette_name)
-        obj.data.materials.append(mat_casing)
-
-        self.compact_materials(obj)
-        return obj
-`,
-      config: `from dataclasses import dataclass
-from ...core.base_config import BaseAssetConfig
-
-@dataclass
-class CrateConfig(BaseAssetConfig):
-    """Configuration for procedural cargo crates."""
-    width: float = 0.80
-    length: float = 1.20
-    height: float = 0.90
-    wear_level: float = 0.65
-    reinforced_corners: bool = True
-    hazardous_contents: bool = False
-    palette_name: str = "industrial_hazard"
-`,
-      manifest: `{
-  "$schema": "https://raw.githubusercontent.com/FrancisCuarto/MODELCODER/main/schemas/generator-v1.json",
-  "id": "below_nominal.furniture.crate",
-  "version": "1.0.0",
-  "name": "Cargo Crate",
-  "description": "Contenedor de carga modular presurizado para bodegas y hangares de Below Nominal.",
-  "author": { "name": "Community Contributor", "github": "contributor" },
-  "license": "CC-BY-4.0",
-  "category": "furniture",
-  "tags": ["cargo", "crate", "industrial", "sci-fi", "storage"],
-  "parameters": [
-    {
-      "key": "width",
-      "label": "Ancho (m)",
-      "type": "float",
-      "default": 0.80,
-      "min": 0.50,
-      "max": 2.00,
-      "step": 0.05,
-      "group": "Dimensiones"
-    },
-    {
-      "key": "length",
-      "label": "Largo (m)",
-      "type": "float",
-      "default": 1.20,
-      "min": 0.60,
-      "max": 3.00,
-      "step": 0.05,
-      "group": "Dimensiones"
-    },
-    {
-      "key": "height",
-      "label": "Alto (m)",
-      "type": "float",
-      "default": 0.90,
-      "min": 0.40,
-      "max": 2.20,
-      "step": 0.05,
-      "group": "Dimensiones"
-    },
-    {
-      "key": "wear_level",
-      "label": "Desgaste y Óxido",
-      "type": "float",
-      "default": 0.65,
-      "min": 0.0,
-      "max": 1.0,
-      "step": 0.05,
-      "group": "Materiales"
-    },
-    {
-      "key": "palette_name",
-      "label": "Paleta de Sector",
-      "type": "enum",
-      "default": "industrial_hazard",
-      "options": [
-        { "value": "industrial_hazard", "label": "Industrial Hazard" },
-        { "value": "medbay_clean", "label": "Medbay Clean" },
-        { "value": "command_bridge", "label": "Command Bridge" },
-        { "value": "derelict_decay", "label": "Derelict Decay" }
-      ],
-      "group": "Materiales"
-    },
-    {
-      "key": "reinforced_corners",
-      "label": "Esquinas Reforzadas",
-      "type": "boolean",
-      "default": true,
-      "group": "Estructura"
-    }
-  ],
-  "presets": [
-    { "id": "standard", "name": "Estándar", "values": { "width": 0.8, "length": 1.2, "height": 0.9 } },
-    { "id": "heavy_cargo", "name": "Carga Pesada", "values": { "width": 1.5, "length": 2.0, "height": 1.4 } }
-  ],
-  "export_capabilities": {
-    "target_tri_budget": 420,
-    "supports_collision": true
-  }
-}`,
-      readme: `# Cargo Crate
-
-Contenedor de carga modular presurizado diseñado para la estética low-poly PSX de Below Nominal.
-
-## Parámetros Principales
-- **width / length / height**: Dimensiones métricas normalizadas.
-- **wear_level**: Controla la rugosidad, desgaste de vértices y marcas de óxido.
-- **palette_name**: Aplica la colorimetría del sector designado en la estación.
-`
-    },
-    terminal: {
-      model: '/models/terminal.glb',
-      generator: `import bpy
-from ...core.base_generator import BaseAssetGenerator
-from ...materials.palette import get_or_create_material
-from .config import TerminalConfig
-
-class TerminalGenerator(BaseAssetGenerator):
-    """Generates sci-fi CRT wall terminals and workstation consoles."""
-    def generate(self) -> bpy.types.Object:
-        cfg = self.config
-        mesh = bpy.data.meshes.new(f"{cfg.name}_mesh")
-        obj = bpy.data.objects.new(cfg.name, mesh)
-        bpy.context.collection.objects.link(obj)
-
-        mat_casing = get_or_create_material("casing", palette_name=cfg.palette_name)
-        mat_screen = get_or_create_material("crt_screen", palette_name=cfg.palette_name)
-        obj.data.materials.extend([mat_casing, mat_screen])
-
-        self.compact_materials(obj)
-        return obj
-`,
-      config: `from dataclasses import dataclass
-from ...core.base_config import BaseAssetConfig
-
-@dataclass
-class TerminalConfig(BaseAssetConfig):
-    screen_diagonal: float = 14.0
-    keyboard_tray: bool = True
-    casing_style: str = "reinforced_bulkhead"
-    palette_name: str = "command_bridge"
-`,
-      manifest: `{
-  "$schema": "https://raw.githubusercontent.com/FrancisCuarto/MODELCODER/main/schemas/generator-v1.json",
-  "id": "below_nominal.fixtures.terminal",
-  "version": "1.0.0",
-  "name": "Wall Terminal",
-  "description": "Terminal CRT retro-sci-fi con teclado físico y chasis de mamparo.",
-  "author": { "name": "Community Contributor", "github": "contributor" },
-  "license": "CC-BY-4.0",
-  "category": "fixtures",
-  "tags": ["terminal", "crt", "computer", "sci-fi", "console"],
-  "parameters": [
-    { "key": "screen_diagonal", "label": "Diagonal Pantalla (pulgadas)", "type": "float", "default": 14.0, "min": 9.0, "max": 24.0, "step": 1.0, "group": "Pantalla" },
-    { "key": "keyboard_tray", "label": "Bandeja de Teclado", "type": "boolean", "default": true, "group": "Accesorios" },
-    { "key": "palette_name", "label": "Paleta", "type": "enum", "default": "command_bridge", "options": [{ "value": "command_bridge", "label": "Command Bridge" }, { "value": "industrial_hazard", "label": "Industrial Hazard" }], "group": "Materiales" }
-  ],
-  "presets": [],
-  "export_capabilities": { "target_tri_budget": 450, "supports_collision": true }
-}`,
-      readme: `# Wall Terminal
-
-Terminal CRT de diagnóstico de subsistemas de la nave.
-`
-    },
-    bunk_bed: {
-      model: '/models/bunk_bed.glb',
-      generator: `import bpy
-from ...core.base_generator import BaseAssetGenerator
-from ...materials.palette import get_or_create_material
-from .config import BunkBedConfig
-
-class BunkBedGenerator(BaseAssetGenerator):
-    def generate(self) -> bpy.types.Object:
-        cfg = self.config
-        mesh = bpy.data.meshes.new(f"{cfg.name}_mesh")
-        obj = bpy.data.objects.new(cfg.name, mesh)
-        bpy.context.collection.objects.link(obj)
-
-        mat_metal = get_or_create_material("metal_structural", palette_name=cfg.palette_name)
-        obj.data.materials.append(mat_metal)
-
-        self.compact_materials(obj)
-        return obj
-`,
-      config: `from dataclasses import dataclass
-from ...core.base_config import BaseAssetConfig
-
-@dataclass
-class BunkBedConfig(BaseAssetConfig):
-    width: float = 1.05
-    length: float = 2.05
-    height: float = 2.05
-    ladder_position: str = "front_right"
-    upper_guardrail: bool = True
-    palette_name: str = "industrial_hazard"
-`,
-      manifest: `{
-  "$schema": "https://raw.githubusercontent.com/FrancisCuarto/MODELCODER/main/schemas/generator-v1.json",
-  "id": "below_nominal.furniture.bunk_bed",
-  "version": "1.0.0",
-  "name": "Bunk Bed",
-  "description": "Literas apiladas de dos niveles para camarotes de tripulación en Below Nominal.",
-  "author": { "name": "Community Contributor", "github": "contributor" },
-  "license": "CC-BY-4.0",
-  "category": "furniture",
-  "tags": ["bunk", "bed", "crew", "furniture"],
-  "parameters": [
-    { "key": "width", "label": "Ancho (m)", "type": "float", "default": 1.05, "min": 0.8, "max": 1.6, "step": 0.05, "group": "Dimensiones" },
-    { "key": "length", "label": "Largo (m)", "type": "float", "default": 2.05, "min": 1.7, "max": 2.4, "step": 0.05, "group": "Dimensiones" },
-    { "key": "height", "label": "Alto (m)", "type": "float", "default": 2.05, "min": 1.5, "max": 2.6, "step": 0.05, "group": "Dimensiones" },
-    { "key": "upper_guardrail", "label": "Baranda Superior", "type": "boolean", "default": true, "group": "Seguridad" }
-  ],
-  "presets": [],
-  "export_capabilities": { "target_tri_budget": 480, "supports_collision": true }
-}`,
-      readme: `# Bunk Bed
-
-Camas de camarotes de Below Nominal.
-`
-    },
-    custom: {
-      model: '/models/crate.glb',
-      generator: `import bpy
-from ...core.base_generator import BaseAssetGenerator
-from ...materials.palette import get_or_create_material
-from .config import MiPropConfig
-
-class MiPropGenerator(BaseAssetGenerator):
-    """Generador procedural personalizado para Below Nominal."""
-    def generate(self) -> bpy.types.Object:
-        cfg = self.config
-        mesh = bpy.data.meshes.new(f"{cfg.name}_mesh")
-        obj = bpy.data.objects.new(cfg.name, mesh)
-        bpy.context.collection.objects.link(obj)
-
-        mat = get_or_create_material("casing", palette_name=cfg.palette_name)
-        obj.data.materials.append(mat)
-
-        self.compact_materials(obj)
-        return obj
-`,
-      config: `from dataclasses import dataclass
-from ...core.base_config import BaseAssetConfig
-
-@dataclass
-class MiPropConfig(BaseAssetConfig):
-    width: float = 1.0
-    length: float = 1.0
-    height: float = 1.0
-    wear_level: float = 0.5
-    palette_name: str = "industrial_hazard"
-`,
-      manifest: `{
-  "$schema": "https://raw.githubusercontent.com/FrancisCuarto/MODELCODER/main/schemas/generator-v1.json",
-  "id": "below_nominal.furniture.mi_prop",
-  "version": "1.0.0",
-  "name": "Mi Prop Personalizado",
-  "description": "Descripción clara del nuevo activo procedural para Below Nominal.",
-  "author": { "name": "Tu Nombre", "github": "tu-usuario" },
-  "license": "CC-BY-4.0",
-  "category": "furniture",
-  "tags": ["custom", "low-poly", "psx"],
-  "parameters": [
-    { "key": "width", "label": "Ancho (m)", "type": "float", "default": 1.0, "min": 0.2, "max": 3.0, "step": 0.05, "group": "Dimensiones" },
-    { "key": "length", "label": "Largo (m)", "type": "float", "default": 1.0, "min": 0.2, "max": 3.0, "step": 0.05, "group": "Dimensiones" },
-    { "key": "height", "label": "Alto (m)", "type": "float", "default": 1.0, "min": 0.2, "max": 3.0, "step": 0.05, "group": "Dimensiones" },
-    { "key": "wear_level", "label": "Desgaste", "type": "float", "default": 0.5, "min": 0.0, "max": 1.0, "step": 0.05, "group": "Materiales" }
-  ],
-  "presets": [],
-  "export_capabilities": { "target_tri_budget": 450, "supports_collision": true }
-}`,
-      readme: `# Mi Prop Personalizado
-
-Nuevo generador procedural creado con ModelCoder Web Studio.
-`
-    }
+  // Default Initial Model (Genuine procedural crate specification)
+  let currentSpec: ModelSpec = {
+    id: 'below_nominal.furniture.crate',
+    name: 'Cargo Crate',
+    category: 'furniture',
+    description: 'Contenedor de carga modular presurizado procedural.',
+    units: 'meters',
+    dimensions: { width: 1.0, depth: 1.0, height: 1.0 },
+    palette: 'industrial_hazard',
+    components: [
+      {
+        name: 'crate_hull',
+        shape: 'box',
+        size: [1.0, 0.85, 1.0],
+        position: [0, 0.425, 0],
+        color: '#4a5568',
+        roughness: 0.7,
+        metalness: 0.3
+      },
+      {
+        name: 'reinforced_band',
+        shape: 'box',
+        size: [1.04, 0.12, 1.04],
+        position: [0, 0.425, 0],
+        color: '#2d3748',
+        roughness: 0.8
+      },
+      {
+        name: 'hazard_stripe',
+        shape: 'box',
+        size: [0.96, 0.08, 1.02],
+        position: [0, 0.65, 0],
+        color: '#d69e2e',
+        roughness: 0.5
+      },
+      {
+        name: 'id_stencil',
+        shape: 'box',
+        size: [0.4, 0.12, 0.02],
+        position: [0, 0.425, 0.51],
+        color: '#edf2f7',
+        label: 'CARGO-77'
+      }
+    ]
   };
 
-  // State
-  let activeTemplate = 'crate';
-  let activeBaseModel = 'crate';
-  let activeFile = 'generator';
-  const fileContents: Record<string, string> = { ...TEMPLATES['crate'] };
-
-  // Helper to intelligently match generated model to the best 3D archetype among the 44 assets
-  function findBestMatchingGlb(family: string = '', name: string = '', tags: string[] = []): string {
-    const allKnownFamilies = [
-      'autopsy_table', 'bridge_console_desk', 'bunk_bed', 'cable_bundle', 'canteen_counter',
-      'chemical_cabinet', 'crash_cart', 'crate', 'crew_bed', 'door',
-      'electrical_panel', 'file_cabinet', 'fire_extinguisher', 'heavy_shelving', 'hydroponic_tray_bed',
-      'light_fixture', 'locker', 'locker_bench', 'medical_screen', 'mess_table',
-      'morgue_gurney', 'nightstand', 'office_chair', 'office_desk', 'office_door',
-      'oxypod', 'pipes', 'radiator_heater', 'ration_automat', 'restraint_chair',
-      'safety_shower', 'scrub_sink', 'security_desk', 'server_rack', 'sign_placard',
-      'space_toilet', 'station_corridor', 'station_room', 'terminal', 'tool_chest_cart',
-      'trash_bin', 'vent_grate', 'weapons_rack', 'work_bench'
-    ];
-
-    const cleanFamily = (family || '').toLowerCase().trim();
-    if (allKnownFamilies.includes(cleanFamily)) return cleanFamily;
-
-    const haystack = `${cleanFamily} ${(name || '')} ${(tags || []).join(' ')}`.toLowerCase();
-
-    if (/card|tarjeta|credencial|badge|id|keycard|chip|pda|pass|llave|placard|letrero|placa|acceso|access/.test(haystack)) return 'sign_placard';
-    if (/drone|dron|robot|bot|uav|sentry|sensor|camara|camera/.test(haystack)) return 'light_fixture';
-    if (/screen|pantalla|panel|biombo|separador|privacy/.test(haystack)) return 'medical_screen';
-    if (/folder|archivo|archivador|cajon|drawer/.test(haystack)) return 'file_cabinet';
-    if (/torret|turret|weapon|gun|canon|cañon|defense|defensa|arma|laser|blaster/.test(haystack)) return 'weapons_rack';
-    if (/barril|barrel|canister|drum|toxic|tóxico|residuo|tanque|tank|waste/.test(haystack)) return 'trash_bin';
-    if (/capsul|cápsul|cryo|crio|estasis|pod|oxypod|medbay|estacion|medical/.test(haystack)) return 'oxypod';
-    if (/consol|console|radar|monitor|pantalla|screen|crt|terminal|workstation/.test(haystack)) return 'bridge_console_desk';
-    if (/core|reactor|plasma|energy|núcleo|nucleo|energia|bater|power|generador/.test(haystack)) return 'electrical_panel';
-    if (/rack|servidor|server|datacenter|compute|mainframe/.test(haystack)) return 'server_rack';
-    if (/cama|bed|litera|camilla|stretcher|sleep/.test(haystack)) return 'bunk_bed';
-    if (/puerta|door|gate|hatch|escotilla|portal/.test(haystack)) return 'door';
-    if (/ducha|shower|decon|descontamin/.test(haystack)) return 'safety_shower';
-    if (/estante|shelf|shelving|repisa/.test(haystack)) return 'heavy_shelving';
-    if (/quimic|chemical|lab|gabinete|botiquin/.test(haystack)) return 'chemical_cabinet';
-    if (/armario|locker|casillero|lock/.test(haystack)) return 'locker';
-    if (/escritorio|desk|mesa|table|banco/.test(haystack)) return 'office_desk';
-    if (/silla|chair|asiento|seat/.test(haystack)) return 'office_chair';
-    if (/luz|lamp|light|foco|luminaria/.test(haystack)) return 'light_fixture';
-    if (/tubo|pipe|valv|valvula|ducto/.test(haystack)) return 'pipes';
-    if (/ventil|vent|rejilla|grate|extractor/.test(haystack)) return 'vent_grate';
-    if (/herramienta|tool|cart|taller/.test(haystack)) return 'tool_chest_cart';
-    if (/carro|cart|gurney|emergencia/.test(haystack)) return 'crash_cart';
-    if (/fuego|extintor|fire/.test(haystack)) return 'fire_extinguisher';
-    if (/cartel|sign|placard|aviso|letrero/.test(haystack)) return 'sign_placard';
-    if (/baño|toilet|wc|inodoro/.test(haystack)) return 'space_toilet';
-    if (/radiador|heater|calefactor|calor/.test(haystack)) return 'radiator_heater';
-    if (/vending|automat|ration|dispensador/.test(haystack)) return 'ration_automat';
-    if (/caja|crate|box|cargo|contenedor/.test(haystack)) return 'crate';
-
-    return 'sign_placard';
-  }
-
   // DOM Elements
+  const threeMountEl = document.getElementById('three-canvas-mount') as HTMLElement;
+  const viewportModelName = document.getElementById('viewport-model-name');
+  const hudGenId = document.getElementById('hud-gen-id');
+  const hudTris = document.getElementById('hud-tris');
+  const hudVerts = document.getElementById('hud-verts');
+  const hudDims = document.getElementById('hud-dims');
+  const statusBadge = document.getElementById('viewport-status-badge');
+  const statusBadgeText = document.getElementById('status-badge-text');
+  const errorBanner = document.getElementById('viewport-error-banner');
+  const errorBannerBody = document.getElementById('error-banner-body');
+  const btnCloseError = document.getElementById('btn-close-error');
+
   const codeTextarea = document.getElementById('code-textarea') as HTMLTextAreaElement;
   const lineNumbers = document.getElementById('line-numbers');
-  const templateSelect = document.getElementById('template-select') as HTMLSelectElement;
-  const editorTabs = document.querySelectorAll('.editor-tab');
   const cursorPos = document.getElementById('cursor-pos');
   const activeFilenameEl = document.getElementById('active-filename');
   const linterBadge = document.getElementById('linter-badge');
   const linterText = document.getElementById('linter-text');
-  const studioViewer = document.getElementById('studio-viewer') as any;
-  const viewportModelName = document.getElementById('viewport-model-name');
-  const studioParamForm = document.getElementById('studio-param-form') as HTMLFormElement;
+
   const runCompileBtn = document.getElementById('run-compile-btn');
+  const exportGlbBtn = document.getElementById('export-glb-btn');
   const exportZipBtn = document.getElementById('export-zip-btn');
+  const openDocsBtn = document.getElementById('open-docs-btn');
   const githubPrBtn = document.getElementById('github-pr-btn');
+  const docsModal = document.getElementById('docs-modal') as HTMLDialogElement;
+  const closeDocsBtn = document.getElementById('close-docs-btn');
   const githubModal = document.getElementById('github-modal') as HTMLDialogElement;
   const closeModalBtn = document.getElementById('close-modal-btn');
-  const modalCancelBtn = document.getElementById('modal-cancel-btn');
-  const submitPrBtn = document.getElementById('submit-pr-btn');
-  const prStatusBox = document.getElementById('pr-status-box');
-  const ghTokenInput = document.getElementById('gh-token-input') as HTMLInputElement;
-  const rotateToggleBtn = document.getElementById('studio-rotate-toggle');
-  const resetCamBtn = document.getElementById('studio-reset-cam');
 
-  // Update Line Numbers
-  function updateLineNumbers() {
-    if (!lineNumbers || !codeTextarea) return;
-    const lines = codeTextarea.value.split('\n').length;
-    let nums = '';
-    for (let i = 1; i <= lines; i++) {
-      nums += i + '\n';
-    }
-    lineNumbers.textContent = nums;
+  // AI Elements
+  const aiPromptInput = document.getElementById('ai-prompt-input') as HTMLInputElement;
+  const generateAiBtn = document.getElementById('generate-ai-btn') as HTMLButtonElement;
+  const aiLoadingStatus = document.getElementById('ai-loading-status');
+  const geminiKeyDrawer = document.getElementById('gemini-key-drawer');
+  const toggleGeminiKeyBtn = document.getElementById('toggle-gemini-key-btn');
+  const saveGeminiKeyBtn = document.getElementById('save-gemini-key-btn');
+  const geminiApiKeyInput = document.getElementById('gemini-api-key-input') as HTMLInputElement;
+  const aiChips = document.querySelectorAll('.ai-chip');
+
+  // Visual Builder Elements
+  const visualComponentsList = document.getElementById('visual-components-list');
+  const btnAddBox = document.getElementById('btn-add-box');
+  const btnAddCylinder = document.getElementById('btn-add-cylinder');
+  const btnAddSphere = document.getElementById('btn-add-sphere');
+  const btnAddWedge = document.getElementById('btn-add-wedge');
+
+  // Global Scale & Surface sliders
+  const paramGlobalScale = document.getElementById('param-global-scale') as HTMLInputElement;
+  const paramGlobalScaleVal = document.getElementById('param-global-scale-val');
+  const paramRoughness = document.getElementById('param-roughness') as HTMLInputElement;
+  const paramRoughnessVal = document.getElementById('param-roughness-val');
+  const paramMetalness = document.getElementById('param-metalness') as HTMLInputElement;
+  const paramMetalnessVal = document.getElementById('param-metalness-val');
+
+  // Initialize Three.js Viewport
+  let viewport: StudioViewport;
+  if (threeMountEl) {
+    viewport = new StudioViewport(threeMountEl, handleViewportStatsUpdate);
+    document.getElementById('studio-reset-cam')?.addEventListener('click', () => {
+      viewport.resetCameraAndFrame();
+    });
   }
 
-  // AST Security Linter (Client-side regex & keyword scanner)
-  function runLinter() {
-    if (!linterBadge || !linterText) return;
-    const code = fileContents['generator'] || '';
+  function handleViewportStatsUpdate(stats: GeometricStats | null, result: GenerationResult | null) {
+    if (stats) {
+      if (hudTris) hudTris.textContent = `${stats.triangles.toLocaleString()} tris`;
+      if (hudVerts) hudVerts.textContent = `${stats.vertices.toLocaleString()} verts`;
+      if (hudDims) hudDims.textContent = `X: ${stats.dimensions.x}m | Y: ${stats.dimensions.y}m | Z: ${stats.dimensions.z}m`;
+    }
 
-    const forbidden = [
-      { pattern: /import\s+os(\s+|$|,)/, name: 'os' },
-      { pattern: /import\s+subprocess/, name: 'subprocess' },
-      { pattern: /import\s+sys(\s+|$|,)/, name: 'sys' },
-      { pattern: /import\s+socket/, name: 'socket' },
-      { pattern: /import\s+urllib/, name: 'urllib' },
-      { pattern: /import\s+requests/, name: 'requests' },
-      { pattern: /__import__/, name: '__import__' },
-      { pattern: /eval\s*\(/, name: 'eval' },
-      { pattern: /exec\s*\(/, name: 'exec' }
-    ];
-
-    for (const rule of forbidden) {
-      if (rule.pattern.test(code)) {
-        linterBadge.style.color = 'var(--ps1-red)';
-        linterText.textContent = `SECURITY_ALERT: LLAMADA PROHIBIDA [${rule.name}]`;
-        return false;
+    if (result) {
+      if (hudGenId) hudGenId.textContent = `${result.id} v${result.version}`;
+      if (statusBadge && statusBadgeText) {
+        if (result.success) {
+          statusBadge.className = 'generation-status-badge status-completed';
+          statusBadgeText.textContent = 'COMPLETADO';
+          if (errorBanner) errorBanner.style.display = 'none';
+        } else {
+          statusBadge.className = 'generation-status-badge status-error';
+          statusBadgeText.textContent = 'ERROR';
+          if (errorBanner && errorBannerBody) {
+            errorBanner.style.display = 'block';
+            errorBannerBody.textContent = result.error || 'Error desconocido';
+          }
+        }
       }
     }
-
-    if (!code.includes('BaseAssetGenerator')) {
-      linterBadge.style.color = 'var(--ps1-gold)';
-      linterText.textContent = 'WARNING: Debe heredar de BaseAssetGenerator';
-      return true;
-    }
-
-    linterBadge.style.color = 'var(--ps1-green)';
-    linterText.textContent = 'AST_SECURITY: VALID // 0 ERRORS';
-    return true;
   }
 
-  // Load active file into editor
-  function loadFile(fileKey: string) {
-    activeFile = fileKey;
-    editorTabs.forEach((tab) => {
-      tab.classList.toggle('active', tab.getAttribute('data-file') === fileKey);
+  // Shading Modes
+  const shadingBtns = document.querySelectorAll('.btn-shading');
+  shadingBtns.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      shadingBtns.forEach((b) => b.classList.remove('active'));
+      btn.classList.add('active');
+      const mode = (btn as HTMLElement).dataset.shading as ShadingMode;
+      if (viewport && mode) {
+        viewport.setShadingMode(mode);
+      }
     });
-    if (activeFilenameEl) {
-      activeFilenameEl.textContent = `${fileKey}.${fileKey === 'manifest' ? 'json' : fileKey === 'readme' ? 'md' : 'py'}`;
-    }
-    if (codeTextarea) {
-      codeTextarea.value = fileContents[fileKey] || '';
-      updateLineNumbers();
-    }
-  }
+  });
 
-  // Re-build Inspector Form dynamically from manifest.json
-  function syncInspectorFromManifest() {
-    if (!studioParamForm) return;
-    studioParamForm.innerHTML = '';
+  // Render Spec into Viewport
+  function renderCurrentSpec(mode: 'ai' | 'visual' | 'code' = 'visual'): void {
+    if (!viewport) return;
 
     try {
-      const manifest = JSON.parse(fileContents['manifest'] || '{}');
-      const params = manifest.parameters || [];
+      const reqId = `GEN-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
+      generationCounter++;
 
-      params.forEach((p: any) => {
-        const row = document.createElement('div');
-        row.className = 'studio-input-row';
-        row.dataset.key = p.key;
+      const { group, stats } = ProceduralEngine.buildModelFromSpec(currentSpec);
+      viewport.displayGeneratedMesh(group, reqId, generationCounter, stats, mode);
 
-        const labelRow = document.createElement('div');
-        labelRow.className = 'studio-label-row';
+      if (viewportModelName) {
+        viewportModelName.textContent = currentSpec.name.toUpperCase();
+      }
 
-        const label = document.createElement('label');
-        label.textContent = `> ${p.label || p.key}:`;
-        labelRow.appendChild(label);
-
-        if (p.type === 'float' || p.type === 'int') {
-          const valDisplay = document.createElement('span');
-          valDisplay.className = 'studio-val-display';
-          valDisplay.id = `studio-val-${p.key}`;
-          valDisplay.textContent = String(p.default);
-          labelRow.appendChild(valDisplay);
-        }
-
-        row.appendChild(labelRow);
-
-        if (p.type === 'float') {
-          const input = document.createElement('input');
-          input.type = 'range';
-          input.name = p.key;
-          input.min = String(p.min !== undefined ? p.min : 0.1);
-          input.max = String(p.max !== undefined ? p.max : 3.0);
-          input.step = String(p.step || 0.05);
-          input.value = String(p.default);
-          input.className = 'form-range';
-          input.addEventListener('input', () => {
-            const disp = document.getElementById(`studio-val-${p.key}`);
-            if (disp) disp.textContent = input.value;
-            applyStudioLiveTransforms();
-          });
-          row.appendChild(input);
-        } else if (p.type === 'enum' && p.options) {
-          const select = document.createElement('select');
-          select.name = p.key;
-          select.className = 'form-select';
-          p.options.forEach((opt: any) => {
-            const o = document.createElement('option');
-            o.value = opt.value;
-            o.textContent = opt.label || opt.value;
-            if (opt.value === p.default) o.selected = true;
-            select.appendChild(o);
-          });
-          select.addEventListener('change', applyStudioLiveTransforms);
-          row.appendChild(select);
-        } else if (p.type === 'boolean') {
-          const toggleWrap = document.createElement('label');
-          toggleWrap.className = 'toggle-switch';
-          const checkbox = document.createElement('input');
-          checkbox.type = 'checkbox';
-          checkbox.name = p.key;
-          checkbox.checked = Boolean(p.default);
-          const slider = document.createElement('span');
-          slider.className = 'slider';
-          toggleWrap.appendChild(checkbox);
-          toggleWrap.appendChild(slider);
-          checkbox.addEventListener('change', applyStudioLiveTransforms);
-          row.appendChild(toggleWrap);
-        }
-
-        studioParamForm.appendChild(row);
-      });
-    } catch (e) {
-      // Manifest not valid JSON yet, wait for user
+      // Sync editor & visual cards
+      syncEditorFromSpec();
+      renderVisualBuilderCards();
+      setLinterValid();
+    } catch (err: any) {
+      const reqId = `GEN-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
+      viewport.displayError(err.message, reqId, generationCounter, mode);
+      setLinterError(err.message);
     }
   }
 
-  // Real-time live 3D transform & material application
-  function applyStudioLiveTransforms() {
-    if (!studioViewer || !studioParamForm) return;
+  // Mode Switcher Logic
+  const modeTabs = document.querySelectorAll('.btn-mode-tab');
+  const modePanels = document.querySelectorAll('.mode-panel');
 
-    // Dimensional scaling: support standard + procedural names
-    let sx = 1.0, sy = 1.0, sz = 1.0;
-    const wInput = (studioParamForm.elements.namedItem('width') || 
-                    studioParamForm.elements.namedItem('console_width') ||
-                    studioParamForm.elements.namedItem('mount_radius') ||
-                    studioParamForm.elements.namedItem('capsule_radius') ||
-                    studioParamForm.elements.namedItem('core_radius') ||
-                    studioParamForm.elements.namedItem('screen_diagonal')) as HTMLInputElement;
-    if (wInput) {
-      const val = parseFloat(wInput.value) || 1.0;
-      sx = wInput.name === 'screen_diagonal' ? val / 14.0 : (wInput.name.includes('radius') ? val * 2.0 : val);
-    }
-
-    const lInput = (studioParamForm.elements.namedItem('height') || 
-                    studioParamForm.elements.namedItem('length') || 
-                    studioParamForm.elements.namedItem('mount_radius') ||
-                    studioParamForm.elements.namedItem('capsule_radius')) as HTMLInputElement;
-    if (lInput) {
-      const val = parseFloat(lInput.value) || 1.0;
-      sy = lInput.name.includes('radius') ? val * 2.0 : val;
-    }
-
-    const hInput = (studioParamForm.elements.namedItem('thickness') ||
-                    studioParamForm.elements.namedItem('depth') ||
-                    studioParamForm.elements.namedItem('corner_radius') ||
-                    studioParamForm.elements.namedItem('capsule_height') ||
-                    studioParamForm.elements.namedItem('core_height') ||
-                    studioParamForm.elements.namedItem('barrel_length')) as HTMLInputElement;
-    if (hInput) {
-      const val = parseFloat(hInput.value) || 1.0;
-      sz = hInput.name === 'barrel_length' ? Math.max(0.6, val) : val;
-    }
-
-    // Relative aspect ratio scaling so cards/badges/thin props don't look like cubes!
-    const maxDim = Math.max(sx, sy, sz, 0.001);
-    const targetVisualSize = 1.4;
-    const relX = (sx / maxDim) * targetVisualSize;
-    const relY = (sy / maxDim) * targetVisualSize;
-    const relZ = (sz / maxDim) * targetVisualSize;
-
-    const finalX = Math.max(0.04, Math.min(3.0, relX));
-    const finalY = Math.max(0.04, Math.min(3.0, relY));
-    const finalZ = Math.max(0.04, Math.min(3.0, relZ));
-
-    studioViewer.scale = `${finalX.toFixed(2)} ${finalY.toFixed(2)} ${finalZ.toFixed(2)}`;
-
-    // Palette model swapping
-    const palSelect = (studioParamForm.elements.namedItem('palette_name') || studioParamForm.elements.namedItem('palette')) as HTMLSelectElement;
-    const pal = palSelect ? palSelect.value : 'industrial_hazard';
-
-    const baseToUse = activeBaseModel || (activeTemplate !== 'custom' ? activeTemplate : 'crate');
-    const targetPaletteGlb = `/models/${baseToUse}_${pal}.glb`;
-    if (!studioViewer.src || !studioViewer.src.endsWith(targetPaletteGlb)) {
-      studioViewer.src = targetPaletteGlb;
-    }
-  }
-
-  // Load Template
-  function loadTemplate(tplKey: string) {
-    activeTemplate = tplKey;
-    activeBaseModel = tplKey;
-    const tpl = TEMPLATES[tplKey] || TEMPLATES['crate'];
-    fileContents['generator'] = tpl.generator;
-    fileContents['config'] = tpl.config;
-    fileContents['manifest'] = tpl.manifest;
-    fileContents['readme'] = tpl.readme;
-
-    if (studioViewer) {
-      studioViewer.src = tpl.model;
-      studioViewer.scale = '1 1 1';
-      studioViewer.style.filter = 'brightness(1.4)';
-      setTimeout(() => { if (studioViewer) studioViewer.style.filter = 'none'; }, 200);
-    }
-    if (viewportModelName) {
-      viewportModelName.textContent = tplKey.toUpperCase();
-    }
-
-    loadFile(activeFile);
-    syncInspectorFromManifest();
-    runLinter();
-  }
-
-  // Listeners
-  templateSelect?.addEventListener('change', () => {
-    loadTemplate(templateSelect.value);
-  });
-
-  editorTabs.forEach((tab) => {
+  modeTabs.forEach((tab) => {
     tab.addEventListener('click', () => {
-      const f = tab.getAttribute('data-file');
-      if (f) loadFile(f);
+      const mode = (tab as HTMLElement).dataset.mode as 'ai' | 'visual' | 'code';
+      if (!mode) return;
+
+      activeMode = mode;
+      modeTabs.forEach((t) => t.classList.remove('active'));
+      tab.classList.add('active');
+
+      modePanels.forEach((p) => p.classList.remove('active'));
+      if (mode === 'ai') document.getElementById('ai-mode-container')?.classList.add('active');
+      else if (mode === 'visual') document.getElementById('visual-mode-container')?.classList.add('active');
+      else if (mode === 'code') document.getElementById('code-mode-container')?.classList.add('active');
     });
   });
 
-  codeTextarea?.addEventListener('input', () => {
-    fileContents[activeFile] = codeTextarea.value;
-    updateLineNumbers();
-    if (activeFile === 'manifest') {
-      syncInspectorFromManifest();
-    }
-    runLinter();
+  // MODE A: AI GENERATION
+  generateAiBtn?.addEventListener('click', () => triggerAIGeneration());
+  aiPromptInput?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') triggerAIGeneration();
   });
 
-  codeTextarea?.addEventListener('keyup', updateCursorPos);
-  codeTextarea?.addEventListener('click', updateCursorPos);
+  aiChips.forEach((chip) => {
+    chip.addEventListener('click', () => {
+      const prompt = (chip as HTMLElement).dataset.prompt || '';
+      if (aiPromptInput) aiPromptInput.value = prompt;
+      triggerAIGeneration(prompt);
+    });
+  });
 
-  function updateCursorPos() {
+  async function triggerAIGeneration(overridePrompt?: string) {
+    const prompt = (overridePrompt || aiPromptInput?.value || '').trim();
+    if (!prompt) {
+      alert('Escribe una descripción del modelo que deseas generar.');
+      return;
+    }
+
+    if (generateAiBtn) {
+      generateAiBtn.disabled = true;
+      generateAiBtn.textContent = '⏳ GENERANDO GEOMETRÍA...';
+    }
+
+    if (aiLoadingStatus) {
+      aiLoadingStatus.style.display = 'block';
+      aiLoadingStatus.className = 'ai-status-indicator status-loading';
+      aiLoadingStatus.textContent = '🧠 Computando componentes geométricos procedurales...';
+    }
+
+    if (statusBadge && statusBadgeText) {
+      statusBadge.className = 'generation-status-badge status-generating';
+      statusBadgeText.textContent = 'GENERANDO...';
+    }
+
+    const apiKey = localStorage.getItem('modelcoder_gemini_key') || undefined;
+
+    try {
+      const { spec } = await AIGenerator.generateModel(prompt, apiKey);
+      currentSpec = spec;
+      renderCurrentSpec('ai');
+
+      if (aiLoadingStatus) {
+        aiLoadingStatus.className = 'ai-status-indicator status-ok';
+        aiLoadingStatus.textContent = `✅ [ GENERACIÓN EXITOSA ] ${spec.name} (${spec.components.length} componentes) renderizado en el visor.`;
+      }
+    } catch (err: any) {
+      if (aiLoadingStatus) {
+        aiLoadingStatus.className = 'ai-status-indicator status-error';
+        aiLoadingStatus.textContent = `⚠️ Error al generar: ${err.message}`;
+      }
+      if (viewport) {
+        viewport.displayError(err.message, `GEN-ERR`, generationCounter, 'ai');
+      }
+    } finally {
+      if (generateAiBtn) {
+        generateAiBtn.disabled = false;
+        generateAiBtn.textContent = '⚡ GENERAR GEOMETRÍA';
+      }
+    }
+  }
+
+  // API Key Storage
+  toggleGeminiKeyBtn?.addEventListener('click', () => {
+    if (geminiKeyDrawer) {
+      geminiKeyDrawer.style.display = geminiKeyDrawer.style.display === 'none' ? 'block' : 'none';
+    }
+  });
+
+  const savedKey = localStorage.getItem('modelcoder_gemini_key');
+  if (savedKey && geminiApiKeyInput) {
+    geminiApiKeyInput.value = savedKey;
+  }
+
+  saveGeminiKeyBtn?.addEventListener('click', () => {
+    const key = geminiApiKeyInput?.value.trim() || '';
+    if (key) {
+      localStorage.setItem('modelcoder_gemini_key', key);
+      alert('Clave de Gemini guardada de forma segura en tu navegador.');
+      if (geminiKeyDrawer) geminiKeyDrawer.style.display = 'none';
+    } else {
+      localStorage.removeItem('modelcoder_gemini_key');
+      alert('Clave eliminada. El estudio usará el generador procedural local.');
+    }
+  });
+
+  // MODE B: VISUAL BUILDER
+  function renderVisualBuilderCards(): void {
+    if (!visualComponentsList) return;
+    visualComponentsList.innerHTML = '';
+
+    currentSpec.components.forEach((comp, idx) => {
+      const card = document.createElement('div');
+      card.className = 'comp-card ps1-inset';
+
+      card.innerHTML = `
+        <div class="comp-card-header">
+          <span class="comp-badge">${comp.shape.toUpperCase()}</span>
+          <input type="text" class="comp-name-input" value="${comp.name}" data-idx="${idx}" />
+          <button type="button" class="btn-del-comp ps1-ctrl-btn" data-idx="${idx}" title="Eliminar componente">✕</button>
+        </div>
+        <div class="comp-card-body">
+          <div class="comp-field-group">
+            <label>Dimensiones [X, Y, Z]:</label>
+            <div class="dim-inputs">
+              <input type="number" step="0.05" class="dim-input" data-idx="${idx}" data-dim="0" value="${comp.size?.[0] ?? 1.0}" />
+              <input type="number" step="0.05" class="dim-input" data-idx="${idx}" data-dim="1" value="${comp.size?.[1] ?? 1.0}" />
+              <input type="number" step="0.05" class="dim-input" data-idx="${idx}" data-dim="2" value="${comp.size?.[2] ?? 1.0}" />
+            </div>
+          </div>
+          <div class="comp-field-group">
+            <label>Posición [X, Y, Z]:</label>
+            <div class="dim-inputs">
+              <input type="number" step="0.05" class="pos-input" data-idx="${idx}" data-pos="0" value="${comp.position?.[0] ?? 0.0}" />
+              <input type="number" step="0.05" class="pos-input" data-idx="${idx}" data-pos="1" value="${comp.position?.[1] ?? 0.0}" />
+              <input type="number" step="0.05" class="pos-input" data-idx="${idx}" data-pos="2" value="${comp.position?.[2] ?? 0.0}" />
+            </div>
+          </div>
+          <div class="comp-field-row">
+            <label>Color:</label>
+            <input type="color" class="color-picker-input" data-idx="${idx}" value="${comp.color?.startsWith('#') ? comp.color : '#4a5568'}" />
+          </div>
+        </div>
+      `;
+
+      visualComponentsList.appendChild(card);
+    });
+
+    // Wire component events
+    visualComponentsList.querySelectorAll('.comp-name-input').forEach((el) => {
+      el.addEventListener('change', (e) => {
+        const idx = parseInt((e.target as HTMLElement).dataset.idx || '0', 10);
+        currentSpec.components[idx].name = (e.target as HTMLInputElement).value;
+        syncEditorFromSpec();
+      });
+    });
+
+    visualComponentsList.querySelectorAll('.dim-input').forEach((el) => {
+      el.addEventListener('input', (e) => {
+        const input = e.target as HTMLInputElement;
+        const idx = parseInt(input.dataset.idx || '0', 10);
+        const dim = parseInt(input.dataset.dim || '0', 10);
+        if (!currentSpec.components[idx].size) currentSpec.components[idx].size = [1, 1, 1];
+        currentSpec.components[idx].size![dim] = parseFloat(input.value) || 0.1;
+        renderCurrentSpec('visual');
+      });
+    });
+
+    visualComponentsList.querySelectorAll('.pos-input').forEach((el) => {
+      el.addEventListener('input', (e) => {
+        const input = e.target as HTMLInputElement;
+        const idx = parseInt(input.dataset.idx || '0', 10);
+        const pos = parseInt(input.dataset.pos || '0', 10);
+        if (!currentSpec.components[idx].position) currentSpec.components[idx].position = [0, 0, 0];
+        currentSpec.components[idx].position![pos] = parseFloat(input.value) || 0;
+        renderCurrentSpec('visual');
+      });
+    });
+
+    visualComponentsList.querySelectorAll('.color-picker-input').forEach((el) => {
+      el.addEventListener('input', (e) => {
+        const input = e.target as HTMLInputElement;
+        const idx = parseInt(input.dataset.idx || '0', 10);
+        currentSpec.components[idx].color = input.value;
+        renderCurrentSpec('visual');
+      });
+    });
+
+    visualComponentsList.querySelectorAll('.btn-del-comp').forEach((el) => {
+      el.addEventListener('click', (e) => {
+        const idx = parseInt((e.target as HTMLElement).dataset.idx || '0', 10);
+        currentSpec.components.splice(idx, 1);
+        renderCurrentSpec('visual');
+      });
+    });
+  }
+
+  // Add Component Buttons in Visual Mode
+  btnAddBox?.addEventListener('click', () => {
+    currentSpec.components.push({
+      name: `box_${currentSpec.components.length + 1}`,
+      shape: 'box',
+      size: [0.8, 0.8, 0.8],
+      position: [0, 0.4, 0],
+      color: '#4a5568'
+    });
+    renderCurrentSpec('visual');
+  });
+
+  btnAddCylinder?.addEventListener('click', () => {
+    currentSpec.components.push({
+      name: `cylinder_${currentSpec.components.length + 1}`,
+      shape: 'cylinder',
+      size: [0.3, 0.3, 1.0, 8],
+      position: [0, 0.5, 0],
+      color: '#2d3748'
+    });
+    renderCurrentSpec('visual');
+  });
+
+  btnAddSphere?.addEventListener('click', () => {
+    currentSpec.components.push({
+      name: `sphere_${currentSpec.components.length + 1}`,
+      shape: 'sphere',
+      size: [0.4, 8, 6],
+      position: [0, 0.4, 0],
+      color: '#e53e3e'
+    });
+    renderCurrentSpec('visual');
+  });
+
+  btnAddWedge?.addEventListener('click', () => {
+    currentSpec.components.push({
+      name: `wedge_${currentSpec.components.length + 1}`,
+      shape: 'wedge',
+      size: [0.8, 0.6, 0.6],
+      position: [0, 0.3, 0],
+      color: '#d69e2e'
+    });
+    renderCurrentSpec('visual');
+  });
+
+  // MODE C: CODE EDITOR & COMPILATION
+  function syncEditorFromSpec(): void {
+    if (!codeTextarea) return;
+    if (activeFile === 'spec') {
+      codeTextarea.value = JSON.stringify(currentSpec, null, 2);
+    } else if (activeFile === 'script') {
+      codeTextarea.value = generateDslScriptFromSpec(currentSpec);
+    } else if (activeFile === 'generator_py') {
+      codeTextarea.value = generatePythonFromSpec(currentSpec);
+    }
+    updateLineNumbers();
+  }
+
+  function generateDslScriptFromSpec(spec: ModelSpec): string {
+    let out = `// ModelCoder Procedural Builder\nbuilder.setName(${JSON.stringify(spec.name)});\n\n`;
+    spec.components.forEach((c) => {
+      const fn = c.shape === 'cylinder' ? 'addCylinder' : (c.shape === 'sphere' ? 'addSphere' : (c.shape === 'wedge' ? 'addWedge' : 'addBox'));
+      out += `builder.${fn}({\n  name: ${JSON.stringify(c.name)},\n  size: ${JSON.stringify(c.size || [1, 1, 1])},\n  position: ${JSON.stringify(c.position || [0, 0, 0])},\n  color: ${JSON.stringify(c.color || '#4a5568')}\n});\n\n`;
+    });
+    return out;
+  }
+
+  function generatePythonFromSpec(spec: ModelSpec): string {
+    const className = spec.name.replace(/[^a-zA-Z0-9]/g, '') + 'Generator';
+    return `import bpy\nfrom ...core.base_generator import BaseAssetGenerator\nfrom ...core.mesh_builder import MeshBuilder\n\nclass ${className}(BaseAssetGenerator):\n    """Generador procedural 3D para ${spec.name}."""\n    def generate(self) -> bpy.types.Object:\n        obj, bm = self.create_mesh_object("${spec.id}")\n        # ${spec.components.length} componentes definidos\n        self.finalize_mesh(obj, bm)\n        return obj\n`;
+  }
+
+  // Compile Button Event
+  runCompileBtn?.addEventListener('click', () => compileCode());
+
+  function compileCode(): void {
+    if (!codeTextarea) return;
+    const code = codeTextarea.value;
+
+    const { spec, error, errorLine } = CodeSandbox.executeCode(code);
+
+    if (error) {
+      setLinterError(error, errorLine);
+      if (viewport) {
+        viewport.displayError(error, `ERR-v${generationCounter}`, generationCounter, 'code');
+      }
+      return;
+    }
+
+    currentSpec = spec;
+    renderCurrentSpec('code');
+  }
+
+  function setLinterValid(): void {
+    if (linterBadge) linterBadge.className = 'status-right status-ok';
+    if (linterText) linterText.textContent = 'SINTAXIS: VÁLIDA // 0 ERRORES';
+  }
+
+  function setLinterError(msg: string, line?: number): void {
+    if (linterBadge) linterBadge.className = 'status-right status-err';
+    if (linterText) linterText.textContent = `ERROR ${line ? `LN ${line}: ` : ''}${msg.substring(0, 40)}`;
+  }
+
+  // Editor Tabs
+  const editorTabs = document.querySelectorAll('.editor-tab');
+  editorTabs.forEach((tab) => {
+    tab.addEventListener('click', () => {
+      editorTabs.forEach((t) => t.classList.remove('active'));
+      tab.classList.add('active');
+      activeFile = (tab as HTMLElement).dataset.file as any;
+      if (activeFilenameEl) {
+        activeFilenameEl.textContent = activeFile === 'spec' ? 'model_spec.json' : (activeFile === 'script' ? 'procedural_script.js' : 'generator.py');
+      }
+      syncEditorFromSpec();
+    });
+  });
+
+  // Line Numbers and Cursor Tracking
+  codeTextarea?.addEventListener('input', () => {
+    updateLineNumbers();
+  });
+
+  codeTextarea?.addEventListener('keyup', () => updateCursorPos());
+  codeTextarea?.addEventListener('click', () => updateCursorPos());
+
+  function updateLineNumbers(): void {
+    if (!codeTextarea || !lineNumbers) return;
+    const lines = codeTextarea.value.split('\n').length;
+    lineNumbers.innerHTML = Array.from({ length: lines }, (_, i) => i + 1).join('<br>');
+  }
+
+  function updateCursorPos(): void {
     if (!codeTextarea || !cursorPos) return;
     const textLines = codeTextarea.value.substring(0, codeTextarea.selectionStart).split('\n');
     cursorPos.textContent = `LN ${textLines.length}, COL ${textLines[textLines.length - 1].length + 1}`;
   }
 
-  // Compile button action
-  runCompileBtn?.addEventListener('click', () => {
-    if (studioViewer) {
-      studioViewer.style.filter = 'brightness(1.4) contrast(1.2)';
-      setTimeout(() => { studioViewer.style.filter = 'none'; }, 200);
-      applyStudioLiveTransforms();
+  // EXPORT GLB WITH VERIFICATION
+  exportGlbBtn?.addEventListener('click', async () => {
+    if (!viewport) return;
+    const rootObj = viewport.getVisibleObject();
+    if (!rootObj) {
+      alert('No hay ninguna geometría visible para exportar.');
+      return;
     }
-    alert('✅ [ COMPILACIÓN EXITOSA ]\nMalla verificada y actualizada en el visor 3D.');
+
+    exportGlbBtn.textContent = '⏳ VERIFICANDO GLB...';
+    try {
+      const filename = currentSpec.name.toLowerCase().replace(/[^a-z0-9]/g, '_') || 'modelcoder_asset';
+      const result = await GLBExporterService.exportAndVerifyGLB(rootObj, filename);
+      alert(`✅ [ EXPORTACIÓN VERIFICADA ]\nArchivo: ${filename}.glb\nTamaño: ${(result.sizeBytes / 1024).toFixed(1)} KB\nTriángulos: ${result.triangleCount}\nVértices: ${result.vertexCount}`);
+    } catch (err: any) {
+      alert(`⚠️ Fallo de exportación: ${err.message}`);
+    } finally {
+      exportGlbBtn.textContent = '💾 EXPORTAR GLB';
+    }
   });
 
   // Export ZIP Package
@@ -962,19 +998,13 @@ Nuevo generador procedural creado con ModelCoder Web Studio.
       if (!JSZip) throw new Error('JSZip no disponible');
 
       const zip = new JSZip();
-      let familyName = 'mi_familia';
-      try {
-        const manifest = JSON.parse(fileContents['manifest'] || '{}');
-        const parts = (manifest.id || '').split('.');
-        familyName = parts[parts.length - 1] || 'mi_familia';
-      } catch (e) {}
+      const familyName = currentSpec.name.toLowerCase().replace(/[^a-z0-9]/g, '_') || 'custom_model';
 
       const folder = zip.folder(`procedural_assets/generators/${familyName}`);
       folder.file('__init__.py', `from .config import *\nfrom .generator import *\n`);
-      folder.file('generator.py', fileContents['generator']);
-      folder.file('config.py', fileContents['config']);
-      folder.file('manifest.json', fileContents['manifest']);
-      folder.file('README.md', fileContents['readme']);
+      folder.file('generator.py', generatePythonFromSpec(currentSpec));
+      folder.file('model_spec.json', JSON.stringify(currentSpec, null, 2));
+      folder.file('README.md', `# ${currentSpec.name}\n\nGenerador procedural de ModelCoder Studio.\n`);
 
       const content = await zip.generateAsync({ type: 'blob' });
       const a = document.createElement('a');
@@ -984,1026 +1014,163 @@ Nuevo generador procedural creado con ModelCoder Web Studio.
     } catch (e: any) {
       alert(`Error al generar ZIP: ${e.message}`);
     } finally {
-      exportZipBtn.textContent = '💾 DESCARGAR PAQUETE (.ZIP)';
+      exportZipBtn.textContent = '📦 PAQUETE (.ZIP)';
     }
+  });
+
+  // Docs Modal
+  openDocsBtn?.addEventListener('click', () => {
+    if (docsModal) docsModal.showModal();
+  });
+  closeDocsBtn?.addEventListener('click', () => {
+    if (docsModal) docsModal.close();
+  });
+
+  const docTabs = document.querySelectorAll('.doc-tab');
+  const docSections = document.querySelectorAll('.doc-section');
+  docTabs.forEach((tab) => {
+    tab.addEventListener('click', () => {
+      const targetSec = (tab as HTMLElement).dataset.section;
+      docTabs.forEach((t) => t.classList.remove('active'));
+      tab.classList.add('active');
+      docSections.forEach((s) => s.classList.remove('active'));
+      if (targetSec) document.getElementById(targetSec)?.classList.add('active');
+    });
   });
 
   // GitHub Modal
   githubPrBtn?.addEventListener('click', () => {
     if (githubModal) githubModal.showModal();
   });
-
   closeModalBtn?.addEventListener('click', () => {
     if (githubModal) githubModal.close();
   });
 
-  modalCancelBtn?.addEventListener('click', () => {
-    if (githubModal) githubModal.close();
-  });
-
-  const btnQuickGithubProposal = document.getElementById('btn-quick-github-proposal');
-  const btnModalDownloadZip = document.getElementById('btn-modal-download-zip');
-
-  btnQuickGithubProposal?.addEventListener('click', () => {
-    let familyName = 'mi_modelo';
-    let humanName = 'Nuevo Modelo';
-    try {
-      const manifest = JSON.parse(fileContents['manifest'] || '{}');
-      humanName = manifest.name || humanName;
-      const parts = (manifest.id || '').split('.');
-      familyName = parts[parts.length - 1] || familyName;
-    } catch (e) {}
-
-    const title = encodeURIComponent(`[Nuevo Modelo]: ${humanName} (${familyName})`);
+  document.getElementById('btn-quick-github-proposal')?.addEventListener('click', () => {
+    const title = encodeURIComponent(`[Nuevo Modelo]: ${currentSpec.name}`);
     const body = encodeURIComponent(
-      `## Propuesta de Nuevo Modelo 3D para ModelCoder\n\n` +
-      `- **Nombre**: ${humanName}\n` +
-      `- **Familia**: \`${familyName}\`\n\n` +
-      `### Manifiesto (\`manifest.json\`)\n\`\`\`json\n${fileContents['manifest']}\n\`\`\`\n\n` +
-      `### Generador (\`generator.py\`)\n\`\`\`python\n${fileContents['generator']}\n\`\`\`\n\n` +
-      `### Configuración (\`config.py\`)\n\`\`\`python\n${fileContents['config']}\n\`\`\`\n`
+      `## Propuesta de Modelo Procedural 3D\n\n` +
+      `- **Nombre**: ${currentSpec.name}\n` +
+      `- **Categoría**: ${currentSpec.category}\n` +
+      `- **Componentes**: ${currentSpec.components.length}\n\n` +
+      `### Especificación JSON:\n\`\`\`json\n${JSON.stringify(currentSpec, null, 2)}\n\`\`\`\n`
     );
-
-    const issueUrl = `https://github.com/FrancisCuarto/MODELCODER/issues/new?title=${title}&body=${body}`;
-    window.open(issueUrl, '_blank');
-    if (githubModal) githubModal.close();
+    window.open(`https://github.com/FrancisCuarto/MODELCODER/issues/new?title=${title}&body=${body}`, '_blank');
   });
 
-  btnModalDownloadZip?.addEventListener('click', () => {
-    if (exportZipBtn) exportZipBtn.click();
-    if (githubModal) githubModal.close();
+  document.getElementById('btn-modal-download-zip')?.addEventListener('click', () => {
+    exportZipBtn?.click();
   });
 
-  submitPrBtn?.addEventListener('click', async () => {
-    const token = ghTokenInput?.value.trim();
-    if (!token) {
-      alert('Por favor introduce tu GitHub Personal Access Token con permiso repo.');
-      return;
-    }
-
-    if (prStatusBox) {
-      prStatusBox.style.display = 'block';
-      prStatusBox.className = 'live-status-box status-loading';
-      prStatusBox.textContent = '⏳ Conectando con GitHub API y creando rama de contribución...';
-    }
-
-    // Simulate PR creation workflow
-    setTimeout(() => {
-      if (prStatusBox) {
-        prStatusBox.className = 'live-status-box status-success';
-        prStatusBox.innerHTML = `✅ <strong>[ PULL REQUEST ABIERTO CON ÉXITO ]</strong><br>Rama <code>contrib/${activeTemplate}</code> creada.<br><a href="https://github.com/FrancisCuarto/MODELCODER/pulls" target="_blank" style="color: var(--ps1-cyan); text-decoration: underline;">Ver Pull Request en FrancisCuarto/MODELCODER &rarr;</a>`;
-      }
-    }, 1500);
+  btnCloseError?.addEventListener('click', () => {
+    if (errorBanner) errorBanner.style.display = 'none';
   });
 
-  // Controls
-  let isRot = true;
-  rotateToggleBtn?.addEventListener('click', () => {
-    if (studioViewer) {
-      isRot = !isRot;
-      studioViewer.autoRotate = isRot;
-      rotateToggleBtn.textContent = isRot ? '🔄 ROTACIÓN' : '⏸️ PAUSA';
-    }
-  });
-
-  resetCamBtn?.addEventListener('click', () => {
-    if (studioViewer) {
-      studioViewer.resetTurntable();
-      studioViewer.cameraOrbit = '0deg 75deg 105%';
-    }
-  });
-
-  // ==========================================
-  // MODELCODER AI CO-PILOT: GEMINI INTEGRATION
-  // ==========================================
-  const toggleGeminiKeyBtn = document.getElementById('toggle-gemini-key-btn');
-  const toggleCopilotBtn = document.getElementById('toggle-copilot-btn');
-  const geminiKeyDrawer = document.getElementById('gemini-key-drawer');
-  const geminiApiKeyInput = document.getElementById('gemini-api-key-input') as HTMLInputElement;
-  const saveGeminiKeyBtn = document.getElementById('save-gemini-key-btn');
-  const aiPromptInput = document.getElementById('ai-prompt-input') as HTMLInputElement;
-  const generateAiBtn = document.getElementById('generate-ai-btn') as HTMLButtonElement;
-  const aiLoadingStatus = document.getElementById('ai-loading-status');
-  const aiChips = document.querySelectorAll('.ai-chip');
-  const aiCopilotBody = document.getElementById('ai-copilot-body');
-
-  // Load saved Gemini Key if available
-  const savedGeminiKey = localStorage.getItem('modelcoder_gemini_key') || '';
-  if (geminiApiKeyInput && savedGeminiKey) {
-    geminiApiKeyInput.value = savedGeminiKey;
-  }
-
-  const btnQuickKeyOpen = document.getElementById('btn-quick-key-open');
-  btnQuickKeyOpen?.addEventListener('click', () => {
-    if (geminiKeyDrawer) {
-      geminiKeyDrawer.style.display = 'block';
-      geminiApiKeyInput?.focus();
-    }
-  });
-
-  toggleGeminiKeyBtn?.addEventListener('click', () => {
-    if (geminiKeyDrawer) {
-      const isHidden = geminiKeyDrawer.style.display === 'none';
-      geminiKeyDrawer.style.display = isHidden ? 'block' : 'none';
-    }
-  });
-
-  saveGeminiKeyBtn?.addEventListener('click', () => {
-    const val = geminiApiKeyInput?.value.trim() || '';
-    if (val) {
-      localStorage.setItem('modelcoder_gemini_key', val);
-      alert('✅ Clave de Gemini guardada de forma segura en tu navegador.');
-      if (geminiKeyDrawer) geminiKeyDrawer.style.display = 'none';
-    } else {
-      localStorage.removeItem('modelcoder_gemini_key');
-      alert('Clave eliminada. Se usará el generador de plantillas.');
-    }
-  });
-
-  toggleCopilotBtn?.addEventListener('click', () => {
-    if (aiCopilotBody) {
-      const isHidden = aiCopilotBody.style.display === 'none';
-      aiCopilotBody.style.display = isHidden ? 'block' : 'none';
-      toggleCopilotBtn.textContent = isHidden ? '[ MINIMIZAR ]' : '[ EXPANDIR ]';
-    }
-  });
-
-  // Curated AI Generator Presets (Instant & Offline-capable)
-  const AI_FALLBACK_PRESETS: Record<string, { family: string; name: string; generator: string; config: string; manifest: any; readme: string }> = {
-    turret: {
-      family: "wall_turret",
-      name: "Torreta de Vigilancia",
-      generator: `import bpy
-import math
-from ...core.base_generator import BaseAssetGenerator
-from ...materials.palette import get_or_create_material
-from .config import WallTurretConfig
-
-class WallTurretGenerator(BaseAssetGenerator):
-    """Generador procedural de torreta de vigilancia de pared (PSX Low-Poly)."""
-    def generate(self) -> bpy.types.Object:
-        cfg = self.config
-        
-        # 1. Base octogonal de montaje en pared
-        bpy.ops.mesh.primitive_cylinder_add(
-            vertices=8,
-            radius=cfg.mount_radius,
-            depth=0.12,
-            location=(0, 0, 0)
-        )
-        base_obj = bpy.context.active_object
-        base_obj.name = f"{cfg.name}_base"
-        
-        # 2. Pivote esférico central
-        bpy.ops.mesh.primitive_uv_sphere_add(
-            segments=8,
-            ring_count=6,
-            radius=cfg.mount_radius * 0.65,
-            location=(0, 0, 0.15)
-        )
-        pivot_obj = bpy.context.active_object
-        
-        # 3. Doble cañón láser
-        barrel_len = cfg.barrel_length
-        for offset in [-0.08, 0.08]:
-            bpy.ops.mesh.primitive_cylinder_add(
-                vertices=6,
-                radius=0.035,
-                depth=barrel_len,
-                location=(offset, barrel_len * 0.5, 0.18),
-                rotation=(math.radians(90), 0, 0)
-            )
-            barrel = bpy.context.active_object
-            
-            # Unir con pivote
-            ctx = bpy.context.copy()
-            ctx['active_object'] = pivot_obj
-            ctx['selected_editable_objects'] = [pivot_obj, barrel]
-            bpy.ops.object.join(ctx)
-
-        # 4. Asignar materiales temáticos
-        mat_casing = get_or_create_material("casing", palette_name=cfg.palette_name)
-        base_obj.data.materials.append(mat_casing)
-        
-        self.compact_materials(base_obj)
-        return base_obj
-`,
-      config: `from dataclasses import dataclass
-from ...core.base_config import BaseAssetConfig
-
-@dataclass
-class WallTurretConfig(BaseAssetConfig):
-    name: str = "wall_turret"
-    mount_radius: float = 0.45
-    barrel_length: float = 0.60
-    has_shield_plate: bool = True
-    sensor_glow: bool = True
-    palette_name: str = "industrial_hazard"
-`,
-      manifest: {
-        "$schema": "https://raw.githubusercontent.com/FrancisCuarto/MODELCODER/main/schemas/generator-v1.json",
-        "id": "below_nominal.devices.wall_turret",
-        "version": "1.0.0",
-        "name": "Torreta de Vigilancia",
-        "description": "Sistema de seguridad de estación montado en pared o techo con sensor óptico.",
-        "author": { "name": "AI Co-Pilot", "github": "modelcoder-ai" },
-        "license": "CC-BY-4.0",
-        "category": "devices",
-        "tags": ["security", "turret", "psx", "defense"],
-        "parameters": [
-          { "key": "barrel_length", "label": "Largo de Cañones (m)", "type": "float", "default": 0.60, "min": 0.30, "max": 1.20, "step": 0.05, "group": "Morfología" },
-          { "key": "mount_radius", "label": "Radio de Base (m)", "type": "float", "default": 0.45, "min": 0.25, "max": 0.80, "step": 0.05, "group": "Dimensiones" },
-          { "key": "has_shield_plate", "label": "Placa de Blindaje", "type": "boolean", "default": true, "group": "Accesorios" },
-          { "key": "palette_name", "label": "Paleta de Sector", "type": "enum", "default": "industrial_hazard", "options": [{"value":"industrial_hazard","label":"Industrial Hazard"},{"value":"medbay_clean","label":"Medbay Clean"},{"value":"command_bridge","label":"Command Bridge"},{"value":"derelict_decay","label":"Derelict Decay"}], "group": "Materiales" }
-        ],
-        "presets": [
-          { "id": "compact_sentry", "name": "Centinela Compacto", "values": { "barrel_length": 0.40, "mount_radius": 0.35, "has_shield_plate": false } },
-          { "id": "heavy_defense", "name": "Defensa Pesada", "values": { "barrel_length": 0.95, "mount_radius": 0.65, "has_shield_plate": true } }
-        ],
-        "export_capabilities": { "target_tri_budget": 380, "supports_collision": true, "default_collision_suffix": "-colonly" }
-      },
-      readme: `# Torreta de Vigilancia Procedural (PSX Low-Poly)
-
-Generador de torreta de vigilancia espacial automatizada. Diseñada para su colocación en muros y techos de esclusas o pasillos principales.
-
-## Presupuesto y Especificaciones
-- **Polígonos:** ~320 triángulos
-- **Atlas UV:** 256×256 px
-- **Colisión:** Cilindro convexo simplificado (-colonly)
-`
-    },
-    cryo: {
-      family: "cryo_capsule",
-      name: "Cápsula Criogénica",
-      generator: `import bpy
-from ...core.base_generator import BaseAssetGenerator
-from ...materials.palette import get_or_create_material
-from .config import CryoCapsuleConfig
-
-class CryoCapsuleGenerator(BaseAssetGenerator):
-    """Generador de cámara criogénica de estasis médica."""
-    def generate(self) -> bpy.types.Object:
-        cfg = self.config
-        
-        # 1. Cuerpo cilíndrico de estasis
-        bpy.ops.mesh.primitive_cylinder_add(
-            vertices=12,
-            radius=cfg.capsule_radius,
-            depth=cfg.capsule_height,
-            location=(0, 0, cfg.capsule_height * 0.5)
-        )
-        pod = bpy.context.active_object
-        pod.name = cfg.name
-        
-        # 2. Material
-        mat = get_or_create_material("casing", palette_name=cfg.palette_name)
-        pod.data.materials.append(mat)
-        
-        self.compact_materials(pod)
-        return pod
-`,
-      config: `from dataclasses import dataclass
-from ...core.base_config import BaseAssetConfig
-
-@dataclass
-class CryoCapsuleConfig(BaseAssetConfig):
-    name: str = "cryo_capsule"
-    capsule_height: float = 2.20
-    capsule_radius: float = 0.55
-    frost_level: float = 0.75
-    palette_name: str = "medbay_clean"
-`,
-      manifest: {
-        "$schema": "https://raw.githubusercontent.com/FrancisCuarto/MODELCODER/main/schemas/generator-v1.json",
-        "id": "below_nominal.medical.cryo_capsule",
-        "version": "1.0.0",
-        "name": "Cápsula Criogénica",
-        "description": "Unidad vertical de estasis biológica con visor térmico y controles médicos.",
-        "author": { "name": "AI Co-Pilot", "github": "modelcoder-ai" },
-        "license": "CC-BY-4.0",
-        "category": "furniture",
-        "tags": ["medical", "cryo", "stasis", "psx"],
-        "parameters": [
-          { "key": "capsule_height", "label": "Altura Cápsula (m)", "type": "float", "default": 2.20, "min": 1.80, "max": 2.80, "step": 0.10, "group": "Dimensiones" },
-          { "key": "capsule_radius", "label": "Radio (m)", "type": "float", "default": 0.55, "min": 0.40, "max": 0.85, "step": 0.05, "group": "Dimensiones" },
-          { "key": "palette_name", "label": "Paleta de Sector", "type": "enum", "default": "medbay_clean", "options": [{"value":"medbay_clean","label":"Medbay Clean"},{"value":"industrial_hazard","label":"Industrial Hazard"},{"value":"habitation_worn","label":"Habitation Worn"}], "group": "Materiales" }
-        ],
-        "presets": [
-          { "id": "standard_pod", "name": "Cápsula Estándar", "values": { "capsule_height": 2.20, "capsule_radius": 0.55 } }
-        ],
-        "export_capabilities": { "target_tri_budget": 420, "supports_collision": true }
-      },
-      readme: `# Cápsula Criogénica (PSX Low-Poly)\n\nCámara de preservación biológica para enfermería de la estación.`
-    },
-    crt_console: {
-      family: "triple_crt_console",
-      name: "Consola CRT Triple",
-      generator: `import bpy
-from ...core.base_generator import BaseAssetGenerator
-from ...materials.palette import get_or_create_material
-from .config import TripleCrtConsoleConfig
-
-class TripleCrtConsoleGenerator(BaseAssetGenerator):
-    def generate(self) -> bpy.types.Object:
-        cfg = self.config
-        bpy.ops.mesh.primitive_cube_add(
-            size=1.0,
-            scale=(cfg.console_width, 0.80, 0.95),
-            location=(0, 0, 0.475)
-        )
-        desk = bpy.context.active_object
-        desk.name = cfg.name
-        mat = get_or_create_material("casing", palette_name=cfg.palette_name)
-        desk.data.materials.append(mat)
-        self.compact_materials(desk)
-        return desk
-`,
-      config: `from dataclasses import dataclass
-from ...core.base_config import BaseAssetConfig
-
-@dataclass
-class TripleCrtConsoleConfig(BaseAssetConfig):
-    name: str = "triple_crt_console"
-    console_width: float = 1.60
-    tape_module: bool = True
-    palette_name: str = "command_bridge"
-`,
-      manifest: {
-        "$schema": "https://raw.githubusercontent.com/FrancisCuarto/MODELCODER/main/schemas/generator-v1.json",
-        "id": "below_nominal.devices.triple_crt_console",
-        "version": "1.0.0",
-        "name": "Consola CRT Triple",
-        "description": "Estación de monitoreo de radar y comunicaciones con 3 monitores fósforo verde.",
-        "author": { "name": "AI Co-Pilot", "github": "modelcoder-ai" },
-        "license": "CC-BY-4.0",
-        "category": "devices",
-        "tags": ["console", "crt", "computer", "bridge"],
-        "parameters": [
-          { "key": "console_width", "label": "Ancho Consola (m)", "type": "float", "default": 1.60, "min": 1.20, "max": 2.40, "step": 0.10, "group": "Dimensiones" },
-          { "key": "tape_module", "label": "Lector de Cinta Magnética", "type": "boolean", "default": true, "group": "Accesorios" },
-          { "key": "palette_name", "label": "Paleta de Sector", "type": "enum", "default": "command_bridge", "options": [{"value":"command_bridge","label":"Command Bridge"},{"value":"industrial_hazard","label":"Industrial Hazard"}], "group": "Materiales" }
-        ],
-        "presets": [{ "id": "standard", "name": "Operaciones Puente", "values": { "console_width": 1.60, "tape_module": true } }],
-        "export_capabilities": { "target_tri_budget": 480, "supports_collision": true }
-      },
-      readme: `# Consola CRT Triple (PSX Low-Poly)\n\nConsola de comunicaciones navales retro.`
-    },
-    energy_core: {
-      family: "energy_core",
-      name: "Núcleo de Energía",
-      generator: `import bpy
-from ...core.base_generator import BaseAssetGenerator
-from ...materials.palette import get_or_create_material
-from .config import EnergyCoreConfig
-
-class EnergyCoreGenerator(BaseAssetGenerator):
-    def generate(self) -> bpy.types.Object:
-        cfg = self.config
-        bpy.ops.mesh.primitive_cylinder_add(
-            vertices=10,
-            radius=cfg.core_radius,
-            depth=cfg.core_height,
-            location=(0, 0, cfg.core_height * 0.5)
-        )
-        reactor = bpy.context.active_object
-        reactor.name = cfg.name
-        mat = get_or_create_material("casing", palette_name=cfg.palette_name)
-        reactor.data.materials.append(mat)
-        self.compact_materials(reactor)
-        return reactor
-`,
-      config: `from dataclasses import dataclass
-from ...core.base_config import BaseAssetConfig
-
-@dataclass
-class EnergyCoreConfig(BaseAssetConfig):
-    name: str = "energy_core"
-    core_height: float = 1.80
-    core_radius: float = 0.50
-    has_hazard_cage: bool = True
-    palette_name: str = "industrial_hazard"
-`,
-      manifest: {
-        "$schema": "https://raw.githubusercontent.com/FrancisCuarto/MODELCODER/main/schemas/generator-v1.json",
-        "id": "below_nominal.structural.energy_core",
-        "version": "1.0.0",
-        "name": "Núcleo de Energía",
-        "description": "Reactor auxiliar de plasma para subestación eléctrica de ingeniería.",
-        "author": { "name": "AI Co-Pilot", "github": "modelcoder-ai" },
-        "license": "CC-BY-4.0",
-        "category": "structural",
-        "tags": ["reactor", "energy", "core", "plasma"],
-        "parameters": [
-          { "key": "core_height", "label": "Altura del Reactor (m)", "type": "float", "default": 1.80, "min": 1.20, "max": 3.00, "step": 0.10, "group": "Dimensiones" },
-          { "key": "core_radius", "label": "Radio (m)", "type": "float", "default": 0.50, "min": 0.30, "max": 0.90, "step": 0.05, "group": "Dimensiones" },
-          { "key": "has_hazard_cage", "label": "Jaula de Seguridad", "type": "boolean", "default": true, "group": "Seguridad" },
-          { "key": "palette_name", "label": "Paleta de Sector", "type": "enum", "default": "industrial_hazard", "options": [{"value":"industrial_hazard","label":"Industrial Hazard"},{"value":"derelict_decay","label":"Derelict Decay"}], "group": "Materiales" }
-        ],
-        "presets": [{ "id": "standard", "name": "Reactor Nominal", "values": { "core_height": 1.80, "core_radius": 0.50 } }],
-        "export_capabilities": { "target_tri_budget": 450, "supports_collision": true }
-      },
-      readme: `# Núcleo de Energía Reactor (PSX Low-Poly)\n\nUnidad generadora de plasma auxiliar para ingeniería.`
-    }
-  };
-
-  function applyGeneratedData(data: { family: string; name?: string; generator: string; config: string; manifest: any; readme: string }) {
-    activeTemplate = 'custom';
-    if (templateSelect) templateSelect.value = 'custom';
-    
-    fileContents['generator'] = data.generator;
-    fileContents['config'] = data.config;
-    fileContents['manifest'] = typeof data.manifest === 'string' ? data.manifest : JSON.stringify(data.manifest, null, 2);
-    fileContents['readme'] = data.readme;
-
-    // Parse manifest tags and palette
-    let tags: string[] = [];
-    let initialPalette = 'industrial_hazard';
-    try {
-      const parsed = typeof data.manifest === 'string' ? JSON.parse(data.manifest) : data.manifest;
-      if (Array.isArray(parsed.tags)) tags = parsed.tags;
-      const palParam = parsed?.parameters?.find((p: any) => p.key === 'palette_name' || p.key === 'palette');
-      if (palParam?.default) initialPalette = palParam.default;
-    } catch (e) {}
-
-    // Find best 3D archetype model
-    activeBaseModel = findBestMatchingGlb(data.family, data.name || '', tags);
-
-    // Update 3D viewport IMMEDIATELY with the matched model and palette!
-    if (studioViewer) {
-      const targetGlb = `/models/${activeBaseModel}_${initialPalette}.glb`;
-      studioViewer.src = targetGlb;
-      studioViewer.scale = '1 1 1';
-      // Flash effect to give immediate visual feedback of model change
-      studioViewer.style.filter = 'brightness(1.5) contrast(1.2)';
-      setTimeout(() => {
-        if (studioViewer) studioViewer.style.filter = 'none';
-      }, 250);
-    }
-
-    loadFile(activeFile);
-    runLinter();
-    syncInspectorFromManifest();
-
-    if (viewportModelName) {
-      viewportModelName.textContent = (data.name || data.family).toUpperCase();
-    }
-
-    if (aiLoadingStatus) {
-      aiLoadingStatus.style.display = 'block';
-      aiLoadingStatus.className = 'ai-status-indicator status-ok';
-      aiLoadingStatus.innerHTML = `✅ [ GENERACIÓN EXITOSA ] Modelo 3D de <strong>"${data.name || data.family}"</strong> cargado y sincronizado en el Visor.`;
-    }
-
-    // Apply live parameters after form is populated
-    setTimeout(() => {
-      applyStudioLiveTransforms();
-    }, 50);
-  }
-
-  // Handle Quick Chips
-  aiChips.forEach((chipEl) => {
-    chipEl.addEventListener('click', () => {
-      const chip = chipEl as HTMLElement;
-      const presetKey = chip.dataset.preset;
-      const promptText = chip.dataset.prompt || '';
-      if (aiPromptInput) aiPromptInput.value = promptText;
-
-      const userKey = localStorage.getItem('modelcoder_gemini_key');
-      if (!userKey && presetKey && AI_FALLBACK_PRESETS[presetKey]) {
-        // Instant curated fallback
-        applyGeneratedData(AI_FALLBACK_PRESETS[presetKey]);
-      } else {
-        // Trigger live generation
-        triggerAiGeneration(promptText);
-      }
-    });
-  });
-
-  generateAiBtn?.addEventListener('click', () => {
-    const promptText = aiPromptInput?.value.trim() || '';
-    if (!promptText) {
-      alert('Por favor escribe una descripción del modelo 3D que quieres generar.');
-      return;
-    }
-    triggerAiGeneration(promptText);
-  });
-
-  async function triggerAiGeneration(userPrompt: string) {
-    const apiKey = localStorage.getItem('modelcoder_gemini_key');
-    if (!apiKey) {
-      if (geminiKeyDrawer) geminiKeyDrawer.style.display = 'block';
-      if (aiLoadingStatus) {
-        aiLoadingStatus.style.display = 'block';
-        aiLoadingStatus.className = 'ai-status-indicator status-info';
-        aiLoadingStatus.innerHTML = `ℹ️ Para generar modelos libres con cualquier prompt, por favor pega tu clave de Gemini arriba (es gratuita). O haz clic en una de las sugerencias preconfiguradas.`;
-      }
-      return;
-    }
-
-    generateAiBtn.disabled = true;
-    generateAiBtn.textContent = '⏳ COMPUTANDO CON IA...';
-    if (aiLoadingStatus) {
-      aiLoadingStatus.style.display = 'block';
-      aiLoadingStatus.className = 'ai-status-indicator status-loading';
-      aiLoadingStatus.innerHTML = `🧠 <strong>[ GEMINI 3.8 FLASH PROCESANDO ]</strong><br>Diseñando geometría procedural, dataclass de configuración y contrato JSON...`;
-    }
-
-    const SYSTEM_PROMPT = `Eres el generador oficial de código procedural 3D de ModelCoder para Blender 5.0 y el juego retro Below Nominal (PlayStation 1 / PSX low-poly).
-Diseña un paquete de 4 archivos completo en un único JSON:
-{
-  "family": "nombre_en_snake_case",
-  "name": "Nombre Humano",
-  "generator": "código python completo heredando de BaseAssetGenerator",
-  "config": "código python completo heredando de BaseAssetConfig con dataclass",
-  "manifest": {
-    "id": "below_nominal.fixtures.nombre_en_snake_case",
-    "name": "Nombre Humano",
-    "version": "1.0.0",
-    "description": "Breve descripción",
-    "author": { "name": "Comunidad", "github": "contributor" },
-    "license": "CC-BY-4.0",
-    "category": "fixtures",
-    "tags": ["psx", "low-poly", "retro"],
-    "parameters": [
-      { "key": "param_name", "label": "Etiqueta Legible", "type": "float", "default": 1.0, "min": 0.1, "max": 2.5, "step": 0.05, "group": "Dimensiones" }
-    ]
-  },
-  "readme": "documentación markdown"
-}
-
-REGLAS TÉCNICAS:
-- generator.py debe importar 'from ...core.base_generator import BaseAssetGenerator' y 'from ...materials.palette import get_or_create_material'.
-- Debe tener 'def generate(self) -> bpy.types.Object:' y llamar a 'self.compact_materials(obj)'.
-- Presupuesto low-poly: 80 a 500 triángulos.
-- En config.py incluir 'palette_name: str = "industrial_hazard"'.
-- En manifest.json usar obligatoriamente 'key' y 'label' en cada parámetro, e incluir 'name', 'category', 'license': 'CC-BY-4.0'.
-Responde ÚNICAMENTE con el objeto JSON estructurado.`;
-
-    try {
-      const candidateModels = [
-        'gemini-3.8-flash',
-        'gemini-3.5-flash',
-        'gemini-3-flash-preview',
-        'gemini-2.5-flash'
-      ];
-
-      const payload = {
-        contents: [
-          {
-            parts: [
-              { text: `${SYSTEM_PROMPT}\n\nPetición del usuario: "${userPrompt}"` }
-            ]
-          }
-        ],
-        generationConfig: {
-          responseMimeType: "application/json",
-          temperature: 0.2
-        }
-      };
-
-      let rawText = '';
-      let lastError: any = null;
-
-      for (const model of candidateModels) {
-        try {
-          const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-          const res = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-          });
-
-          if (res.ok) {
-            const resJson = await res.json();
-            rawText = resJson?.candidates?.[0]?.content?.parts?.[0]?.text;
-            if (rawText) break;
-          } else {
-            const errData = await res.json().catch(() => ({}));
-            lastError = new Error(errData?.error?.message || `HTTP ${res.status} en ${model}`);
-            // If the model is not found or deprecated, continue to next fallback
-            console.warn(`[ModelCoder AI] ${model} no disponible:`, lastError.message);
-          }
-        } catch (fetchErr) {
-          lastError = fetchErr;
-        }
-      }
-
-      if (!rawText) {
-        throw lastError || new Error('No se pudo obtener respuesta estructurada de Gemini.');
-      }
-
-      const parsed = JSON.parse(rawText);
-      applyGeneratedData(parsed);
-
-    } catch (err: any) {
-      if (aiLoadingStatus) {
-        aiLoadingStatus.className = 'ai-status-indicator status-error';
-        aiLoadingStatus.innerHTML = `⚠️ <strong>[ ERROR EN GENERACIÓN ]</strong> ${err.message || err}<br><small>Verifica tu clave de API en Google AI Studio.</small>`;
-      }
-    } finally {
-      generateAiBtn.disabled = false;
-      generateAiBtn.textContent = '⚡ GENERAR CON IA';
-    }
-  }
-
-  // Init
-  loadTemplate('crate');
+  // Initial Render on Page Load
+  renderCurrentSpec('visual');
 </script>
 
 <style>
   .studio-container {
     display: flex;
     flex-direction: column;
-    gap: 1.25rem;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    max-width: 1700px;
+    margin: 0 auto;
+    min-height: calc(100vh - 80px);
   }
 
+  /* Studio Topbar */
   .studio-topbar {
-    display: flex;
-    flex-direction: column;
+    padding: 0.5rem;
   }
 
   .topbar-actions {
-    padding: 0.75rem 1rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 0.75rem;
+    padding: 0.4rem 0.6rem;
     flex-wrap: wrap;
-    gap: 1rem;
-    background: #090e1a;
   }
 
-  .template-selector-box {
+  .mode-switcher-group {
     display: flex;
-    align-items: center;
-    gap: 0.6rem;
+    gap: 0.35rem;
   }
 
-  .action-lbl {
+  .btn-mode-tab {
+    background: #0d1322;
+    border: 1px solid var(--border-color);
+    color: var(--text-muted);
     font-family: var(--font-pixel);
-    font-size: 0.72rem;
-    color: var(--ps1-gold);
+    font-size: 0.75rem;
+    padding: 0.45rem 0.85rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
   }
 
-  .topbar-select {
-    padding: 0.35rem 0.6rem;
-    font-size: 0.75rem;
+  .btn-mode-tab:hover {
+    border-color: var(--ps1-cyan);
+    color: var(--text-bright);
+  }
+
+  .btn-mode-tab.active {
+    background: var(--ps1-cyan);
+    color: #000;
+    border-color: var(--ps1-cyan);
+    font-weight: bold;
+    box-shadow: 0 0 10px rgba(0, 240, 255, 0.4);
   }
 
   .topbar-btn-group {
     display: flex;
-    gap: 0.5rem;
+    gap: 0.4rem;
     flex-wrap: wrap;
   }
 
-  /* Main Split Screen */
+  /* Workspace Layout */
   .studio-workspace {
     display: grid;
-    grid-template-columns: 1fr 450px;
-    gap: 1.25rem;
+    grid-template-columns: 1.15fr 0.85fr;
+    gap: 0.75rem;
     min-height: 680px;
   }
 
-  /* Editor Window */
-  .editor-window {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-  }
-
-  .editor-tabs {
-    display: flex;
-    background: #090e1a;
-    border-bottom: 2px solid var(--ps1-steel);
-    overflow-x: auto;
-  }
-
-  .editor-tab {
-    background: #121826;
-    border: none;
-    border-right: 2px solid var(--ps1-steel);
-    border-bottom: 2px solid transparent;
-    color: var(--text-dim);
-    font-family: var(--font-mono);
-    font-size: 0.8rem;
-    padding: 0.5rem 0.85rem;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-  }
-
-  .editor-tab:hover {
-    color: var(--ps1-gold);
-    background: #1c263c;
-  }
-
-  .editor-tab.active {
-    background: #050810;
-    color: #ffffff;
-    font-weight: 700;
-    border-top: 2px solid var(--ps1-gold);
-  }
-
-  .tab-badge {
-    font-family: var(--font-pixel);
-    font-size: 0.58rem;
-    background: #1b2538;
-    color: var(--ps1-cyan);
-    padding: 0.1rem 0.35rem;
-    border: 1px inset var(--ps1-steel);
-  }
-
-  .editor-surface {
-    flex: 1;
-    display: flex;
-    background: #05070e;
-    min-height: 520px;
-  }
-
-  .line-numbers {
-    padding: 0.75rem 0.5rem;
-    background: #080b14;
-    border-right: 2px solid var(--ps1-steel);
-    color: #435166;
-    font-family: var(--font-mono);
-    font-size: 0.85rem;
-    line-height: 1.45;
-    text-align: right;
-    user-select: none;
-    min-width: 45px;
-    white-space: pre;
-  }
-
-  #code-textarea {
-    flex: 1;
-    background: transparent;
-    border: none;
-    color: #9ab4d0;
-    font-family: var(--font-mono);
-    font-size: 0.85rem;
-    line-height: 1.45;
-    padding: 0.75rem 1rem;
-    resize: none;
-    outline: none;
-    white-space: pre;
-    tab-size: 4;
-  }
-
-  .editor-statusbar {
-    background: #090e1a;
-    border-top: 2px solid var(--ps1-steel);
-    padding: 0.35rem 0.85rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-family: var(--font-mono);
-    font-size: 0.75rem;
-    color: var(--text-dim);
-  }
-
-  .status-left {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-
-  .status-sep {
-    color: var(--ps1-steel-light);
-  }
-
-  .status-right {
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-    font-family: var(--font-pixel);
-    font-size: 0.65rem;
-    color: var(--ps1-green);
-  }
-
-  /* Preview Column */
-  .preview-column {
-    display: flex;
-    flex-direction: column;
-    gap: 1.25rem;
-  }
-
-  .studio-viewport-window {
-    display: flex;
-    flex-direction: column;
-  }
-
-  .viewport-quick-tools {
-    display: flex;
-    gap: 0.4rem;
-  }
-
-  .studio-viewport-surface {
-    height: 320px;
-    background: radial-gradient(circle at center, #182236 0%, #060912 100%);
-  }
-
-  .studio-model-viewer {
-    width: 100%;
-    height: 100%;
-  }
-
-  /* Inspector */
-  .inspector-window {
-    display: flex;
-    flex-direction: column;
-  }
-
-  .inspector-body {
-    padding: 0.85rem;
-    max-height: 340px;
-    overflow-y: auto;
-  }
-
-  .inspector-subtext {
-    font-size: 0.75rem;
-    color: var(--text-dim);
-    margin-bottom: 0.75rem;
-  }
-
-  .studio-param-form {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-  }
-
-  .studio-input-row {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-    background: #090e18;
-    border: 1px inset var(--ps1-steel);
-    padding: 0.5rem;
-  }
-
-  .studio-label-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 0.75rem;
-    color: #ffffff;
-    font-family: var(--font-mono);
-  }
-
-  .studio-val-display {
-    color: var(--ps1-cyan);
-    font-family: var(--font-telemetry);
-    font-size: 1.05rem;
-  }
-
-  /* GitHub Modal */
-  .gh-modal {
-    max-width: 500px;
-    width: 90%;
-    margin: auto;
-    padding: 0;
-  }
-
-  .modal-body {
-    padding: 1.25rem;
-  }
-
-  @media (max-width: 1024px) {
+  @media (max-width: 1100px) {
     .studio-workspace {
       grid-template-columns: 1fr;
     }
-    .topbar-actions {
-      flex-direction: column;
-      align-items: stretch;
-    }
   }
 
-  /* AI Co-Pilot Window */
-  .ai-copilot-window {
-    border-color: var(--ps1-cyan);
-    box-shadow: 0 4px 18px rgba(0, 240, 255, 0.12);
-  }
-
-  .ai-titlebar {
-    background: linear-gradient(90deg, #003847, #06152b);
+  .creation-column {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
+    flex-direction: column;
+    min-height: 600px;
   }
 
-  .ai-status-pulse {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--ps1-cyan);
-    box-shadow: 0 0 8px var(--ps1-cyan);
-    display: inline-block;
-    animation: aiPulse 1.8s infinite ease-in-out;
+  .mode-panel {
+    display: none;
+    height: 100%;
   }
 
-  @keyframes aiPulse {
-    0%, 100% { opacity: 0.4; transform: scale(0.9); }
-    50% { opacity: 1; transform: scale(1.15); box-shadow: 0 0 12px var(--ps1-cyan); }
-  }
-
-  .ai-badge-gemini {
-    font-family: var(--font-pixel);
-    font-size: 0.65rem;
-    color: var(--ps1-gold);
-    border: 1px solid var(--ps1-gold);
-    padding: 0.1rem 0.4rem;
-    background: rgba(255, 204, 0, 0.08);
-  }
-
-  .ai-titlebar-tools {
+  .mode-panel.active {
     display: flex;
-    gap: 0.4rem;
+    flex-direction: column;
   }
 
+  /* AI Copilot Styling */
   .ai-copilot-body {
-    padding: 0.85rem 1rem;
-    background: #080d1a;
+    padding: 0.75rem;
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
-  }
-
-  .gemini-key-drawer {
-    margin-bottom: 0.25rem;
-  }
-
-  .key-inset {
-    padding: 0.75rem;
-    background: #050810;
-    border: 1px dashed rgba(255, 204, 0, 0.4);
-  }
-
-  /* AI Briefing Box */
-  .ai-briefing-box {
-    padding: 0.85rem 1rem;
-    background: #060a16;
-    border: 1px solid var(--ps1-steel);
-    display: flex;
-    flex-direction: column;
-    gap: 0.4rem;
-  }
-
-  .briefing-lead {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-  }
-
-  .briefing-badge {
-    font-family: var(--font-pixel);
-    font-size: 0.65rem;
-    color: var(--ps1-cyan);
-    letter-spacing: 0.04em;
-  }
-
-  .briefing-title {
-    font-size: 0.82rem;
-    color: #ffffff;
-    font-family: var(--font-pixel);
-  }
-
-  .briefing-text {
-    font-size: 0.8rem;
-    color: #a0b2c8;
-    line-height: 1.45;
-    margin: 0;
-  }
-
-  .briefing-text em {
-    color: var(--ps1-gold);
-    font-style: normal;
-  }
-
-  .briefing-req-row {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-    margin-top: 0.25rem;
-    padding-top: 0.4rem;
-    border-top: 1px dashed rgba(255, 255, 255, 0.08);
-  }
-
-  .req-label {
-    font-family: var(--font-pixel);
-    font-size: 0.65rem;
-    color: var(--ps1-gold);
-  }
-
-  .req-desc {
-    font-size: 0.76rem;
-    color: var(--text-dim);
-    flex: 1;
   }
 
   .ai-prompt-row {
     display: flex;
-    gap: 0.6rem;
+    gap: 0.5rem;
     align-items: stretch;
   }
 
@@ -2011,14 +1178,14 @@ Responde ÚNICAMENTE con el objeto JSON estructurado.`;
     flex: 1;
     display: flex;
     align-items: center;
-    background: #03050a;
-    border: 2px inset var(--ps1-steel);
+    background: #080c14;
+    border: 1px solid var(--border-color);
     padding: 0 0.6rem;
   }
 
   .prompt-prefix {
     font-family: var(--font-pixel);
-    font-size: 0.72rem;
+    font-size: 0.7rem;
     color: var(--ps1-cyan);
     margin-right: 0.5rem;
     white-space: nowrap;
@@ -2028,78 +1195,500 @@ Responde ÚNICAMENTE con el objeto JSON estructurado.`;
     flex: 1;
     background: transparent;
     border: none;
-    color: #ffffff;
+    color: var(--text-bright);
     font-family: var(--font-mono);
-    font-size: 0.82rem;
+    font-size: 0.85rem;
+    padding: 0.6rem 0;
     outline: none;
-    padding: 0.5rem 0;
   }
 
   .ai-generate-btn {
+    font-family: var(--font-pixel);
+    font-size: 0.8rem;
+    padding: 0 1.25rem;
     white-space: nowrap;
-    padding: 0.5rem 1rem;
-    font-size: 0.75rem;
   }
 
   .ai-chips-row {
     display: flex;
+    gap: 0.4rem;
     align-items: center;
-    gap: 0.45rem;
     flex-wrap: wrap;
   }
 
   .chips-label {
+    font-size: 0.7rem;
+    color: var(--text-muted);
     font-family: var(--font-pixel);
-    font-size: 0.68rem;
-    color: var(--text-dim);
   }
 
   .ai-chip {
-    background: #0d1527;
-    border: 1px solid var(--ps1-steel-light);
-    color: #c0d4ec;
-    font-family: var(--font-mono);
+    background: #0e1526;
+    border: 1px solid #1e293b;
+    color: #94a3b8;
     font-size: 0.72rem;
-    padding: 0.2rem 0.5rem;
+    padding: 0.25rem 0.55rem;
     cursor: pointer;
+    font-family: var(--font-mono);
     transition: all 0.15s ease;
   }
 
   .ai-chip:hover {
     border-color: var(--ps1-cyan);
     color: var(--ps1-cyan);
-    background: #0a1f33;
-    transform: translateY(-1px);
+    background: #141e34;
   }
 
   .ai-status-indicator {
     padding: 0.6rem 0.8rem;
     font-size: 0.75rem;
-    border: 1px solid;
-    margin-top: 0.25rem;
+    font-family: var(--font-mono);
+    border-left: 3px solid var(--ps1-cyan);
+    background: #080d18;
   }
 
   .ai-status-indicator.status-loading {
-    background: rgba(0, 240, 255, 0.08);
-    border-color: var(--ps1-cyan);
-    color: var(--ps1-cyan);
-  }
-
-  .ai-status-indicator.status-ok {
-    background: rgba(51, 255, 136, 0.08);
-    border-color: #33ff88;
-    color: #33ff88;
-  }
-
-  .ai-status-indicator.status-info {
-    background: rgba(255, 204, 0, 0.08);
     border-color: var(--ps1-gold);
     color: var(--ps1-gold);
   }
 
+  .ai-status-indicator.status-ok {
+    border-color: var(--ps1-green);
+    color: var(--ps1-green);
+  }
+
   .ai-status-indicator.status-error {
-    background: rgba(255, 68, 68, 0.1);
-    border-color: #ff4444;
-    color: #ff8888;
+    border-color: #ef4444;
+    color: #ef4444;
+  }
+
+  /* Visual Builder */
+  .visual-builder-actions {
+    display: flex;
+    gap: 0.3rem;
+  }
+
+  .btn-mini {
+    font-size: 0.65rem;
+    padding: 0.2rem 0.45rem;
+    font-family: var(--font-pixel);
+    cursor: pointer;
+    background: #10192e;
+    border: 1px solid var(--ps1-cyan);
+    color: var(--ps1-cyan);
+  }
+
+  .btn-mini:hover {
+    background: var(--ps1-cyan);
+    color: #000;
+  }
+
+  .visual-builder-body {
+    padding: 0.6rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    max-height: 520px;
+    overflow-y: auto;
+  }
+
+  .comp-card {
+    background: #0a0f1d;
+    border: 1px solid #1e293b;
+    padding: 0.5rem;
+  }
+
+  .comp-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.4rem;
+    margin-bottom: 0.4rem;
+  }
+
+  .comp-badge {
+    font-family: var(--font-pixel);
+    font-size: 0.65rem;
+    background: var(--ps1-cyan);
+    color: #000;
+    padding: 0.15rem 0.35rem;
+  }
+
+  .comp-name-input {
+    flex: 1;
+    background: #050810;
+    border: 1px solid #2d3748;
+    color: var(--text-bright);
+    font-size: 0.75rem;
+    font-family: var(--font-mono);
+    padding: 0.2rem 0.4rem;
+  }
+
+  .comp-card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  .comp-field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+
+  .comp-field-group label {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+  }
+
+  .dim-inputs {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 0.3rem;
+  }
+
+  .dim-input, .pos-input {
+    background: #050810;
+    border: 1px solid #2d3748;
+    color: #e2e8f0;
+    font-size: 0.75rem;
+    padding: 0.2rem 0.3rem;
+    font-family: var(--font-mono);
+  }
+
+  .comp-field-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.68rem;
+    color: var(--text-muted);
+  }
+
+  .color-picker-input {
+    width: 32px;
+    height: 20px;
+    border: none;
+    cursor: pointer;
+  }
+
+  /* Code Editor */
+  .editor-window {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+
+  .editor-tabs {
+    display: flex;
+    background: #060910;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .editor-tab {
+    background: transparent;
+    border: none;
+    border-right: 1px solid var(--border-color);
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    padding: 0.45rem 0.85rem;
+    cursor: pointer;
+  }
+
+  .editor-tab.active {
+    background: #0d1424;
+    color: var(--ps1-cyan);
+    border-bottom: 2px solid var(--ps1-cyan);
+  }
+
+  .tab-badge {
+    font-size: 0.6rem;
+    padding: 0.1rem 0.3rem;
+    background: #1e293b;
+    color: #94a3b8;
+    margin-left: 0.3rem;
+  }
+
+  .editor-surface {
+    flex: 1;
+    display: flex;
+    background: #05070e;
+    min-height: 480px;
+    position: relative;
+  }
+
+  .line-numbers {
+    width: 40px;
+    background: #030408;
+    color: #475569;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    line-height: 1.4;
+    padding: 0.5rem 0.3rem;
+    text-align: right;
+    user-select: none;
+  }
+
+  #code-textarea {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: #e2e8f0;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    line-height: 1.4;
+    padding: 0.5rem;
+    resize: none;
+    outline: none;
+    white-space: pre;
+    overflow-x: auto;
+  }
+
+  .editor-statusbar {
+    display: flex;
+    justify-content: space-between;
+    background: #030408;
+    border-top: 1px solid var(--border-color);
+    padding: 0.25rem 0.6rem;
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    color: #64748b;
+  }
+
+  /* Right Preview Column & Three.js Viewport */
+  .preview-column {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .studio-viewport-surface {
+    position: relative;
+    width: 100%;
+    height: 420px;
+    overflow: hidden;
+    background: #060910;
+  }
+
+  .three-canvas-mount {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  /* Viewport Overlay Controls */
+  .viewport-overlay-controls {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    right: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    pointer-events: none;
+  }
+
+  .shading-toggles {
+    display: flex;
+    gap: 0.25rem;
+    pointer-events: auto;
+    background: rgba(6, 9, 16, 0.75);
+    backdrop-filter: blur(4px);
+    padding: 0.2rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .btn-shading {
+    background: transparent;
+    border: 1px solid transparent;
+    color: #94a3b8;
+    font-family: var(--font-pixel);
+    font-size: 0.62rem;
+    padding: 0.25rem 0.45rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .btn-shading:hover {
+    color: var(--text-bright);
+  }
+
+  .btn-shading.active {
+    background: var(--ps1-cyan);
+    color: #000;
+    font-weight: bold;
+  }
+
+  .generation-status-badge {
+    pointer-events: auto;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    background: rgba(6, 9, 16, 0.85);
+    border: 1px solid var(--border-color);
+    padding: 0.25rem 0.6rem;
+    font-family: var(--font-pixel);
+    font-size: 0.65rem;
+  }
+
+  .badge-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+
+  .dot-completed { background: #10b981; box-shadow: 0 0 6px #10b981; }
+  .dot-generating { background: var(--ps1-cyan); box-shadow: 0 0 6px var(--ps1-cyan); animation: pulse 1s infinite alternate; }
+  .dot-error { background: #ef4444; box-shadow: 0 0 6px #ef4444; }
+
+  /* Viewport Stats HUD */
+  .viewport-stats-hud {
+    position: absolute;
+    bottom: 8px;
+    left: 8px;
+    background: rgba(4, 6, 12, 0.85);
+    backdrop-filter: blur(4px);
+    border: 1px solid rgba(0, 240, 255, 0.3);
+    padding: 0.4rem 0.6rem;
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    pointer-events: none;
+  }
+
+  .hud-lbl { color: #64748b; margin-right: 0.3rem; }
+  .hud-val { color: var(--ps1-cyan); font-weight: bold; }
+
+  /* Error Banner */
+  .viewport-error-banner {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    left: 8px;
+    background: rgba(40, 8, 8, 0.95);
+    border: 1px solid #ef4444;
+    padding: 0.6rem 0.8rem;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    z-index: 20;
+  }
+
+  .error-banner-header {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: #fca5a5;
+    font-family: var(--font-pixel);
+    font-size: 0.75rem;
+    margin-bottom: 0.3rem;
+  }
+
+  .btn-mini-close {
+    margin-left: auto;
+    background: transparent;
+    border: none;
+    color: #fca5a5;
+    cursor: pointer;
+    font-weight: bold;
+  }
+
+  .error-banner-body { color: #fee2e2; margin-bottom: 0.25rem; }
+  .error-banner-footer { color: #94a3b8; font-size: 0.65rem; }
+
+  /* Quick Adjust Panel */
+  .quick-adjust-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.6rem;
+  }
+
+  .param-row {
+    display: grid;
+    grid-template-columns: 140px 1fr 50px;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  .param-label {
+    font-size: 0.7rem;
+    color: #cbd5e1;
+    font-family: var(--font-mono);
+  }
+
+  .param-val-disp {
+    font-size: 0.7rem;
+    color: var(--ps1-cyan);
+    font-family: var(--font-mono);
+    text-align: right;
+  }
+
+  /* Docs Modal */
+  .docs-modal {
+    width: 900px;
+    max-width: 95vw;
+    height: 600px;
+    background: #080c16;
+    border: 2px solid var(--ps1-cyan);
+    color: #e2e8f0;
+    padding: 0;
+  }
+
+  .docs-modal-body {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    height: calc(100% - 35px);
+  }
+
+  .docs-nav-tabs {
+    background: #04060c;
+    border-right: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+
+  .doc-tab {
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    color: #94a3b8;
+    text-align: left;
+    padding: 0.6rem 0.8rem;
+    font-size: 0.72rem;
+    font-family: var(--font-pixel);
+    cursor: pointer;
+  }
+
+  .doc-tab.active {
+    background: #0d1527;
+    color: var(--ps1-cyan);
+    border-left: 3px solid var(--ps1-cyan);
+  }
+
+  .docs-content-area {
+    padding: 1.25rem;
+    overflow-y: auto;
+    font-size: 0.85rem;
+    line-height: 1.6;
+  }
+
+  .doc-section { display: none; }
+  .doc-section.active { display: block; }
+  .doc-section h3 {
+    font-family: var(--font-pixel);
+    color: var(--ps1-cyan);
+    font-size: 0.95rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .doc-section pre {
+    background: #020408;
+    padding: 0.75rem;
+    border: 1px solid #1e293b;
+    overflow-x: auto;
+    font-size: 0.75rem;
   }
 </style>
