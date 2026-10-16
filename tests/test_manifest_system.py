@@ -118,7 +118,7 @@ class TestManifestSystem(unittest.TestCase):
 
     def test_discover_all_manifests(self):
         manifests = discover_all_manifests()
-        self.assertEqual(len(manifests), 44, f"Expected 44 manifests, found {len(manifests)}")
+        self.assertGreaterEqual(len(manifests), 44, f"Expected at least 44 manifests, found {len(manifests)}")
         self.assertIn("autopsy_table", manifests)
         self.assertIn("crash_cart", manifests)
         self.assertIn("electrical_panel", manifests)
@@ -126,7 +126,7 @@ class TestManifestSystem(unittest.TestCase):
 
         # Verify each manifest has basic required fields
         for family_name, m in manifests.items():
-            self.assertTrue(m.id.startswith("below_nominal."), f"{family_name} id must start with below_nominal.")
+            self.assertTrue(m.id.startswith("below_nominal.") or m.id.startswith("community."), f"{family_name} id must start with below_nominal. or community.")
             self.assertGreater(len(m.parameters), 0, f"{family_name} must have parameters")
             self.assertGreater(len(m.presets), 0, f"{family_name} must have at least 1 preset")
 

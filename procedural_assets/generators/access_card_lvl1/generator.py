@@ -5,7 +5,9 @@ from ...core.base_generator import BaseAssetGenerator
 from ...materials.palette import get_or_create_material
 
 class AccessCardGenerator(BaseAssetGenerator):
-    def generate(self) -> bpy.types.Object:
+    def generate(self, config=None) -> bpy.types.Object:
+        if config is not None:
+            self.config = config
         mesh = bpy.data.meshes.new("AccessCard")
         obj = bpy.data.objects.new("AccessCard", mesh)
         bpy.context.collection.objects.link(obj)

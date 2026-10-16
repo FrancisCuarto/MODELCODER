@@ -46,5 +46,25 @@
       "step": 0.001,
       "group": "Dimensiones"
     }
+  ],
+  "presets": [
+    {
+      "id": "standard_card",
+      "label": "Tarjeta Estándar",
+      "values": {
+        "width": 0.085,
+        "height": 0.055,
+        "thickness": 0.004
+      }
+    },
+    {
+      "id": "oversized_badge",
+      "label": "Credencial Grande",
+      "values": {
+        "width": 0.11,
+        "height": 0.07,
+        "thickness": 0.005
+      }
+    }
   ]
 }
