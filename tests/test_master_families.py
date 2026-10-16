@@ -57,4 +57,4 @@ class TestMasterAssetFamilies(unittest.TestCase):
                 self.assertTrue(os.path.exists(json_out), f"JSON for '{family_name}' must exist")
 
 if __name__ == "__main__":
-    unittest.main()
+    unittest.main(argv=[sys.argv[0]])

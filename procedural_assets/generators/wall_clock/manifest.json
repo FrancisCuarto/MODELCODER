@@ -1,0 +1,116 @@
+{
+  "id": "below_nominal.habitation.wall_clock",
+  "name": "Wall Clock",
+  "category": "habitation",
+  "version": "1.0.0",
+  "description": "Industrial analog 24-hour bulkhead station wall clock with bezel, dial markings, hands, and mounting hardware.",
+  "author": {
+    "name": "ModelCoder Core Team",
+    "github": "FrancisCuarto"
+  },
+  "parameters": [
+    {
+      "key": "diameter",
+      "type": "float",
+      "default": 0.30,
+      "min": 0.20,
+      "max": 0.50,
+      "description": "Clock bezel diameter in meters"
+    },
+    {
+      "key": "depth",
+      "type": "float",
+      "default": 0.05,
+      "min": 0.03,
+      "max": 0.10,
+      "description": "Casing depth from wall surface"
+    },
+    {
+      "key": "bezel_type",
+      "type": "enum",
+      "default": "circular",
+      "options": ["circular", "octagonal"],
+      "description": "Profile shape of the protective bezel"
+    },
+    {
+      "key": "clock_state",
+      "type": "enum",
+      "default": "running",
+      "options": ["running", "stopped", "broken"],
+      "description": "Operational state of the clock"
+    },
+    {
+      "key": "hour",
+      "type": "int",
+      "default": 14,
+      "min": 0,
+      "max": 23,
+      "description": "Station shift hour"
+    },
+    {
+      "key": "minute",
+      "type": "int",
+      "default": 45,
+      "min": 0,
+      "max": 59,
+      "description": "Station shift minute"
+    },
+    {
+      "key": "has_glass",
+      "type": "bool",
+      "default": true,
+      "description": "Include protective glass pane over face"
+    },
+    {
+      "key": "has_wall_bracket",
+      "type": "bool",
+      "default": true,
+      "description": "Include rear bulkhead mounting bracket and cable conduit"
+    }
+  ],
+  "presets": [
+    {
+      "id": "shift_nominal",
+      "label": "Shift Nominal",
+      "description": "Standard circular bulkhead clock during daytime station shift",
+      "values": {
+        "diameter": 0.30,
+        "bezel_type": "circular",
+        "clock_state": "running",
+        "hour": 14,
+        "minute": 45,
+        "palette": "standard"
+      }
+    },
+    {
+      "id": "night_watch",
+      "label": "Night Watch",
+      "description": "Heavy octagonal industrial clock during zero-g night watch shift",
+      "values": {
+        "diameter": 0.34,
+        "bezel_type": "octagonal",
+        "clock_state": "running",
+        "hour": 3,
+        "minute": 15,
+        "palette": "maintenance_hazard"
+      }
+    },
+    {
+      "id": "derelict_stopped",
+      "label": "Derelict Stopped",
+      "description": "Cracked dial clock frozen at critical system failure timestamp",
+      "values": {
+        "diameter": 0.28,
+        "bezel_type": "circular",
+        "clock_state": "broken",
+        "hour": 8,
+        "minute": 0,
+        "palette": "derelict_rust"
+      }
+    }
+  ],
+  "export_capabilities": {
+    "supports_collision": true,
+    "default_collision_suffix": "-convcolonly"
+  }
+}

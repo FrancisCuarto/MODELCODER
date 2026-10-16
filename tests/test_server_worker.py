@@ -66,4 +66,4 @@ class TestServerWorker(unittest.TestCase):
         self.assertEqual(len(remaining), 0, f"Temporary directories should be cleaned up, found: {remaining}")
 
 if __name__ == "__main__":
-    unittest.main()
+    unittest.main(argv=[sys.argv[0]])

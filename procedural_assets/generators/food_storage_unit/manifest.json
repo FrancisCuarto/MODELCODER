@@ -1,0 +1,112 @@
+{
+  "id": "below_nominal.habitation.food_storage_unit",
+  "name": "Armario de Almacenamiento de Alimentos",
+  "description": "Armario hermético de habitabilidad con compartimentos modulares para paquetes de raciones sintéticas, pestillos de palanca y ranuras de ventilación térmica.",
+  "category": "habitation",
+  "tags": ["food_storage", "habitation", "rations", "supplies", "locker", "crew", "retro"],
+  "author": {
+    "name": "ModelCoder Core Team",
+    "github": "FrancisCuarto"
+  },
+  "license": "CC-BY-4.0",
+  "version": "1.0.0",
+  "parameters": [
+    {
+      "key": "height",
+      "label": "Altura del Armario (m)",
+      "type": "float",
+      "default": 1.75,
+      "min": 1.2,
+      "max": 2.2,
+      "step": 0.05,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "width",
+      "label": "Ancho del Armario (m)",
+      "type": "float",
+      "default": 0.85,
+      "min": 0.6,
+      "max": 1.4,
+      "step": 0.05,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "compartment_rows",
+      "label": "Filas de Compartimentos",
+      "type": "int",
+      "default": 4,
+      "min": 2,
+      "max": 6,
+      "step": 1,
+      "group": "Estructura"
+    },
+    {
+      "key": "has_latch_bars",
+      "label": "Pestillos de Palanca de Presión",
+      "type": "bool",
+      "default": true,
+      "group": "Componentes"
+    },
+    {
+      "key": "has_ration_trays",
+      "label": "Bandejas con Paquetes de Raciones",
+      "type": "bool",
+      "default": true,
+      "group": "Componentes"
+    },
+    {
+      "key": "storage_state",
+      "label": "Nivel de Abastecimiento",
+      "type": "select",
+      "default": "stocked",
+      "options": ["stocked", "depleted", "open_looted"],
+      "group": "Lógica"
+    }
+  ],
+  "presets": [
+    {
+      "id": "fully_stocked",
+      "label": "Despensa Completa",
+      "description": "Armario con 4 compartimentos abastecidos con raciones nutricionales selladas y cierres asegurados.",
+      "values": {
+        "height": 1.75,
+        "width": 0.85,
+        "compartment_rows": 4,
+        "has_latch_bars": true,
+        "has_ration_trays": true,
+        "storage_state": "stocked"
+      }
+    },
+    {
+      "id": "rationing_shortage",
+      "label": "Racionamiento Crítico",
+      "description": "Compartimentos casi vacíos con etiquetas de advertencia y pestillos trabados.",
+      "values": {
+        "height": 1.75,
+        "width": 0.85,
+        "compartment_rows": 4,
+        "has_latch_bars": true,
+        "has_ration_trays": false,
+        "storage_state": "depleted"
+      }
+    },
+    {
+      "id": "abandoned_raided",
+      "label": "Armario Saqueado",
+      "description": "Puerta forzada, pestillo roto y bandejas volcadas tras la evacuación.",
+      "values": {
+        "height": 1.60,
+        "width": 0.80,
+        "compartment_rows": 3,
+        "has_latch_bars": false,
+        "has_ration_trays": true,
+        "storage_state": "open_looted"
+      }
+    }
+  ],
+  "export_capabilities": {
+    "supports_collision": true,
+    "default_collision_suffix": "-convcolonly"
+  }
+}

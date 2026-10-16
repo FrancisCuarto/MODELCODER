@@ -1,0 +1,116 @@
+{
+  "id": "below_nominal.habitation.personal_effects_box",
+  "name": "Personal Effects Box",
+  "category": "habitation",
+  "version": "1.0.0",
+  "description": "Hermetic crew personal effects trunk with corner impact bumpers, draw latches, folding carry handle, and crew ID nameplate.",
+  "author": {
+    "name": "ModelCoder Core Team",
+    "github": "FrancisCuarto"
+  },
+  "parameters": [
+    {
+      "key": "width",
+      "type": "float",
+      "default": 0.44,
+      "min": 0.30,
+      "max": 0.70,
+      "description": "Container width in meters"
+    },
+    {
+      "key": "depth",
+      "type": "float",
+      "default": 0.32,
+      "min": 0.20,
+      "max": 0.50,
+      "description": "Container depth in meters"
+    },
+    {
+      "key": "height",
+      "type": "float",
+      "default": 0.22,
+      "min": 0.15,
+      "max": 0.40,
+      "description": "Container total height in meters"
+    },
+    {
+      "key": "box_state",
+      "type": "enum",
+      "default": "closed",
+      "options": ["closed", "open", "damaged"],
+      "description": "Lid position and structural state"
+    },
+    {
+      "key": "has_latches",
+      "type": "bool",
+      "default": true,
+      "description": "Include dual front toggle draw latches"
+    },
+    {
+      "key": "has_handle",
+      "type": "bool",
+      "default": true,
+      "description": "Include reinforced folding carry handle"
+    },
+    {
+      "key": "has_nameplate",
+      "type": "bool",
+      "default": true,
+      "description": "Include crew identification nameplate / stencil label"
+    },
+    {
+      "key": "has_corner_gussets",
+      "type": "bool",
+      "default": true,
+      "description": "Include rubberized corner impact gussets"
+    }
+  ],
+  "presets": [
+    {
+      "id": "officer_locker",
+      "label": "Officer Locker",
+      "description": "Standard locked crew effects trunk stored in personal bunk locker",
+      "values": {
+        "width": 0.44,
+        "depth": 0.32,
+        "height": 0.22,
+        "box_state": "closed",
+        "has_nameplate": true,
+        "has_handle": true,
+        "palette": "standard"
+      }
+    },
+    {
+      "id": "field_evacuation",
+      "label": "Field Evacuation",
+      "description": "Heavy-duty high-visibility trunk prepared for emergency station evacuation",
+      "values": {
+        "width": 0.50,
+        "depth": 0.36,
+        "height": 0.25,
+        "box_state": "closed",
+        "has_nameplate": true,
+        "has_handle": true,
+        "palette": "maintenance_hazard"
+      }
+    },
+    {
+      "id": "abandoned_derelict",
+      "label": "Abandoned Derelict",
+      "description": "Ransacked and opened trunk left in a depressurized habitation sector",
+      "values": {
+        "width": 0.44,
+        "depth": 0.32,
+        "height": 0.22,
+        "box_state": "open",
+        "has_nameplate": true,
+        "has_handle": true,
+        "palette": "derelict_rust"
+      }
+    }
+  ],
+  "export_capabilities": {
+    "supports_collision": true,
+    "default_collision_suffix": "-convcolonly"
+  }
+}

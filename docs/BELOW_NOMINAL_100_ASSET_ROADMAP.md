@@ -17,7 +17,7 @@ flowchart LR
     C --> D["Lote D<br/>Ingeniería & Energía<br/>(63-72) [COMPLETADO]"]
     D --> E["Lote E<br/>Infraestructura Modular<br/>(73-80) [COMPLETADO]"]
     E --> F["Lote F<br/>Seguridad & Comms<br/>(81-89) [COMPLETADO]"]
-    F --> G["Lote G<br/>Navegación & Vida<br/>(90-100) [SIGUIENTE]"]
+    F --> G["Lote G<br/>Navegación & Vida<br/>(90-100) [COMPLETADO]"]
 ```
 
 ---
@@ -113,6 +113,7 @@ flowchart LR
 
 ### Lote G: Navegación y Habitabilidad (Familias 90–100)
 *Foco: Vida a bordo, comunicaciones de largo alcance y soporte vital secundario.*
+- **Estado:** **100% Implementado, Validado y Sincronizado** (128/128 tests pasando en Blender 5.0, 101/101 modelos en catálogo web).
 
 1. **`090. comms_antenna`**: Mástil de antenas dipolo para enlaces de radiofrecuencia.
 2. **`091. antenna_dish`**: Parabólica orientable con alimentador focal para enlace orbital.

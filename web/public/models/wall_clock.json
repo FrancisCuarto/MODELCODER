@@ -1,0 +1,98 @@
+{
+  "generator": "WallClockGenerator",
+  "model_name": "wall_clock",
+  "seed": 42,
+  "timestamp": "2026-10-16T16:09:42.705457Z",
+  "mesh_metrics": {
+    "triangle_count": 296,
+    "vertex_count": 184,
+    "target_tri_budget": 280,
+    "budget_compliance_ratio": 1.06,
+    "dimensions_meters": {
+      "width": 0.312,
+      "height": 0.0615,
+      "depth": 0.356
+    },
+    "has_vertex_colors": true,
+    "materials_assigned": [
+      "mat_psx_industrial_hazard_casing_w25"
+    ]
+  },
+  "config_parameters": {
+    "seed": 42,
+    "target_tri_budget": 280,
+    "name": "wall_clock",
+    "wear_level": 0.25,
+    "add_collision_mesh": false,
+    "collision_type": "box",
+    "collision_suffix": "-convcolonly",
+    "pivot_rule": "floor_center",
+    "export_subcomponents": false,
+    "palette_name": "industrial_hazard",
+    "emission_scale": 1.0,
+    "extra_params": {},
+    "family_id": "wall_clock",
+    "category": "habitation",
+    "diameter": 0.3,
+    "depth": 0.05,
+    "bezel_type": "circular",
+    "clock_state": "running",
+    "hour": 14,
+    "minute": 45,
+    "has_glass": true,
+    "has_wall_bracket": true
+  },
+  "sockets": [
+    {
+      "name": "socket_player_interact",
+      "position": [
+        0.0,
+        -0.581,
+        0.0
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "Standard player character interaction stand point"
+    },
+    {
+      "name": "socket_item_spawn",
+      "position": [
+        0.0,
+        0.0,
+        0.376
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "Prop or pickup spawn snap position (keycards, ammo, medical items)"
+    },
+    {
+      "name": "socket_light",
+      "position": [
+        0.0,
+        0.0,
+        0.303
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "OmniLight3D / SpotLight3D mount anchor point"
+    }
+  ],
+  "godot_4_compatibility": {
+    "format": "glTF 2.0 Binary (.glb)",
+    "unit": "meters (1.0 Blender unit = 1.0 Godot unit)",
+    "forward_axis": "-Z",
+    "up_axis": "+Y",
+    "collision_mesh_convention": "Child node with -col or -colonly creates Godot StaticBody3D collision shape",
+    "vertex_colors": "Exported in COLOR_0 accessor (usable with StandardMaterial3D or PSX shader)",
+    "pbr_materials": "Exported as glTF PBR metallic/roughness + emissive"
+  }
+}

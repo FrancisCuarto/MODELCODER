@@ -1,0 +1,97 @@
+{
+  "generator": "WaterRecyclerGenerator",
+  "model_name": "water_recycler",
+  "seed": 42,
+  "timestamp": "2026-10-16T16:09:42.996192Z",
+  "mesh_metrics": {
+    "triangle_count": 432,
+    "vertex_count": 262,
+    "target_tri_budget": 420,
+    "budget_compliance_ratio": 1.03,
+    "dimensions_meters": {
+      "width": 0.95,
+      "height": 0.7448,
+      "depth": 1.6
+    },
+    "has_vertex_colors": true,
+    "materials_assigned": [
+      "mat_psx_industrial_hazard_casing_w40"
+    ]
+  },
+  "config_parameters": {
+    "seed": 42,
+    "target_tri_budget": 420,
+    "name": "water_recycler",
+    "wear_level": 0.4,
+    "add_collision_mesh": false,
+    "collision_type": "box",
+    "collision_suffix": "-convcolonly",
+    "pivot_rule": "floor_center",
+    "export_subcomponents": false,
+    "palette_name": "industrial_hazard",
+    "emission_scale": 1.0,
+    "extra_params": {},
+    "family_id": "water_recycler",
+    "category": "engineering",
+    "height": 1.6,
+    "width": 0.95,
+    "depth": 0.65,
+    "filter_stage_count": 3,
+    "has_purity_monitor": true,
+    "has_bypass_valves": true,
+    "recycler_state": "nominal"
+  },
+  "sockets": [
+    {
+      "name": "socket_player_interact",
+      "position": [
+        0.0,
+        -0.922,
+        0.0
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "Standard player character interaction stand point"
+    },
+    {
+      "name": "socket_item_spawn",
+      "position": [
+        0.0,
+        0.0,
+        1.62
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "Prop or pickup spawn snap position (keycards, ammo, medical items)"
+    },
+    {
+      "name": "socket_light",
+      "position": [
+        0.0,
+        0.0,
+        1.36
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "OmniLight3D / SpotLight3D mount anchor point"
+    }
+  ],
+  "godot_4_compatibility": {
+    "format": "glTF 2.0 Binary (.glb)",
+    "unit": "meters (1.0 Blender unit = 1.0 Godot unit)",
+    "forward_axis": "-Z",
+    "up_axis": "+Y",
+    "collision_mesh_convention": "Child node with -col or -colonly creates Godot StaticBody3D collision shape",
+    "vertex_colors": "Exported in COLOR_0 accessor (usable with StandardMaterial3D or PSX shader)",
+    "pbr_materials": "Exported as glTF PBR metallic/roughness + emissive"
+  }
+}

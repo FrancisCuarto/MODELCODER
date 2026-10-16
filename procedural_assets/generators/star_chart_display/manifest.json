@@ -1,0 +1,99 @@
+{
+  "id": "below_nominal.command.star_chart_display",
+  "name": "Display Mural de Mapa Estelar",
+  "description": "Pantalla mural de navegación táctica de gran formato con cartografía orbital retroiluminada, marco reforzado con cantoneras de sujeción y botonera de control.",
+  "category": "command",
+  "tags": ["star_chart", "navigation", "bridge", "display", "orbital", "map", "retro"],
+  "author": {
+    "name": "ModelCoder Core Team",
+    "github": "FrancisCuarto"
+  },
+  "license": "CC-BY-4.0",
+  "version": "1.0.0",
+  "parameters": [
+    {
+      "key": "width",
+      "label": "Ancho de Pantalla (m)",
+      "type": "float",
+      "default": 1.35,
+      "min": 0.8,
+      "max": 2.2,
+      "step": 0.05,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "height",
+      "label": "Alto de Pantalla (m)",
+      "type": "float",
+      "default": 0.85,
+      "min": 0.5,
+      "max": 1.4,
+      "step": 0.05,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "display_mode",
+      "label": "Capa Cartográfica",
+      "type": "select",
+      "default": "orbital_plot",
+      "options": ["orbital_plot", "star_map", "alert_route", "dark_offline"],
+      "group": "Lógica"
+    },
+    {
+      "key": "has_control_strip",
+      "label": "Botonera de Control Inferior",
+      "type": "bool",
+      "default": true,
+      "group": "Componentes"
+    },
+    {
+      "key": "has_corner_brackets",
+      "label": "Cantoneras Metálicas de Esquina",
+      "type": "bool",
+      "default": true,
+      "group": "Componentes"
+    }
+  ],
+  "presets": [
+    {
+      "id": "europa_orbital_plot",
+      "label": "Trayectoria Orbital Europa",
+      "description": "Carta de navegación con órbitas jovianas activas iluminadas en verde fósforo y marco gris naval.",
+      "values": {
+        "width": 1.35,
+        "height": 0.85,
+        "display_mode": "orbital_plot",
+        "has_control_strip": true,
+        "has_corner_brackets": true
+      }
+    },
+    {
+      "id": "danger_collision_alert",
+      "label": "Alerta de Desvío / Impacto",
+      "description": "Mapa táctico en rojo emisivo parpadeante indicando vector de aproximación a escombros.",
+      "values": {
+        "width": 1.45,
+        "height": 0.90,
+        "display_mode": "alert_route",
+        "has_control_strip": true,
+        "has_corner_brackets": true
+      }
+    },
+    {
+      "id": "unpowered_dark",
+      "label": "Display Mural Sin Tensión",
+      "description": "Pantalla apagada de cristal oscuro con polvo, marcas de rozadura y leds inactivos.",
+      "values": {
+        "width": 1.20,
+        "height": 0.80,
+        "display_mode": "dark_offline",
+        "has_control_strip": true,
+        "has_corner_brackets": false
+      }
+    }
+  ],
+  "export_capabilities": {
+    "supports_collision": true,
+    "default_collision_suffix": "-convcolonly"
+  }
+}

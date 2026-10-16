@@ -1,0 +1,112 @@
+{
+  "id": "below_nominal.habitation.crew_shower",
+  "name": "Cabina de Ducha de Tripulación",
+  "description": "Cabina individual de higiene con plato de ducha antideslizante, desagüe perimetral, rociador estanco superior, mezclador monomando y cortina suspendida.",
+  "category": "habitation",
+  "tags": ["crew_shower", "shower", "habitation", "hygiene", "sanitation", "crew", "retro"],
+  "author": {
+    "name": "ModelCoder Core Team",
+    "github": "FrancisCuarto"
+  },
+  "license": "CC-BY-4.0",
+  "version": "1.0.0",
+  "parameters": [
+    {
+      "key": "width",
+      "label": "Ancho de Cabina (m)",
+      "type": "float",
+      "default": 0.90,
+      "min": 0.75,
+      "max": 1.20,
+      "step": 0.05,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "depth",
+      "label": "Fondo de Cabina (m)",
+      "type": "float",
+      "default": 0.90,
+      "min": 0.75,
+      "max": 1.20,
+      "step": 0.05,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "height",
+      "label": "Altura Total (m)",
+      "type": "float",
+      "default": 2.10,
+      "min": 1.80,
+      "max": 2.40,
+      "step": 0.05,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "has_curtain",
+      "label": "Cortina Industrial Suspendida",
+      "type": "bool",
+      "default": true,
+      "group": "Componentes"
+    },
+    {
+      "key": "has_grab_rail",
+      "label": "Barra Asidero de Seguridad",
+      "type": "bool",
+      "default": true,
+      "group": "Componentes"
+    },
+    {
+      "key": "shower_head_type",
+      "label": "Tipo de Rociador",
+      "type": "select",
+      "default": "fixed_overhead",
+      "options": ["fixed_overhead", "handheld_hose"],
+      "group": "Grifería"
+    }
+  ],
+  "presets": [
+    {
+      "id": "standard_sanitation",
+      "label": "Cabina Operativa Nominal",
+      "description": "Ducha completa con cortina corrida a un lateral, rociador de techo y barra asidero de acero.",
+      "values": {
+        "width": 0.90,
+        "depth": 0.90,
+        "height": 2.10,
+        "has_curtain": true,
+        "has_grab_rail": true,
+        "shower_head_type": "fixed_overhead"
+      }
+    },
+    {
+      "id": "open_curtain_service",
+      "label": "Mantenimiento / Cortina Retirada",
+      "description": "Cabina abierta para inspección de válvulas de mezcla termostática.",
+      "values": {
+        "width": 0.95,
+        "depth": 0.95,
+        "height": 2.15,
+        "has_curtain": false,
+        "has_grab_rail": true,
+        "shower_head_type": "handheld_hose"
+      }
+    },
+    {
+      "id": "derelict_dry",
+      "label": "Ducha Sin Agua / Derelict",
+      "description": "Cabina desconectada con cal incrustada en plato y cortina rasgada.",
+      "values": {
+        "width": 0.85,
+        "depth": 0.85,
+        "height": 2.05,
+        "has_curtain": true,
+        "has_grab_rail": false,
+        "shower_head_type": "fixed_overhead"
+      }
+    }
+  ],
+  "export_capabilities": {
+    "supports_collision": true,
+    "default_collision_suffix": "-convcolonly"
+  }
+}

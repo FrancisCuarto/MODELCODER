@@ -90,7 +90,7 @@ class ParameterDef:
 
         elif self.type == "enum":
             if self.options:
-                valid_vals = [opt["value"] for opt in self.options]
+                valid_vals = [opt["value"] if isinstance(opt, dict) else str(opt) for opt in self.options]
                 if str(val) not in valid_vals:
                     return False, f"Value '{val}' for '{self.key}' is not in allowed options: {valid_vals}"
 
@@ -293,7 +293,7 @@ class GeneratorManifest:
                         help=f"Disable {p.label}"
                     )
             elif p.type == "enum":
-                choices = [opt["value"] for opt in p.options] if p.options else None
+                choices = [opt["value"] if isinstance(opt, dict) else str(opt) for opt in p.options] if p.options else None
                 parser.add_argument(
                     cli_flag,
                     type=str,

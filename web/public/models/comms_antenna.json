@@ -1,0 +1,97 @@
+{
+  "generator": "CommsAntennaGenerator",
+  "model_name": "comms_antenna",
+  "seed": 42,
+  "timestamp": "2026-10-16T16:09:40.380642Z",
+  "mesh_metrics": {
+    "triangle_count": 404,
+    "vertex_count": 250,
+    "target_tri_budget": 360,
+    "budget_compliance_ratio": 1.12,
+    "dimensions_meters": {
+      "width": 0.75,
+      "height": 0.75,
+      "depth": 1.98
+    },
+    "has_vertex_colors": true,
+    "materials_assigned": [
+      "mat_psx_industrial_hazard_casing_w35"
+    ]
+  },
+  "config_parameters": {
+    "seed": 42,
+    "target_tri_budget": 360,
+    "name": "comms_antenna",
+    "wear_level": 0.35,
+    "add_collision_mesh": false,
+    "collision_type": "box",
+    "collision_suffix": "-convcolonly",
+    "pivot_rule": "floor_center",
+    "export_subcomponents": false,
+    "palette_name": "industrial_hazard",
+    "emission_scale": 1.0,
+    "extra_params": {},
+    "family_id": "comms_antenna",
+    "category": "comms",
+    "height": 1.8,
+    "mast_radius": 0.03,
+    "dipole_pairs": 3,
+    "arm_length": 0.35,
+    "has_tuning_box": true,
+    "has_guy_wires": false,
+    "antenna_state": "nominal"
+  },
+  "sockets": [
+    {
+      "name": "socket_player_interact",
+      "position": [
+        0.0,
+        -0.925,
+        0.0
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "Standard player character interaction stand point"
+    },
+    {
+      "name": "socket_item_spawn",
+      "position": [
+        0.0,
+        0.0,
+        2.0
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "Prop or pickup spawn snap position (keycards, ammo, medical items)"
+    },
+    {
+      "name": "socket_light",
+      "position": [
+        0.0,
+        0.0,
+        1.683
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "OmniLight3D / SpotLight3D mount anchor point"
+    }
+  ],
+  "godot_4_compatibility": {
+    "format": "glTF 2.0 Binary (.glb)",
+    "unit": "meters (1.0 Blender unit = 1.0 Godot unit)",
+    "forward_axis": "-Z",
+    "up_axis": "+Y",
+    "collision_mesh_convention": "Child node with -col or -colonly creates Godot StaticBody3D collision shape",
+    "vertex_colors": "Exported in COLOR_0 accessor (usable with StandardMaterial3D or PSX shader)",
+    "pbr_materials": "Exported as glTF PBR metallic/roughness + emissive"
+  }
+}

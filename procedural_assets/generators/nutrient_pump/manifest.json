@@ -1,0 +1,97 @@
+{
+  "id": "below_nominal.hydroponics.nutrient_pump",
+  "name": "Bomba Dosificadora de Nutrientes",
+  "description": "Bomba centrífuga compacta con motor eléctrico de aletas refrigeradoras, filtro de cartucho en línea, manómetro de impulsión y soporte con amortiguadores.",
+  "category": "hydroponics",
+  "tags": ["nutrient_pump", "pump", "hydroponic", "motor", "filter", "engineering", "retro"],
+  "author": {
+    "name": "ModelCoder Core Team",
+    "github": "FrancisCuarto"
+  },
+  "license": "CC-BY-4.0",
+  "version": "1.0.0",
+  "parameters": [
+    {
+      "key": "pump_size",
+      "label": "Escala General (m)",
+      "type": "float",
+      "default": 0.45,
+      "min": 0.3,
+      "max": 0.8,
+      "step": 0.05,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "motor_type",
+      "label": "Tipo de Motor",
+      "type": "select",
+      "default": "electric_finned",
+      "options": ["electric_finned", "compact_servo"],
+      "group": "Motor"
+    },
+    {
+      "key": "has_filter_canister",
+      "label": "Cartucho de Filtrado",
+      "type": "bool",
+      "default": true,
+      "group": "Componentes"
+    },
+    {
+      "key": "has_pressure_dial",
+      "label": "Manómetro de Impulsión",
+      "type": "bool",
+      "default": true,
+      "group": "Componentes"
+    },
+    {
+      "key": "pump_state",
+      "label": "Estado de Flujo",
+      "type": "select",
+      "default": "active",
+      "options": ["active", "clogged", "service_off"],
+      "group": "Lógica"
+    }
+  ],
+  "presets": [
+    {
+      "id": "nominal_flow",
+      "label": "Caudal de Riego Activo",
+      "description": "Bomba en funcionamiento continuo con presión nominal y filtro limpio.",
+      "values": {
+        "pump_size": 0.45,
+        "motor_type": "electric_finned",
+        "has_filter_canister": true,
+        "has_pressure_dial": true,
+        "pump_state": "active"
+      }
+    },
+    {
+      "id": "filter_clogged",
+      "label": "Filtro Colmatado / Baja Presión",
+      "description": "Alarma de restricción de paso con manómetro indicando sobrepresión en aspiración.",
+      "values": {
+        "pump_size": 0.45,
+        "motor_type": "electric_finned",
+        "has_filter_canister": true,
+        "has_pressure_dial": true,
+        "pump_state": "clogged"
+      }
+    },
+    {
+      "id": "service_shutoff",
+      "label": "Desconectada en Banco",
+      "description": "Bomba desmontada para purga y sustitución de juntas de vitón.",
+      "values": {
+        "pump_size": 0.40,
+        "motor_type": "compact_servo",
+        "has_filter_canister": false,
+        "has_pressure_dial": true,
+        "pump_state": "service_off"
+      }
+    }
+  ],
+  "export_capabilities": {
+    "supports_collision": true,
+    "default_collision_suffix": "-convcolonly"
+  }
+}

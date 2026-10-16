@@ -100,6 +100,19 @@ from .speaker_intercom import SpeakerIntercomConfig, SpeakerIntercomGenerator
 from .emergency_beacon import EmergencyBeaconConfig, EmergencyBeaconGenerator
 from .camera_monitor import CameraMonitorConfig, CameraMonitorGenerator
 
+# Lote G: Navegación y Habitabilidad (Familias 90-100)
+from .comms_antenna import CommsAntennaConfig, CommsAntennaGenerator
+from .antenna_dish import AntennaDishConfig, AntennaDishGenerator
+from .nav_console import NavConsoleConfig, NavConsoleGenerator
+from .star_chart_display import StarChartDisplayConfig, StarChartDisplayGenerator
+from .hydroponic_tank import HydroponicTankConfig, HydroponicTankGenerator
+from .nutrient_pump import NutrientPumpConfig, NutrientPumpGenerator
+from .water_recycler import WaterRecyclerConfig, WaterRecyclerGenerator
+from .food_storage_unit import FoodStorageUnitConfig, FoodStorageUnitGenerator
+from .crew_shower import CrewShowerConfig, CrewShowerGenerator
+from .wall_clock import WallClockConfig, WallClockGenerator
+from .personal_effects_box import PersonalEffectsBoxConfig, PersonalEffectsBoxGenerator
+
 GENERATOR_REGISTRY = {
     # Environment & Architectural Tiles
     "station_corridor": (StationCorridorConfig, StationCorridorGenerator),
@@ -213,6 +226,19 @@ GENERATOR_REGISTRY = {
     "speaker_intercom": (SpeakerIntercomConfig, SpeakerIntercomGenerator),
     "emergency_beacon": (EmergencyBeaconConfig, EmergencyBeaconGenerator),
     "camera_monitor": (CameraMonitorConfig, CameraMonitorGenerator),
+
+    # Lote G: Navegación y Habitabilidad (Familias 90-100)
+    "comms_antenna": (CommsAntennaConfig, CommsAntennaGenerator),
+    "antenna_dish": (AntennaDishConfig, AntennaDishGenerator),
+    "nav_console": (NavConsoleConfig, NavConsoleGenerator),
+    "star_chart_display": (StarChartDisplayConfig, StarChartDisplayGenerator),
+    "hydroponic_tank": (HydroponicTankConfig, HydroponicTankGenerator),
+    "nutrient_pump": (NutrientPumpConfig, NutrientPumpGenerator),
+    "water_recycler": (WaterRecyclerConfig, WaterRecyclerGenerator),
+    "food_storage_unit": (FoodStorageUnitConfig, FoodStorageUnitGenerator),
+    "crew_shower": (CrewShowerConfig, CrewShowerGenerator),
+    "wall_clock": (WallClockConfig, WallClockGenerator),
+    "personal_effects_box": (PersonalEffectsBoxConfig, PersonalEffectsBoxGenerator),
 }
 
 # Dynamic auto-discovery for community-contributed generator families
@@ -328,5 +354,16 @@ __all__ = [
     "SpeakerIntercomConfig", "SpeakerIntercomGenerator",
     "EmergencyBeaconConfig", "EmergencyBeaconGenerator",
     "CameraMonitorConfig", "CameraMonitorGenerator",
+    "CommsAntennaConfig", "CommsAntennaGenerator",
+    "AntennaDishConfig", "AntennaDishGenerator",
+    "NavConsoleConfig", "NavConsoleGenerator",
+    "StarChartDisplayConfig", "StarChartDisplayGenerator",
+    "HydroponicTankConfig", "HydroponicTankGenerator",
+    "NutrientPumpConfig", "NutrientPumpGenerator",
+    "WaterRecyclerConfig", "WaterRecyclerGenerator",
+    "FoodStorageUnitConfig", "FoodStorageUnitGenerator",
+    "CrewShowerConfig", "CrewShowerGenerator",
+    "WallClockConfig", "WallClockGenerator",
+    "PersonalEffectsBoxConfig", "PersonalEffectsBoxGenerator",
 ]
 

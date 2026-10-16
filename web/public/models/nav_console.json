@@ -1,0 +1,98 @@
+{
+  "generator": "NavConsoleGenerator",
+  "model_name": "nav_console",
+  "seed": 42,
+  "timestamp": "2026-10-16T16:09:41.536456Z",
+  "mesh_metrics": {
+    "triangle_count": 256,
+    "vertex_count": 168,
+    "target_tri_budget": 300,
+    "budget_compliance_ratio": 0.85,
+    "dimensions_meters": {
+      "width": 1.4,
+      "height": 0.8598,
+      "depth": 1.15
+    },
+    "has_vertex_colors": true,
+    "materials_assigned": [
+      "mat_psx_industrial_hazard_casing_w35"
+    ]
+  },
+  "config_parameters": {
+    "seed": 42,
+    "target_tri_budget": 300,
+    "name": "nav_console",
+    "wear_level": 0.35,
+    "add_collision_mesh": false,
+    "collision_type": "box",
+    "collision_suffix": "-convcolonly",
+    "pivot_rule": "floor_center",
+    "export_subcomponents": false,
+    "palette_name": "industrial_hazard",
+    "emission_scale": 1.0,
+    "extra_params": {},
+    "family_id": "nav_console",
+    "category": "command",
+    "width": 1.4,
+    "depth": 0.95,
+    "height": 1.15,
+    "screen_count": 3,
+    "has_joystick": true,
+    "has_throttle": true,
+    "has_footrest": true,
+    "console_state": "active"
+  },
+  "sockets": [
+    {
+      "name": "socket_player_interact",
+      "position": [
+        0.0,
+        -0.98,
+        0.0
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "Standard player character interaction stand point"
+    },
+    {
+      "name": "socket_item_spawn",
+      "position": [
+        0.0,
+        0.0,
+        1.17
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "Prop or pickup spawn snap position (keycards, ammo, medical items)"
+    },
+    {
+      "name": "socket_light",
+      "position": [
+        0.0,
+        0.0,
+        0.977
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "OmniLight3D / SpotLight3D mount anchor point"
+    }
+  ],
+  "godot_4_compatibility": {
+    "format": "glTF 2.0 Binary (.glb)",
+    "unit": "meters (1.0 Blender unit = 1.0 Godot unit)",
+    "forward_axis": "-Z",
+    "up_axis": "+Y",
+    "collision_mesh_convention": "Child node with -col or -colonly creates Godot StaticBody3D collision shape",
+    "vertex_colors": "Exported in COLOR_0 accessor (usable with StandardMaterial3D or PSX shader)",
+    "pbr_materials": "Exported as glTF PBR metallic/roughness + emissive"
+  }
+}

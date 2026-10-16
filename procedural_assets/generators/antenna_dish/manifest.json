@@ -1,0 +1,113 @@
+{
+  "id": "below_nominal.comms.antenna_dish",
+  "name": "Antena Parabólica Compacta",
+  "description": "Plato parabólico direccional para enlaces orbitales con soporte gimbal azimutal, brazo de alimentación focal y reflector secundario.",
+  "category": "comms",
+  "tags": ["antenna", "dish", "parabolic", "comms", "telemetry", "satellite", "retro"],
+  "author": {
+    "name": "ModelCoder Core Team",
+    "github": "FrancisCuarto"
+  },
+  "license": "CC-BY-4.0",
+  "version": "1.0.0",
+  "parameters": [
+    {
+      "key": "dish_diameter",
+      "label": "Diámetro del Plato (m)",
+      "type": "float",
+      "default": 0.8,
+      "min": 0.5,
+      "max": 1.4,
+      "step": 0.1,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "elevation_angle",
+      "label": "Ángulo de Elevación (°)",
+      "type": "float",
+      "default": 35.0,
+      "min": 0.0,
+      "max": 75.0,
+      "step": 5.0,
+      "group": "Orientación"
+    },
+    {
+      "key": "azimuth_angle",
+      "label": "Ángulo de Azimut (°)",
+      "type": "float",
+      "default": 20.0,
+      "min": -180.0,
+      "max": 180.0,
+      "step": 15.0,
+      "group": "Orientación"
+    },
+    {
+      "key": "has_sub_reflector",
+      "label": "Alimentador Sub-reflector",
+      "type": "bool",
+      "default": true,
+      "group": "Componentes"
+    },
+    {
+      "key": "mount_type",
+      "label": "Tipo de Montura",
+      "type": "select",
+      "default": "pedestal",
+      "options": ["pedestal", "wall_bracket"],
+      "group": "Montaje"
+    },
+    {
+      "key": "condition",
+      "label": "Estado Operativo",
+      "type": "select",
+      "default": "nominal",
+      "options": ["nominal", "misaligned", "damaged"],
+      "group": "Variante"
+    }
+  ],
+  "presets": [
+    {
+      "id": "orbital_uplink",
+      "label": "Enlace Orbital Nominal",
+      "description": "Parabólica de 0.8m orientada hacia el cenit con montura de pedestal y alimentador centrado.",
+      "values": {
+        "dish_diameter": 0.8,
+        "elevation_angle": 35.0,
+        "azimuth_angle": 20.0,
+        "has_sub_reflector": true,
+        "mount_type": "pedestal",
+        "condition": "nominal"
+      }
+    },
+    {
+      "id": "wall_tracking",
+      "label": "Rastreador Mural",
+      "description": "Antena montada sobre brazo angular de pared para cobertura de horizonte espacial.",
+      "values": {
+        "dish_diameter": 0.65,
+        "elevation_angle": 15.0,
+        "azimuth_angle": -45.0,
+        "has_sub_reflector": true,
+        "mount_type": "wall_bracket",
+        "condition": "nominal"
+      }
+    },
+    {
+      "id": "abandoned_rust",
+      "label": "Parabólica Desviada / Abandonada",
+      "description": "Plato con inclinación forzada hacia el suelo, cubierta abollada y alimentador ausente.",
+      "values": {
+        "dish_diameter": 0.8,
+        "elevation_angle": 5.0,
+        "azimuth_angle": 85.0,
+        "has_sub_reflector": false,
+        "mount_type": "pedestal",
+        "condition": "damaged"
+      }
+    }
+  ],
+  "export_capabilities": {
+    "supports_collision": true,
+    "default_collision_suffix": "-convcolonly"
+  }
+}

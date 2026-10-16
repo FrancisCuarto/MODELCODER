@@ -1,0 +1,115 @@
+{
+  "id": "below_nominal.comms.comms_antenna",
+  "name": "Antena Mástil de Comunicaciones",
+  "description": "Mástil técnico de radiofrecuencia con dipolos transversales, aisladores cerámicos, caja de sintonización de impedancia y tirantes tensores.",
+  "category": "comms",
+  "tags": ["comms", "antenna", "mast", "radio", "telemetry", "facility", "retro"],
+  "author": {
+    "name": "ModelCoder Core Team",
+    "github": "FrancisCuarto"
+  },
+  "license": "CC-BY-4.0",
+  "version": "1.0.0",
+  "parameters": [
+    {
+      "key": "height",
+      "label": "Altura del Mástil (m)",
+      "type": "float",
+      "default": 1.8,
+      "min": 1.0,
+      "max": 3.2,
+      "step": 0.2,
+      "group": "Geometría"
+    },
+    {
+      "key": "mast_radius",
+      "label": "Radio del Tubo (m)",
+      "type": "float",
+      "default": 0.03,
+      "min": 0.02,
+      "max": 0.06,
+      "step": 0.005,
+      "group": "Geometría"
+    },
+    {
+      "key": "dipole_pairs",
+      "label": "Pares de Elementos Dipolo",
+      "type": "int",
+      "default": 3,
+      "min": 1,
+      "max": 6,
+      "step": 1,
+      "group": "Componentes"
+    },
+    {
+      "key": "arm_length",
+      "label": "Envergadura de Brazos (m)",
+      "type": "float",
+      "default": 0.35,
+      "min": 0.2,
+      "max": 0.6,
+      "step": 0.05,
+      "group": "Geometría"
+    },
+    {
+      "key": "has_tuning_box",
+      "label": "Caja de Sintonización Base",
+      "type": "bool",
+      "default": true,
+      "group": "Componentes"
+    },
+    {
+      "key": "antenna_state",
+      "label": "Estado Operativo",
+      "type": "select",
+      "default": "nominal",
+      "options": ["nominal", "folded", "broken"],
+      "group": "Variante"
+    }
+  ],
+  "presets": [
+    {
+      "id": "station_link",
+      "label": "Enlace de Estación Nominal",
+      "description": "Mástil vertical de 1.8m desplegado con 3 pares de dipolos activos y caja de adaptación de impedancia.",
+      "values": {
+        "height": 1.8,
+        "mast_radius": 0.03,
+        "dipole_pairs": 3,
+        "arm_length": 0.35,
+        "has_tuning_box": true,
+        "antenna_state": "nominal"
+      }
+    },
+    {
+      "id": "folded_transport",
+      "label": "Mástil Plegado de Repuesto",
+      "description": "Antena compacta con brazos replegados para almacenamiento en pañol de repuestos.",
+      "values": {
+        "height": 1.2,
+        "mast_radius": 0.025,
+        "dipole_pairs": 2,
+        "arm_length": 0.15,
+        "has_tuning_box": true,
+        "antenna_state": "folded"
+      }
+    },
+    {
+      "id": "derelict_broken",
+      "label": "Mástil Dañado / Fracturado",
+      "description": "Antena con brazos doblados, caja de conexiones corroída y cables cortados.",
+      "values": {
+        "height": 1.6,
+        "mast_radius": 0.03,
+        "dipole_pairs": 3,
+        "arm_length": 0.30,
+        "has_tuning_box": false,
+        "antenna_state": "broken"
+      }
+    }
+  ],
+  "export_capabilities": {
+    "supports_collision": true,
+    "default_collision_suffix": "-convcolonly"
+  }
+}

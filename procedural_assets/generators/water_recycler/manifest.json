@@ -1,0 +1,112 @@
+{
+  "id": "below_nominal.engineering.water_recycler",
+  "name": "Unidad de Reciclaje de Agua",
+  "description": "Planta compacta de regeneración de aguas grises con banco de cartuchos de ósmosis inversa, manómetros diferenciales, monitor de pureza y válvulas de purga.",
+  "category": "engineering",
+  "tags": ["water_recycler", "life_support", "filtration", "osmosis", "engineering", "retro"],
+  "author": {
+    "name": "ModelCoder Core Team",
+    "github": "FrancisCuarto"
+  },
+  "license": "CC-BY-4.0",
+  "version": "1.0.0",
+  "parameters": [
+    {
+      "key": "height",
+      "label": "Altura del Armario (m)",
+      "type": "float",
+      "default": 1.6,
+      "min": 1.2,
+      "max": 2.2,
+      "step": 0.1,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "width",
+      "label": "Ancho Frontal (m)",
+      "type": "float",
+      "default": 0.95,
+      "min": 0.7,
+      "max": 1.5,
+      "step": 0.05,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "filter_stage_count",
+      "label": "Etapas de Filtrado",
+      "type": "int",
+      "default": 3,
+      "min": 2,
+      "max": 4,
+      "step": 1,
+      "group": "Componentes"
+    },
+    {
+      "key": "has_purity_monitor",
+      "label": "Monitor de Pureza TDS",
+      "type": "bool",
+      "default": true,
+      "group": "Componentes"
+    },
+    {
+      "key": "has_bypass_valves",
+      "label": "Válvulas de Desvío / Bypass",
+      "type": "bool",
+      "default": true,
+      "group": "Componentes"
+    },
+    {
+      "key": "recycler_state",
+      "label": "Estado de Membrana",
+      "type": "select",
+      "default": "nominal",
+      "options": ["nominal", "filter_saturated", "emergency_bypass", "derelict"],
+      "group": "Lógica"
+    }
+  ],
+  "presets": [
+    {
+      "id": "pure_recycling",
+      "label": "Reciclaje Nominal Potable",
+      "description": "3 etapas de desmineralización activas con monitor en verde y manómetros en rango seguro.",
+      "values": {
+        "height": 1.6,
+        "width": 0.95,
+        "filter_stage_count": 3,
+        "has_purity_monitor": true,
+        "has_bypass_valves": true,
+        "recycler_state": "nominal"
+      }
+    },
+    {
+      "id": "membrane_saturation",
+      "label": "Filtros Saturados",
+      "description": "Alerta ámbar por pérdida de caudal con cartuchos bloqueados y manómetro al límite.",
+      "values": {
+        "height": 1.6,
+        "width": 0.95,
+        "filter_stage_count": 3,
+        "has_purity_monitor": true,
+        "has_bypass_valves": true,
+        "recycler_state": "filter_saturated"
+      }
+    },
+    {
+      "id": "emergency_bypass",
+      "label": "Desvío de Emergencia",
+      "description": "Línea secundaria abierta con bypass directo sin desinfección UV.",
+      "values": {
+        "height": 1.5,
+        "width": 0.90,
+        "filter_stage_count": 2,
+        "has_purity_monitor": true,
+        "has_bypass_valves": true,
+        "recycler_state": "emergency_bypass"
+      }
+    }
+  ],
+  "export_capabilities": {
+    "supports_collision": true,
+    "default_collision_suffix": "-convcolonly"
+  }
+}

@@ -1,0 +1,112 @@
+{
+  "id": "below_nominal.hydroponics.hydroponic_tank",
+  "name": "Depósito de Solución Hidropónica",
+  "description": "Tanque translúcido de almacenamiento de sales minerales y nutrientes vegetales con tubo visor de nivel graduado, tapa hermética con manómetro y conducciones de recirculación.",
+  "category": "hydroponics",
+  "tags": ["hydroponic", "tank", "reservoir", "nutrients", "botany", "life_support", "retro"],
+  "author": {
+    "name": "ModelCoder Core Team",
+    "github": "FrancisCuarto"
+  },
+  "license": "CC-BY-4.0",
+  "version": "1.0.0",
+  "parameters": [
+    {
+      "key": "tank_height",
+      "label": "Altura del Tanque (m)",
+      "type": "float",
+      "default": 1.3,
+      "min": 0.8,
+      "max": 2.2,
+      "step": 0.1,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "tank_radius",
+      "label": "Radio del Cilindro (m)",
+      "type": "float",
+      "default": 0.40,
+      "min": 0.25,
+      "max": 0.70,
+      "step": 0.05,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "liquid_level",
+      "label": "Nivel de Solución (0-1)",
+      "type": "float",
+      "default": 0.75,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.05,
+      "group": "Estado"
+    },
+    {
+      "key": "has_sight_glass",
+      "label": "Tubo Visor Graduado",
+      "type": "bool",
+      "default": true,
+      "group": "Componentes"
+    },
+    {
+      "key": "has_feed_pipes",
+      "label": "Bridas y Tuberías de Paso",
+      "type": "bool",
+      "default": true,
+      "group": "Componentes"
+    },
+    {
+      "key": "solution_type",
+      "label": "Tipo de Nutriente",
+      "type": "select",
+      "default": "nutrient_rich",
+      "options": ["nutrient_rich", "low_reserve", "algae_bloom"],
+      "group": "Lógica"
+    }
+  ],
+  "presets": [
+    {
+      "id": "nutrient_rich",
+      "label": "Solución Óptima Verde",
+      "description": "Depósito lleno al 75% con solución translúcida enriquecida y visor graduado limpio.",
+      "values": {
+        "tank_height": 1.3,
+        "tank_radius": 0.40,
+        "liquid_level": 0.75,
+        "has_sight_glass": true,
+        "has_feed_pipes": true,
+        "solution_type": "nutrient_rich"
+      }
+    },
+    {
+      "id": "low_reserve_warning",
+      "label": "Reserva Crítica Baja",
+      "description": "Nivel al 15% con válvula de cierre cerrada y alarma ámbar en visor.",
+      "values": {
+        "tank_height": 1.3,
+        "tank_radius": 0.40,
+        "liquid_level": 0.15,
+        "has_sight_glass": true,
+        "has_feed_pipes": true,
+        "solution_type": "low_reserve"
+      }
+    },
+    {
+      "id": "algae_contamination",
+      "label": "Proliferación de Algas",
+      "description": "Solución enturbiada verde oscuro con incrustaciones en cristal y paredes manchadas.",
+      "values": {
+        "tank_height": 1.4,
+        "tank_radius": 0.45,
+        "liquid_level": 0.85,
+        "has_sight_glass": true,
+        "has_feed_pipes": true,
+        "solution_type": "algae_bloom"
+      }
+    }
+  ],
+  "export_capabilities": {
+    "supports_collision": true,
+    "default_collision_suffix": "-convcolonly"
+  }
+}
