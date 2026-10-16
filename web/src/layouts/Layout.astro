@@ -51,6 +51,9 @@ import '../styles/global.css';
           <a href="/" class="nav-link">&gt; Catálogo</a>
           <a href="/studio" class="nav-link nav-link-studio" style="color: var(--ps1-gold); border-color: var(--ps1-gold);">&gt; Studio 3D (Crear)</a>
           <a href="/contribute" class="nav-link">&gt; Cómo funciona</a>
+          <a href="/colaboradores" id="nav-collab-link" class="nav-link nav-link-collab" style="display: none; color: var(--ps1-gold); border-color: var(--ps1-gold);" title="Portal privado de colaboradores">
+            👑 Colaboradores
+          </a>
           <a href="https://ivorbitgames.online" target="_blank" rel="noopener noreferrer" class="nav-link nav-link-creator" title="Estudio Creador: IV Orbit Games (Argentina)">
             🪐 IV Orbit
           </a>
@@ -77,6 +80,7 @@ import '../styles/global.css';
                   <span id="user-email-text" class="user-email-text"></span>
                 </div>
                 <a href="/studio" class="dropdown-item">&gt; STUDIO WORKSPACE</a>
+                <a href="/colaboradores" class="dropdown-item" style="color: var(--ps1-gold); font-weight: bold;">&gt; PANEL COLABORADORES 👑</a>
                 <button id="btn-logout" class="dropdown-item dropdown-item-danger" type="button">&gt; CERRAR SESIÓN</button>
               </div>
             </div>
@@ -257,7 +261,7 @@ import '../styles/global.css';
 
     <!-- Script de Inicialización de Autenticación de Supabase -->
     <script>
-      import { getSupabase, signInWithGitHub, signInWithEmail, signUpWithEmail, signOut, onAuthStateChange } from '../lib/supabase';
+      import { getSupabase, signInWithGitHub, signInWithEmail, signUpWithEmail, signOut, onAuthStateChange, checkUserRole } from '../lib/supabase';
 
       const btnOpenAuth = document.getElementById('btn-open-auth');
       const authModal = document.getElementById('ps1-auth-modal');
@@ -385,16 +389,27 @@ import '../styles/global.css';
       });
 
       // Auth state observer
-      function updateSessionUI(user: any) {
+      async function updateSessionUI(user: any) {
+        const navCollabLink = document.getElementById('nav-collab-link');
         if (user) {
           btnOpenAuth?.classList.add('hidden');
           userLoggedBox?.classList.remove('hidden');
           const name = user.user_metadata?.user_name || user.user_metadata?.name || user.email?.split('@')[0] || 'PILOTO';
           if (userDisplayName) userDisplayName.textContent = `@${name.toUpperCase()}`;
           if (userEmailText) userEmailText.textContent = user.email || '';
+
+          // Verificar si es colaborador para mostrar el acceso directo
+          const { isCollaborator, role } = await checkUserRole(user.email);
+          if (navCollabLink) {
+            navCollabLink.style.display = isCollaborator ? 'inline-flex' : 'none';
+            if (role === 'owner') {
+              navCollabLink.textContent = '👑 Colaboradores';
+            }
+          }
         } else {
           btnOpenAuth?.classList.remove('hidden');
           userLoggedBox?.classList.add('hidden');
+          if (navCollabLink) navCollabLink.style.display = 'none';
         }
       }
 

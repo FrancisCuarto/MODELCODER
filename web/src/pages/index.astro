@@ -336,22 +336,29 @@ const categories = [
 </Layout>
 
 <script>
+  import { getCommunityModels } from '../lib/supabase';
+
   // Client-side filtering logic
   const searchInput = document.getElementById('search-input') as HTMLInputElement;
   const filterBtns = document.querySelectorAll('.filter-btn');
-  const cards = document.querySelectorAll('.generator-card');
+  const generatorsContainer = document.getElementById('generators-container');
   const resultsCount = document.getElementById('results-count');
   const noResults = document.getElementById('no-results');
   const resetBtn = document.getElementById('reset-filters-btn');
 
   let activeCategory = 'all';
   let searchQuery = '';
+  let communityModelsList: any[] = [];
+
+  function getCards(): HTMLElement[] {
+    return Array.from(document.querySelectorAll('.generator-card')) as HTMLElement[];
+  }
 
   function applyFilters() {
     let visible = 0;
+    const cards = getCards();
 
-    cards.forEach((cardEl) => {
-      const card = cardEl as HTMLElement;
+    cards.forEach((card) => {
       const category = card.dataset.category || '';
       const name = card.dataset.name || '';
       const desc = card.dataset.desc || '';
@@ -383,6 +390,98 @@ const categories = [
     }
   }
 
+  // Cargar y mostrar modelos subidos directamente por colaboradores
+  async function loadCommunityModels() {
+    try {
+      communityModelsList = await getCommunityModels({ onlyPublic: true });
+      if (!generatorsContainer || communityModelsList.length === 0) return;
+
+      communityModelsList.forEach((m) => {
+        const article = document.createElement('article');
+        article.className = 'ps1-window generator-card community-card';
+        article.dataset.family = m.slug;
+        article.dataset.category = m.category || 'furniture';
+        article.dataset.tags = `comunidad colaborador ${m.name.toLowerCase()} ${(m.description || '').toLowerCase()}`;
+        article.dataset.name = m.name.toLowerCase();
+        article.dataset.desc = (m.description || '').toLowerCase();
+
+        const previewContent = m.glb_data
+          ? `<model-viewer
+              src="${m.glb_data}"
+              alt="${m.name}"
+              auto-rotate
+              rotation-per-second="25deg"
+              camera-controls
+              interaction-prompt="none"
+              shadow-intensity="1.0"
+              loading="lazy"
+              class="model-preview"
+            ></model-viewer>`
+          : `<div class="placeholder-preview" style="display:flex; flex-direction:column; justify-content:center; align-items:center; background:#070d18; height:100%;">
+              <span style="font-size:2.5rem; margin-bottom: 0.35rem;">📦</span>
+              <span style="font-family: var(--font-pixel); font-size:0.7rem; color:var(--ps1-gold);">MODELO PROCEDURAL EN NUBE</span>
+            </div>`;
+
+        article.innerHTML = `
+          <div class="ps1-titlebar card-titlebar" style="background: linear-gradient(90deg, #172433, #0a131e); border-bottom: 1px solid var(--ps1-gold);">
+            <span class="card-category-badge" style="color: var(--ps1-gold);">[${(m.category || 'furniture').toUpperCase()}]</span>
+            <span class="card-license-tag" style="color: var(--ps1-green); font-weight: bold;">👑 COMUNIDAD</span>
+          </div>
+
+          <div class="ps1-inset card-preview">
+            ${previewContent}
+            <div class="preview-badges">
+              <span class="category-badge category-${m.category || 'furniture'}">
+                ${m.category || 'furniture'}
+              </span>
+              <span class="preset-badge" style="background: var(--ps1-gold); color: #000; font-weight: bold;">
+                EQUIPO OFICIAL
+              </span>
+            </div>
+          </div>
+
+          <div class="card-body">
+            <h2 class="card-title">
+              <a href="#" class="comm-open-link" data-slug="${m.slug}">${m.name}</a>
+            </h2>
+            <p class="card-description">${m.description || 'Modelo procedural creado por el equipo de colaboradores de ModelCoder.'}</p>
+
+            <div class="card-meta">
+              <span class="ps1-inset meta-tag">📐 ${m.spec?.components?.length || 0} PIEZAS</span>
+              <span class="ps1-inset meta-tag">~${m.tri_count || 350} TRIS</span>
+              <span class="ps1-inset meta-tag" style="color: var(--ps1-cyan);">👤 ${m.author_name}</span>
+            </div>
+          </div>
+
+          <div class="card-footer">
+            <button type="button" class="btn btn-primary btn-open-comm-studio" data-slug="${m.slug}" style="flex: 1;">
+              ABRIR EN STUDIO 3D &gt;&gt;
+            </button>
+            ${m.glb_data ? `<a href="${m.glb_data}" download="${m.slug}.glb" class="btn btn-outline" title="Descargar archivo GLB directamente">BAJAR .GLB</a>` : ''}
+          </div>
+        `;
+
+        generatorsContainer.prepend(article);
+      });
+
+      generatorsContainer.querySelectorAll('.btn-open-comm-studio, .comm-open-link').forEach((el) => {
+        el.addEventListener('click', (e) => {
+          e.preventDefault();
+          const slug = (e.currentTarget as HTMLElement).dataset.slug;
+          const found = communityModelsList.find((x) => x.slug === slug);
+          if (found && found.spec) {
+            localStorage.setItem('modelcoder_spec', JSON.stringify(found.spec));
+            window.location.href = '/studio';
+          }
+        });
+      });
+
+      applyFilters();
+    } catch (err) {
+      console.warn('[ModelCoder] Could not load community models on homepage:', err);
+    }
+  }
+
   searchInput?.addEventListener('input', (e) => {
     searchQuery = (e.target as HTMLInputElement).value;
     applyFilters();
@@ -407,6 +506,8 @@ const categories = [
     });
     applyFilters();
   });
+
+  loadCommunityModels();
 </script>
 
 <style>

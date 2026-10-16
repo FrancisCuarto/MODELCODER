@@ -1,0 +1,917 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="Panel de Colaboradores & Publicación Directa">
+  <div class="collab-container">
+    <!-- Pantalla 1: No autenticado -->
+    <div id="auth-required-box" class="ps1-window state-window">
+      <div class="ps1-titlebar">
+        <span>// ACCESO RESTRINGIDO // IDENTIFICACIÓN REQUERIDA</span>
+        <span class="ps1-telemetry-tag" style="color: var(--ps1-gold);">SECURITY LEVEL 4</span>
+      </div>
+      <div class="window-inner-pad">
+        <h2 class="state-title">PANEL DE COLABORADORES & PUBLICACIÓN DIRECTA</h2>
+        <p class="state-desc">
+          Este apartado es exclusivo para el creador y colaboradores autorizados de ModelCoder para publicar modelos 3D directamente en el catálogo sin pasar por GitHub.
+        </p>
+        <div class="ps1-inset notice-inset">
+          <p style="margin: 0; font-size: 0.85rem; color: #c0d0e0; line-height: 1.5;">
+            🔒 Inicia sesión con tu cuenta de correo o GitHub para verificar tus credenciales de colaborador.
+          </p>
+        </div>
+        <div style="margin-top: 1.5rem;">
+          <button id="btn-login-collab" type="button" class="btn btn-primary" style="font-size: 0.85rem; padding: 0.65rem 1.5rem;">
+            👤 INICIAR SESIÓN DE PILOTO
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pantalla 2: Usuario autenticado pero NO autorizado -->
+    <div id="unauthorized-box" class="ps1-window state-window" style="display: none; border-color: var(--ps1-red);">
+      <div class="ps1-titlebar" style="background: linear-gradient(90deg, #440000, #1a0000);">
+        <span>// ACCESO DENEGADO // PERMISOS INSUFICIENTES</span>
+        <span class="ps1-telemetry-tag" style="color: var(--ps1-red);">ACCESS RESTRICTED</span>
+      </div>
+      <div class="window-inner-pad">
+        <h2 class="state-title" style="color: var(--ps1-red);">CUENTA NO AUTORIZADA</h2>
+        <p class="state-desc">
+          Has iniciado sesión como <strong id="unauth-email-text" style="color: #ffffff;"></strong>, pero este correo no se encuentra en la lista de colaboradores autorizados por el creador.
+        </p>
+        <div class="ps1-inset" style="padding: 1rem; background: #0c0507; border-color: var(--ps1-red); margin-bottom: 1.5rem;">
+          <p style="margin: 0; font-size: 0.82rem; color: #ffb8b8; line-height: 1.5;">
+            Si eres desarrollador o colaborador del proyecto, solicita al creador (Franciscuarto) que agregue tu correo al panel de colaboradores.
+          </p>
+        </div>
+        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+          <a href="https://ivorbitgames.online/contacto" target="_blank" rel="noopener noreferrer" class="btn btn-outline">
+            🪐 Contactar al Creador
+          </a>
+          <a href="/studio" class="btn btn-gold">
+            🛠️ Ir al Studio 3D Público
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pantalla 3: Panel Principal de Colaboradores (AUTORIZADO) -->
+    <div id="collab-dashboard" style="display: none;">
+      <!-- Header del Dashboard -->
+      <div class="ps1-window dashboard-header-window">
+        <div class="ps1-titlebar">
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <img src="/logo.png" alt="Logo" style="width: 20px; height: 20px; object-fit: contain; border-radius: 3px;" />
+            <span>// PORTAL DE COLABORADORES & PUBLICACIÓN DIRECTA</span>
+          </div>
+          <span id="badge-user-role" class="ps1-telemetry-tag badge-role">COLABORADOR</span>
+        </div>
+        <div class="dashboard-header-body">
+          <div class="user-greeting-row">
+            <div>
+              <span class="greeting-lbl">&gt; PILOTO IDENTIFICADO:</span>
+              <h1 class="user-greeting-email" id="user-greeting-email">cargando...</h1>
+            </div>
+            <div class="header-action-buttons">
+              <a href="/studio" class="btn btn-gold btn-create-model">
+                ⚡ ABRIR STUDIO 3D (CREAR)
+              </a>
+            </div>
+          </div>
+
+          <!-- Pestañas del Panel -->
+          <div class="panel-tabs-row">
+            <button type="button" class="panel-tab active" data-tab="tab-models">
+              📁 MODELOS DEL EQUIPO (<span id="count-models-tab">0</span>)
+            </button>
+            <button type="button" class="panel-tab" id="tab-btn-team" data-tab="tab-team" style="display: none;">
+              👑 GESTIÓN DE COLABORADORES
+            </button>
+            <button type="button" class="panel-tab" data-tab="tab-sql">
+              ⚙️ CONFIGURACIÓN SUPABASE (SQL)
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 1: MODELOS DEL EQUIPO -->
+      <div id="tab-models" class="tab-content-panel active">
+        <!-- Barra de Telemetría y Filtro -->
+        <div class="models-toolbar ps1-window">
+          <div class="models-stats-pills">
+            <span class="stat-pill">TOTAL: <strong id="stat-total-models" class="text-gold">0</strong></span>
+            <span class="stat-pill">EN CATÁLOGO: <strong id="stat-public-models" class="text-green">0</strong></span>
+            <span class="stat-pill">PRIVADOS EQUIPO: <strong id="stat-private-models" class="text-cyan">0</strong></span>
+          </div>
+          <div class="models-filter-group">
+            <button type="button" class="btn-filter-models active" data-filter="all">TODOS</button>
+            <button type="button" class="btn-filter-models" data-filter="public">PÚBLICOS</button>
+            <button type="button" class="btn-filter-models" data-filter="private">PRIVADOS</button>
+          </div>
+        </div>
+
+        <!-- Grid de Modelos -->
+        <div id="collab-models-grid" class="collab-models-grid">
+          <!-- Renderizado dinámico -->
+        </div>
+
+        <!-- Estado vacío -->
+        <div id="models-empty-state" class="ps1-window" style="display: none; text-align: center; padding: 2.5rem 1.5rem;">
+          <p style="font-family: var(--font-pixel); font-size: 0.85rem; color: var(--ps1-gold); margin-bottom: 0.75rem;">
+            AÚN NO HAY MODELOS SUBIDOS DIRECTAMENTE
+          </p>
+          <p style="font-size: 0.82rem; color: var(--text-dim); max-width: 600px; margin: 0 auto 1.5rem;">
+            Genera un modelo en el Studio 3D (con IA o mediante piezas procedurales) y utiliza el nuevo botón de publicación directa para subirlo aquí al instante.
+          </p>
+          <a href="/studio" class="btn btn-primary">
+            🚀 IR AL STUDIO AHORA
+          </a>
+        </div>
+      </div>
+
+      <!-- TAB 2: GESTIÓN DE EQUIPO (SOLO ADMIN / OWNER) -->
+      <div id="tab-team" class="tab-content-panel" style="display: none;">
+        <div class="ps1-window team-window">
+          <div class="ps1-titlebar">
+            <span>// CONTROL DE ACCESO // LISTA BLANCA DE COLABORADORES</span>
+            <span class="ps1-telemetry-tag" style="color: var(--ps1-gold);">ADMIN ONLY</span>
+          </div>
+          <div class="team-body">
+            <!-- Formulario para agregar colaborador -->
+            <div class="ps1-inset add-collab-box">
+              <h3 class="box-subtitle">&gt; AGREGAR NUEVO COLABORADOR AUTORIZADO</h3>
+              <p class="box-desc">
+                Ingresa el correo electrónico con el que tu colaborador iniciará sesión en ModelCoder (vía email o GitHub).
+              </p>
+              <form id="form-add-collab" class="add-collab-form">
+                <div class="form-inputs-row">
+                  <div class="form-field" style="flex: 2;">
+                    <label for="new-collab-email">CORREO ELECTRÓNICO *</label>
+                    <input type="email" id="new-collab-email" class="ps1-input" required placeholder="colaborador@correo.com" />
+                  </div>
+                  <div class="form-field" style="flex: 1.5;">
+                    <label for="new-collab-name">NOMBRE O ALIAS</label>
+                    <input type="text" id="new-collab-name" class="ps1-input" placeholder="ej. Lucas (3D Artist)" />
+                  </div>
+                  <div class="form-field" style="flex: 1;">
+                    <label for="new-collab-role">ROL</label>
+                    <select id="new-collab-role" class="ps1-input">
+                      <option value="collaborator">Colaborador</option>
+                      <option value="admin">Administrador</option>
+                    </select>
+                  </div>
+                </div>
+                <div style="margin-top: 1rem; display: flex; justify-content: flex-end;">
+                  <button type="submit" class="btn btn-green">
+                    [ + AUTORIZAR COLABORADOR ]
+                  </button>
+                </div>
+              </form>
+              <div id="add-collab-status" class="status-msg hidden"></div>
+            </div>
+
+            <!-- Tabla de Colaboradores -->
+            <div class="collab-table-wrap">
+              <h3 class="box-subtitle">&gt; COLABORADORES ACTIVOS</h3>
+              <table class="collab-table">
+                <thead>
+                  <tr>
+                    <th>PILOTO / CORREO</th>
+                    <th>NOMBRE</th>
+                    <th>ROL</th>
+                    <th>FECHA ALTA</th>
+                    <th>ACCIONES</th>
+                  </tr>
+                </thead>
+                <tbody id="collab-table-body">
+                  <!-- Render dinámico -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 3: CONFIGURACIÓN SUPABASE SQL -->
+      <div id="tab-sql" class="tab-content-panel" style="display: none;">
+        <div class="ps1-window">
+          <div class="ps1-titlebar">
+            <span>// MIGRACIÓN SQL PARA EL DASHBOARD DE SUPABASE</span>
+            <span class="ps1-telemetry-tag">POSTGRESQL</span>
+          </div>
+          <div class="window-inner-pad">
+            <p style="font-size: 0.85rem; color: #c0d0e0; margin-bottom: 1rem; line-height: 1.5;">
+              Para que los modelos se sincronicen globalmente en la nube entre múltiples dispositivos y navegadores, copia este script y ejecútalo en el <strong>SQL Editor</strong> de tu proyecto Supabase:
+            </p>
+            <div style="position: relative;">
+              <pre class="sql-code-box"><code>-- Ejecuta en https://supabase.com/dashboard/project/jegdicdnhetdzmcuznqy/sql
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+CREATE TABLE IF NOT EXISTS public.collaborators (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    email TEXT UNIQUE NOT NULL,
+    name TEXT,
+    role TEXT NOT NULL DEFAULT 'collaborator' CHECK (role IN ('owner', 'admin', 'collaborator')),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.community_models (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    slug TEXT UNIQUE NOT NULL,
+    name TEXT NOT NULL,
+    category TEXT NOT NULL DEFAULT 'furniture',
+    description TEXT DEFAULT '',
+    spec JSONB NOT NULL,
+    tri_count INTEGER DEFAULT 0,
+    author_name TEXT NOT NULL,
+    author_email TEXT NOT NULL,
+    is_public BOOLEAN NOT NULL DEFAULT true,
+    glb_data TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+ALTER TABLE public.collaborators ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.community_models ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Permitir lectura publica de colaboradores" ON public.collaborators FOR SELECT USING (true);
+CREATE POLICY "Permitir gestion de colaboradores" ON public.collaborators FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Lectura de modelos publicos" ON public.community_models FOR SELECT USING (true);
+CREATE POLICY "Gestion de modelos" ON public.community_models FOR ALL USING (true) WITH CHECK (true);
+
+INSERT INTO public.collaborators (email, name, role)
+VALUES ('franciscuarto@ivorbitgames.online', 'Franciscuarto (Dueño)', 'owner')
+ON CONFLICT (email) DO NOTHING;</code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</Layout>
+
+<script>
+  import {
+    getCurrentUser,
+    onAuthStateChange,
+    checkUserRole,
+    getCollaborators,
+    addCollaborator,
+    removeCollaborator,
+    getCommunityModels,
+    toggleModelVisibility,
+    deleteCommunityModel,
+    type Collaborator,
+    type CommunityModel
+  } from '../lib/supabase';
+
+  const authRequiredBox = document.getElementById('auth-required-box');
+  const unauthorizedBox = document.getElementById('unauthorized-box');
+  const unauthEmailText = document.getElementById('unauth-email-text');
+  const collabDashboard = document.getElementById('collab-dashboard');
+  const btnLoginCollab = document.getElementById('btn-login-collab');
+  const userGreetingEmail = document.getElementById('user-greeting-email');
+  const badgeUserRole = document.getElementById('badge-user-role');
+  const tabBtnTeam = document.getElementById('tab-btn-team');
+
+  const panelTabs = document.querySelectorAll('.panel-tab');
+  const tabPanels = {
+    'tab-models': document.getElementById('tab-models'),
+    'tab-team': document.getElementById('tab-team'),
+    'tab-sql': document.getElementById('tab-sql'),
+  };
+
+  const collabModelsGrid = document.getElementById('collab-models-grid');
+  const modelsEmptyState = document.getElementById('models-empty-state');
+  const countModelsTab = document.getElementById('count-models-tab');
+  const statTotalModels = document.getElementById('stat-total-models');
+  const statPublicModels = document.getElementById('stat-public-models');
+  const statPrivateModels = document.getElementById('stat-private-models');
+
+  const formAddCollab = document.getElementById('form-add-collab') as HTMLFormElement;
+  const newCollabEmail = document.getElementById('new-collab-email') as HTMLInputElement;
+  const newCollabName = document.getElementById('new-collab-name') as HTMLInputElement;
+  const newCollabRole = document.getElementById('new-collab-role') as HTMLSelectElement;
+  const addCollabStatus = document.getElementById('add-collab-status');
+  const collabTableBody = document.getElementById('collab-table-body');
+  const filterBtns = document.querySelectorAll('.btn-filter-models');
+
+  let currentActiveUser: any = null;
+  let currentUserRole: 'owner' | 'admin' | 'collaborator' | null = null;
+  let allCommunityModels: CommunityModel[] = [];
+  let currentModelFilter = 'all';
+
+  // Abrir modal de autenticación si se presiona el botón
+  btnLoginCollab?.addEventListener('click', () => {
+    const authBtn = document.getElementById('btn-open-auth');
+    authBtn?.click();
+  });
+
+  // Switcher de pestañas del panel
+  panelTabs.forEach((tab) => {
+    tab.addEventListener('click', () => {
+      panelTabs.forEach((t) => t.classList.remove('active'));
+      tab.classList.add('active');
+      const targetId = tab.getAttribute('data-tab');
+      Object.keys(tabPanels).forEach((k) => {
+        const p = tabPanels[k as keyof typeof tabPanels];
+        if (p) p.style.display = k === targetId ? 'block' : 'none';
+      });
+    });
+  });
+
+  // Inicialización y escucha de estado de sesión
+  async function initSession(user: any) {
+    currentActiveUser = user;
+    if (!user) {
+      if (authRequiredBox) authRequiredBox.style.display = 'block';
+      if (unauthorizedBox) unauthorizedBox.style.display = 'none';
+      if (collabDashboard) collabDashboard.style.display = 'none';
+      return;
+    }
+
+    const { isCollaborator, role } = await checkUserRole(user.email);
+    currentUserRole = role;
+
+    if (!isCollaborator) {
+      if (authRequiredBox) authRequiredBox.style.display = 'none';
+      if (unauthorizedBox) unauthorizedBox.style.display = 'block';
+      if (unauthEmailText) unauthEmailText.textContent = user.email || 'tu cuenta';
+      if (collabDashboard) collabDashboard.style.display = 'none';
+      return;
+    }
+
+    // Usuario Autorizado
+    if (authRequiredBox) authRequiredBox.style.display = 'none';
+    if (unauthorizedBox) unauthorizedBox.style.display = 'none';
+    if (collabDashboard) collabDashboard.style.display = 'block';
+
+    if (userGreetingEmail) userGreetingEmail.textContent = user.email || 'Piloto';
+    if (badgeUserRole) {
+      if (role === 'owner') {
+        badgeUserRole.textContent = '👑 DUEÑO / ADMINISTRADOR';
+        badgeUserRole.style.color = 'var(--ps1-gold)';
+      } else if (role === 'admin') {
+        badgeUserRole.textContent = '⚡ ADMINISTRADOR';
+        badgeUserRole.style.color = 'var(--ps1-cyan)';
+      } else {
+        badgeUserRole.textContent = '🛠️ COLABORADOR AUTORIZADO';
+        badgeUserRole.style.color = 'var(--ps1-green)';
+      }
+    }
+
+    // Mostrar pestaña de equipo a admins y owners
+    if (tabBtnTeam) {
+      tabBtnTeam.style.display = (role === 'owner' || role === 'admin') ? 'block' : 'none';
+    }
+
+    // Cargar datos
+    loadModels();
+    if (role === 'owner' || role === 'admin') {
+      loadTeamTable();
+    }
+  }
+
+  // Cargar modelos del equipo
+  async function loadModels() {
+    allCommunityModels = await getCommunityModels({ onlyPublic: false });
+    renderModels();
+  }
+
+  function renderModels() {
+    if (!collabModelsGrid) return;
+    collabModelsGrid.innerHTML = '';
+
+    const filtered = allCommunityModels.filter((m) => {
+      if (currentModelFilter === 'public') return m.is_public;
+      if (currentModelFilter === 'private') return !m.is_public;
+      return true;
+    });
+
+    // Actualizar contadores
+    const totalCount = allCommunityModels.length;
+    const publicCount = allCommunityModels.filter((m) => m.is_public).length;
+    const privateCount = totalCount - publicCount;
+
+    if (countModelsTab) countModelsTab.textContent = String(totalCount);
+    if (statTotalModels) statTotalModels.textContent = String(totalCount);
+    if (statPublicModels) statPublicModels.textContent = String(publicCount);
+    if (statPrivateModels) statPrivateModels.textContent = String(privateCount);
+
+    if (filtered.length === 0) {
+      if (modelsEmptyState) modelsEmptyState.style.display = 'block';
+      return;
+    }
+    if (modelsEmptyState) modelsEmptyState.style.display = 'none';
+
+    filtered.forEach((model) => {
+      const card = document.createElement('div');
+      card.className = 'ps1-window model-card-item';
+      const isPublic = model.is_public;
+
+      card.innerHTML = `
+        <div class="ps1-titlebar" style="background: ${isPublic ? 'linear-gradient(90deg, #002233, #001122)' : 'linear-gradient(90deg, #332200, #110b00)'}">
+          <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 200px;">// ${model.name}</span>
+          <span class="ps1-telemetry-tag" style="color: ${isPublic ? 'var(--ps1-green)' : 'var(--ps1-gold)'}">
+            ${isPublic ? '● PÚBLICO' : '🔒 PRIVADO'}
+          </span>
+        </div>
+        <div class="model-card-body">
+          <div class="model-preview-box">
+            <span class="preview-cube-icon">📦</span>
+            <span class="preview-cat-badge">${model.category.toUpperCase()}</span>
+          </div>
+          <h3 class="model-card-name">${model.name}</h3>
+          <p class="model-card-desc">${model.description || 'Sin descripción detallada.'}</p>
+          <div class="model-card-meta">
+            <span>👤 ${model.author_name}</span>
+            <span>📐 ${model.spec?.components?.length || 0} piezas</span>
+            <span>~${model.tri_count || 350} tris</span>
+          </div>
+          <div class="model-card-actions">
+            <button type="button" class="btn btn-sm btn-outline btn-toggle-vis" data-id="${model.id}" data-public="${isPublic}">
+              ${isPublic ? 'Ocultar (Privado)' : 'Hacer Público'}
+            </button>
+            <button type="button" class="btn btn-sm btn-gold btn-edit-studio" data-slug="${model.slug}">
+              Editar en Studio
+            </button>
+            <button type="button" class="btn btn-sm btn-danger btn-delete-model" data-id="${model.id}" title="Eliminar modelo">
+              🗑️
+            </button>
+          </div>
+        </div>
+      `;
+
+      collabModelsGrid.appendChild(card);
+    });
+
+    // Listeners de tarjetas
+    collabModelsGrid.querySelectorAll('.btn-toggle-vis').forEach((btn) => {
+      btn.addEventListener('click', async (e) => {
+        const target = e.currentTarget as HTMLElement;
+        const id = target.dataset.id || '';
+        const currentPub = target.dataset.public === 'true';
+        await toggleModelVisibility(id, !currentPub);
+        await loadModels();
+      });
+    });
+
+    collabModelsGrid.querySelectorAll('.btn-edit-studio').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        const slug = (e.currentTarget as HTMLElement).dataset.slug;
+        const model = allCommunityModels.find((m) => m.slug === slug);
+        if (model && model.spec) {
+          localStorage.setItem('modelcoder_spec', JSON.stringify(model.spec));
+          window.location.href = '/studio';
+        }
+      });
+    });
+
+    collabModelsGrid.querySelectorAll('.btn-delete-model').forEach((btn) => {
+      btn.addEventListener('click', async (e) => {
+        const id = (e.currentTarget as HTMLElement).dataset.id || '';
+        if (confirm('¿Estás seguro de que deseas eliminar este modelo?')) {
+          await deleteCommunityModel(id);
+          await loadModels();
+        }
+      });
+    });
+  }
+
+  // Filtros de modelos
+  filterBtns.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      filterBtns.forEach((b) => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentModelFilter = btn.getAttribute('data-filter') || 'all';
+      renderModels();
+    });
+  });
+
+  // Cargar tabla de colaboradores
+  async function loadTeamTable() {
+    if (!collabTableBody) return;
+    collabTableBody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 1rem;">Cargando colaboradores...</td></tr>';
+    const list = await getCollaborators();
+    collabTableBody.innerHTML = '';
+
+    list.forEach((c) => {
+      const tr = document.createElement('tr');
+      const isOwner = c.role === 'owner';
+      tr.innerHTML = `
+        <td><strong style="color: #ffffff;">${c.email}</strong></td>
+        <td>${c.name || '—'}</td>
+        <td><span class="role-pill role-${c.role}">${c.role.toUpperCase()}</span></td>
+        <td>${c.created_at ? new Date(c.created_at).toLocaleDateString() : 'Activo'}</td>
+        <td>
+          ${isOwner ? '<span style="color: var(--text-dim); font-size: 0.75rem;">Dueño principal</span>' : `
+            <button type="button" class="btn btn-sm btn-outline btn-remove-collab" data-id="${c.id}" style="color: var(--ps1-red); border-color: var(--ps1-red);">
+              Revocar
+            </button>
+          `}
+        </td>
+      `;
+      collabTableBody.appendChild(tr);
+    });
+
+    collabTableBody.querySelectorAll('.btn-remove-collab').forEach((btn) => {
+      btn.addEventListener('click', async (e) => {
+        const id = (e.currentTarget as HTMLElement).dataset.id || '';
+        if (confirm('¿Revocar permisos de colaborador a esta cuenta?')) {
+          await removeCollaborator(id);
+          await loadTeamTable();
+        }
+      });
+    });
+  }
+
+  // Formulario de agregar colaborador
+  formAddCollab?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!newCollabEmail) return;
+    const email = newCollabEmail.value.trim();
+    const name = newCollabName ? newCollabName.value.trim() : '';
+    const role = (newCollabRole ? newCollabRole.value : 'collaborator') as any;
+
+    const res = await addCollaborator(email, name, role);
+    if (res.success) {
+      if (addCollabStatus) {
+        addCollabStatus.textContent = `✓ ${email} ha sido autorizado como ${role}.`;
+        addCollabStatus.className = 'status-msg success';
+        addCollabStatus.classList.remove('hidden');
+      }
+      newCollabEmail.value = '';
+      if (newCollabName) newCollabName.value = '';
+      await loadTeamTable();
+    } else {
+      if (addCollabStatus) {
+        addCollabStatus.textContent = `Error: ${res.error || 'No se pudo agregar'}`;
+        addCollabStatus.className = 'status-msg error';
+        addCollabStatus.classList.remove('hidden');
+      }
+    }
+  });
+
+  // Escuchar sesión
+  onAuthStateChange((user) => {
+    initSession(user);
+  });
+
+  getCurrentUser().then((user) => {
+    initSession(user);
+  });
+</script>
+
+<style>
+  .collab-container {
+    max-width: 1400px;
+    margin: 1.5rem auto 4rem;
+    padding: 0 1rem;
+  }
+
+  .state-window {
+    max-width: 650px;
+    margin: 3rem auto;
+  }
+
+  .window-inner-pad {
+    padding: 1.75rem;
+  }
+
+  .state-title {
+    font-family: var(--font-title);
+    font-size: 1.25rem;
+    color: var(--ps1-gold);
+    margin-bottom: 0.75rem;
+    letter-spacing: 0.04em;
+  }
+
+  .state-desc {
+    font-size: 0.88rem;
+    color: #b0c0d8;
+    line-height: 1.55;
+    margin-bottom: 1.25rem;
+  }
+
+  .notice-inset {
+    padding: 1rem;
+    background: #080d1a;
+  }
+
+  /* Header del Dashboard */
+  .dashboard-header-window {
+    margin-bottom: 1.5rem;
+  }
+
+  .dashboard-header-body {
+    padding: 1.25rem 1.5rem;
+  }
+
+  .user-greeting-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .greeting-lbl {
+    font-family: var(--font-pixel);
+    font-size: 0.65rem;
+    color: var(--ps1-cyan);
+    display: block;
+    margin-bottom: 0.25rem;
+  }
+
+  .user-greeting-email {
+    font-family: var(--font-title);
+    font-size: 1.2rem;
+    color: #ffffff;
+    margin: 0;
+  }
+
+  .badge-role {
+    color: var(--ps1-gold);
+    font-weight: bold;
+  }
+
+  .panel-tabs-row {
+    display: flex;
+    gap: 0.5rem;
+    border-top: 1px solid var(--ps1-steel);
+    padding-top: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .panel-tab {
+    font-family: var(--font-pixel);
+    font-size: 0.72rem;
+    padding: 0.5rem 1rem;
+    background: #090e1c;
+    border: 1px solid var(--ps1-steel);
+    color: #a0b2cc;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .panel-tab:hover {
+    color: #ffffff;
+    border-color: var(--ps1-cyan);
+  }
+
+  .panel-tab.active {
+    background: #121c33;
+    border-color: var(--ps1-gold);
+    color: var(--ps1-gold);
+    box-shadow: 0 0 8px rgba(255, 176, 0, 0.2);
+  }
+
+  /* Toolbar de Modelos */
+  .models-toolbar {
+    margin-bottom: 1.25rem;
+    padding: 0.85rem 1.25rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .models-stats-pills {
+    display: flex;
+    gap: 1rem;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: #a0b2cc;
+  }
+
+  .models-filter-group {
+    display: flex;
+    gap: 0.35rem;
+  }
+
+  .btn-filter-models {
+    font-family: var(--font-pixel);
+    font-size: 0.65rem;
+    padding: 0.35rem 0.75rem;
+    background: #060912;
+    border: 1px solid var(--ps1-steel);
+    color: var(--text-dim);
+    cursor: pointer;
+  }
+
+  .btn-filter-models.active {
+    border-color: var(--ps1-cyan);
+    color: var(--ps1-cyan);
+    background: #0c1426;
+  }
+
+  /* Grid de Modelos */
+  .collab-models-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1.25rem;
+  }
+
+  .model-card-item {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .model-card-body {
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    flex: 1;
+  }
+
+  .model-preview-box {
+    height: 90px;
+    background: #050810;
+    border: 1px inset var(--ps1-steel);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+  }
+
+  .preview-cube-icon {
+    font-size: 2.2rem;
+    filter: drop-shadow(0 0 8px rgba(255, 176, 0, 0.4));
+  }
+
+  .preview-cat-badge {
+    position: absolute;
+    bottom: 6px;
+    right: 8px;
+    font-family: var(--font-pixel);
+    font-size: 0.58rem;
+    color: var(--ps1-cyan);
+    background: #000;
+    padding: 0.1rem 0.35rem;
+    border: 1px solid var(--ps1-cyan);
+  }
+
+  .model-card-name {
+    font-family: var(--font-title);
+    font-size: 0.95rem;
+    color: #ffffff;
+    margin: 0;
+  }
+
+  .model-card-desc {
+    font-size: 0.78rem;
+    color: #9cb2cc;
+    line-height: 1.4;
+    margin: 0;
+    flex: 1;
+  }
+
+  .model-card-meta {
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    border-top: 1px solid #142036;
+    padding-top: 0.5rem;
+  }
+
+  .model-card-actions {
+    display: flex;
+    gap: 0.4rem;
+    margin-top: 0.3rem;
+  }
+
+  .model-card-actions .btn {
+    flex: 1;
+  }
+
+  /* Gestión de Equipo */
+  .team-body {
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.75rem;
+  }
+
+  .box-subtitle {
+    font-family: var(--font-pixel);
+    font-size: 0.8rem;
+    color: var(--ps1-gold);
+    margin: 0 0 0.5rem 0;
+  }
+
+  .box-desc {
+    font-size: 0.82rem;
+    color: #a0b6d0;
+    line-height: 1.45;
+    margin-bottom: 1rem;
+  }
+
+  .add-collab-box {
+    padding: 1.25rem;
+    background: #080d1a;
+  }
+
+  .form-inputs-row {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .form-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+
+  .form-field label {
+    font-family: var(--font-pixel);
+    font-size: 0.62rem;
+    color: var(--ps1-cyan);
+  }
+
+  .collab-table-wrap {
+    overflow-x: auto;
+  }
+
+  .collab-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+  }
+
+  .collab-table th {
+    background: #0e1526;
+    color: var(--ps1-gold);
+    text-align: left;
+    padding: 0.6rem 0.75rem;
+    font-family: var(--font-pixel);
+    font-size: 0.65rem;
+    border-bottom: 2px solid var(--ps1-steel);
+  }
+
+  .collab-table td {
+    padding: 0.65rem 0.75rem;
+    border-bottom: 1px solid #142036;
+    color: #c0d0e0;
+  }
+
+  .role-pill {
+    font-family: var(--font-pixel);
+    font-size: 0.58rem;
+    padding: 0.15rem 0.45rem;
+    border: 1px solid;
+  }
+
+  .role-owner {
+    color: var(--ps1-gold);
+    border-color: var(--ps1-gold);
+    background: rgba(255, 176, 0, 0.1);
+  }
+
+  .role-admin {
+    color: var(--ps1-cyan);
+    border-color: var(--ps1-cyan);
+    background: rgba(0, 240, 255, 0.1);
+  }
+
+  .role-collaborator {
+    color: var(--ps1-green);
+    border-color: var(--ps1-green);
+    background: rgba(57, 255, 20, 0.1);
+  }
+
+  .sql-code-box {
+    background: #050810;
+    border: 1px inset var(--ps1-steel);
+    padding: 1.25rem;
+    color: #9cb6d8;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    line-height: 1.45;
+    overflow-x: auto;
+  }
+
+  .status-msg {
+    margin-top: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+  }
+
+  .status-msg.success {
+    background: rgba(57, 255, 20, 0.12);
+    border: 1px solid var(--ps1-green);
+    color: var(--ps1-green);
+  }
+
+  .status-msg.error {
+    background: rgba(255, 56, 46, 0.12);
+    border: 1px solid var(--ps1-red);
+    color: #ff7770;
+  }
+</style>

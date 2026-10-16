@@ -543,11 +543,61 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     </div>
     <div class="modal-body" style="padding: 1.25rem;">
       <h3 style="color: var(--ps1-gold); font-family: var(--font-pixel); font-size: 0.95rem; margin-bottom: 0.4rem;">
-        PUBLICAR EN FrancisCuarto/MODELCODER
+        PUBLICACIÓN & APORTE DE MODELOS
       </h3>
       <p style="font-size: 0.82rem; color: #b0c0d4; margin-bottom: 1.25rem; line-height: 1.5;">
-        Tu modelo puede incorporarse al catálogo oficial abierto para que todos puedan usarlo en sus juegos:
+        Elige el método de publicación para tu modelo 3D:
       </p>
+
+      <!-- SECCIÓN EXCLUSIVA: SUBIDA DIRECTA PARA COLABORADORES -->
+      <div id="collab-direct-publish-card" class="ps1-inset" style="padding: 1rem; margin-bottom: 1.25rem; background: #07101e; border-left: 4px solid var(--ps1-gold);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.4rem;">
+          <span style="font-family: var(--font-pixel); font-size: 0.82rem; color: var(--ps1-gold); display: flex; align-items: center; gap: 0.4rem;">
+            👑 SUBIDA DIRECTA AL CATÁLOGO (SIN GITHUB)
+          </span>
+          <span id="collab-badge-indicator" class="ps1-telemetry-tag" style="color: var(--ps1-gold);">COLABORADOR VERIFICADO</span>
+        </div>
+        <p style="font-size: 0.78rem; color: #c0d0e0; margin-bottom: 0.85rem; line-height: 1.45;">
+          Como colaborador o creador autorizado, puedes subir este modelo directamente a la nube. Quedará disponible de inmediato en la web sin requerir aprobación ni Pull Requests.
+        </p>
+
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 0.75rem; margin-bottom: 0.75rem;">
+          <div>
+            <label style="font-family: var(--font-pixel); font-size: 0.6rem; color: var(--ps1-cyan); display: block; margin-bottom: 0.2rem;">NOMBRE DEL MODELO:</label>
+            <input type="text" id="direct-upload-name" class="ps1-input" style="width: 100%; font-size: 0.8rem; padding: 0.4rem 0.5rem;" />
+          </div>
+          <div>
+            <label style="font-family: var(--font-pixel); font-size: 0.6rem; color: var(--ps1-cyan); display: block; margin-bottom: 0.2rem;">VISIBILIDAD:</label>
+            <select id="direct-upload-vis" class="ps1-input" style="width: 100%; font-size: 0.8rem; padding: 0.4rem 0.5rem;">
+              <option value="public">Público (En Catálogo)</option>
+              <option value="private">Privado (Solo Equipo)</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label style="font-family: var(--font-pixel); font-size: 0.6rem; color: var(--ps1-cyan); display: block; margin-bottom: 0.2rem;">CATEGORÍA:</label>
+          <select id="direct-upload-cat" class="ps1-input" style="width: 100%; font-size: 0.8rem; padding: 0.4rem 0.5rem; margin-bottom: 0.75rem;">
+            <option value="furniture">Mobiliario (furniture)</option>
+            <option value="fixtures">Luces & Dispositivos (fixtures)</option>
+            <option value="infrastructure">Infraestructura (infrastructure)</option>
+            <option value="medical">Médico & Laboratorio (medical)</option>
+            <option value="architecture">Arquitectura (architecture)</option>
+          </select>
+        </div>
+
+        <button id="btn-submit-direct-publish" type="button" class="btn btn-gold" style="width: 100%; font-size: 0.85rem; padding: 0.65rem;">
+          ⚡ SUBIR AL CATÁLOGO DIRECTO AHORA
+        </button>
+        <div id="direct-upload-status" class="status-msg hidden" style="margin-top: 0.6rem; font-size: 0.78rem;"></div>
+      </div>
+
+      <!-- AVISO PARA QUIENES NO HAN INICIADO SESIÓN -->
+      <div id="collab-unauth-notice" class="ps1-inset" style="padding: 0.75rem 1rem; margin-bottom: 1rem; background: #080d18; border-left: 3px solid var(--ps1-steel); display: none;">
+        <span style="font-size: 0.76rem; color: #a0b6d0; line-height: 1.45; display: block;">
+          💡 <strong>¿Eres colaborador oficial o el creador?</strong> <a href="/colaboradores" style="color: var(--ps1-gold); text-decoration: underline;">Inicia sesión aquí</a> para desbloquear la subida directa sin pasar por GitHub.
+        </span>
+      </div>
 
       <div class="ps1-inset" style="padding: 1rem; margin-bottom: 1rem; background: #080e1c; border-left: 3px solid var(--ps1-green);">
         <span style="font-family: var(--font-pixel); font-size: 0.8rem; color: var(--ps1-green); display: block; margin-bottom: 0.35rem;">
@@ -585,6 +635,7 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
   import { GLBExporterService } from '../lib/studio/glb-exporter';
   import { StudioViewport } from '../lib/studio/three-viewport';
   import { TextureLibrary } from '../lib/studio/texture-library';
+  import { getCurrentUser, checkUserRole, publishCommunityModel } from '../lib/supabase';
   import type { ModelSpec, ComponentDef, GeometricStats, GenerationResult, ShadingMode, ShapePrimitive, TransformGizmoMode, CameraViewPreset } from '../lib/studio/types';
 
   // State Management
@@ -594,6 +645,7 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
   let selectedComponentIndex: number | null = 0;
   let isUniformScaleLocked = true;
   let isGridSnapEnabled = false;
+  let lastGeometricStats: GeometricStats | null = null;
 
   // History Stack (Undo / Redo)
   const historyStack: ModelSpec[] = [];
@@ -753,6 +805,7 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
 
   function handleViewportStatsUpdate(stats: GeometricStats | null, result: GenerationResult | null) {
     if (stats) {
+      lastGeometricStats = stats;
       if (hudTris) hudTris.textContent = `${stats.triangles.toLocaleString()} tris`;
       if (hudVerts) hudVerts.textContent = `${stats.vertices.toLocaleString()} verts`;
       if (hudDims) hudDims.textContent = `X: ${stats.dimensions.x}m | Y: ${stats.dimensions.y}m | Z: ${stats.dimensions.z}m`;
@@ -2374,9 +2427,108 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     });
   });
 
-  githubPrBtn?.addEventListener('click', () => {
+  githubPrBtn?.addEventListener('click', async () => {
+    try {
+      const user = await getCurrentUser();
+      const roleInfo = await checkUserRole(user?.email);
+      const collabCard = document.getElementById('collab-direct-publish-card');
+      const collabNotice = document.getElementById('collab-unauth-notice');
+      const directUploadName = document.getElementById('direct-upload-name') as HTMLInputElement;
+      const directUploadCat = document.getElementById('direct-upload-cat') as HTMLSelectElement;
+
+      if (roleInfo.isCollaborator) {
+        if (collabCard) collabCard.style.display = 'block';
+        if (collabNotice) collabNotice.style.display = 'none';
+        if (directUploadName) directUploadName.value = currentSpec.name;
+        if (directUploadCat) directUploadCat.value = currentSpec.category || 'furniture';
+      } else {
+        if (collabCard) collabCard.style.display = 'none';
+        if (collabNotice) collabNotice.style.display = 'block';
+      }
+    } catch (e) {
+      console.warn('[ModelCoder] Error checking collaborator permissions:', e);
+    }
     if (githubModal) githubModal.showModal();
   });
+
+  const btnSubmitDirect = document.getElementById('btn-submit-direct-publish') as HTMLButtonElement;
+  const directUploadStatus = document.getElementById('direct-upload-status');
+  const directUploadName = document.getElementById('direct-upload-name') as HTMLInputElement;
+  const directUploadVis = document.getElementById('direct-upload-vis') as HTMLSelectElement;
+  const directUploadCat = document.getElementById('direct-upload-cat') as HTMLSelectElement;
+
+  btnSubmitDirect?.addEventListener('click', async () => {
+    const modelName = directUploadName?.value.trim() || currentSpec.name;
+    const modelVis = directUploadVis?.value || 'public';
+    const modelCat = directUploadCat?.value || currentSpec.category || 'furniture';
+
+    if (!modelName) {
+      alert('Por favor ingresa un nombre para el modelo.');
+      return;
+    }
+
+    if (directUploadStatus) {
+      directUploadStatus.classList.remove('hidden');
+      directUploadStatus.style.display = 'block';
+      directUploadStatus.style.color = 'var(--ps1-gold)';
+      directUploadStatus.innerHTML = '⏳ <strong>Generando binario GLB y empaquetando texturas...</strong>';
+    }
+    btnSubmitDirect.disabled = true;
+
+    try {
+      const glbBuffer = await GLBExporterService.exportSpec(currentSpec);
+      const blob = new Blob([glbBuffer], { type: 'model/gltf-binary' });
+      const reader = new FileReader();
+
+      reader.onloadend = async () => {
+        try {
+          const glbDataUrl = reader.result as string;
+          const user = await getCurrentUser();
+          const authorEmail = user?.email || 'colaborador@modelcoder.internal';
+          const authorName = (user?.user_metadata as any)?.user_name || user?.email?.split('@')[0] || 'Colaborador';
+
+          const res = await publishCommunityModel({
+            name: modelName,
+            category: modelCat,
+            description: currentSpec.description || `Modelo procedural ${modelName}`,
+            spec: currentSpec,
+            tri_count: lastGeometricStats?.triangles || 350,
+            author_name: authorName,
+            author_email: authorEmail,
+            is_public: modelVis === 'public',
+            glb_data: glbDataUrl
+          });
+
+          btnSubmitDirect.disabled = false;
+          if (res.success) {
+            if (directUploadStatus) {
+              directUploadStatus.style.color = 'var(--ps1-green)';
+              directUploadStatus.innerHTML = `✅ <strong>¡Publicado con éxito!</strong> El modelo ya está en la nube.<br><a href="/colaboradores" style="color:var(--ps1-gold);text-decoration:underline;display:inline-block;margin-top:6px;">Ver en Portal de Colaboradores &rarr;</a>`;
+            }
+          } else {
+            if (directUploadStatus) {
+              directUploadStatus.style.color = '#ff4444';
+              directUploadStatus.textContent = `❌ Error al subir: ${res.error || 'Error desconocido'}`;
+            }
+          }
+        } catch (innerErr: any) {
+          btnSubmitDirect.disabled = false;
+          if (directUploadStatus) {
+            directUploadStatus.style.color = '#ff4444';
+            directUploadStatus.textContent = `❌ Error: ${innerErr.message || innerErr}`;
+          }
+        }
+      };
+      reader.readAsDataURL(blob);
+    } catch (err: any) {
+      btnSubmitDirect.disabled = false;
+      if (directUploadStatus) {
+        directUploadStatus.style.color = '#ff4444';
+        directUploadStatus.textContent = `❌ Falló la exportación GLB: ${err.message || err}`;
+      }
+    }
+  });
+
   closeModalBtn?.addEventListener('click', () => {
     if (githubModal) githubModal.close();
   });
@@ -2400,6 +2552,20 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
   btnCloseError?.addEventListener('click', () => {
     if (errorBanner) errorBanner.style.display = 'none';
   });
+
+  // Check if a model was sent to Studio to edit (from Collaborators or Home)
+  const savedSpecStr = typeof window !== 'undefined' ? localStorage.getItem('modelcoder_spec') : null;
+  if (savedSpecStr) {
+    try {
+      const loadedSpec = JSON.parse(savedSpecStr);
+      if (loadedSpec && Array.isArray(loadedSpec.components)) {
+        currentSpec = loadedSpec;
+      }
+    } catch (err) {
+      console.warn('[ModelCoder] Could not parse stored spec:', err);
+    }
+    localStorage.removeItem('modelcoder_spec');
+  }
 
   // Initial Load
   pushHistoryState(currentSpec);
