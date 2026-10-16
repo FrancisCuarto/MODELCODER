@@ -12,6 +12,31 @@ export type ShapePrimitive =
   | 'capsule' 
   | 'wedge';
 
+export type TexturePreset = 
+  | 'worn_metal'
+  | 'metal_dark_grime'
+  | 'metal_light_brushed'
+  | 'painted_metal_white'
+  | 'beige_plastic_worn'
+  | 'rubber_black'
+  | 'rust_heavy'
+  | 'hazard_stripes'
+  | 'vent_grill'
+  | 'crt_screen_green'
+  | 'crt_screen_amber'
+  | 'crt_screen_off'
+  | 'caution_label'
+  | 'red_paint_worn';
+
+export type MaterialCategoryType =
+  | 'painted_metal'
+  | 'steel'
+  | 'plastic'
+  | 'glass'
+  | 'screen'
+  | 'rubber'
+  | 'ceramic';
+
 export interface ComponentDef {
   name: string;
   shape: ShapePrimitive;
@@ -24,6 +49,7 @@ export interface ComponentDef {
    * - cone: [radius, height, segments]
    * - torus: [radius, tube, radialSegments, tubularSegments]
    * - capsule: [radius, length, capSegments, radialSegments]
+   * - wedge: [width, height, depth]
    */
   size?: number[];
   position?: [number, number, number];
@@ -35,6 +61,13 @@ export interface ComponentDef {
   wireframe?: boolean;
   label?: string; // Text string for decal / stencil plate
   labelColor?: string;
+
+  // Authentic PS1 Material & Texture Preset Extension (optional, backward-compatible)
+  texturePreset?: TexturePreset | string;
+  materialType?: MaterialCategoryType | string;
+  emissive?: string; // Hex color for CRT glows, LED lights or status lamps
+  emissiveIntensity?: number;
+  uvScale?: [number, number]; // [scaleU, scaleV] frequency modifier to prevent stretching
 }
 
 export interface ModelSpec {

@@ -80,6 +80,7 @@ export class AIGenerator {
 CRITICAL DIRECTIVE: You must invent a completely ORIGINAL, UNIQUE, and UNCONVENTIONAL 3D procedural composition for this request.
 Do NOT reuse standard repetitive box templates or previously seen presets.
 Design fresh component proportions, creative shapes (using combinations of box, cylinder, sphere, wedge, cone, torus, capsule), intricate details, and authentic retro vertex colors (casing, metal, metal_light, hazard, accent, screen, glass, red, blue, green, dark, rust, gold).
+Assign realistic texturePreset values where appropriate: "worn_metal" (chassis/hull), "rubber_black" (wheels/tires/feet), "crt_screen_green" or "crt_screen_amber" (monitors/displays), "hazard_stripes" (bumpers/warning zones), "vent_grill" (radiators/air intakes), "metal_light_brushed" (chrome/pipes/rims), "painted_metal_white" (body panels), "caution_label" (warning badges).
 Keep triangle budgets low (100 to 500 tris). All coordinates (position, size) must be real numbers in meters.
 Return ONLY valid JSON matching this schema:
 {
@@ -98,6 +99,7 @@ Return ONLY valid JSON matching this schema:
       "position": [<x>, <y>, <z>],
       "rotation": [<deg_x>, <deg_y>, <deg_z>],
       "color": "<hex_or_palette_name>",
+      "texturePreset": "worn_metal" | "metal_light_brushed" | "painted_metal_white" | "beige_plastic_worn" | "rubber_black" | "rust_heavy" | "hazard_stripes" | "vent_grill" | "crt_screen_green" | "crt_screen_amber" | "caution_label" | "red_paint_worn",
       "roughness": 0.7,
       "metalness": 0.2
     }
@@ -217,6 +219,7 @@ Return ONLY valid JSON matching this schema:
             size: [cw, ch, cd],
             position: [0, wheelR * 0.65 + ch * 0.5, 0],
             color: mainColor,
+            texturePreset: 'worn_metal',
             roughness: 0.6,
             metalness: 0.3
           },
@@ -227,6 +230,7 @@ Return ONLY valid JSON matching this schema:
             size: [cw * 0.85, cabinH, cd * 0.52],
             position: [0, wheelR * 0.65 + ch + cabinH * 0.5, -cd * 0.05],
             color: '#2d3748',
+            texturePreset: 'painted_metal_white',
             roughness: 0.5,
             metalness: 0.4
           },
@@ -258,6 +262,7 @@ Return ONLY valid JSON matching this schema:
             position: [-axleX, wheelR, axleZ],
             rotation: [0, 0, 90],
             color: '#1a202c',
+            texturePreset: 'rubber_black',
             roughness: 0.9
           },
           {
@@ -267,6 +272,7 @@ Return ONLY valid JSON matching this schema:
             position: [axleX, wheelR, axleZ],
             rotation: [0, 0, 90],
             color: '#1a202c',
+            texturePreset: 'rubber_black',
             roughness: 0.9
           },
           {
@@ -276,6 +282,7 @@ Return ONLY valid JSON matching this schema:
             position: [-axleX, wheelR, -axleZ],
             rotation: [0, 0, 90],
             color: '#1a202c',
+            texturePreset: 'rubber_black',
             roughness: 0.9
           },
           {
@@ -285,6 +292,7 @@ Return ONLY valid JSON matching this schema:
             position: [axleX, wheelR, -axleZ],
             rotation: [0, 0, 90],
             color: '#1a202c',
+            texturePreset: 'rubber_black',
             roughness: 0.9
           },
           // 4 Metallic Rims
@@ -295,6 +303,7 @@ Return ONLY valid JSON matching this schema:
             position: [-axleX - 0.01, wheelR, axleZ],
             rotation: [0, 0, 90],
             color: '#cbd5e0',
+            texturePreset: 'metal_light_brushed',
             metalness: 0.8
           },
           {
@@ -304,6 +313,7 @@ Return ONLY valid JSON matching this schema:
             position: [axleX + 0.01, wheelR, axleZ],
             rotation: [0, 0, 90],
             color: '#cbd5e0',
+            texturePreset: 'metal_light_brushed',
             metalness: 0.8
           },
           {
@@ -313,6 +323,7 @@ Return ONLY valid JSON matching this schema:
             position: [-axleX - 0.01, wheelR, -axleZ],
             rotation: [0, 0, 90],
             color: '#cbd5e0',
+            texturePreset: 'metal_light_brushed',
             metalness: 0.8
           },
           {
@@ -322,6 +333,7 @@ Return ONLY valid JSON matching this schema:
             position: [axleX + 0.01, wheelR, -axleZ],
             rotation: [0, 0, 90],
             color: '#cbd5e0',
+            texturePreset: 'metal_light_brushed',
             metalness: 0.8
           },
           // Front Headlights
@@ -1520,6 +1532,7 @@ Return ONLY valid JSON matching this schema:
             size: [w, h, thick],
             position: [0, h * 0.5, 0],
             color: mainColor === '#4a5568' ? '#ffffff' : mainColor,
+            texturePreset: 'painted_metal_white',
             roughness: 0.8,
             metalness: 0.1
           },
@@ -1537,6 +1550,7 @@ Return ONLY valid JSON matching this schema:
             size: [w * 0.28, h * 0.16, thick * 1.15],
             position: [-w * 0.22, h * 0.52, thick * 0.2],
             color: '#ecc94b',
+            texturePreset: 'metal_light_brushed',
             roughness: 0.3,
             metalness: 0.8
           },
@@ -1554,6 +1568,7 @@ Return ONLY valid JSON matching this schema:
             size: [w * 0.98, h * 0.18, thick * 1.05],
             position: [0, h * 0.70, -thick * 0.1],
             color: '#1a202c',
+            texturePreset: 'rubber_black',
             roughness: 0.9,
             metalness: 0.3
           },
@@ -1590,6 +1605,7 @@ Return ONLY valid JSON matching this schema:
             size: [cw, ch * 0.65, cd * 0.85],
             position: [0, ch * 0.325, 0],
             color: mainColor,
+            texturePreset: 'worn_metal',
             roughness: 0.75,
             metalness: 0.3
           },
@@ -1600,6 +1616,7 @@ Return ONLY valid JSON matching this schema:
             position: [0, ch * 0.68, cd * 0.25],
             rotation: [-15, 0, 0],
             color: '#1a202c',
+            texturePreset: 'rubber_black',
             roughness: 0.85
           },
           {
@@ -1608,6 +1625,7 @@ Return ONLY valid JSON matching this schema:
             size: [cw * 0.85, ch * 0.35, cd * 0.45],
             position: [0, ch * 0.85, -cd * 0.15],
             color: '#2d3748',
+            texturePreset: 'beige_plastic_worn',
             roughness: 0.7
           },
           {
@@ -1616,6 +1634,7 @@ Return ONLY valid JSON matching this schema:
             size: [cw * 0.70, ch * 0.26, 0.02],
             position: [0, ch * 0.85, cd * 0.08],
             color: '#319795',
+            texturePreset: 'crt_screen_green',
             roughness: 0.2,
             metalness: 0.1
           }

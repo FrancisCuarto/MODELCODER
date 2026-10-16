@@ -369,11 +369,13 @@ import catalog from '../data/catalog.json';
         </section>
 
         <section id="doc-materials" class="doc-section">
-          <h3>5. Materiales, Colores de Vértice y Luces</h3>
-          <p>El estudio utiliza <strong>Flat Shading</strong> con paletas de colores por vértice (Vertex Colors), fiel a la estética PlayStation 1:</p>
+          <h3>5. Sistema Unificado de Materiales y Texturas Procedurales PS1</h3>
+          <p>ModelCoder cuenta con un sistema compartido de texturas procedurales calibradas al catálogo de Below Nominal y a la estética retro PS1 (Nearest Filter, patrones pixel-art y flat shading):</p>
           <ul>
-            <li>No requiere mapas de texturas pesados; los colores se asignan a nivel de vértice.</li>
-            <li>El visor incluye modos para inspeccionar el sombreado estándar, la estructura de alambre (Wireframe), las normales y los colores planos sin iluminación.</li>
+            <li><strong>Presets Industriales:</strong> <code>worn_metal</code>, <code>metal_light_brushed</code>, <code>painted_metal_white</code>, <code>beige_plastic_worn</code>, <code>rubber_black</code>, <code>rust_heavy</code>, <code>hazard_stripes</code>, <code>vent_grill</code>, <code>crt_screen_green</code>, <code>crt_screen_amber</code>, <code>caution_label</code> y <code>red_paint_worn</code>.</li>
+            <li><strong>Mapeo UV Anti-Estiramiento:</strong> El motor calibra dinámicamente las coordenadas UV en metros reales sobre cajas, cilindros y cuñas para que los chevrons, rejillas y metal cepillado no se deformen en piezas alargadas.</li>
+            <li><strong>Exportación GLB Completa:</strong> Todas las texturas y materiales se empaquetan de forma embebida en el archivo <code>.glb</code> binario listo para Godot 4, Blender y Unity.</li>
+            <li><strong>Compatibilidad Retroactiva:</strong> Cualquier componente antiguo que sólo defina <code>color</code> continuará funcionando con colores de vértice puros.</li>
           </ul>
         </section>
 
@@ -493,8 +495,9 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
         size: [1.0, 0.85, 1.0],
         position: [0, 0.425, 0],
         color: '#4a5568',
-        roughness: 0.7,
-        metalness: 0.3
+        texturePreset: 'worn_metal',
+        roughness: 0.68,
+        metalness: 0.35
       },
       {
         name: 'reinforced_band',
@@ -502,15 +505,19 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
         size: [1.04, 0.12, 1.04],
         position: [0, 0.425, 0],
         color: '#2d3748',
-        roughness: 0.8
+        texturePreset: 'metal_dark_grime',
+        roughness: 0.70,
+        metalness: 0.38
       },
       {
         name: 'hazard_stripe',
         shape: 'box',
         size: [0.96, 0.08, 1.02],
         position: [0, 0.65, 0],
-        color: '#d69e2e',
-        roughness: 0.5
+        color: '#ffffff',
+        texturePreset: 'hazard_stripes',
+        roughness: 0.70,
+        metalness: 0.05
       },
       {
         name: 'id_stencil',
@@ -518,6 +525,7 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
         size: [0.4, 0.12, 0.02],
         position: [0, 0.425, 0.51],
         color: '#edf2f7',
+        texturePreset: 'caution_label',
         label: 'CARGO-77'
       }
     ]
@@ -868,6 +876,24 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
             <label>Color:</label>
             <input type="color" class="color-picker-input" data-idx="${idx}" value="${comp.color?.startsWith('#') ? comp.color : '#4a5568'}" />
           </div>
+          <div class="comp-field-row" style="margin-top: 0.4rem;">
+            <label>Textura PS1:</label>
+            <select class="comp-texture-select form-input" data-idx="${idx}" style="font-size: 0.72rem; padding: 0.2rem 0.4rem; flex: 1;">
+              <option value="" ${!comp.texturePreset ? 'selected' : ''}>[Sin textura - Color plano]</option>
+              <option value="worn_metal" ${comp.texturePreset === 'worn_metal' ? 'selected' : ''}>🔩 Metal Desgastado (worn_metal)</option>
+              <option value="metal_light_brushed" ${comp.texturePreset === 'metal_light_brushed' ? 'selected' : ''}>✨ Metal Cepillado (metal_light_brushed)</option>
+              <option value="painted_metal_white" ${comp.texturePreset === 'painted_metal_white' ? 'selected' : ''}>⚪ Esmalte Blanco (painted_metal_white)</option>
+              <option value="beige_plastic_worn" ${comp.texturePreset === 'beige_plastic_worn' ? 'selected' : ''}>📟 Plástico Beige Retro (beige_plastic_worn)</option>
+              <option value="rubber_black" ${comp.texturePreset === 'rubber_black' ? 'selected' : ''}>⚫ Goma Negra (rubber_black)</option>
+              <option value="rust_heavy" ${comp.texturePreset === 'rust_heavy' ? 'selected' : ''}>🟤 Óxido Pesado (rust_heavy)</option>
+              <option value="hazard_stripes" ${comp.texturePreset === 'hazard_stripes' ? 'selected' : ''}>⚠️ Rayas de Peligro (hazard_stripes)</option>
+              <option value="vent_grill" ${comp.texturePreset === 'vent_grill' ? 'selected' : ''}>▦ Rejilla Ventilación (vent_grill)</option>
+              <option value="crt_screen_green" ${comp.texturePreset === 'crt_screen_green' ? 'selected' : ''}>🟢 Monitor CRT Verde (crt_screen_green)</option>
+              <option value="crt_screen_amber" ${comp.texturePreset === 'crt_screen_amber' ? 'selected' : ''}>🟠 Monitor CRT Ámbar (crt_screen_amber)</option>
+              <option value="caution_label" ${comp.texturePreset === 'caution_label' ? 'selected' : ''}>🏷️ Etiqueta Precaución (caution_label)</option>
+              <option value="red_paint_worn" ${comp.texturePreset === 'red_paint_worn' ? 'selected' : ''}>🔴 Pintura Roja (red_paint_worn)</option>
+            </select>
+          </div>
         </div>
       `;
 
@@ -910,6 +936,19 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
         const input = e.target as HTMLInputElement;
         const idx = parseInt(input.dataset.idx || '0', 10);
         currentSpec.components[idx].color = input.value;
+        renderCurrentSpec('visual');
+      });
+    });
+
+    visualComponentsList.querySelectorAll('.comp-texture-select').forEach((el) => {
+      el.addEventListener('change', (e) => {
+        const select = e.target as HTMLSelectElement;
+        const idx = parseInt(select.dataset.idx || '0', 10);
+        if (select.value) {
+          currentSpec.components[idx].texturePreset = select.value;
+        } else {
+          delete currentSpec.components[idx].texturePreset;
+        }
         renderCurrentSpec('visual');
       });
     });

@@ -2,7 +2,45 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 
-// Node.js test environment polyfill for THREE.GLTFExporter
+// Node.js test environment polyfills for THREE.GLTFExporter & ImageData
+if (typeof (globalThis as any).self === 'undefined') {
+  (globalThis as any).self = globalThis;
+}
+if (typeof (globalThis as any).ImageData === 'undefined') {
+  (globalThis as any).ImageData = class NodeImageData {
+    data: Uint8ClampedArray;
+    width: number;
+    height: number;
+    constructor(data: any, width: number, height: number) {
+      this.data = data;
+      this.width = width;
+      this.height = height;
+    }
+  };
+}
+if (typeof (globalThis as any).document === 'undefined') {
+  (globalThis as any).document = {
+    createElement: (tag: string) => {
+      if (tag === 'canvas') {
+        return {
+          width: 0,
+          height: 0,
+          getContext: () => ({
+            translate: () => {},
+            scale: () => {},
+            putImageData: () => {},
+            drawImage: () => {}
+          }),
+          toBlob: (cb: any, type: string) => {
+            const png1x1 = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'base64');
+            cb(new Blob([png1x1], { type: type || 'image/png' }));
+          }
+        };
+      }
+      return {};
+    }
+  };
+}
 if (typeof globalThis.FileReader === 'undefined') {
   class NodeFileReader {
     onload: any = null;
@@ -50,6 +88,7 @@ import { CodeSandbox } from '../src/lib/studio/code-sandbox.ts';
 import { AIGenerator } from '../src/lib/studio/ai-generator.ts';
 import { GLBExporterService } from '../src/lib/studio/glb-exporter.ts';
 import { ProceduralMemory } from '../src/lib/studio/procedural-memory.ts';
+import { TextureLibrary } from '../src/lib/studio/texture-library.ts';
 
 test('Criterion 1 & 2: Solicitar un cubo y luego una esfera genera geometrías distintas y dimensiones reales', () => {
   // 1. Generate cube
@@ -278,6 +317,281 @@ test('Engine Selector: modo "local" funciona de forma autónoma sin clave y con 
   assert.equal(resFresh.source, 'local');
 
   ProceduralMemory.clearLocalMemory();
+});
+
+test('Material System Test 1: Un componente antiguo que solo tenga color sigue funcionando (compatibilidad retroactiva)', () => {
+  const legacySpec = {
+    id: 'test.legacy.box',
+    name: 'Caja Antigua',
+    category: 'furniture',
+    description: 'Componente legado sin preset de textura',
+    units: 'meters' as const,
+    dimensions: { width: 1.0, depth: 1.0, height: 1.0 },
+    palette: 'standard',
+    components: [
+      {
+        name: 'legacy_cube',
+        shape: 'box' as const,
+        size: [1.0, 1.0, 1.0],
+        position: [0, 0.5, 0] as [number, number, number],
+        color: '#e53e3e' // Red hex only
+      }
+    ]
+  };
+
+  const { group, stats } = ProceduralEngine.buildModelFromSpec(legacySpec);
+  assert.equal(stats.triangles, 12);
+  assert.equal(group.children.length, 1);
+
+  const mesh = group.children[0] as THREE.Mesh;
+  const mat = mesh.material as THREE.MeshStandardMaterial;
+  assert.equal(mat.vertexColors, true, 'Legacy component must use vertex colors');
+  assert.equal(mat.map, null, 'Legacy component without texturePreset must not have a texture map');
+  assert.ok(mat.color.r > 0.7, 'Material color should be reddish');
+
+  ProceduralEngine.disposeHierarchy(group);
+});
+
+test('Material System Test 2: Un componente con texturePreset: "worn_industrial" muestra una textura real y no un color plano', () => {
+  const spec = {
+    id: 'test.textured.worn',
+    name: 'Panel Industrial',
+    category: 'infrastructure',
+    description: 'Componente con preset alias worn_industrial',
+    units: 'meters' as const,
+    dimensions: { width: 1.0, depth: 1.0, height: 1.0 },
+    palette: 'industrial_hazard',
+    components: [
+      {
+        name: 'industrial_chassis',
+        shape: 'box' as const,
+        size: [1.0, 1.0, 1.0],
+        texturePreset: 'worn_industrial' // Alias for metal_dark_grime
+      }
+    ]
+  };
+
+  const { group } = ProceduralEngine.buildModelFromSpec(spec);
+  const mesh = group.children[0] as THREE.Mesh;
+  const mat = mesh.material as THREE.MeshStandardMaterial;
+
+  assert.ok(mat.map !== null, 'Textured component must have an active material.map');
+  assert.ok(mat.map instanceof THREE.DataTexture, 'Texture map must be a THREE.DataTexture');
+  assert.equal(mat.map.magFilter, THREE.NearestFilter, 'Texture must use NearestFilter for authentic PS1 look');
+  assert.equal(mat.map.minFilter, THREE.NearestFilter, 'Texture must use NearestFilter on minFilter');
+  assert.equal(mat.map.wrapS, THREE.RepeatWrapping, 'Texture must support RepeatWrapping');
+  assert.equal(mat.roughness, 0.70, 'Roughness should match metal_dark_grime profile default');
+  assert.equal(mat.metalness, 0.38, 'Metalness should match metal_dark_grime profile default');
+
+  ProceduralEngine.disposeHierarchy(group);
+});
+
+test('Material System Test 3: Un modelo compuesto por metal, goma y pantalla muestra tres tratamientos visuales distintos', () => {
+  const multiSpec = {
+    id: 'test.multi.materials',
+    name: 'Dispositivo Multi-Material',
+    category: 'command',
+    description: 'Objeto con tres materiales texturizados distintos',
+    units: 'meters' as const,
+    dimensions: { width: 1.0, depth: 1.0, height: 1.0 },
+    palette: 'industrial_hazard',
+    components: [
+      {
+        name: 'metal_frame',
+        shape: 'box' as const,
+        size: [1.0, 0.4, 0.8],
+        texturePreset: 'worn_metal'
+      },
+      {
+        name: 'rubber_feet',
+        shape: 'cylinder' as const,
+        size: [0.1, 0.1, 0.15, 8],
+        position: [0, -0.2, 0] as [number, number, number],
+        texturePreset: 'rubber_black'
+      },
+      {
+        name: 'radar_display',
+        shape: 'box' as const,
+        size: [0.6, 0.3, 0.02],
+        position: [0, 0.3, 0.4] as [number, number, number],
+        texturePreset: 'crt_screen_green'
+      }
+    ]
+  };
+
+  const { group, stats } = ProceduralEngine.buildModelFromSpec(multiSpec);
+  assert.equal(group.children.length, 3);
+  assert.ok(stats.triangles > 20);
+
+  const metalMesh = group.children[0] as THREE.Mesh;
+  const rubberMesh = group.children[1] as THREE.Mesh;
+  const screenMesh = group.children[2] as THREE.Mesh;
+
+  const metalMat = metalMesh.material as THREE.MeshStandardMaterial;
+  const rubberMat = rubberMesh.material as THREE.MeshStandardMaterial;
+  const screenMat = screenMesh.material as THREE.MeshStandardMaterial;
+
+  // 1. All 3 have active textures
+  assert.ok(metalMat.map !== null, 'Metal must have texture');
+  assert.ok(rubberMat.map !== null, 'Rubber must have texture');
+  assert.ok(screenMat.map !== null, 'Screen must have texture');
+
+  // 2. All 3 textures are distinct
+  assert.notEqual(metalMat.map, rubberMat.map, 'Metal and rubber must have distinct textures');
+  assert.notEqual(metalMat.map, screenMat.map, 'Metal and screen must have distinct textures');
+  assert.notEqual(rubberMat.map, screenMat.map, 'Rubber and screen must have distinct textures');
+
+  // 3. Different surface physics
+  assert.ok(metalMat.metalness > rubberMat.metalness, 'Metal must have higher metalness than rubber');
+  assert.ok(rubberMat.roughness > screenMat.roughness, 'Rubber must be rougher than glass screen');
+  assert.ok(screenMat.emissive && screenMat.emissiveIntensity > 0, 'Screen must have emissive glow enabled');
+
+  ProceduralEngine.disposeHierarchy(group);
+});
+
+test('Material System Test 4: Mapeo UV anti-estiramiento en cajas y cuñas', () => {
+  // Elongated rectangular pillar: 0.2m x 2.0m x 0.2m
+  const pillarSpec = {
+    id: 'test.uv.pillar',
+    name: 'Columna Alargada',
+    category: 'infrastructure',
+    description: 'Pilar con rayas de peligro sin estiramiento',
+    units: 'meters' as const,
+    dimensions: { width: 0.2, depth: 0.2, height: 2.0 },
+    palette: 'industrial_hazard',
+    components: [
+      {
+        name: 'hazard_pillar',
+        shape: 'box' as const,
+        size: [0.2, 2.0, 0.2],
+        texturePreset: 'hazard_stripes'
+      },
+      {
+        name: 'wedge_ramp',
+        shape: 'wedge' as const,
+        size: [0.5, 0.3, 0.4],
+        texturePreset: 'worn_metal'
+      }
+    ]
+  };
+
+  const { group } = ProceduralEngine.buildModelFromSpec(pillarSpec);
+  const pillarMesh = group.children[0] as THREE.Mesh;
+  const boxGeom = pillarMesh.geometry;
+  const uvAttr = boxGeom.getAttribute('uv');
+  assert.ok(uvAttr, 'BoxGeometry must have UV attribute');
+
+  const uvs = uvAttr.array;
+  // Face 4 (+Z Front face): width = 0.2, height = 2.0
+  // v0 is (0, 2.0), v1 is (0.2, 2.0), v2 is (0, 0), v3 is (0.2, 0)
+  const f4_v1_u = uvs[(4 * 4 + 1) * 2];
+  const f4_v1_v = uvs[(4 * 4 + 1) * 2 + 1];
+  assert.ok(Math.abs(f4_v1_u - 0.2) < 0.001, `UV U should be scaled to width (0.2), got ${f4_v1_u}`);
+  assert.ok(Math.abs(f4_v1_v - 2.0) < 0.001, `UV V should be scaled to height (2.0), got ${f4_v1_v}`);
+
+  // Wedge UV verification
+  const wedgeMesh = group.children[1] as THREE.Mesh;
+  const wedgeGeom = wedgeMesh.geometry;
+  const wedgeUvAttr = wedgeGeom.getAttribute('uv');
+  assert.ok(wedgeUvAttr, 'WedgeGeometry must have UV attribute');
+  assert.equal(wedgeUvAttr.count, 24, 'Wedge must have 24 UV coordinate pairs');
+
+  ProceduralEngine.disposeHierarchy(group);
+});
+
+test('Material System Test 5: Exportación e importación GLB conserva los 3 materiales texturizados', async () => {
+  const modelSpec = {
+    id: 'test.glb.multi',
+    name: 'Consola Operativa Multi-Textura',
+    category: 'command',
+    description: 'Consola con metal, goma y pantalla CRT',
+    units: 'meters' as const,
+    dimensions: { width: 1.0, depth: 0.8, height: 1.0 },
+    palette: 'industrial_hazard',
+    components: [
+      {
+        name: 'chassis',
+        shape: 'box' as const,
+        size: [1.0, 0.6, 0.8],
+        texturePreset: 'worn_metal'
+      },
+      {
+        name: 'bumper_rubber',
+        shape: 'cylinder' as const,
+        size: [0.15, 0.15, 0.8, 8],
+        position: [0, -0.2, 0.4] as [number, number, number],
+        texturePreset: 'rubber_black'
+      },
+      {
+        name: 'crt_monitor',
+        shape: 'box' as const,
+        size: [0.5, 0.35, 0.05],
+        position: [0, 0.4, 0.2] as [number, number, number],
+        texturePreset: 'crt_screen_green'
+      }
+    ]
+  };
+
+  const { group } = ProceduralEngine.buildModelFromSpec(modelSpec);
+
+  // 1. Export scene to binary GLB
+  const glbBuffer = await GLBExporterService.exportToArrayBuffer(group);
+  assert.ok(glbBuffer instanceof ArrayBuffer, 'GLB export must return an ArrayBuffer');
+  assert.ok(glbBuffer.byteLength > 1500, `GLB buffer must contain geometry and textures (got ${glbBuffer.byteLength} bytes)`);
+
+  // 2. Validate round-trip test import with GLTFLoader
+  const verification = await GLBExporterService.verifyGLBBuffer(glbBuffer);
+  assert.equal(verification.verified, true, `GLB verification failed: ${verification.error}`);
+  assert.ok(verification.triangleCount > 0, 'Imported GLB must retain triangle count');
+  assert.ok(verification.vertexCount > 0, 'Imported GLB must retain vertex count');
+
+  ProceduralEngine.disposeHierarchy(group);
+});
+
+test('Material System Test 6: disposeHierarchy no destruye las texturas cacheadas en TextureLibrary', () => {
+  const spec = {
+    id: 'test.dispose.leak',
+    name: 'Test Regeneración',
+    category: 'furniture',
+    description: 'Prueba de liberación de memoria segura',
+    units: 'meters' as const,
+    dimensions: { width: 1.0, depth: 1.0, height: 1.0 },
+    palette: 'standard',
+    components: [
+      {
+        name: 'crate',
+        shape: 'box' as const,
+        size: [1, 1, 1],
+        texturePreset: 'hazard_stripes'
+      }
+    ]
+  };
+
+  // 1st generation
+  const { group: group1 } = ProceduralEngine.buildModelFromSpec(spec);
+  const mesh1 = group1.children[0] as THREE.Mesh;
+  const mat1 = mesh1.material as THREE.MeshStandardMaterial;
+  const tex1 = mat1.map!;
+  assert.ok(TextureLibrary.isPresetTexture(tex1), 'Texture should be recognized as library preset');
+
+  // Dispose 1st generation
+  ProceduralEngine.disposeHierarchy(group1);
+
+  // 2nd generation immediately after disposal
+  const { group: group2 } = ProceduralEngine.buildModelFromSpec(spec);
+  const mesh2 = group2.children[0] as THREE.Mesh;
+  const mat2 = mesh2.material as THREE.MeshStandardMaterial;
+  const tex2 = mat2.map!;
+
+  assert.equal(tex1, tex2, 'Texture instance should be safely reused across generations without memory leaks');
+  assert.ok(tex2.image.data !== null, 'Reused texture pixel data must remain valid');
+
+  ProceduralEngine.disposeHierarchy(group2);
+});
+
+// Teardown: ensure Node exits cleanly after tests
+test('Teardown: Exit cleanly', () => {
+  setTimeout(() => process.exit(0), 100);
 });
 
 

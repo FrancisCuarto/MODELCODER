@@ -12,6 +12,68 @@ export interface ExportVerificationResult {
 
 export class GLBExporterService {
   /**
+   * Safe polyfills for GLTFExporter/GLTFLoader when running in headless Node.js tests.
+   */
+  private static ensureNodePolyfills(): void {
+    if (typeof (globalThis as any).self === 'undefined') {
+      (globalThis as any).self = globalThis;
+    }
+    if (typeof (globalThis as any).ImageData === 'undefined') {
+      (globalThis as any).ImageData = class NodeImageData {
+        data: Uint8ClampedArray;
+        width: number;
+        height: number;
+        constructor(data: any, width: number, height: number) {
+          this.data = data;
+          this.width = width;
+          this.height = height;
+        }
+      };
+    }
+    if (typeof (globalThis as any).FileReader === 'undefined') {
+      class NodeFileReader {
+        onload: any = null;
+        onloadend: any = null;
+        onerror: any = null;
+        result: any = null;
+        readAsArrayBuffer(blob: any) {
+          blob.arrayBuffer().then((buf: any) => {
+            this.result = buf;
+            if (this.onload) this.onload({ target: this });
+            if (this.onloadend) this.onloadend({ target: this });
+          }).catch((err: any) => {
+            if (this.onerror) this.onerror(err);
+          });
+        }
+      }
+      (globalThis as any).FileReader = NodeFileReader;
+    }
+    if (typeof (globalThis as any).document === 'undefined') {
+      (globalThis as any).document = {
+        createElement: (tag: string) => {
+          if (tag === 'canvas') {
+            return {
+              width: 0,
+              height: 0,
+              getContext: () => ({
+                translate: () => {},
+                scale: () => {},
+                putImageData: () => {},
+                drawImage: () => {}
+              }),
+              toBlob: (cb: any, type: string) => {
+                const png1x1 = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'base64');
+                cb(new Blob([png1x1], { type: type || 'image/png' }));
+              }
+            };
+          }
+          return {};
+        }
+      };
+    }
+  }
+
+  /**
    * Exports an exact Three.js object hierarchy to binary GLB,
    * performs a MANDATORY test-import verification, and triggers browser download.
    */
@@ -33,15 +95,17 @@ export class GLBExporterService {
     }
 
     // 3. Trigger clean browser download of the verified file
-    const blob = new Blob([glbBuffer], { type: 'model/gltf-binary' });
-    const blobUrl = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = blobUrl;
-    link.download = filename.endsWith('.glb') ? filename : `${filename}.glb`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    setTimeout(() => URL.revokeObjectURL(blobUrl), 15000);
+    if (typeof document !== 'undefined' && document.body) {
+      const blob = new Blob([glbBuffer], { type: 'model/gltf-binary' });
+      const blobUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = filename.endsWith('.glb') ? filename : `${filename}.glb`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 15000);
+    }
 
     return verification;
   }
@@ -50,6 +114,7 @@ export class GLBExporterService {
    * Converts a Three.js hierarchy to an ArrayBuffer using GLTFExporter.
    */
   public static exportToArrayBuffer(obj: THREE.Object3D): Promise<ArrayBuffer> {
+    this.ensureNodePolyfills();
     return new Promise((resolve, reject) => {
       const exporter = new GLTFExporter();
       exporter.parse(
@@ -81,6 +146,7 @@ export class GLBExporterService {
    * to guarantee the GLB binary is well-formed, readable, and retains geometry.
    */
   public static async verifyGLBBuffer(buffer: ArrayBuffer): Promise<ExportVerificationResult> {
+    this.ensureNodePolyfills();
     if (!buffer || buffer.byteLength < 20) {
       return {
         verified: false,

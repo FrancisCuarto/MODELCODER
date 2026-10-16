@@ -46,6 +46,11 @@ export class ProceduralBuilderContext {
     metalness?: number;
     wireframe?: boolean;
     label?: string;
+    texturePreset?: string;
+    materialType?: string;
+    emissive?: string;
+    emissiveIntensity?: number;
+    uvScale?: [number, number];
   }): this {
     return this.addComponent({
       name: opts.name || `box_${this.spec.components.length + 1}`,
@@ -57,7 +62,12 @@ export class ProceduralBuilderContext {
       roughness: opts.roughness,
       metalness: opts.metalness,
       wireframe: opts.wireframe,
-      label: opts.label
+      label: opts.label,
+      texturePreset: opts.texturePreset,
+      materialType: opts.materialType,
+      emissive: opts.emissive,
+      emissiveIntensity: opts.emissiveIntensity,
+      uvScale: opts.uvScale
     });
   }
 
@@ -72,6 +82,11 @@ export class ProceduralBuilderContext {
     color?: string;
     roughness?: number;
     metalness?: number;
+    texturePreset?: string;
+    materialType?: string;
+    emissive?: string;
+    emissiveIntensity?: number;
+    uvScale?: [number, number];
   }): this {
     const s = opts.size || [opts.radius || 0.4, opts.radius || 0.4, opts.height || 1.0, opts.segments || 8];
     return this.addComponent({
@@ -82,7 +97,12 @@ export class ProceduralBuilderContext {
       rotation: opts.rotation || [0, 0, 0],
       color: opts.color || '#2d3748',
       roughness: opts.roughness,
-      metalness: opts.metalness
+      metalness: opts.metalness,
+      texturePreset: opts.texturePreset,
+      materialType: opts.materialType,
+      emissive: opts.emissive,
+      emissiveIntensity: opts.emissiveIntensity,
+      uvScale: opts.uvScale
     });
   }
 
@@ -96,6 +116,11 @@ export class ProceduralBuilderContext {
     color?: string;
     roughness?: number;
     metalness?: number;
+    texturePreset?: string;
+    materialType?: string;
+    emissive?: string;
+    emissiveIntensity?: number;
+    uvScale?: [number, number];
   }): this {
     const s = opts.size || [opts.radius || 0.5, opts.segments || 8, Math.max(4, Math.round((opts.segments || 8) * 0.75))];
     return this.addComponent({
@@ -106,7 +131,12 @@ export class ProceduralBuilderContext {
       rotation: opts.rotation || [0, 0, 0],
       color: opts.color || '#e53e3e',
       roughness: opts.roughness,
-      metalness: opts.metalness
+      metalness: opts.metalness,
+      texturePreset: opts.texturePreset,
+      materialType: opts.materialType,
+      emissive: opts.emissive,
+      emissiveIntensity: opts.emissiveIntensity,
+      uvScale: opts.uvScale
     });
   }
 
@@ -116,6 +146,13 @@ export class ProceduralBuilderContext {
     position?: [number, number, number];
     rotation?: [number, number, number];
     color?: string;
+    roughness?: number;
+    metalness?: number;
+    texturePreset?: string;
+    materialType?: string;
+    emissive?: string;
+    emissiveIntensity?: number;
+    uvScale?: [number, number];
   }): this {
     return this.addComponent({
       name: opts.name || `wedge_${this.spec.components.length + 1}`,
@@ -123,7 +160,14 @@ export class ProceduralBuilderContext {
       size: opts.size || [1, 1, 1],
       position: opts.position || [0, 0, 0],
       rotation: opts.rotation || [0, 0, 0],
-      color: opts.color || '#4a5568'
+      color: opts.color || '#4a5568',
+      roughness: opts.roughness,
+      metalness: opts.metalness,
+      texturePreset: opts.texturePreset,
+      materialType: opts.materialType,
+      emissive: opts.emissive,
+      emissiveIntensity: opts.emissiveIntensity,
+      uvScale: opts.uvScale
     });
   }
 }

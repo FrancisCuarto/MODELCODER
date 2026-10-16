@@ -1,5 +1,6 @@
 import * as THREE from 'three';
-import type { ModelSpec, ComponentDef, GeometricStats } from './types';
+import type { ModelSpec, ComponentDef, GeometricStats } from './types.ts';
+import { TextureLibrary } from './texture-library.ts';
 
 export class ProceduralEngine {
   /**
@@ -39,6 +40,15 @@ export class ProceduralEngine {
         const h = Math.max(0.01, s[1] ?? 1.0);
         const d = Math.max(0.01, s[2] ?? 1.0);
         geom = new THREE.BoxGeometry(w, h, d);
+        if (comp.texturePreset) {
+          const presetName = TextureLibrary.resolvePresetName(comp.texturePreset);
+          const profile = presetName ? TextureLibrary.PROFILES[presetName] : null;
+          if (!profile?.isDecal) {
+            this.adjustBoxUVs(geom, w, h, d, comp.uvScale);
+          } else if (comp.uvScale) {
+            this.applyUVScale(geom, comp.uvScale);
+          }
+        }
         break;
       }
       case 'cylinder': {
@@ -47,6 +57,9 @@ export class ProceduralEngine {
         const h = Math.max(0.01, s[2] ?? 1.0);
         const segs = Math.max(4, Math.min(32, Math.round(s[3] ?? 8)));
         geom = new THREE.CylinderGeometry(rt, rb, h, segs);
+        if (comp.texturePreset) {
+          this.adjustCylinderUVs(geom, (rt + rb) * 0.5, h, comp.uvScale);
+        }
         break;
       }
       case 'sphere': {
@@ -54,12 +67,18 @@ export class ProceduralEngine {
         const wsegs = Math.max(4, Math.min(32, Math.round(s[1] ?? 8)));
         const hsegs = Math.max(3, Math.min(24, Math.round(s[2] ?? 6)));
         geom = new THREE.SphereGeometry(r, wsegs, hsegs);
+        if (comp.uvScale) {
+          this.applyUVScale(geom, comp.uvScale);
+        }
         break;
       }
       case 'plane': {
         const w = Math.max(0.01, s[0] ?? 1.0);
         const h = Math.max(0.01, s[1] ?? 1.0);
         geom = new THREE.PlaneGeometry(w, h);
+        if (comp.uvScale) {
+          this.applyUVScale(geom, comp.uvScale);
+        }
         break;
       }
       case 'cone': {
@@ -67,6 +86,9 @@ export class ProceduralEngine {
         const h = Math.max(0.01, s[1] ?? 1.0);
         const segs = Math.max(4, Math.min(32, Math.round(s[2] ?? 8)));
         geom = new THREE.ConeGeometry(r, h, segs);
+        if (comp.uvScale) {
+          this.applyUVScale(geom, comp.uvScale);
+        }
         break;
       }
       case 'torus': {
@@ -75,6 +97,9 @@ export class ProceduralEngine {
         const radSegs = Math.max(4, Math.min(24, Math.round(s[2] ?? 6)));
         const tubSegs = Math.max(6, Math.min(32, Math.round(s[3] ?? 10)));
         geom = new THREE.TorusGeometry(r, tube, radSegs, tubSegs);
+        if (comp.uvScale) {
+          this.applyUVScale(geom, comp.uvScale);
+        }
         break;
       }
       case 'capsule': {
@@ -83,6 +108,9 @@ export class ProceduralEngine {
         const capSegs = Math.max(2, Math.min(16, Math.round(s[2] ?? 4)));
         const radSegs = Math.max(4, Math.min(24, Math.round(s[3] ?? 8)));
         geom = new THREE.CapsuleGeometry(r, len, capSegs, radSegs);
+        if (comp.uvScale) {
+          this.applyUVScale(geom, comp.uvScale);
+        }
         break;
       }
       case 'wedge': {
@@ -90,7 +118,7 @@ export class ProceduralEngine {
         const w = Math.max(0.01, s[0] ?? 1.0);
         const h = Math.max(0.01, s[1] ?? 1.0);
         const d = Math.max(0.01, s[2] ?? 1.0);
-        geom = this.createWedgeGeometry(w, h, d);
+        geom = this.createWedgeGeometry(w, h, d, comp.uvScale);
         break;
       }
       default: {
@@ -99,18 +127,25 @@ export class ProceduralEngine {
       }
     }
 
-    // Apply color and vertex colors
+    // Material and vertex color resolution
     const baseColor = this.resolveColor(comp.color);
-    this.bakeVertexColors(geom, baseColor);
+    let mat: THREE.MeshStandardMaterial;
 
-    const mat = new THREE.MeshStandardMaterial({
-      color: baseColor,
-      roughness: comp.roughness ?? 0.75,
-      metalness: comp.metalness ?? 0.25,
-      flatShading: true,
-      vertexColors: true,
-      wireframe: Boolean(comp.wireframe)
-    });
+    if (comp.texturePreset) {
+      // Procedural surface texture from unified TextureLibrary
+      mat = TextureLibrary.getMaterial(comp, baseColor);
+    } else {
+      // Legacy untextured / flat-colored component
+      this.bakeVertexColors(geom, baseColor);
+      mat = new THREE.MeshStandardMaterial({
+        color: baseColor,
+        roughness: comp.roughness ?? 0.75,
+        metalness: comp.metalness ?? 0.25,
+        flatShading: true,
+        vertexColors: true,
+        wireframe: Boolean(comp.wireframe)
+      });
+    }
 
     const mesh = new THREE.Mesh(geom, mat);
     mesh.name = comp.name || `comp_${shape}`;
@@ -147,19 +182,23 @@ export class ProceduralEngine {
   }
 
   /**
-   * Creates a triangular prism wedge geometry.
+   * Creates a triangular prism wedge geometry with explicit unstretched UV coordinates.
    */
-  private static createWedgeGeometry(w: number, h: number, d: number): THREE.BufferGeometry {
+  private static createWedgeGeometry(w: number, h: number, d: number, uvScale?: [number, number]): THREE.BufferGeometry {
     const hw = w * 0.5;
     const hh = h * 0.5;
     const hd = d * 0.5;
 
-    // 6 vertices of a triangular prism
+    const su = uvScale?.[0] ?? 1.0;
+    const sv = uvScale?.[1] ?? 1.0;
+    const hyp = Math.sqrt(w * w + h * h);
+
+    // 24 vertices of a triangular prism
     const positions = new Float32Array([
       // Front triangle
-      -hw, -hh, hd,
-       hw, -hh, hd,
-      -hw,  hh, hd,
+      -hw, -hh,  hd,
+       hw, -hh,  hd,
+      -hw,  hh,  hd,
 
       // Back triangle
        hw, -hh, -hd,
@@ -191,8 +230,45 @@ export class ProceduralEngine {
        hw, -hh, -hd,
     ]);
 
+    const uvs = new Float32Array([
+      // Front triangle
+      0, 0,
+      w * su, 0,
+      0, h * sv,
+
+      // Back triangle
+      w * su, 0,
+      0, 0,
+      0, h * sv,
+
+      // Bottom quad
+      0, 0,
+      w * su, 0,
+      w * su, d * sv,
+      0, 0,
+      w * su, d * sv,
+      0, d * sv,
+
+      // Back vertical quad
+      0, 0,
+      d * su, 0,
+      d * su, h * sv,
+      0, 0,
+      d * su, h * sv,
+      0, h * sv,
+
+      // Sloped quad
+      0, 0,
+      0, d * sv,
+      hyp * su, d * sv,
+      0, 0,
+      hyp * su, d * sv,
+      hyp * su, 0,
+    ]);
+
     const geom = new THREE.BufferGeometry();
     geom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    geom.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
     geom.computeVertexNormals();
     return geom;
   }
@@ -328,7 +404,103 @@ export class ProceduralEngine {
   }
 
   /**
-   * Safely frees and disposes all GPU memory allocated by an Object3D subtree.
+   * Adjusts UV coordinates on BoxGeometry faces to avoid visible stretching.
+   */
+  public static adjustBoxUVs(
+    geom: THREE.BufferGeometry,
+    width: number,
+    height: number,
+    depth: number,
+    uvScale?: [number, number]
+  ): void {
+    const uvAttr = geom.getAttribute('uv');
+    if (!uvAttr) return;
+
+    const uvs = uvAttr.array as Float32Array;
+    const su = uvScale?.[0] ?? 1.0;
+    const sv = uvScale?.[1] ?? 1.0;
+
+    // 6 faces * 4 vertices = 24 vertices
+    // Face 0 (+X, right): depth x height
+    // Face 1 (-X, left): depth x height
+    // Face 2 (+Y, top): width x depth
+    // Face 3 (-Y, bottom): width x depth
+    // Face 4 (+Z, front): width x height
+    // Face 5 (-Z, back): width x height
+    const faceDims: Array<[number, number]> = [
+      [depth, height],
+      [depth, height],
+      [width, depth],
+      [width, depth],
+      [width, height],
+      [width, height]
+    ];
+
+    for (let f = 0; f < 6; f++) {
+      const [fw, fh] = faceDims[f];
+      const scaleU = Math.max(0.01, fw) * su;
+      const scaleV = Math.max(0.01, fh) * sv;
+
+      for (let v = 0; v < 4; v++) {
+        const idx = (f * 4 + v) * 2;
+        uvs[idx] = uvs[idx] * scaleU;
+        uvs[idx + 1] = uvs[idx + 1] * scaleV;
+      }
+    }
+
+    uvAttr.needsUpdate = true;
+  }
+
+  /**
+   * Adjusts UV coordinates on CylinderGeometry to maintain authentic square texture tiling.
+   */
+  public static adjustCylinderUVs(
+    geom: THREE.BufferGeometry,
+    radius: number,
+    height: number,
+    uvScale?: [number, number]
+  ): void {
+    const uvAttr = geom.getAttribute('uv');
+    if (!uvAttr) return;
+
+    const uvs = uvAttr.array as Float32Array;
+    const su = uvScale?.[0] ?? 1.0;
+    const sv = uvScale?.[1] ?? 1.0;
+
+    const circumference = 2 * Math.PI * Math.max(0.01, radius);
+    const scaleU = circumference * su;
+    const scaleV = Math.max(0.01, height) * sv;
+
+    for (let i = 0; i < uvs.length; i += 2) {
+      uvs[i] = uvs[i] * scaleU;
+      uvs[i + 1] = uvs[i + 1] * scaleV;
+    }
+
+    uvAttr.needsUpdate = true;
+  }
+
+  /**
+   * Scales existing UV attributes uniformly or by axis factor.
+   */
+  public static applyUVScale(geom: THREE.BufferGeometry, uvScale: [number, number]): void {
+    const uvAttr = geom.getAttribute('uv');
+    if (!uvAttr) return;
+
+    const uvs = uvAttr.array as Float32Array;
+    const su = uvScale[0] ?? 1.0;
+    const sv = uvScale[1] ?? 1.0;
+
+    for (let i = 0; i < uvs.length; i += 2) {
+      uvs[i] = uvs[i] * su;
+      uvs[i + 1] = uvs[i + 1] * sv;
+    }
+
+    uvAttr.needsUpdate = true;
+  }
+
+  /**
+   * Safely frees and disposes all GPU memory allocated by an Object3D subtree,
+   * while keeping reusable texture presets cached in TextureLibrary.
    */
   public static disposeHierarchy(obj: THREE.Object3D): void {
     obj.traverse((child) => {
@@ -338,15 +510,13 @@ export class ProceduralEngine {
           mesh.geometry.dispose();
         }
         if (mesh.material) {
-          if (Array.isArray(mesh.material)) {
-            mesh.material.forEach((m) => {
-              if (m.map) m.map.dispose();
-              m.dispose();
-            });
-          } else {
-            if (mesh.material.map) mesh.material.map.dispose();
-            mesh.material.dispose();
-          }
+          const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+          mats.forEach((m) => {
+            if (m.map && !TextureLibrary.isPresetTexture(m.map)) {
+              m.map.dispose();
+            }
+            m.dispose();
+          });
         }
       }
     });
