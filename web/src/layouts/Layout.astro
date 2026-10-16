@@ -52,6 +52,30 @@ import '../styles/global.css';
           <a href="https://github.com/FrancisCuarto/MODELCODER" target="_blank" rel="noopener noreferrer" class="nav-link nav-link-gh">
             &gt; GITHUB
           </a>
+
+          <!-- User Authentication Widget -->
+          <div id="user-auth-root" class="user-auth-container">
+            <button id="btn-open-auth" class="ps1-btn-auth" type="button" title="Acceso de Usuario">
+              <span class="auth-icon">👤</span>
+              <span class="auth-label">&gt; ACCESO</span>
+            </button>
+
+            <div id="user-logged-box" class="user-logged-pill hidden">
+              <button id="user-profile-btn" class="user-profile-trigger" type="button" aria-haspopup="menu">
+                <span class="user-avatar-tag">👾</span>
+                <span id="user-display-name" class="user-display-name">PILOTO</span>
+                <span class="user-caret">▼</span>
+              </button>
+              <div id="user-dropdown-menu" class="user-dropdown-ps1 hidden">
+                <div class="user-dropdown-header">
+                  <span class="ps1-badge-gold">SESIÓN SUPABASE</span>
+                  <span id="user-email-text" class="user-email-text"></span>
+                </div>
+                <a href="/studio" class="dropdown-item">&gt; STUDIO WORKSPACE</a>
+                <button id="btn-logout" class="dropdown-item dropdown-item-danger" type="button">&gt; CERRAR SESIÓN</button>
+              </div>
+            </div>
+          </div>
         </nav>
       </div>
     </header>
@@ -59,6 +83,77 @@ import '../styles/global.css';
     <main class="site-content">
       <slot />
     </main>
+
+    <!-- Modal Retro PS1 de Autenticación de Usuarios (Supabase) -->
+    <div id="ps1-auth-modal" class="ps1-modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="auth-modal-title">
+      <div class="ps1-window auth-modal-window">
+        <div class="ps1-titlebar">
+          <div class="titlebar-title" id="auth-modal-title">
+            <span class="title-glyph">▲</span>
+            <span>BIOS // IDENTIFICACIÓN DE USUARIO</span>
+          </div>
+          <button type="button" class="ps1-window-btn" id="btn-close-auth-modal" aria-label="Cerrar">✕</button>
+        </div>
+
+        <div class="auth-modal-body">
+          <div class="auth-tabs">
+            <button type="button" class="auth-tab active" data-tab="oauth">OAUTH GITHUB</button>
+            <button type="button" class="auth-tab" data-tab="login">INICIAR SESIÓN</button>
+            <button type="button" class="auth-tab" data-tab="signup">REGISTRARSE</button>
+          </div>
+
+          <!-- TAB 1: GITHUB OAUTH -->
+          <div class="auth-tab-panel" id="tab-oauth">
+            <p class="auth-desc">Identifícate con tu cuenta de GitHub para guardar tus configuraciones y sincronizar tus modelos procedurales en la nube.</p>
+            <button type="button" class="btn auth-action-btn btn-github-oauth" id="btn-auth-github">
+              <span class="auth-btn-icon">🐱</span>
+              <span>CONTINUAR CON GITHUB</span>
+            </button>
+            <div class="auth-note-box">
+              <span class="note-tag">[SUPABASE AUTH]</span>
+              <span>Conexión cifrada sin cookies de rastreo. Compatible con Vercel & Supabase.</span>
+            </div>
+          </div>
+
+          <!-- TAB 2: EMAIL LOGIN -->
+          <div class="auth-tab-panel hidden" id="tab-login">
+            <form id="form-login" class="auth-form">
+              <div class="auth-field">
+                <label for="login-email">&gt; CORREO ELECTRÓNICO</label>
+                <input type="email" id="login-email" class="ps1-input" required placeholder="piloto@below-nominal.space" />
+              </div>
+              <div class="auth-field">
+                <label for="login-password">&gt; CONTRASEÑA</label>
+                <input type="password" id="login-password" class="ps1-input" required placeholder="••••••••" />
+              </div>
+              <button type="submit" class="btn auth-action-btn" id="btn-submit-login">
+                <span>[ ENTRAR ]</span>
+              </button>
+            </form>
+          </div>
+
+          <!-- TAB 3: EMAIL SIGNUP -->
+          <div class="auth-tab-panel hidden" id="tab-signup">
+            <form id="form-signup" class="auth-form">
+              <div class="auth-field">
+                <label for="signup-email">&gt; CORREO NUEVO</label>
+                <input type="email" id="signup-email" class="ps1-input" required placeholder="nuevo_piloto@ejemplo.com" />
+              </div>
+              <div class="auth-field">
+                <label for="signup-password">&gt; CONTRASEÑA (MÍN. 6 CARACTERES)</label>
+                <input type="password" id="signup-password" minlength="6" class="ps1-input" required placeholder="••••••••" />
+              </div>
+              <button type="submit" class="btn auth-action-btn" id="btn-submit-signup" style="border-color: var(--ps1-cyan); color: var(--ps1-cyan);">
+                <span>[ CREAR CUENTA ]</span>
+              </button>
+            </form>
+          </div>
+
+          <!-- Mensaje de estado dinámico -->
+          <div id="auth-status-msg" class="auth-status-box hidden"></div>
+        </div>
+      </div>
+    </div>
 
     <footer class="site-footer">
       <div class="footer-content">
@@ -75,5 +170,472 @@ import '../styles/global.css';
         </div>
       </div>
     </footer>
+
+    <!-- Script de Inicialización de Autenticación de Supabase -->
+    <script>
+      import { getSupabase, signInWithGitHub, signInWithEmail, signUpWithEmail, signOut, onAuthStateChange } from '../lib/supabase';
+
+      const btnOpenAuth = document.getElementById('btn-open-auth');
+      const authModal = document.getElementById('ps1-auth-modal');
+      const btnCloseAuthModal = document.getElementById('btn-close-auth-modal');
+      const userLoggedBox = document.getElementById('user-logged-box');
+      const userProfileBtn = document.getElementById('user-profile-btn');
+      const userDisplayName = document.getElementById('user-display-name');
+      const userEmailText = document.getElementById('user-email-text');
+      const userDropdownMenu = document.getElementById('user-dropdown-menu');
+      const btnLogout = document.getElementById('btn-logout');
+
+      const tabs = document.querySelectorAll('.auth-tab');
+      const tabPanels = {
+        oauth: document.getElementById('tab-oauth'),
+        login: document.getElementById('tab-login'),
+        signup: document.getElementById('tab-signup'),
+      };
+      const authStatusMsg = document.getElementById('auth-status-msg');
+
+      function showStatus(text: string, isError = false) {
+        if (!authStatusMsg) return;
+        authStatusMsg.textContent = text;
+        authStatusMsg.classList.remove('hidden', 'error', 'success');
+        authStatusMsg.classList.add(isError ? 'error' : 'success');
+      }
+
+      function clearStatus() {
+        if (!authStatusMsg) return;
+        authStatusMsg.classList.add('hidden');
+        authStatusMsg.textContent = '';
+      }
+
+      function openModal() {
+        if (!authModal) return;
+        authModal.classList.remove('hidden');
+        clearStatus();
+      }
+
+      function closeModal() {
+        if (!authModal) return;
+        authModal.classList.add('hidden');
+        clearStatus();
+      }
+
+      btnOpenAuth?.addEventListener('click', openModal);
+      btnCloseAuthModal?.addEventListener('click', closeModal);
+
+      // Close modal on backdrop click
+      authModal?.addEventListener('click', (e) => {
+        if (e.target === authModal) closeModal();
+      });
+
+      // Tab switcher
+      tabs.forEach((tab) => {
+        tab.addEventListener('click', () => {
+          tabs.forEach((t) => t.classList.remove('active'));
+          tab.classList.add('active');
+          const target = tab.getAttribute('data-tab');
+          Object.keys(tabPanels).forEach((key) => {
+            if (key === target) {
+              tabPanels[key as keyof typeof tabPanels]?.classList.remove('hidden');
+            } else {
+              tabPanels[key as keyof typeof tabPanels]?.classList.add('hidden');
+            }
+          });
+          clearStatus();
+        });
+      });
+
+      // Toggle user profile dropdown
+      userProfileBtn?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        userDropdownMenu?.classList.toggle('hidden');
+      });
+
+      document.addEventListener('click', () => {
+        userDropdownMenu?.classList.add('hidden');
+      });
+
+      // GitHub OAuth button
+      document.getElementById('btn-auth-github')?.addEventListener('click', async () => {
+        try {
+          showStatus('Iniciando redirección a GitHub...');
+          await signInWithGitHub();
+        } catch (err: any) {
+          showStatus(`Error OAuth: ${err?.message || err}`, true);
+        }
+      });
+
+      // Form Login Email
+      document.getElementById('form-login')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = (document.getElementById('login-email') as HTMLInputElement)?.value;
+        const password = (document.getElementById('login-password') as HTMLInputElement)?.value;
+        try {
+          showStatus('Verificando credenciales...');
+          await signInWithEmail(email, password);
+          showStatus('¡Acceso correcto! Cargando sesión...', false);
+          setTimeout(() => {
+            closeModal();
+            window.location.reload();
+          }, 800);
+        } catch (err: any) {
+          showStatus(`Error: ${err?.message || err}`, true);
+        }
+      });
+
+      // Form Signup Email
+      document.getElementById('form-signup')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = (document.getElementById('signup-email') as HTMLInputElement)?.value;
+        const password = (document.getElementById('signup-password') as HTMLInputElement)?.value;
+        try {
+          showStatus('Registrando nuevo piloto...');
+          await signUpWithEmail(email, password);
+          showStatus('¡Cuenta creada! Revisa tu bandeja de entrada si requiere confirmación.', false);
+        } catch (err: any) {
+          showStatus(`Error al registrar: ${err?.message || err}`, true);
+        }
+      });
+
+      // Logout button
+      btnLogout?.addEventListener('click', async () => {
+        await signOut();
+      });
+
+      // Auth state observer
+      function updateSessionUI(user: any) {
+        if (user) {
+          btnOpenAuth?.classList.add('hidden');
+          userLoggedBox?.classList.remove('hidden');
+          const name = user.user_metadata?.user_name || user.user_metadata?.name || user.email?.split('@')[0] || 'PILOTO';
+          if (userDisplayName) userDisplayName.textContent = `@${name.toUpperCase()}`;
+          if (userEmailText) userEmailText.textContent = user.email || '';
+        } else {
+          btnOpenAuth?.classList.remove('hidden');
+          userLoggedBox?.classList.add('hidden');
+        }
+      }
+
+      // Check current session
+      const supabase = getSupabase();
+      if (supabase) {
+        supabase.auth.getUser().then(({ data }) => {
+          updateSessionUI(data.user);
+        });
+        onAuthStateChange((user) => {
+          updateSessionUI(user);
+        });
+      }
+    </script>
+
+    <style>
+      .user-auth-container {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+      }
+
+      .ps1-btn-auth {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        background: #192030;
+        border: 2px outset var(--ps1-steel-light);
+        padding: 0.35rem 0.65rem;
+        color: var(--ps1-cyan);
+        font-family: var(--font-pixel);
+        font-size: 0.75rem;
+        cursor: pointer;
+        box-shadow: 1px 1px 0px #000;
+      }
+
+      .ps1-btn-auth:hover {
+        background: #27344d;
+        color: var(--ps1-gold);
+        border-color: var(--ps1-gold);
+      }
+
+      .user-logged-pill {
+        position: relative;
+      }
+
+      .user-profile-trigger {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        background: #101625;
+        border: 2px outset var(--ps1-gold);
+        padding: 0.35rem 0.65rem;
+        color: var(--ps1-gold);
+        font-family: var(--font-pixel);
+        font-size: 0.72rem;
+        cursor: pointer;
+        box-shadow: 1px 1px 0px #000;
+      }
+
+      .user-profile-trigger:hover {
+        background: #1c2742;
+      }
+
+      .user-caret {
+        font-size: 0.6rem;
+      }
+
+      .user-dropdown-ps1 {
+        position: absolute;
+        top: calc(100% + 4px);
+        right: 0;
+        min-width: 200px;
+        background: var(--ps1-panel-dark);
+        border: 2px outset var(--ps1-steel-light);
+        box-shadow: 3px 3px 0px #000;
+        z-index: 1000;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .user-dropdown-header {
+        padding: 0.6rem;
+        background: #090c14;
+        border-bottom: 1px inset var(--ps1-steel);
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+      }
+
+      .ps1-badge-gold {
+        font-family: var(--font-telemetry);
+        font-size: 0.95rem;
+        color: var(--ps1-gold);
+        letter-spacing: 0.05em;
+      }
+
+      .user-email-text {
+        font-family: var(--font-mono);
+        font-size: 0.75rem;
+        color: var(--text-dim);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .dropdown-item {
+        padding: 0.5rem 0.7rem;
+        font-family: var(--font-pixel);
+        font-size: 0.7rem;
+        color: var(--text-main);
+        text-align: left;
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      }
+
+      .dropdown-item:hover {
+        background: #192338;
+        color: var(--ps1-cyan);
+        text-decoration: none;
+      }
+
+      .dropdown-item-danger {
+        color: var(--ps1-red);
+      }
+
+      .dropdown-item-danger:hover {
+        background: rgba(255, 56, 46, 0.15);
+        color: #ff6e66;
+      }
+
+      /* Modal Styling */
+      .ps1-modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 4, 36, 0.85);
+        backdrop-filter: blur(2px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10000;
+        padding: 1rem;
+      }
+
+      .auth-modal-window {
+        width: 100%;
+        max-width: 480px;
+        background: #0d1220;
+      }
+
+      .ps1-titlebar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: linear-gradient(90deg, #18223c 0%, #0d1220 100%);
+        border-bottom: 2px outset var(--ps1-steel);
+        padding: 0.45rem 0.75rem;
+      }
+
+      .titlebar-title {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-family: var(--font-pixel);
+        font-size: 0.72rem;
+        color: var(--ps1-gold);
+        letter-spacing: 0.04em;
+      }
+
+      .title-glyph {
+        color: var(--ps1-cyan);
+        font-size: 0.65rem;
+      }
+
+      .ps1-window-btn {
+        background: #192030;
+        border: 2px outset var(--ps1-steel-light);
+        color: #ffffff;
+        font-family: var(--font-pixel);
+        font-size: 0.7rem;
+        padding: 0.15rem 0.45rem;
+        cursor: pointer;
+      }
+
+      .ps1-window-btn:hover {
+        background: var(--ps1-red);
+        border-color: #ff6e66;
+      }
+
+      .auth-modal-body {
+        padding: 1.25rem;
+      }
+
+      .auth-tabs {
+        display: flex;
+        gap: 0.35rem;
+        border-bottom: 2px solid var(--ps1-steel);
+        margin-bottom: 1.25rem;
+      }
+
+      .auth-tab {
+        background: #151b2a;
+        border: 2px outset var(--ps1-steel);
+        border-bottom: none;
+        color: var(--text-dim);
+        font-family: var(--font-pixel);
+        font-size: 0.65rem;
+        padding: 0.45rem 0.65rem;
+        cursor: pointer;
+      }
+
+      .auth-tab:hover {
+        color: var(--text-main);
+        background: #1d263b;
+      }
+
+      .auth-tab.active {
+        background: #25314d;
+        color: var(--ps1-gold);
+        border-color: var(--ps1-gold);
+        font-weight: bold;
+      }
+
+      .auth-desc {
+        font-family: var(--font-mono);
+        font-size: 0.85rem;
+        color: var(--text-dim);
+        margin-bottom: 1.25rem;
+        line-height: 1.4;
+      }
+
+      .auth-action-btn {
+        width: 100%;
+        padding: 0.75rem;
+        font-size: 0.75rem;
+        margin-bottom: 1rem;
+      }
+
+      .btn-github-oauth {
+        background: #24292e;
+        border-color: var(--ps1-gold);
+        color: var(--ps1-gold);
+      }
+
+      .btn-github-oauth:hover {
+        background: #2f363d;
+        color: #ffffff;
+      }
+
+      .auth-note-box {
+        display: flex;
+        gap: 0.5rem;
+        background: #080c16;
+        border: 1px inset var(--ps1-steel);
+        padding: 0.6rem 0.75rem;
+        font-family: var(--font-mono);
+        font-size: 0.75rem;
+        color: var(--text-dim);
+      }
+
+      .note-tag {
+        color: var(--ps1-cyan);
+        font-weight: bold;
+        flex-shrink: 0;
+      }
+
+      .auth-form {
+        display: flex;
+        flex-direction: column;
+        gap: 0.9rem;
+      }
+
+      .auth-field {
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+      }
+
+      .auth-field label {
+        font-family: var(--font-pixel);
+        font-size: 0.65rem;
+        color: var(--ps1-gold);
+      }
+
+      .ps1-input {
+        background: #060912;
+        border: 2px inset var(--ps1-steel);
+        color: #ffffff;
+        font-family: var(--font-mono);
+        font-size: 0.85rem;
+        padding: 0.5rem 0.65rem;
+        outline: none;
+      }
+
+      .ps1-input:focus {
+        border-color: var(--ps1-cyan);
+        box-shadow: 0 0 5px rgba(0, 240, 255, 0.4);
+      }
+
+      .auth-status-box {
+        margin-top: 1rem;
+        padding: 0.65rem;
+        font-family: var(--font-mono);
+        font-size: 0.8rem;
+        border: 1px inset var(--ps1-steel);
+        background: #090e1c;
+      }
+
+      .auth-status-box.error {
+        color: #ff6e66;
+        border-color: var(--ps1-red);
+        background: rgba(255, 56, 46, 0.12);
+      }
+
+      .auth-status-box.success {
+        color: var(--ps1-green);
+        border-color: var(--ps1-green);
+        background: rgba(57, 255, 20, 0.1);
+      }
+
+      .hidden {
+        display: none !important;
+      }
+    </style>
   </body>
 </html>

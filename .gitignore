@@ -37,6 +37,14 @@ yarn-error.log*
 # Local personal configs
 .export_config.json
 
+# Environment variables
+.env
+.env.*
+*.env
+web/.env
+!.env.example
+!web/.env.example
+
 # Operating System
 .DS_Store
 Thumbs.db
