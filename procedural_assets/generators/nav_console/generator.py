@@ -66,7 +66,7 @@ class NavConsoleGenerator(BaseAssetGenerator):
             offset=(0.0, 0.0, plinth_h * 0.5),
             mat_idx=metal_mat,
             rgba=metal_rgba,
-            uv_rect=PS1TextureAtlas.get_rect("metal_plates_rivets")
+            uv_rect=PS1TextureAtlas.get_rect("metal_dark_grime")
         )
 
         # Left and right side cabinet pylons
@@ -107,7 +107,7 @@ class NavConsoleGenerator(BaseAssetGenerator):
             offset=(0.0, table_y, desk_h),
             mat_idx=casing_mat,
             rgba=casing_rgba,
-            uv_rect=PS1TextureAtlas.get_rect("metal_plates_rivets")
+            uv_rect=PS1TextureAtlas.get_rect("metal_dark_grime")
         )
         # Padded front wrist rest
         MeshBuilder.add_box(
@@ -116,7 +116,7 @@ class NavConsoleGenerator(BaseAssetGenerator):
             offset=(0.0, table_y - (table_d * 0.5) + 0.03, desk_h + 0.02),
             mat_idx=metal_mat,
             rgba=(0.14, 0.14, 0.16, 1.0),
-            uv_rect=PS1TextureAtlas.get_rect("rubber_tread")
+            uv_rect=PS1TextureAtlas.get_rect("rubber_black")
         )
 
         # -------------------------------------------------------------
@@ -161,7 +161,7 @@ class NavConsoleGenerator(BaseAssetGenerator):
                 offset=(sx, fascia_y - 0.005, hood_z + 0.02),
                 mat_idx=accent_mat,
                 rgba=screen_rgba,
-                uv_rect=PS1TextureAtlas.get_rect("computer_screen_crt")
+                uv_rect=PS1TextureAtlas.get_rect("crt_screen_green")
             )
 
         # -------------------------------------------------------------
@@ -199,7 +199,7 @@ class NavConsoleGenerator(BaseAssetGenerator):
                 offset=(joy_x, joy_y + 0.01, ctrl_z + 0.16),
                 mat_idx=metal_mat,
                 rgba=(0.12, 0.12, 0.14, 1.0),
-                uv_rect=PS1TextureAtlas.get_rect("rubber_tread")
+                uv_rect=PS1TextureAtlas.get_rect("rubber_black")
             )
 
         if self.config.has_throttle:
@@ -233,7 +233,7 @@ class NavConsoleGenerator(BaseAssetGenerator):
             offset=(0.0, table_y + 0.04, ctrl_z + 0.01),
             mat_idx=metal_mat,
             rgba=(0.28, 0.28, 0.32, 1.0),
-            uv_rect=PS1TextureAtlas.get_rect("control_panel_buttons")
+            uv_rect=PS1TextureAtlas.get_rect("button_white")
         )
 
         self.finalize_mesh(obj, bm)

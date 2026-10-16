@@ -54,7 +54,7 @@ class NutrientPumpGenerator(BaseAssetGenerator):
             offset=(0.0, 0.0, 0.02),
             mat_idx=metal_mat,
             rgba=metal_rgba,
-            uv_rect=PS1TextureAtlas.get_rect("metal_plates_rivets")
+            uv_rect=PS1TextureAtlas.get_rect("metal_dark_grime")
         )
         # 4 Neoprene damping foot pucks
         for px in (-base_w * 0.42, base_w * 0.42):
@@ -68,7 +68,7 @@ class NutrientPumpGenerator(BaseAssetGenerator):
                     axis='Z',
                     mat_idx=metal_mat,
                     rgba=(0.14, 0.14, 0.16, 1.0),
-                    uv_rect=PS1TextureAtlas.get_rect("rubber_tread")
+                    uv_rect=PS1TextureAtlas.get_rect("rubber_black")
                 )
 
         # -------------------------------------------------------------
@@ -100,7 +100,7 @@ class NutrientPumpGenerator(BaseAssetGenerator):
             axis='X',
             mat_idx=metal_mat,
             rgba=metal_rgba,
-            uv_rect=PS1TextureAtlas.get_rect("metal_vent_grate")
+            uv_rect=PS1TextureAtlas.get_rect("vent_grill")
         )
         # Top electrical conduit connection box
         MeshBuilder.add_box(
@@ -164,7 +164,7 @@ class NutrientPumpGenerator(BaseAssetGenerator):
                 axis='Z',
                 mat_idx=metal_mat,
                 rgba=metal_rgba,
-                uv_rect=PS1TextureAtlas.get_rect("metal_plates_rivets")
+                uv_rect=PS1TextureAtlas.get_rect("metal_dark_grime")
             )
             # Translucent nutrient filter bowl
             MeshBuilder.add_cylinder(
@@ -176,7 +176,7 @@ class NutrientPumpGenerator(BaseAssetGenerator):
                 axis='Z',
                 mat_idx=accent_mat,
                 rgba=green_rgba,
-                uv_rect=PS1TextureAtlas.get_rect("computer_screen_crt")
+                uv_rect=PS1TextureAtlas.get_rect("crt_screen_green")
             )
 
         # -------------------------------------------------------------
@@ -194,7 +194,7 @@ class NutrientPumpGenerator(BaseAssetGenerator):
                 axis='Y',
                 mat_idx=metal_mat,
                 rgba=dial_rgba,
-                uv_rect=PS1TextureAtlas.get_rect("control_panel_buttons")
+                uv_rect=PS1TextureAtlas.get_rect("button_white")
             )
             # Pointer needle
             MeshBuilder.add_box(

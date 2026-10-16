@@ -1,0 +1,143 @@
+{
+  "generator": "StationRoomGenerator",
+  "model_name": "station_room",
+  "seed": 42,
+  "timestamp": "2026-10-16T19:48:19.662075Z",
+  "mesh_metrics": {
+    "triangle_count": 336,
+    "vertex_count": 224,
+    "target_tri_budget": 750,
+    "budget_compliance_ratio": 0.45,
+    "dimensions_meters": {
+      "width": 6.4,
+      "height": 8.4,
+      "depth": 3.56
+    },
+    "has_vertex_colors": true,
+    "materials_assigned": [
+      "mat_psx_industrial_hazard_fluorescent_lit_w50",
+      "mat_psx_industrial_hazard_door_emergency_red_w50",
+      "mat_psx_industrial_hazard_floor_metal_w50",
+      "mat_psx_industrial_hazard_floor_hazard_w50",
+      "mat_psx_industrial_hazard_floor_grate_w50",
+      "mat_psx_industrial_hazard_wall_bulkhead_w50",
+      "mat_psx_industrial_hazard_wall_support_beam_w50",
+      "mat_psx_industrial_hazard_ceiling_girder_w50"
+    ]
+  },
+  "config_parameters": {
+    "seed": 42,
+    "target_tri_budget": 750,
+    "name": "station_room",
+    "wear_level": 0.5,
+    "add_collision_mesh": false,
+    "collision_type": "box",
+    "collision_suffix": "-convcolonly",
+    "pivot_rule": "floor_center",
+    "export_subcomponents": false,
+    "palette_name": "industrial_hazard",
+    "emission_scale": 1.0,
+    "extra_params": {},
+    "room_archetype": "medbay_lab",
+    "width": 6.0,
+    "depth": 8.0,
+    "height": 3.4,
+    "door_north": true,
+    "door_south": true,
+    "door_east": false,
+    "door_west": false,
+    "doorway_width": 2.0,
+    "doorway_height": 2.4,
+    "pillar_layout": "perimeter_buttresses",
+    "floor_elevation": "flat",
+    "has_observation_window": false,
+    "has_overhead_gantry": false,
+    "has_floor_drain": false,
+    "lighting_color": "clean_white",
+    "doorway_sockets": [
+      {
+        "name": "door_north",
+        "pos": [
+          0.0,
+          4.0,
+          0.0
+        ],
+        "forward": [
+          0.0,
+          1.0,
+          0.0
+        ],
+        "width": 2.0,
+        "height": 2.4
+      },
+      {
+        "name": "door_south",
+        "pos": [
+          0.0,
+          -4.0,
+          0.0
+        ],
+        "forward": [
+          0.0,
+          -1.0,
+          0.0
+        ],
+        "width": 2.0,
+        "height": 2.4
+      }
+    ]
+  },
+  "sockets": [
+    {
+      "name": "socket_player_interact",
+      "position": [
+        0.0,
+        -4.75,
+        0.0
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "Standard player character interaction stand point"
+    },
+    {
+      "name": "socket_item_spawn",
+      "position": [
+        0.0,
+        0.0,
+        3.58
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "Prop or pickup spawn snap position (keycards, ammo, medical items)"
+    },
+    {
+      "name": "socket_light",
+      "position": [
+        0.0,
+        0.0,
+        3.026
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "OmniLight3D / SpotLight3D mount anchor point"
+    }
+  ],
+  "godot_4_compatibility": {
+    "format": "glTF 2.0 Binary (.glb)",
+    "unit": "meters (1.0 Blender unit = 1.0 Godot unit)",
+    "forward_axis": "-Z",
+    "up_axis": "+Y",
+    "collision_mesh_convention": "Child node with -col or -colonly creates Godot StaticBody3D collision shape",
+    "vertex_colors": "Exported in COLOR_0 accessor (usable with StandardMaterial3D or PSX shader)",
+    "pbr_materials": "Exported as glTF PBR metallic/roughness + emissive"
+  }
+}

@@ -1,8 +1,8 @@
 {
-  "generator": "ProceduralAssetGenerator",
+  "generator": "StationCorridorGenerator",
   "model_name": "station_corridor",
-  "seed": 1337,
-  "timestamp": "2026-10-15T22:33:46.390359Z",
+  "seed": 42,
+  "timestamp": "2026-10-16T19:48:19.097304Z",
   "mesh_metrics": {
     "triangle_count": 192,
     "vertex_count": 128,
@@ -25,7 +25,7 @@
     ]
   },
   "config_parameters": {
-    "seed": 1337,
+    "seed": 42,
     "target_tri_budget": 550,
     "name": "station_corridor",
     "wear_level": 0.5,

@@ -70,7 +70,7 @@ class HydroponicTankGenerator(BaseAssetGenerator):
                 offset=(lx, ly, 0.0075),
                 mat_idx=metal_mat,
                 rgba=metal_rgba,
-                uv_rect=PS1TextureAtlas.get_rect("metal_plates_rivets")
+                uv_rect=PS1TextureAtlas.get_rect("metal_dark_grime")
             )
 
         # Bottom ring collar
@@ -83,7 +83,7 @@ class HydroponicTankGenerator(BaseAssetGenerator):
             axis='Z',
             mat_idx=metal_mat,
             rgba=metal_rgba,
-            uv_rect=PS1TextureAtlas.get_rect("metal_plates_rivets")
+            uv_rect=PS1TextureAtlas.get_rect("metal_dark_grime")
         )
 
         # -------------------------------------------------------------
@@ -112,7 +112,7 @@ class HydroponicTankGenerator(BaseAssetGenerator):
             axis='Z',
             mat_idx=metal_mat,
             rgba=metal_rgba,
-            uv_rect=PS1TextureAtlas.get_rect("metal_plates_rivets")
+            uv_rect=PS1TextureAtlas.get_rect("metal_dark_grime")
         )
 
         # -------------------------------------------------------------
@@ -160,7 +160,7 @@ class HydroponicTankGenerator(BaseAssetGenerator):
                 axis='Z',
                 mat_idx=accent_mat,
                 rgba=liquid_rgba,
-                uv_rect=PS1TextureAtlas.get_rect("computer_screen_crt")
+                uv_rect=PS1TextureAtlas.get_rect("crt_screen_green")
             )
 
         # -------------------------------------------------------------

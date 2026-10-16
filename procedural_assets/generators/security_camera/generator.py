@@ -54,7 +54,7 @@ class SecurityCameraGenerator(BaseAssetGenerator):
                 offset=(0.0, 0.0, -plate_t * 0.5),
                 mat_idx=casing_mat,
                 rgba=casing_rgba,
-                uv_rect=PS1TextureAtlas.get_rect("metal_plates_rivets")
+                uv_rect=PS1TextureAtlas.get_rect("metal_dark_grime")
             )
             gimbal_center = Vector((0.0, 0.0, -0.12))
             # Downward drop stem
@@ -77,7 +77,7 @@ class SecurityCameraGenerator(BaseAssetGenerator):
                 offset=(0.0, plate_t * 0.5, 0.0),
                 mat_idx=casing_mat,
                 rgba=casing_rgba,
-                uv_rect=PS1TextureAtlas.get_rect("metal_plates_rivets")
+                uv_rect=PS1TextureAtlas.get_rect("metal_dark_grime")
             )
             # Extension arm reaching forward in +Y
             arm_reach = 0.18
@@ -138,7 +138,7 @@ class SecurityCameraGenerator(BaseAssetGenerator):
                 axis='Z',
                 mat_idx=metal_mat,
                 rgba=dark_glass_rgba,
-                uv_rect=PS1TextureAtlas.get_rect("rubber_tread")
+                uv_rect=PS1TextureAtlas.get_rect("rubber_black")
             )
             cam_faces.extend(dome_base)
             cam_faces.extend(dome_bubble)
@@ -198,7 +198,7 @@ class SecurityCameraGenerator(BaseAssetGenerator):
                 axis='Y',
                 mat_idx=metal_mat,
                 rgba=dark_glass_rgba,
-                uv_rect=PS1TextureAtlas.get_rect("rubber_tread")
+                uv_rect=PS1TextureAtlas.get_rect("rubber_black")
             )
             cam_faces.extend(glass)
 
@@ -211,7 +211,7 @@ class SecurityCameraGenerator(BaseAssetGenerator):
                     offset=(0.0, shield_l * 0.5, (body_h * 0.5) + 0.008),
                     mat_idx=metal_mat,
                     rgba=metal_rgba,
-                    uv_rect=PS1TextureAtlas.get_rect("metal_plates_rivets")
+                    uv_rect=PS1TextureAtlas.get_rect("metal_dark_grime")
                 )
                 cam_faces.extend(shield)
 
@@ -263,7 +263,7 @@ class SecurityCameraGenerator(BaseAssetGenerator):
                 axis='Y',
                 mat_idx=metal_mat,
                 rgba=(0.12, 0.12, 0.12, 1.0),
-                uv_rect=PS1TextureAtlas.get_rect("rubber_tread")
+                uv_rect=PS1TextureAtlas.get_rect("rubber_black")
             )
 
         self.finalize_mesh(obj, bm)

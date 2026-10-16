@@ -1,5 +1,5 @@
 # Informe de Exportación a Godot 4 — food_storage_unit
-**Estado:** ✅ EXITOSA | **Fecha:** `2026-10-16T16:09:41.150543Z` | **Generador:** `FoodStorageUnitGenerator`
+**Estado:** ✅ EXITOSA | **Fecha:** `2026-10-16T19:48:14.042641Z` | **Generador:** `FoodStorageUnitGenerator`
 
 ## 1. Archivo y Dimensiones
 - **Archivo GLB:** `D:\MODELCODER\web\public\models\food_storage_unit.glb`

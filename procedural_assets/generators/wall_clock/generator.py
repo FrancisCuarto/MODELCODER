@@ -56,7 +56,7 @@ class WallClockGenerator(BaseAssetGenerator[WallClockConfig]):
             axis='Y',
             mat_idx=casing_mat,
             rgba=casing_rgba,
-            uv_rect=PS1TextureAtlas.get_rect("casing_panel_clean")
+            uv_rect=PS1TextureAtlas.get_rect("painted_metal_white")
         )
 
         # 2. Outer front bezel lip / rim
@@ -184,7 +184,7 @@ class WallClockGenerator(BaseAssetGenerator[WallClockConfig]):
                 offset=(sx, depth + 0.009, sz),
                 mat_idx=accent_mat,
                 rgba=(0.85, 0.22, 0.15, 1.0),
-                uv_rect=PS1TextureAtlas.get_rect("stripe_hazard_yellow")
+                uv_rect=PS1TextureAtlas.get_rect("hazard_stripes")
             )
 
         # 7. Glass Face / Shards
@@ -197,7 +197,7 @@ class WallClockGenerator(BaseAssetGenerator[WallClockConfig]):
                     offset=(-dial_rad * 0.2, depth + 0.010, center_z - dial_rad * 0.2),
                     mat_idx=glass_mat,
                     rgba=(0.55, 0.75, 0.85, 0.45),
-                    uv_rect=PS1TextureAtlas.get_rect("casing_panel_clean")
+                    uv_rect=PS1TextureAtlas.get_rect("painted_metal_white")
                 )
             else:
                 MeshBuilder.add_cylinder(
@@ -209,7 +209,7 @@ class WallClockGenerator(BaseAssetGenerator[WallClockConfig]):
                     axis='Y',
                     mat_idx=glass_mat,
                     rgba=(0.60, 0.80, 0.90, 0.35),
-                    uv_rect=PS1TextureAtlas.get_rect("casing_panel_clean")
+                    uv_rect=PS1TextureAtlas.get_rect("painted_metal_white")
                 )
 
         # 8. Mounting hardware & Top Hanging Tab

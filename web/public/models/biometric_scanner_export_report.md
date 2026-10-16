@@ -1,5 +1,5 @@
 # Informe de Exportación a Godot 4 — biometric_scanner
-**Estado:** ✅ EXITOSA | **Fecha:** `2026-10-16T15:41:26.784571Z` | **Generador:** `BiometricScannerGenerator`
+**Estado:** ✅ EXITOSA | **Fecha:** `2026-10-16T19:48:10.948832Z` | **Generador:** `BiometricScannerGenerator`
 
 ## 1. Archivo y Dimensiones
 - **Archivo GLB:** `D:\MODELCODER\web\public\models\biometric_scanner.glb`

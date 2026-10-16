@@ -101,7 +101,7 @@ class StarChartDisplayGenerator(BaseAssetGenerator):
             offset=(0.0, front_y + 0.004, screen_z),
             mat_idx=accent_mat,
             rgba=screen_rgba,
-            uv_rect=PS1TextureAtlas.get_rect("computer_screen_crt")
+            uv_rect=PS1TextureAtlas.get_rect("crt_screen_green")
         )
 
         # -------------------------------------------------------------
@@ -117,7 +117,7 @@ class StarChartDisplayGenerator(BaseAssetGenerator):
                         offset=(cx, front_y + 0.011, cz),
                         mat_idx=metal_mat,
                         rgba=metal_rgba,
-                        uv_rect=PS1TextureAtlas.get_rect("metal_plates_rivets")
+                        uv_rect=PS1TextureAtlas.get_rect("metal_dark_grime")
                     )
 
         # -------------------------------------------------------------
@@ -146,7 +146,7 @@ class StarChartDisplayGenerator(BaseAssetGenerator):
                     offset=(bx, front_y + 0.012, strip_z),
                     mat_idx=casing_mat,
                     rgba=(0.32, 0.35, 0.38, 1.0),
-                    uv_rect=PS1TextureAtlas.get_rect("control_panel_buttons")
+                    uv_rect=PS1TextureAtlas.get_rect("button_white")
                 )
 
         # -------------------------------------------------------------
@@ -159,7 +159,7 @@ class StarChartDisplayGenerator(BaseAssetGenerator):
             offset=(0.0, (hood_d * 0.5) - 0.01, half_h + 0.015),
             mat_idx=metal_mat,
             rgba=metal_rgba,
-            uv_rect=PS1TextureAtlas.get_rect("metal_plates_rivets")
+            uv_rect=PS1TextureAtlas.get_rect("metal_dark_grime")
         )
 
         self.finalize_mesh(obj, bm)

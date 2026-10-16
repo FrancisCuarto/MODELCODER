@@ -1,5 +1,5 @@
 # Informe de Exportación a Godot 4 — nav_console
-**Estado:** ✅ EXITOSA | **Fecha:** `2026-10-16T16:09:41.735588Z` | **Generador:** `NavConsoleGenerator`
+**Estado:** ✅ EXITOSA | **Fecha:** `2026-10-16T19:48:15.586287Z` | **Generador:** `NavConsoleGenerator`
 
 ## 1. Archivo y Dimensiones
 - **Archivo GLB:** `D:\MODELCODER\web\public\models\nav_console.glb`

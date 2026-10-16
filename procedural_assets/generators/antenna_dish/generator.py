@@ -54,7 +54,7 @@ class AntennaDishGenerator(BaseAssetGenerator):
                 offset=(0.0, 0.01, 0.0),
                 mat_idx=metal_mat,
                 rgba=metal_rgba,
-                uv_rect=PS1TextureAtlas.get_rect("metal_plates_rivets")
+                uv_rect=PS1TextureAtlas.get_rect("metal_dark_grime")
             )
             # Cantilever extension pipe
             MeshBuilder.add_cylinder(
@@ -80,7 +80,7 @@ class AntennaDishGenerator(BaseAssetGenerator):
                 axis='Z',
                 mat_idx=metal_mat,
                 rgba=metal_rgba,
-                uv_rect=PS1TextureAtlas.get_rect("metal_plates_rivets")
+                uv_rect=PS1TextureAtlas.get_rect("metal_dark_grime")
             )
             # Vertical pedestal pillar
             MeshBuilder.add_cylinder(

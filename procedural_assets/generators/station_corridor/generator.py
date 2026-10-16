@@ -36,13 +36,13 @@ class StationCorridorGenerator(BaseAssetGenerator):
 
         # Pre-fetch material indices and UV rects
         m_floor = mat_mgr.get_index("floor_metal")
-        r_floor = mat_mgr.get_rect("floor_metal")
+        r_floor = mat_mgr.get_rect("metal_dark_grime")
 
         m_hazard = mat_mgr.get_index("floor_hazard")
-        r_hazard = mat_mgr.get_rect("hazard_yellow")
+        r_hazard = mat_mgr.get_rect("hazard_stripes")
 
         m_grate = mat_mgr.get_index("floor_grate")
-        r_grate = mat_mgr.get_rect("vent")
+        r_grate = mat_mgr.get_rect("vent_grill")
 
         m_wall = mat_mgr.get_index("wall_bulkhead")
         r_wall = mat_mgr.get_rect("metal_dark_grime")
@@ -54,7 +54,7 @@ class StationCorridorGenerator(BaseAssetGenerator):
         r_girder = mat_mgr.get_rect("metal_light_brushed")
 
         m_door_frame = mat_mgr.get_index("door_emergency_red")
-        r_door_frame = mat_mgr.get_rect("door_emergency_red")
+        r_door_frame = mat_mgr.get_rect("door_seal_red")
 
         m_rust = mat_mgr.get_index("rust_patch")
         r_rust = mat_mgr.get_rect("rust_heavy")
@@ -66,7 +66,7 @@ class StationCorridorGenerator(BaseAssetGenerator):
             r_light = mat_mgr.get_rect("led_red")
         elif config.lighting_state == "unlit":
             m_light = mat_mgr.get_index("glass_tube")
-            r_light = mat_mgr.get_rect("glass_tube")
+            r_light = mat_mgr.get_rect("glass_reinforced")
 
         m_rubber = mat_mgr.get_index("rubber_tire")
         r_rubber = mat_mgr.get_rect("rubber_black")

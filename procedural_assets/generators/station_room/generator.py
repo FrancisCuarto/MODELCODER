@@ -40,13 +40,13 @@ class StationRoomGenerator(BaseAssetGenerator):
 
         # Material indices & UV rects
         m_floor = mat_mgr.get_index("floor_metal")
-        r_floor = mat_mgr.get_rect("floor_metal")
+        r_floor = mat_mgr.get_rect("metal_dark_grime")
 
         m_hazard = mat_mgr.get_index("floor_hazard")
-        r_hazard = mat_mgr.get_rect("hazard_yellow")
+        r_hazard = mat_mgr.get_rect("hazard_stripes")
 
         m_grate = mat_mgr.get_index("floor_grate")
-        r_grate = mat_mgr.get_rect("vent")
+        r_grate = mat_mgr.get_rect("vent_grill")
 
         m_wall = mat_mgr.get_index("wall_bulkhead")
         r_wall = mat_mgr.get_rect("metal_dark_grime")
@@ -58,10 +58,10 @@ class StationRoomGenerator(BaseAssetGenerator):
         r_girder = mat_mgr.get_rect("metal_light_brushed")
 
         m_door_frame = mat_mgr.get_index("door_emergency_red")
-        r_door_frame = mat_mgr.get_rect("door_emergency_red")
+        r_door_frame = mat_mgr.get_rect("door_seal_red")
 
         m_glass = mat_mgr.get_index("glass_observation")
-        r_glass = mat_mgr.get_rect("glass_observation")
+        r_glass = mat_mgr.get_rect("glass_reinforced")
 
         # Emissive lighting
         m_light = mat_mgr.get_index("fluorescent_tube_lit")
@@ -71,7 +71,7 @@ class StationRoomGenerator(BaseAssetGenerator):
             r_light = mat_mgr.get_rect("led_red")
         elif config.lighting_color == "medbay_cyan":
             m_light = mat_mgr.get_index("oxygen_cyan")
-            r_light = mat_mgr.get_rect("oxygen_cyan")
+            r_light = mat_mgr.get_rect("oxygen_cyan_glow")
         elif config.lighting_color == "dim_amber":
             m_light = mat_mgr.get_index("memory_cartridge")
             r_light = mat_mgr.get_rect("cartridge_amber")

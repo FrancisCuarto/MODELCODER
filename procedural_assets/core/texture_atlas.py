@@ -7,6 +7,7 @@ CRT scanlines, and retro dials using vectorized NumPy operations.
 
 from typing import Dict, Tuple, Optional
 import math
+import warnings
 import numpy as np
 import bpy
 
@@ -63,10 +64,120 @@ class PS1TextureAtlas:
         "sign_sector_blue": (0.875, 0.875, 1.00, 1.00),      # (224, 224) -> (256, 256)
     }
 
+    # Explicit alias mapping for legacy and generator compatibility.
+    # Maps historical / semantic texture names to their visually calibrated canonical sub-regions.
+    ALIASES: Dict[str, str] = {
+        # Structural metals and mounting plates -> metal_dark_grime (dark chassis, bolts, edge vignette)
+        "metal_plates_rivets": "metal_dark_grime",
+        "floor_metal": "metal_dark_grime",
+
+        # Vulcanized elastomers and rubber components -> rubber_black (matte black elastomer)
+        "rubber_tread": "rubber_black",
+
+        # CRT monitors and glowing displays -> crt_screen_green (green phosphor CRT with scanlines)
+        "computer_screen_crt": "crt_screen_green",
+        "screen_crt": "crt_screen_green",
+        "screen_green": "crt_screen_green",
+
+        # Stainless / brushed steels -> metal_light_brushed
+        "steel_stainless": "metal_light_brushed",
+
+        # Buttons, keypad matrix and dials -> button_white (beveled raised button with contrast border)
+        "control_panel_buttons": "button_white",
+
+        # Smooth enamel / plastic outer casings -> painted_metal_white (clean off-white enamel with corner wear)
+        "casing_panel_clean": "painted_metal_white",
+        "painted_casing": "painted_metal_white",
+
+        # Ventilation grilles and speaker grates -> vent_grill (horizontal slats with shadow relief)
+        "metal_vent_grate": "vent_grill",
+        "vent": "vent_grill",
+
+        # Warning badges and stencil labels -> caution_label (yellow badge with simulated text bars)
+        "generic_label": "caution_label",
+
+        # Hazard chevron warning stripes -> hazard_stripes (yellow & black diagonal stripes)
+        "stripe_hazard_yellow": "hazard_stripes",
+        "hazard_yellow": "hazard_stripes",
+
+        # Emergency door seals and accent frames -> door_seal_red (heavy red rubber/paint seal)
+        "door_emergency_red": "door_seal_red",
+
+        # Glazed / reinforced security glass -> glass_reinforced (translucent glass with steel mesh grid)
+        "glass_observation": "glass_reinforced",
+        "glass_tube": "glass_reinforced",
+
+        # Oxygen glow conduits -> oxygen_cyan_glow (cyan bioluminescent/chemiluminescent glow)
+        "oxygen_cyan": "oxygen_cyan_glow",
+    }
+
+    # Global strict flag: when True, requesting an unknown texture raises KeyError instead of warning.
+    STRICT_MODE: bool = False
+
     @classmethod
-    def get_rect(cls, name: str) -> Rect:
-        """Retrieve UV rect bounds for a given texture chunk."""
-        return cls.RECTS.get(name, (0.0, 0.0, 1.0, 1.0))
+    def is_valid_name(cls, name: str) -> bool:
+        """Return True if name exists in canonical RECTS or in ALIASES."""
+        return (name in cls.RECTS) or (name in cls.ALIASES)
+
+    @classmethod
+    def resolve_rect_name(cls, name: str) -> str:
+        """
+        Resolve a texture name to its canonical RECTS key.
+        Raises KeyError if the name is neither in RECTS nor in ALIASES.
+        """
+        if name in cls.RECTS:
+            return name
+        if name in cls.ALIASES:
+            return cls.ALIASES[name]
+        raise KeyError(
+            f"[PS1TextureAtlas] Unknown texture chunk '{name}'. "
+            f"Available canonical keys: {sorted(cls.RECTS.keys())}. "
+            f"Available aliases: {sorted(cls.ALIASES.keys())}."
+        )
+
+    @classmethod
+    def get_rect(cls, name: str, strict: Optional[bool] = None) -> Rect:
+        """
+        Retrieve UV rect bounds (u0, v0, u1, v1) for a given texture chunk or alias.
+        
+        CRITICAL INTEGRITY RULE:
+        Never returns (0.0, 0.0, 1.0, 1.0) silently on missing names.
+        - Canonical names return their designated sub-rectangle.
+        - Aliased names return the canonical rectangle and emit a deprecation/developer warning.
+        - Unknown names either raise KeyError (if strict=True or STRICT_MODE=True) or
+          log a prominent UserWarning and fallback to safe sub-tile 'metal_dark_grime'.
+        """
+        is_strict = cls.STRICT_MODE if strict is None else strict
+
+        if name in cls.RECTS:
+            return cls.RECTS[name]
+
+        if name in cls.ALIASES:
+            canonical = cls.ALIASES[name]
+            warnings.warn(
+                f"[PS1TextureAtlas] Texture name '{name}' is a legacy alias; "
+                f"resolving to canonical region '{canonical}'. "
+                f"Please update generator to use '{canonical}' directly.",
+                UserWarning,
+                stacklevel=2
+            )
+            return cls.RECTS[canonical]
+
+        # Unknown name requested
+        msg = (
+            f"[PS1TextureAtlas] Unknown texture chunk '{name}' requested! "
+            f"Silent fallback to entire atlas is strictly disabled. "
+            f"Available canonical keys: {sorted(cls.RECTS.keys())}."
+        )
+        if is_strict:
+            raise KeyError(msg)
+
+        warnings.warn(
+            f"{msg} Falling back to safe structural sub-tile 'metal_dark_grime'.",
+            UserWarning,
+            stacklevel=2
+        )
+        return cls.RECTS["metal_dark_grime"]
 
     @classmethod
     def generate_atlas_pixels(cls, wear_level: float = 0.5, seed: int = 42) -> np.ndarray:

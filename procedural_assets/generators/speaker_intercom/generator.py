@@ -61,7 +61,7 @@ class SpeakerIntercomGenerator(BaseAssetGenerator):
             offset=(0.0, 0.006, 0.0),
             mat_idx=metal_mat,
             rgba=metal_rgba,
-            uv_rect=PS1TextureAtlas.get_rect("metal_plates_rivets")
+            uv_rect=PS1TextureAtlas.get_rect("metal_dark_grime")
         )
         # Front housing block
         MeshBuilder.add_box(
@@ -103,7 +103,7 @@ class SpeakerIntercomGenerator(BaseAssetGenerator):
                 axis='Y',
                 mat_idx=metal_mat,
                 rgba=(0.12, 0.12, 0.14, 1.0),
-                uv_rect=PS1TextureAtlas.get_rect("metal_vent_grate")
+                uv_rect=PS1TextureAtlas.get_rect("vent_grill")
             )
 
         # -------------------------------------------------------------
@@ -146,7 +146,7 @@ class SpeakerIntercomGenerator(BaseAssetGenerator):
             axis='Y',
             mat_idx=metal_mat,
             rgba=metal_rgba,
-            uv_rect=PS1TextureAtlas.get_rect("metal_vent_grate")
+            uv_rect=PS1TextureAtlas.get_rect("vent_grill")
         )
 
         # -------------------------------------------------------------
@@ -174,7 +174,7 @@ class SpeakerIntercomGenerator(BaseAssetGenerator):
                 offset=(-0.015, front_y + 0.002, half_h - 0.025),
                 mat_idx=metal_mat,
                 rgba=metal_rgba,
-                uv_rect=PS1TextureAtlas.get_rect("metal_plates_rivets")
+                uv_rect=PS1TextureAtlas.get_rect("metal_dark_grime")
             )
 
         # -------------------------------------------------------------

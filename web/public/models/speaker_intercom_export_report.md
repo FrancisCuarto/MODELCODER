@@ -1,5 +1,5 @@
 # Informe de Exportación a Godot 4 — speaker_intercom
-**Estado:** ✅ EXITOSA | **Fecha:** `2026-10-16T15:41:28.582324Z` | **Generador:** `SpeakerIntercomGenerator`
+**Estado:** ✅ EXITOSA | **Fecha:** `2026-10-16T19:48:18.189645Z` | **Generador:** `SpeakerIntercomGenerator`
 
 ## 1. Archivo y Dimensiones
 - **Archivo GLB:** `D:\MODELCODER\web\public\models\speaker_intercom.glb`

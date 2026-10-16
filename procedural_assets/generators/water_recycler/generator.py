@@ -62,7 +62,7 @@ class WaterRecyclerGenerator(BaseAssetGenerator):
             offset=(0.0, 0.0, 0.04),
             mat_idx=metal_mat,
             rgba=metal_rgba,
-            uv_rect=PS1TextureAtlas.get_rect("metal_plates_rivets")
+            uv_rect=PS1TextureAtlas.get_rect("metal_dark_grime")
         )
 
         # Upper rear cabinet housing box
@@ -123,7 +123,7 @@ class WaterRecyclerGenerator(BaseAssetGenerator):
                     axis='Z',
                     mat_idx=metal_mat,
                     rgba=metal_rgba,
-                    uv_rect=PS1TextureAtlas.get_rect("metal_plates_rivets")
+                    uv_rect=PS1TextureAtlas.get_rect("metal_dark_grime")
                 )
 
         # Interconnecting stainless horizontal pipe manifold
@@ -160,7 +160,7 @@ class WaterRecyclerGenerator(BaseAssetGenerator):
                 offset=(-0.14, half_d + 0.012, upper_panel_z),
                 mat_idx=accent_mat,
                 rgba=purity_rgba,
-                uv_rect=PS1TextureAtlas.get_rect("computer_screen_crt")
+                uv_rect=PS1TextureAtlas.get_rect("crt_screen_green")
             )
 
         # Dual analog pressure gauges (Inlet & Outlet)
@@ -174,7 +174,7 @@ class WaterRecyclerGenerator(BaseAssetGenerator):
                 axis='Y',
                 mat_idx=metal_mat,
                 rgba=(0.92, 0.92, 0.94, 1.0),
-                uv_rect=PS1TextureAtlas.get_rect("control_panel_buttons")
+                uv_rect=PS1TextureAtlas.get_rect("button_white")
             )
             # Gauge needle
             MeshBuilder.add_box(

@@ -69,7 +69,7 @@ class CameraMonitorGenerator(BaseAssetGenerator):
                 axis='Z',
                 mat_idx=metal_mat,
                 rgba=metal_rgba,
-                uv_rect=PS1TextureAtlas.get_rect("metal_plates_rivets")
+                uv_rect=PS1TextureAtlas.get_rect("metal_dark_grime")
             )
             # Neck column
             MeshBuilder.add_cylinder(
@@ -93,7 +93,7 @@ class CameraMonitorGenerator(BaseAssetGenerator):
                         offset=(fx, fy, stand_h * 0.5),
                         mat_idx=metal_mat,
                         rgba=(0.12, 0.12, 0.14, 1.0),
-                        uv_rect=PS1TextureAtlas.get_rect("rubber_tread")
+                        uv_rect=PS1TextureAtlas.get_rect("rubber_black")
                     )
 
         # -------------------------------------------------------------
@@ -115,7 +115,7 @@ class CameraMonitorGenerator(BaseAssetGenerator):
             offset=(0.0, -d * 0.5 - 0.02, mon_z),
             mat_idx=metal_mat,
             rgba=metal_rgba,
-            uv_rect=PS1TextureAtlas.get_rect("metal_vent_grate")
+            uv_rect=PS1TextureAtlas.get_rect("vent_grill")
         )
         # Top carrying handle recess
         MeshBuilder.add_box(
@@ -155,7 +155,7 @@ class CameraMonitorGenerator(BaseAssetGenerator):
             offset=(0.0, front_y + 0.014, bezel_z),
             mat_idx=accent_mat,
             rgba=screen_rgba,
-            uv_rect=PS1TextureAtlas.get_rect("computer_screen_crt")
+            uv_rect=PS1TextureAtlas.get_rect("crt_screen_green")
         )
 
         # Quad 2x2 grid cross splitter bars (if quad_split)
@@ -193,7 +193,7 @@ class CameraMonitorGenerator(BaseAssetGenerator):
                     offset=(bx, front_y + 0.006, deck_z),
                     mat_idx=metal_mat,
                     rgba=(0.30, 0.30, 0.34, 1.0),
-                    uv_rect=PS1TextureAtlas.get_rect("control_panel_buttons")
+                    uv_rect=PS1TextureAtlas.get_rect("button_white")
                 )
                 # Small channel tally LED above button
                 led_c = (0.20, 0.95, 0.25, 1.0) if self.config.display_state == "cctv_feed" else (0.20, 0.20, 0.22, 1.0)

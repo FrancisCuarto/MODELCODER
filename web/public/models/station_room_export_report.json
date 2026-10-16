@@ -1,0 +1,295 @@
+{
+  "export_metadata": {
+    "generator": "StationRoomGenerator",
+    "asset_name": "station_room",
+    "timestamp": "2026-10-16T19:48:19.868221Z",
+    "format": "glTF 2.0 Binary (.glb)",
+    "output_file": "D:\\MODELCODER\\web\\public\\models\\station_room.glb",
+    "file_size_bytes": 121496,
+    "file_size_kb": 118.65
+  },
+  "normalization": {
+    "units": "Meters (1 Blender unit = 1.0 Godot unit)",
+    "scale_applied": true,
+    "rotation_applied": true,
+    "location_applied": true,
+    "pivot_rule": "floor_center",
+    "pivot_offset_applied": [
+      -0.0,
+      -0.0,
+      0.08
+    ],
+    "normals_shading": "Flat (poly.use_smooth = False, PS1 low-poly crisp)",
+    "normals_recalculated": true,
+    "uv_mapping": "TEXCOORD_0 (Component-mapped to PS1 Weathered Texture Atlas)",
+    "vertex_colors": "COLOR_0 (Col / PS1 Gouraud tinting and wear)"
+  },
+  "dimensions_meters": {
+    "x": 6.4,
+    "y": 8.4,
+    "z": 3.56
+  },
+  "geometry_metrics": {
+    "total_triangles": 336,
+    "total_vertices": 224,
+    "target_tri_budget": 750,
+    "budget_compliance_ratio": 0.45,
+    "object_count": 4,
+    "hierarchy": [
+      {
+        "name": "station_room",
+        "type": "MESH",
+        "parent": null,
+        "triangles": 336,
+        "vertices": 224
+      },
+      {
+        "name": "socket_item_spawn",
+        "type": "EMPTY",
+        "parent": "station_room",
+        "triangles": 0,
+        "vertices": 0
+      },
+      {
+        "name": "socket_light",
+        "type": "EMPTY",
+        "parent": "station_room",
+        "triangles": 0,
+        "vertices": 0
+      },
+      {
+        "name": "socket_player_interact",
+        "type": "EMPTY",
+        "parent": "station_room",
+        "triangles": 0,
+        "vertices": 0
+      }
+    ]
+  },
+  "materials": {
+    "count": 8,
+    "compacted": true,
+    "list": [
+      {
+        "name": "mat_psx_industrial_hazard_fluorescent_lit_w50",
+        "roughness": 0.18,
+        "metallic": 0.0,
+        "emission": "3.0x"
+      },
+      {
+        "name": "mat_psx_industrial_hazard_door_emergency_red_w50",
+        "roughness": 0.55,
+        "metallic": 0.15,
+        "emission": "None"
+      },
+      {
+        "name": "mat_psx_industrial_hazard_floor_metal_w50",
+        "roughness": 0.78,
+        "metallic": 0.32,
+        "emission": "None"
+      },
+      {
+        "name": "mat_psx_industrial_hazard_floor_hazard_w50",
+        "roughness": 0.72,
+        "metallic": 0.1,
+        "emission": "None"
+      },
+      {
+        "name": "mat_psx_industrial_hazard_floor_grate_w50",
+        "roughness": 0.6,
+        "metallic": 0.65,
+        "emission": "None"
+      },
+      {
+        "name": "mat_psx_industrial_hazard_wall_bulkhead_w50",
+        "roughness": 0.74,
+        "metallic": 0.28,
+        "emission": "None"
+      },
+      {
+        "name": "mat_psx_industrial_hazard_wall_support_beam_w50",
+        "roughness": 0.52,
+        "metallic": 0.75,
+        "emission": "None"
+      },
+      {
+        "name": "mat_psx_industrial_hazard_ceiling_girder_w50",
+        "roughness": 0.65,
+        "metallic": 0.6,
+        "emission": "None"
+      }
+    ]
+  },
+  "collision": {
+    "enabled": false,
+    "node_name": "None",
+    "shape_type": "box",
+    "godot_suffix": "-convcolonly",
+    "extents": [
+      6.4,
+      8.4,
+      3.56
+    ]
+  },
+  "sockets": [
+    {
+      "name": "socket_player_interact",
+      "position": [
+        0.0,
+        -4.75,
+        0.0
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "Standard player character interaction stand point"
+    },
+    {
+      "name": "socket_item_spawn",
+      "position": [
+        0.0,
+        0.0,
+        3.58
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "Prop or pickup spawn snap position (keycards, ammo, medical items)"
+    },
+    {
+      "name": "socket_light",
+      "position": [
+        0.0,
+        0.0,
+        3.026
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "OmniLight3D / SpotLight3D mount anchor point"
+    }
+  ],
+  "godot_4_validation": {
+    "bounds_aabb": {
+      "position": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "size": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "collision_shape_count": 0,
+    "errors": [],
+    "file": "D:\\MODELCODER\\web\\public\\models\\station_room.glb",
+    "materials": [
+      "mat_psx_industrial_hazard_fluorescent_lit_w50",
+      "mat_psx_industrial_hazard_door_emergency_red_w50",
+      "mat_psx_industrial_hazard_floor_metal_w50",
+      "mat_psx_industrial_hazard_floor_hazard_w50",
+      "mat_psx_industrial_hazard_floor_grate_w50",
+      "mat_psx_industrial_hazard_wall_bulkhead_w50",
+      "mat_psx_industrial_hazard_wall_support_beam_w50",
+      "mat_psx_industrial_hazard_ceiling_girder_w50"
+    ],
+    "mesh_count": 1,
+    "nodes": [
+      {
+        "class": "Node3D",
+        "depth": 0,
+        "name": "station_room2"
+      },
+      {
+        "aabb": {
+          "position": [
+            -3.2,
+            0.0,
+            -4.2
+          ],
+          "size": [
+            6.4,
+            3.56,
+            8.4
+          ]
+        },
+        "class": "MeshInstance3D",
+        "depth": 1,
+        "has_uv": true,
+        "materials": [
+          "mat_psx_industrial_hazard_fluorescent_lit_w50",
+          "mat_psx_industrial_hazard_door_emergency_red_w50",
+          "mat_psx_industrial_hazard_floor_metal_w50",
+          "mat_psx_industrial_hazard_floor_hazard_w50",
+          "mat_psx_industrial_hazard_floor_grate_w50",
+          "mat_psx_industrial_hazard_wall_bulkhead_w50",
+          "mat_psx_industrial_hazard_wall_support_beam_w50",
+          "mat_psx_industrial_hazard_ceiling_girder_w50"
+        ],
+        "name": "station_room",
+        "surface_count": 8
+      },
+      {
+        "class": "Node3D",
+        "depth": 2,
+        "name": "socket_item_spawn"
+      },
+      {
+        "class": "Node3D",
+        "depth": 2,
+        "name": "socket_light"
+      },
+      {
+        "class": "Node3D",
+        "depth": 2,
+        "name": "socket_player_interact"
+      }
+    ],
+    "root_class": "Node3D",
+    "root_name": "station_room2",
+    "socket_count": 3,
+    "sockets": [
+      {
+        "name": "socket_item_spawn",
+        "position": [
+          0.0,
+          3.66,
+          0.0
+        ]
+      },
+      {
+        "name": "socket_light",
+        "position": [
+          0.0,
+          3.106,
+          0.0
+        ]
+      },
+      {
+        "name": "socket_player_interact",
+        "position": [
+          0.0,
+          0.08,
+          4.75
+        ]
+      }
+    ],
+    "static_body_count": 0,
+    "total_surfaces": 8,
+    "valid": true,
+    "warnings": [],
+    "tested_in_godot": true,
+    "success": true,
+    "exit_code": 0,
+    "godot_binary": "C:\\Users\\lopez\\Downloads\\Godot_v4.5.1-stable_win64.exe\\Godot_v4.5.1-stable_win64_console.exe"
+  },
+  "warnings": []
+}

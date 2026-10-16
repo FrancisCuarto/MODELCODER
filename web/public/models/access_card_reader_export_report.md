@@ -1,5 +1,5 @@
 # Informe de Exportación a Godot 4 — access_card_reader
-**Estado:** ✅ EXITOSA | **Fecha:** `2026-10-16T15:41:26.204597Z` | **Generador:** `AccessCardReaderGenerator`
+**Estado:** ✅ EXITOSA | **Fecha:** `2026-10-16T19:48:09.412969Z` | **Generador:** `AccessCardReaderGenerator`
 
 ## 1. Archivo y Dimensiones
 - **Archivo GLB:** `D:\MODELCODER\web\public\models\access_card_reader.glb`

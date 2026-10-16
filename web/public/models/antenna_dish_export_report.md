@@ -1,5 +1,5 @@
 # Informe de Exportación a Godot 4 — antenna_dish
-**Estado:** ✅ EXITOSA | **Fecha:** `2026-10-16T16:09:40.283772Z` | **Generador:** `AntennaDishGenerator`
+**Estado:** ✅ EXITOSA | **Fecha:** `2026-10-16T19:48:10.426012Z` | **Generador:** `AntennaDishGenerator`
 
 ## 1. Archivo y Dimensiones
 - **Archivo GLB:** `D:\MODELCODER\web\public\models\antenna_dish.glb`

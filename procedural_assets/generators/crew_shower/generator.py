@@ -65,7 +65,7 @@ class CrewShowerGenerator(BaseAssetGenerator):
             offset=(0.0, 0.0, tray_h - 0.005),
             mat_idx=metal_mat,
             rgba=(0.88, 0.90, 0.92, 1.0),
-            uv_rect=PS1TextureAtlas.get_rect("rubber_tread")
+            uv_rect=PS1TextureAtlas.get_rect("rubber_black")
         )
         # Center circular waste drain
         MeshBuilder.add_cylinder(
@@ -94,7 +94,7 @@ class CrewShowerGenerator(BaseAssetGenerator):
             offset=(0.0, -half_d + (wall_t * 0.5), wall_mid_z),
             mat_idx=casing_mat,
             rgba=casing_rgba,
-            uv_rect=PS1TextureAtlas.get_rect("metal_plates_rivets")
+            uv_rect=PS1TextureAtlas.get_rect("metal_dark_grime")
         )
         # Left sanitary wall panel
         MeshBuilder.add_box(
@@ -103,7 +103,7 @@ class CrewShowerGenerator(BaseAssetGenerator):
             offset=(-half_w + (wall_t * 0.5), (wall_t * 0.5), wall_mid_z),
             mat_idx=casing_mat,
             rgba=casing_rgba,
-            uv_rect=PS1TextureAtlas.get_rect("metal_plates_rivets")
+            uv_rect=PS1TextureAtlas.get_rect("metal_dark_grime")
         )
 
         back_wall_y = -half_d + wall_t

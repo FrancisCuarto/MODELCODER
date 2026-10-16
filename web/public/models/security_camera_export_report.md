@@ -1,5 +1,5 @@
 # Informe de Exportación a Godot 4 — security_camera
-**Estado:** ✅ EXITOSA | **Fecha:** `2026-10-16T15:41:28.288498Z` | **Generador:** `SecurityCameraGenerator`
+**Estado:** ✅ EXITOSA | **Fecha:** `2026-10-16T19:48:17.671501Z` | **Generador:** `SecurityCameraGenerator`
 
 ## 1. Archivo y Dimensiones
 - **Archivo GLB:** `D:\MODELCODER\web\public\models\security_camera.glb`

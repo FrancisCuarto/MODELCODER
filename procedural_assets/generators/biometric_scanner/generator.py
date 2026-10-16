@@ -93,7 +93,7 @@ class BiometricScannerGenerator(BaseAssetGenerator):
             offset=(0.0, front_y + 0.012, platen_z),
             mat_idx=metal_mat,
             rgba=(0.10, 0.15, 0.18, 1.0),
-            uv_rect=PS1TextureAtlas.get_rect("computer_screen_crt")
+            uv_rect=PS1TextureAtlas.get_rect("crt_screen_green")
         )
 
         # Active glowing laser scan line slit
@@ -114,7 +114,7 @@ class BiometricScannerGenerator(BaseAssetGenerator):
                 offset=(sx, front_y + 0.012, platen_z),
                 mat_idx=metal_mat,
                 rgba=metal_rgba,
-                uv_rect=PS1TextureAtlas.get_rect("metal_plates_rivets")
+                uv_rect=PS1TextureAtlas.get_rect("metal_dark_grime")
             )
 
         # -------------------------------------------------------------
@@ -129,7 +129,7 @@ class BiometricScannerGenerator(BaseAssetGenerator):
             offset=(0.0, front_y + 0.015, upper_z),
             mat_idx=metal_mat,
             rgba=metal_rgba,
-            uv_rect=PS1TextureAtlas.get_rect("metal_plates_rivets")
+            uv_rect=PS1TextureAtlas.get_rect("metal_dark_grime")
         )
 
         if self.config.has_face_reticle:
@@ -143,7 +143,7 @@ class BiometricScannerGenerator(BaseAssetGenerator):
                 axis='Y',
                 mat_idx=metal_mat,
                 rgba=(0.06, 0.06, 0.08, 1.0),
-                uv_rect=PS1TextureAtlas.get_rect("rubber_tread")
+                uv_rect=PS1TextureAtlas.get_rect("rubber_black")
             )
             # Internal retina laser indicator diode
             MeshBuilder.add_cylinder(
@@ -166,7 +166,7 @@ class BiometricScannerGenerator(BaseAssetGenerator):
                 offset=(0.0, front_y + 0.003, upper_z - 0.055),
                 mat_idx=metal_mat,
                 rgba=metal_rgba,
-                uv_rect=PS1TextureAtlas.get_rect("metal_vent_grate")
+                uv_rect=PS1TextureAtlas.get_rect("vent_grill")
             )
 
         # -------------------------------------------------------------
@@ -193,7 +193,7 @@ class BiometricScannerGenerator(BaseAssetGenerator):
                 offset=(0.0, d * 0.5, 0.009),
                 mat_idx=metal_mat,
                 rgba=metal_rgba,
-                uv_rect=PS1TextureAtlas.get_rect("metal_plates_rivets")
+                uv_rect=PS1TextureAtlas.get_rect("metal_dark_grime")
             )
             # Floor anchor bolts
             for bx in (-0.08, 0.08):
@@ -217,7 +217,7 @@ class BiometricScannerGenerator(BaseAssetGenerator):
                 offset=(0.0, 0.006, 0.0),
                 mat_idx=metal_mat,
                 rgba=metal_rgba,
-                uv_rect=PS1TextureAtlas.get_rect("metal_plates_rivets")
+                uv_rect=PS1TextureAtlas.get_rect("metal_dark_grime")
             )
 
         self.finalize_mesh(obj, bm)

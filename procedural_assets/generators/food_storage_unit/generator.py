@@ -58,7 +58,7 @@ class FoodStorageUnitGenerator(BaseAssetGenerator):
                     offset=(fx, fy, 0.02),
                     mat_idx=metal_mat,
                     rgba=metal_rgba,
-                    uv_rect=PS1TextureAtlas.get_rect("metal_plates_rivets")
+                    uv_rect=PS1TextureAtlas.get_rect("metal_dark_grime")
                 )
 
         body_h = h - 0.04
@@ -118,7 +118,7 @@ class FoodStorageUnitGenerator(BaseAssetGenerator):
                 offset=(0.0, front_y + 0.006, rz),
                 mat_idx=metal_mat,
                 rgba=metal_rgba,
-                uv_rect=PS1TextureAtlas.get_rect("metal_plates_rivets")
+                uv_rect=PS1TextureAtlas.get_rect("metal_dark_grime")
             )
 
             # Compression latch handle
@@ -139,7 +139,7 @@ class FoodStorageUnitGenerator(BaseAssetGenerator):
                 offset=(-half_w * 0.40, front_y + 0.014, rz),
                 mat_idx=casing_mat,
                 rgba=(0.90, 0.90, 0.92, 1.0),
-                uv_rect=PS1TextureAtlas.get_rect("control_panel_buttons")
+                uv_rect=PS1TextureAtlas.get_rect("button_white")
             )
 
         # -------------------------------------------------------------
@@ -152,7 +152,7 @@ class FoodStorageUnitGenerator(BaseAssetGenerator):
                 offset=(0.0, front_y + 0.004, vz),
                 mat_idx=metal_mat,
                 rgba=metal_rgba,
-                uv_rect=PS1TextureAtlas.get_rect("metal_vent_grate")
+                uv_rect=PS1TextureAtlas.get_rect("vent_grill")
             )
 
         self.finalize_mesh(obj, bm)

@@ -62,7 +62,7 @@ class AccessCardReaderGenerator(BaseAssetGenerator):
             offset=(0.0, 0.0075, 0.0),
             mat_idx=metal_mat,
             rgba=metal_rgba,
-            uv_rect=PS1TextureAtlas.get_rect("metal_plates_rivets")
+            uv_rect=PS1TextureAtlas.get_rect("metal_dark_grime")
         )
         # Front beveled faceplate
         front_w = w - 0.01
@@ -99,7 +99,7 @@ class AccessCardReaderGenerator(BaseAssetGenerator):
                 offset=(slot_x, front_y + 0.018, 0.0),
                 mat_idx=metal_mat,
                 rgba=(0.08, 0.08, 0.09, 1.0),
-                uv_rect=PS1TextureAtlas.get_rect("rubber_tread")
+                uv_rect=PS1TextureAtlas.get_rect("rubber_black")
             )
 
         # -------------------------------------------------------------
@@ -136,7 +136,7 @@ class AccessCardReaderGenerator(BaseAssetGenerator):
                 offset=(panel_x, front_y + 0.008, half_h - 0.07),
                 mat_idx=metal_mat,
                 rgba=lcd_rgba,
-                uv_rect=PS1TextureAtlas.get_rect("computer_screen_crt")
+                uv_rect=PS1TextureAtlas.get_rect("crt_screen_green")
             )
 
         # -------------------------------------------------------------
@@ -169,7 +169,7 @@ class AccessCardReaderGenerator(BaseAssetGenerator):
                         offset=(bx, front_y + 0.006 + (btn_thick * 0.5), bz),
                         mat_idx=casing_mat,
                         rgba=(0.35, 0.35, 0.38, 1.0),
-                        uv_rect=PS1TextureAtlas.get_rect("control_panel_buttons")
+                        uv_rect=PS1TextureAtlas.get_rect("button_white")
                     )
 
         # -------------------------------------------------------------
@@ -184,7 +184,7 @@ class AccessCardReaderGenerator(BaseAssetGenerator):
                 offset=(0.0, (shroud_d * 0.5) - 0.01, half_h + 0.01),
                 mat_idx=metal_mat,
                 rgba=metal_rgba,
-                uv_rect=PS1TextureAtlas.get_rect("metal_plates_rivets")
+                uv_rect=PS1TextureAtlas.get_rect("metal_dark_grime")
             )
             # Left & right side cheeks
             for sx in (-(half_w + 0.01), (half_w + 0.01)):
@@ -194,7 +194,7 @@ class AccessCardReaderGenerator(BaseAssetGenerator):
                     offset=(sx, shroud_d * 0.35, 0.0),
                     mat_idx=metal_mat,
                     rgba=metal_rgba,
-                    uv_rect=PS1TextureAtlas.get_rect("metal_plates_rivets")
+                    uv_rect=PS1TextureAtlas.get_rect("metal_dark_grime")
                 )
 
         # -------------------------------------------------------------

@@ -57,7 +57,7 @@ class PersonalEffectsBoxGenerator(BaseAssetGenerator[PersonalEffectsBoxConfig]):
             offset=(0.0, 0.0, hb * 0.5),
             mat_idx=casing_mat,
             rgba=casing_rgba,
-            uv_rect=PS1TextureAtlas.get_rect("casing_panel_clean")
+            uv_rect=PS1TextureAtlas.get_rect("painted_metal_white")
         )
 
         # Base stiffening ribbing (horizontal band near perimeter)
@@ -67,7 +67,7 @@ class PersonalEffectsBoxGenerator(BaseAssetGenerator[PersonalEffectsBoxConfig]):
             offset=(0.0, 0.0, hb * 0.5),
             mat_idx=casing_mat,
             rgba=casing_rgba,
-            uv_rect=PS1TextureAtlas.get_rect("casing_panel_clean")
+            uv_rect=PS1TextureAtlas.get_rect("painted_metal_white")
         )
 
         # -------------------------------------------------------------
@@ -178,7 +178,7 @@ class PersonalEffectsBoxGenerator(BaseAssetGenerator[PersonalEffectsBoxConfig]):
                 offset=(0.0, -d * 0.5 - 0.002, hb * 0.45),
                 mat_idx=screen_mat,
                 rgba=(0.85, 0.88, 0.85, 1.0),
-                uv_rect=PS1TextureAtlas.get_rect("generic_label")
+                uv_rect=PS1TextureAtlas.get_rect("caution_label")
             )
 
         # -------------------------------------------------------------
@@ -197,7 +197,7 @@ class PersonalEffectsBoxGenerator(BaseAssetGenerator[PersonalEffectsBoxConfig]):
             offset=(0.0, 0.0, hb + hl * 0.5),
             mat_idx=casing_mat,
             rgba=casing_rgba,
-            uv_rect=PS1TextureAtlas.get_rect("casing_panel_clean")
+            uv_rect=PS1TextureAtlas.get_rect("painted_metal_white")
         )
 
         # Lid top recess / bevel rim
@@ -207,7 +207,7 @@ class PersonalEffectsBoxGenerator(BaseAssetGenerator[PersonalEffectsBoxConfig]):
             offset=(0.0, 0.0, hb + hl + 0.005),
             mat_idx=casing_mat,
             rgba=casing_rgba,
-            uv_rect=PS1TextureAtlas.get_rect("casing_panel_clean")
+            uv_rect=PS1TextureAtlas.get_rect("painted_metal_white")
         )
 
         # Top corner bumpers on lid
@@ -251,7 +251,7 @@ class PersonalEffectsBoxGenerator(BaseAssetGenerator[PersonalEffectsBoxConfig]):
                 offset=(0.05, 0.02, hb * 0.85 + 0.011),
                 mat_idx=screen_mat,
                 rgba=(0.18, 0.45, 0.55, 1.0),
-                uv_rect=PS1TextureAtlas.get_rect("screen_crt")
+                uv_rect=PS1TextureAtlas.get_rect("crt_screen_green")
             )
         elif self.config.box_state == "damaged":
             # Slightly misaligned / dented lid

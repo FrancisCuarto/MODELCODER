@@ -88,7 +88,7 @@ class ConveyorSegmentGenerator(BaseAssetGenerator):
                 offset=(0.0, 0.0, height + (beam_h * 0.3)),
                 mat_idx=metal_mat,
                 rgba=(0.18, 0.18, 0.20, 1.0),
-                uv_rect=PS1TextureAtlas.get_rect("rubber_tread")
+                uv_rect=PS1TextureAtlas.get_rect("rubber_black")
             )
             # Front and rear crown drive drums
             for dy in (-half_l + 0.06, half_l - 0.06):
@@ -150,7 +150,7 @@ class ConveyorSegmentGenerator(BaseAssetGenerator):
                     offset=(lx, ly, 0.0075),
                     mat_idx=metal_mat,
                     rgba=metal_rgba,
-                    uv_rect=PS1TextureAtlas.get_rect("metal_plates_rivets")
+                    uv_rect=PS1TextureAtlas.get_rect("metal_dark_grime")
                 )
             # Transverse cross brace between left and right leg
             cross_z = (height - (beam_h * 0.5)) * 0.4
@@ -207,7 +207,7 @@ class ConveyorSegmentGenerator(BaseAssetGenerator):
                 offset=(motor_x, motor_y, motor_z),
                 mat_idx=casing_mat,
                 rgba=casing_rgba,
-                uv_rect=PS1TextureAtlas.get_rect("metal_vent_grate")
+                uv_rect=PS1TextureAtlas.get_rect("vent_grill")
             )
             # Cylindrical stator motor bell
             MeshBuilder.add_cylinder(
@@ -243,7 +243,7 @@ class ConveyorSegmentGenerator(BaseAssetGenerator):
             offset=(e_x, e_y, e_z),
             mat_idx=accent_mat,
             rgba=red_rgba,
-            uv_rect=PS1TextureAtlas.get_rect("metal_plates_rivets")
+            uv_rect=PS1TextureAtlas.get_rect("metal_dark_grime")
         )
         # Push mushroom button
         MeshBuilder.add_cylinder(

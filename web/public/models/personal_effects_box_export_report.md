@@ -1,5 +1,5 @@
 # Informe de Exportación a Godot 4 — personal_effects_box
-**Estado:** ✅ EXITOSA | **Fecha:** `2026-10-16T16:09:42.316093Z` | **Generador:** `PersonalEffectsBoxGenerator`
+**Estado:** ✅ EXITOSA | **Fecha:** `2026-10-16T19:48:17.167307Z` | **Generador:** `PersonalEffectsBoxGenerator`
 
 ## 1. Archivo y Dimensiones
 - **Archivo GLB:** `D:\MODELCODER\web\public\models\personal_effects_box.glb`

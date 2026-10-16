@@ -1,0 +1,271 @@
+{
+  "export_metadata": {
+    "generator": "OfficeDoorGenerator",
+    "asset_name": "office_door",
+    "timestamp": "2026-10-16T19:48:16.636993Z",
+    "format": "glTF 2.0 Binary (.glb)",
+    "output_file": "D:\\MODELCODER\\web\\public\\models\\office_door.glb",
+    "file_size_bytes": 98168,
+    "file_size_kb": 95.87
+  },
+  "normalization": {
+    "units": "Meters (1 Blender unit = 1.0 Godot unit)",
+    "scale_applied": true,
+    "rotation_applied": true,
+    "location_applied": true,
+    "pivot_rule": "floor_center",
+    "pivot_offset_applied": [
+      -0.0,
+      -0.0,
+      -0.0
+    ],
+    "normals_shading": "Flat (poly.use_smooth = False, PS1 low-poly crisp)",
+    "normals_recalculated": true,
+    "uv_mapping": "TEXCOORD_0 (Component-mapped to PS1 Weathered Texture Atlas)",
+    "vertex_colors": "COLOR_0 (Col / PS1 Gouraud tinting and wear)"
+  },
+  "dimensions_meters": {
+    "x": 1.2,
+    "y": 0.22,
+    "z": 2.4
+  },
+  "geometry_metrics": {
+    "total_triangles": 120,
+    "total_vertices": 80,
+    "target_tri_budget": 420,
+    "budget_compliance_ratio": 0.29,
+    "object_count": 4,
+    "hierarchy": [
+      {
+        "name": "office_door",
+        "type": "MESH",
+        "parent": null,
+        "triangles": 120,
+        "vertices": 80
+      },
+      {
+        "name": "socket_item_spawn",
+        "type": "EMPTY",
+        "parent": "office_door",
+        "triangles": 0,
+        "vertices": 0
+      },
+      {
+        "name": "socket_light",
+        "type": "EMPTY",
+        "parent": "office_door",
+        "triangles": 0,
+        "vertices": 0
+      },
+      {
+        "name": "socket_player_interact",
+        "type": "EMPTY",
+        "parent": "office_door",
+        "triangles": 0,
+        "vertices": 0
+      }
+    ]
+  },
+  "materials": {
+    "count": 5,
+    "compacted": true,
+    "list": [
+      {
+        "name": "mat_psx_industrial_hazard_mounting_w50",
+        "roughness": 0.42,
+        "metallic": 0.88,
+        "emission": "None"
+      },
+      {
+        "name": "mat_psx_industrial_hazard_glass_observation_w50",
+        "roughness": 0.14,
+        "metallic": 0.08,
+        "emission": "None"
+      },
+      {
+        "name": "mat_psx_industrial_hazard_door_frame_heavy_w50",
+        "roughness": 0.7,
+        "metallic": 0.45,
+        "emission": "None"
+      },
+      {
+        "name": "mat_psx_industrial_hazard_locker_gray_w50",
+        "roughness": 0.68,
+        "metallic": 0.25,
+        "emission": "None"
+      },
+      {
+        "name": "mat_psx_industrial_hazard_wall_support_beam_w50",
+        "roughness": 0.52,
+        "metallic": 0.75,
+        "emission": "None"
+      }
+    ]
+  },
+  "collision": {
+    "enabled": false,
+    "node_name": "None",
+    "shape_type": "box",
+    "godot_suffix": "-convcolonly",
+    "extents": [
+      1.2,
+      0.22,
+      2.4
+    ]
+  },
+  "sockets": [
+    {
+      "name": "socket_player_interact",
+      "position": [
+        0.0,
+        -0.66,
+        0.0
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "Standard player character interaction stand point"
+    },
+    {
+      "name": "socket_item_spawn",
+      "position": [
+        0.0,
+        0.0,
+        2.42
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "Prop or pickup spawn snap position (keycards, ammo, medical items)"
+    },
+    {
+      "name": "socket_light",
+      "position": [
+        0.0,
+        0.0,
+        2.04
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "OmniLight3D / SpotLight3D mount anchor point"
+    }
+  ],
+  "godot_4_validation": {
+    "bounds_aabb": {
+      "position": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "size": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "collision_shape_count": 0,
+    "errors": [],
+    "file": "D:\\MODELCODER\\web\\public\\models\\office_door.glb",
+    "materials": [
+      "mat_psx_industrial_hazard_mounting_w50",
+      "mat_psx_industrial_hazard_glass_observation_w50",
+      "mat_psx_industrial_hazard_door_frame_heavy_w50",
+      "mat_psx_industrial_hazard_locker_gray_w50",
+      "mat_psx_industrial_hazard_wall_support_beam_w50"
+    ],
+    "mesh_count": 1,
+    "nodes": [
+      {
+        "class": "Node3D",
+        "depth": 0,
+        "name": "office_door2"
+      },
+      {
+        "aabb": {
+          "position": [
+            -0.6,
+            0.0,
+            -0.11
+          ],
+          "size": [
+            1.2,
+            2.4,
+            0.22
+          ]
+        },
+        "class": "MeshInstance3D",
+        "depth": 1,
+        "has_uv": true,
+        "materials": [
+          "mat_psx_industrial_hazard_mounting_w50",
+          "mat_psx_industrial_hazard_glass_observation_w50",
+          "mat_psx_industrial_hazard_door_frame_heavy_w50",
+          "mat_psx_industrial_hazard_locker_gray_w50",
+          "mat_psx_industrial_hazard_wall_support_beam_w50"
+        ],
+        "name": "office_door",
+        "surface_count": 5
+      },
+      {
+        "class": "Node3D",
+        "depth": 2,
+        "name": "socket_item_spawn"
+      },
+      {
+        "class": "Node3D",
+        "depth": 2,
+        "name": "socket_light"
+      },
+      {
+        "class": "Node3D",
+        "depth": 2,
+        "name": "socket_player_interact"
+      }
+    ],
+    "root_class": "Node3D",
+    "root_name": "office_door2",
+    "socket_count": 3,
+    "sockets": [
+      {
+        "name": "socket_item_spawn",
+        "position": [
+          0.0,
+          2.42,
+          0.0
+        ]
+      },
+      {
+        "name": "socket_light",
+        "position": [
+          0.0,
+          2.04,
+          0.0
+        ]
+      },
+      {
+        "name": "socket_player_interact",
+        "position": [
+          0.0,
+          0.0,
+          0.66
+        ]
+      }
+    ],
+    "static_body_count": 0,
+    "total_surfaces": 5,
+    "valid": true,
+    "warnings": [],
+    "tested_in_godot": true,
+    "success": true,
+    "exit_code": 0,
+    "godot_binary": "C:\\Users\\lopez\\Downloads\\Godot_v4.5.1-stable_win64.exe\\Godot_v4.5.1-stable_win64_console.exe"
+  },
+  "warnings": []
+}

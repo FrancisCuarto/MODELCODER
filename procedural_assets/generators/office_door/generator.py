@@ -36,7 +36,7 @@ class OfficeDoorGenerator(BaseAssetGenerator):
         r_leaf = mat_mgr.get_rect("beige_plastic_worn")
 
         m_glass = mat_mgr.get_index("glass_observation")
-        r_glass = mat_mgr.get_rect("glass_observation")
+        r_glass = mat_mgr.get_rect("glass_reinforced")
 
         m_trim = mat_mgr.get_index("wall_support_beam")
         r_trim = mat_mgr.get_rect("metal_light_brushed")
