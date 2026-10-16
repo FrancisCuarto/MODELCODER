@@ -96,80 +96,112 @@ gen.parameters.forEach((param: any) => {
             </div>
           )}
         </div>
+
+        <!-- Quick Direct Download & Helper under Viewport -->
+        <div class="viewport-quick-bar">
+          <a 
+            href={gen.model_url} 
+            download={`${gen.family}.glb`}
+            class="btn btn-primary btn-quick-dl" 
+            title="Descargar archivo GLB directamente para tu motor de juego"
+          >
+            💾 DESCARGAR MODELO (.GLB)
+          </a>
+          <p class="viewport-hint">
+            💡 Arrastrá para rotar el objeto en 360°, hacé zoom con la rueda y observá los cambios en tiempo real.
+          </p>
+        </div>
       </div>
 
-      <!-- Generator Summary Panel -->
-      <div class="ps1-window summary-window">
-        <div class="ps1-titlebar">
-          <span>// ASSET_TELEMETRY: [{gen.name.toUpperCase()}]</span>
-          <span class="meta-pill-ver">v{gen.version}</span>
-        </div>
-
+      <!-- Collapsible Technical Capabilities -->
+      <details class="ps1-window summary-window">
+        <summary class="ps1-titlebar summary-toggle">
+          <span>// ESPECIFICACIONES TÉCNICAS (CLIC PARA EXPANDIR)</span>
+          <span class="meta-pill-ver">MALLA LOW-POLY</span>
+        </summary>
         <div class="summary-body">
-          <div class="summary-header">
-            <div>
-              <h1 class="generator-title">{gen.name}</h1>
-              <code class="family-tag">family: {gen.family}</code>
-            </div>
-            <div class="license-badge-box">
-              <span class="meta-pill">{gen.license}</span>
-            </div>
-          </div>
-
-          <p class="summary-desc">{gen.description}</p>
-
-          <!-- Technical Capabilities Grid (Retro Mech HUD style) -->
           <div class="capabilities-grid">
             <div class="ps1-inset cap-card">
-              <span class="cap-label">TRI_BUDGET</span>
+              <span class="cap-label">PRESUPUESTO TRIÁNGULOS</span>
               <span class="cap-val text-gold">{gen.export_capabilities?.target_tri_budget || '400~500'} TRIS</span>
             </div>
             <div class="ps1-inset cap-card">
-              <span class="cap-label">GODOT_4_COLLISION</span>
+              <span class="cap-label">COLISIÓN EN MOTOR</span>
               <span class="cap-val text-green">
-                {gen.export_capabilities?.supports_collision ? 'ACTIVA (-convcolonly)' : 'VISUAL ONLY'}
+                {gen.export_capabilities?.supports_collision ? 'ACTIVA (-convcolonly)' : 'SOLO VISUAL'}
               </span>
             </div>
             <div class="ps1-inset cap-card">
-              <span class="cap-label">PIVOT_ORIGIN</span>
-              <span class="cap-val">FLOOR_CENTER (Z=0.0)</span>
+              <span class="cap-label">ORIGEN DE PIVOTE</span>
+              <span class="cap-val">CENTRO SUELO (Z=0.0)</span>
             </div>
             <div class="ps1-inset cap-card">
-              <span class="cap-label">SOCKETS_ATTACH</span>
+              <span class="cap-label">SOCKETS DE ANCLAJE</span>
               <span class="cap-val text-cyan">
-                {gen.export_capabilities?.supports_sockets ? 'INTERACT + LIGHT' : 'ESTÁNDAR'}
+                {gen.export_capabilities?.supports_sockets ? 'INTERACTIVO + LUZ' : 'ESTÁNDAR'}
               </span>
             </div>
           </div>
         </div>
-      </div>
+      </details>
 
-      <!-- Source Code Inspection Accordion -->
-      <div class="ps1-window code-window">
-        <div class="ps1-titlebar">
-          <span>// PYTHON_GENERATOR_SOURCE: [generator.py]</span>
-          <button id="copy-code-btn" class="btn btn-outline" style="padding: 0.2rem 0.5rem; font-size: 0.65rem;">
-            [ COPIAR CÓDIGO ]
-          </button>
-        </div>
+      <!-- Collapsible Source Code Inspection -->
+      <details class="ps1-window code-window">
+        <summary class="ps1-titlebar code-toggle">
+          <span>// CÓDIGO PYTHON DEL GENERADOR [generator.py] (CLIC PARA EXPANDIR)</span>
+          <span class="meta-pill-ver">BLENDER API</span>
+        </summary>
         <div class="code-body">
+          <p style="font-size: 0.8rem; color: var(--text-dim); margin-bottom: 0.75rem;">
+            Instrucciones en Python que construyen la geometría proceduralmente dentro de Blender:
+          </p>
+          <div style="display: flex; justify-content: flex-end; margin-bottom: 0.5rem;">
+            <button id="copy-code-btn" type="button" class="btn btn-outline" style="padding: 0.25rem 0.6rem; font-size: 0.65rem;">
+              [ COPIAR CÓDIGO ]
+            </button>
+          </div>
           <pre class="ps1-inset code-block"><code id="python-source">{gen.source_code}</code></pre>
         </div>
-      </div>
+      </details>
     </div>
 
     <!-- Right Column: Interactive Parameter Configurator -->
     <div class="configurator-column">
+      <!-- Model Title & Description Header Card -->
+      <div class="ps1-window model-info-card">
+        <div class="ps1-titlebar">
+          <span>// INFORMACIÓN DEL OBJETO</span>
+          <span class="meta-pill-ver">v{gen.version}</span>
+        </div>
+        <div class="model-info-body">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; margin-bottom: 0.5rem;">
+            <div>
+              <h1 class="generator-title">{gen.name}</h1>
+              <span class="model-category-label">Categoría: {gen.category}</span>
+            </div>
+            <span class="meta-pill">{gen.license}</span>
+          </div>
+          <p class="summary-desc">
+            {gen.description}
+          </p>
+        </div>
+      </div>
+
       <div class="ps1-window configurator-card">
         <div class="ps1-titlebar">
-          <span>// PARAMETERS_EDITOR</span>
-          <span class="param-count-badge">[{gen.parameters.length} PARAMS]</span>
+          <span>// CONTROLES Y PARÁMETROS</span>
+          <span class="param-count-badge">[{gen.parameters.length} CONTROLES]</span>
         </div>
 
         <div class="config-body">
-          <p class="config-subtext">
-            Ajusta los parámetros para previsualizar variantes en tiempo real y exportar la malla 3D personalizada.
-          </p>
+          <div class="config-lead-row">
+            <p class="config-subtext">
+              Modificá las medidas o el estilo para previsualizarlo en tiempo real:
+            </p>
+            <button type="button" id="reset-params-btn" class="btn btn-outline btn-reset-params">
+              ↺ Restablecer valores
+            </button>
+          </div>
 
           <!-- Presets Dropdown Selector -->
           {gen.presets.length > 0 && (
@@ -958,11 +990,85 @@ gen.parameters.forEach((param: any) => {
     }
   });
 
+  const resetParamsBtn = document.getElementById('reset-params-btn');
+  resetParamsBtn?.addEventListener('click', () => {
+    if (form) {
+      form.reset();
+      updateLiveValuesAndCLI();
+    }
+  });
+
   // Initial update
   updateLiveValuesAndCLI();
 </script>
 
 <style>
+  /* Quick Direct Download Bar under Viewport */
+  .viewport-quick-bar {
+    padding: 0.85rem 1rem;
+    background: #080d1a;
+    border-top: 2px solid var(--ps1-steel);
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .btn-quick-dl {
+    width: 100%;
+    font-size: 0.85rem;
+    padding: 0.7rem;
+    text-shadow: none;
+  }
+
+  .viewport-hint {
+    font-size: 0.78rem;
+    color: var(--text-dim);
+    margin: 0;
+    text-align: center;
+    line-height: 1.4;
+  }
+
+  /* Model Info Header Card */
+  .model-info-card {
+    margin-bottom: 1.25rem;
+  }
+
+  .model-info-body {
+    padding: 1.25rem;
+    background: #090e1c;
+  }
+
+  .model-category-label {
+    font-size: 0.72rem;
+    color: var(--ps1-cyan);
+    font-family: var(--font-pixel);
+    display: block;
+    margin-top: 0.25rem;
+  }
+
+  .config-lead-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .btn-reset-params {
+    font-size: 0.65rem;
+    padding: 0.25rem 0.55rem;
+  }
+
+  .summary-toggle, .code-toggle {
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .summary-toggle:hover, .code-toggle:hover {
+    color: var(--ps1-gold-light);
+  }
+
   /* Breadcrumb */
   .ps1-breadcrumb {
     font-family: var(--font-pixel);

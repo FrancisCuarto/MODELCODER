@@ -19,66 +19,97 @@ const categories = [
 ---
 
 <Layout title="Catálogo de Generadores 3D">
-  <!-- PS1 Mission Briefing / Hero Window -->
+  <!-- Hero Window -->
   <section class="ps1-window hero-window">
     <div class="ps1-titlebar">
-      <span>// SYSTEM_BRIEFING: MODELCODER_PSX_ENGINE</span>
-      <span class="ps1-title-status">READY [OK]</span>
+      <span>// MODELCODER — GENERADORES 3D PROCEDURALES</span>
+      <span class="ps1-title-status">SISTEMA ACTIVO</span>
     </div>
 
     <div class="hero-body">
       <div class="hero-header-line">
-        <h1 class="hero-title">BIBLIOTECA COMUNITARIA DE MODELOS 3D</h1>
+        <h1 class="hero-title">Creá modelos 3D para tus proyectos, sin empezar desde cero.</h1>
       </div>
       <p class="hero-description">
-        No descargues simples archivos estáticos. Personaliza el código que genera los modelos,
-        inspecciona sus parámetros matemáticos en tiempo real y exporta directamente mallas optimizadas para Godot 4 y glTF.
+        Explorá objetos, cambiá su forma con controles simples y descargá el resultado en formato universal GLB.
+        Si te interesa, también podés descubrir y personalizar el código Python que los construye.
       </p>
+
+      <div class="hero-actions-row">
+        <a href="#generators-container" class="btn btn-primary">
+          [ EXPLORAR MODELOS ↓ ]
+        </a>
+        <a href="/contribute" class="btn btn-cyan">
+          [ CÓMO FUNCIONA ]
+        </a>
+        <a href="/studio" class="btn btn-gold">
+          ⚡ STUDIO 3D CON IA
+        </a>
+      </div>
+
+      <!-- Explicación en 3 pasos -->
+      <div class="three-steps-container">
+        <div class="step-card ps1-inset">
+          <div class="step-badge">PASO 01</div>
+          <h3 class="step-title">Elegí un objeto</h3>
+          <p class="step-desc">Explorá 44 modelos low-poly organizados por categorías según lo que necesite tu escena.</p>
+        </div>
+        <div class="step-card ps1-inset">
+          <div class="step-badge">PASO 02</div>
+          <h3 class="step-title">Personalizalo</h3>
+          <p class="step-desc">Ajustá sus medidas, paletas de color retro y accesorios con controles visuales en tiempo real.</p>
+        </div>
+        <div class="step-card ps1-inset">
+          <div class="step-badge">PASO 03</div>
+          <h3 class="step-title">Descargalo</h3>
+          <p class="step-desc">Obtené tu archivo .GLB listo para importar directo en Godot 4, Unity, Blender o la web.</p>
+        </div>
+      </div>
 
       <!-- Retro PS1 HUD Telemetry -->
       <div class="metrics-grid">
         <div class="ps1-inset metric-card">
-          <span class="metric-lbl">TOTAL_GENERATORS</span>
+          <span class="metric-lbl">TOTAL MODELOS</span>
           <span class="metric-val text-gold">{catalog.length}</span>
         </div>
         <div class="ps1-inset metric-card">
-          <span class="metric-lbl">ACTIVE_SECTORS</span>
+          <span class="metric-lbl">PALETAS RETRO</span>
           <span class="metric-val text-cyan">5</span>
         </div>
         <div class="ps1-inset metric-card">
-          <span class="metric-lbl">CODE_LICENSING</span>
-          <span class="metric-val text-green">100% CC-BY</span>
+          <span class="metric-lbl">LICENCIA</span>
+          <span class="metric-val text-green">CC-BY 4.0</span>
         </div>
         <div class="ps1-inset metric-card">
-          <span class="metric-lbl">RENDER_PIPELINE</span>
-          <span class="metric-val text-gold">PS1 / LOW-POLY</span>
+          <span class="metric-lbl">FORMATO</span>
+          <span class="metric-val text-gold">GLTF / GLB</span>
         </div>
       </div>
     </div>
   </section>
 
   <!-- PS1 Tactical Filter Controls -->
-  <section class="ps1-window catalog-controls-window">
+  <section class="ps1-window catalog-controls-window" id="catalog-controls">
     <div class="ps1-titlebar">
-      <span>// DATABASE_QUERY_FILTER</span>
-      <span id="results-count" class="results-telemetry">44 / 44 RECORDS</span>
+      <span>// BÚSQUEDA Y FILTRADO DEL CATÁLOGO</span>
+      <span id="results-count" class="results-telemetry">{catalog.length} MODELOS ENCONTRADOS</span>
     </div>
 
     <div class="controls-body">
       <div class="search-row">
-        <span class="search-prompt">&gt; SEARCH:</span>
+        <span class="search-prompt">&gt; BUSCAR:</span>
         <div class="search-box">
           <input 
             type="text" 
             id="search-input" 
-            placeholder="Escribe para filtrar (ej. mesa, medbay, crt, panel, tubería)..." 
+            placeholder="Buscá una puerta, una mesa, una máquina, un panel, una litera..." 
             autocomplete="off"
           />
         </div>
       </div>
 
       <div class="category-filters">
-        <span class="filter-prompt">&gt; SECTOR:</span>
+        <span class="filter-prompt">&gt; CATEGORÍA:</span>
         <div class="filter-buttons-wrap">
           {categories.map((cat) => (
             <button 
@@ -105,7 +136,7 @@ const categories = [
         data-desc={gen.description.toLowerCase()}
       >
         <div class="ps1-titlebar card-titlebar">
-          <span class="card-family-tag">[{gen.family}]</span>
+          <span class="card-category-badge">[{gen.category.toUpperCase()}]</span>
           <span class="card-license-tag">{gen.license}</span>
         </div>
 
@@ -145,24 +176,24 @@ const categories = [
           <p class="card-description">{gen.description}</p>
 
           <div class="card-meta">
-            <span class="ps1-inset meta-tag">PARAMS: {gen.parameters.length}</span>
-            <span class="ps1-inset meta-tag">TRIS: {gen.export_capabilities?.target_tri_budget || 450}</span>
+            <span class="ps1-inset meta-tag">📐 {gen.parameters.length} CONTROLES</span>
+            <span class="ps1-inset meta-tag">~{gen.export_capabilities?.target_tri_budget || 450} TRIS</span>
             <span class="ps1-inset meta-tag">v{gen.version}</span>
           </div>
         </div>
 
         <div class="card-footer">
           <a href={`/generators/${gen.family}`} class="btn btn-primary" style="flex: 1;">
-            CONFIGURAR & 3D &gt;&gt;
+            PERSONALIZAR & 3D &gt;&gt;
           </a>
           {gen.has_model && (
             <a 
               href={gen.model_url} 
               download={`${gen.family}.glb`}
               class="btn btn-outline" 
-              title="Descargar GLB pre-renderizado"
+              title="Descargar archivo GLB directamente"
             >
-              GLB
+              BAJAR .GLB
             </a>
           )}
         </div>
@@ -291,6 +322,51 @@ const categories = [
     line-height: 1.6;
     margin-bottom: 1.5rem;
     max-width: 1000px;
+  }
+
+  .hero-actions-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-bottom: 2rem;
+  }
+
+  /* 3-Step Guide */
+  .three-steps-container {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .step-card {
+    padding: 1.1rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    border: 1px solid var(--ps1-steel);
+    background: #060912;
+  }
+
+  .step-badge {
+    font-family: var(--font-pixel);
+    font-size: 0.65rem;
+    color: var(--ps1-cyan);
+    letter-spacing: 0.05em;
+  }
+
+  .step-title {
+    font-family: var(--font-pixel);
+    font-size: 0.85rem;
+    color: #ffffff;
+    margin: 0;
+  }
+
+  .step-desc {
+    font-size: 0.82rem;
+    color: var(--text-dim);
+    line-height: 1.5;
+    margin: 0;
   }
 
   /* Retro HUD Telemetry Metrics */
@@ -534,7 +610,17 @@ const categories = [
     gap: 0.5rem;
   }
 
+  .card-category-badge {
+    color: var(--ps1-gold);
+    font-family: var(--font-pixel);
+    font-size: 0.65rem;
+    letter-spacing: 0.04em;
+  }
+
   @media (max-width: 768px) {
+    .three-steps-container {
+      grid-template-columns: 1fr;
+    }
     .metrics-grid {
       grid-template-columns: repeat(2, 1fr);
     }

@@ -554,8 +554,57 @@ Nuevo generador procedural creado con ModelCoder Web Studio.
 
   // State
   let activeTemplate = 'crate';
+  let activeBaseModel = 'crate';
   let activeFile = 'generator';
   const fileContents: Record<string, string> = { ...TEMPLATES['crate'] };
+
+  // Helper to intelligently match generated model to the best 3D archetype among the 44 assets
+  function findBestMatchingGlb(family: string = '', name: string = '', tags: string[] = []): string {
+    const allKnownFamilies = [
+      'autopsy_table', 'bridge_console_desk', 'bunk_bed', 'cable_bundle', 'canteen_counter',
+      'chemical_cabinet', 'crash_cart', 'crate', 'crew_bed', 'door',
+      'electrical_panel', 'file_cabinet', 'fire_extinguisher', 'heavy_shelving', 'hydroponic_tray_bed',
+      'light_fixture', 'locker', 'locker_bench', 'medical_screen', 'mess_table',
+      'morgue_gurney', 'nightstand', 'office_chair', 'office_desk', 'office_door',
+      'oxypod', 'pipes', 'radiator_heater', 'ration_automat', 'restraint_chair',
+      'safety_shower', 'scrub_sink', 'security_desk', 'server_rack', 'sign_placard',
+      'space_toilet', 'station_corridor', 'station_room', 'terminal', 'tool_chest_cart',
+      'trash_bin', 'vent_grate', 'weapons_rack', 'work_bench'
+    ];
+
+    const cleanFamily = (family || '').toLowerCase().trim();
+    if (allKnownFamilies.includes(cleanFamily)) return cleanFamily;
+
+    const haystack = `${cleanFamily} ${(name || '')} ${(tags || []).join(' ')}`.toLowerCase();
+
+    if (/torret|turret|weapon|gun|canon|cañon|defense|defensa|arma|laser|blaster/.test(haystack)) return 'weapons_rack';
+    if (/barril|barrel|canister|drum|toxic|tóxico|residuo|tanque|tank|waste/.test(haystack)) return 'trash_bin';
+    if (/capsul|cápsul|cryo|crio|estasis|pod|oxypod|medbay|estacion|medical/.test(haystack)) return 'oxypod';
+    if (/consol|console|radar|monitor|pantalla|screen|crt|terminal|workstation/.test(haystack)) return 'bridge_console_desk';
+    if (/core|reactor|plasma|energy|núcleo|nucleo|energia|bater|power|generador/.test(haystack)) return 'electrical_panel';
+    if (/rack|servidor|server|datacenter|compute|mainframe/.test(haystack)) return 'server_rack';
+    if (/cama|bed|litera|camilla|stretcher|sleep/.test(haystack)) return 'bunk_bed';
+    if (/puerta|door|gate|hatch|escotilla|portal/.test(haystack)) return 'door';
+    if (/ducha|shower|decon|descontamin/.test(haystack)) return 'safety_shower';
+    if (/estante|shelf|shelving|repisa/.test(haystack)) return 'heavy_shelving';
+    if (/quimic|chemical|lab|gabinete|botiquin/.test(haystack)) return 'chemical_cabinet';
+    if (/armario|locker|casillero|lock/.test(haystack)) return 'locker';
+    if (/escritorio|desk|mesa|table|banco/.test(haystack)) return 'office_desk';
+    if (/silla|chair|asiento|seat/.test(haystack)) return 'office_chair';
+    if (/luz|lamp|light|foco|luminaria/.test(haystack)) return 'light_fixture';
+    if (/tubo|pipe|valv|valvula|ducto/.test(haystack)) return 'pipes';
+    if (/ventil|vent|rejilla|grate|extractor/.test(haystack)) return 'vent_grate';
+    if (/herramienta|tool|cart|taller/.test(haystack)) return 'tool_chest_cart';
+    if (/carro|cart|gurney|emergencia/.test(haystack)) return 'crash_cart';
+    if (/fuego|extintor|fire/.test(haystack)) return 'fire_extinguisher';
+    if (/cartel|sign|placard|aviso|letrero/.test(haystack)) return 'sign_placard';
+    if (/baño|toilet|wc|inodoro/.test(haystack)) return 'space_toilet';
+    if (/radiador|heater|calefactor|calor/.test(haystack)) return 'radiator_heater';
+    if (/vending|automat|ration|dispensador/.test(haystack)) return 'ration_automat';
+    if (/caja|crate|box|cargo|contenedor/.test(haystack)) return 'crate';
+
+    return 'crate';
+  }
 
   // DOM Elements
   const codeTextarea = document.getElementById('code-textarea') as HTMLTextAreaElement;
@@ -728,34 +777,57 @@ Nuevo generador procedural creado con ModelCoder Web Studio.
   function applyStudioLiveTransforms() {
     if (!studioViewer || !studioParamForm) return;
 
-    // Dimensional scaling
+    // Dimensional scaling: support standard + procedural names
     let sx = 1.0, sy = 1.0, sz = 1.0;
-    const wInput = studioParamForm.elements.namedItem('width') as HTMLInputElement;
-    if (wInput) sx = parseFloat(wInput.value) || 1.0;
+    const wInput = (studioParamForm.elements.namedItem('width') || 
+                    studioParamForm.elements.namedItem('console_width') ||
+                    studioParamForm.elements.namedItem('mount_radius') ||
+                    studioParamForm.elements.namedItem('capsule_radius') ||
+                    studioParamForm.elements.namedItem('core_radius') ||
+                    studioParamForm.elements.namedItem('screen_diagonal')) as HTMLInputElement;
+    if (wInput) {
+      const val = parseFloat(wInput.value) || 1.0;
+      sx = wInput.name === 'screen_diagonal' ? val / 14.0 : (wInput.name.includes('radius') ? val * 2.0 : val);
+    }
 
-    const lInput = (studioParamForm.elements.namedItem('length') || studioParamForm.elements.namedItem('depth')) as HTMLInputElement;
-    if (lInput) sy = parseFloat(lInput.value) || 1.0;
+    const lInput = (studioParamForm.elements.namedItem('length') || 
+                    studioParamForm.elements.namedItem('depth') ||
+                    studioParamForm.elements.namedItem('barrel_length') ||
+                    studioParamForm.elements.namedItem('mount_radius') ||
+                    studioParamForm.elements.namedItem('capsule_radius') ||
+                    studioParamForm.elements.namedItem('core_radius')) as HTMLInputElement;
+    if (lInput) {
+      const val = parseFloat(lInput.value) || 1.0;
+      sy = lInput.name.includes('radius') ? val * 2.0 : val;
+    }
 
-    const hInput = studioParamForm.elements.namedItem('height') as HTMLInputElement;
-    if (hInput) sz = parseFloat(hInput.value) || 1.0;
+    const hInput = (studioParamForm.elements.namedItem('height') ||
+                    studioParamForm.elements.namedItem('capsule_height') ||
+                    studioParamForm.elements.namedItem('core_height') ||
+                    studioParamForm.elements.namedItem('barrel_length')) as HTMLInputElement;
+    if (hInput) {
+      const val = parseFloat(hInput.value) || 1.0;
+      sz = hInput.name === 'barrel_length' ? Math.max(0.6, val) : val;
+    }
 
-    studioViewer.scale = `${Math.min(2.5, Math.max(0.4, sx))} ${Math.min(2.5, Math.max(0.4, sy))} ${Math.min(2.5, Math.max(0.4, sz))}`;
+    const clamp = (v: number) => Math.min(2.5, Math.max(0.35, v));
+    studioViewer.scale = `${clamp(sx)} ${clamp(sy)} ${clamp(sz)}`;
 
     // Palette model swapping
     const palSelect = (studioParamForm.elements.namedItem('palette_name') || studioParamForm.elements.namedItem('palette')) as HTMLSelectElement;
     const pal = palSelect ? palSelect.value : 'industrial_hazard';
 
-    if (activeTemplate !== 'custom') {
-      const targetPaletteGlb = `/models/${activeTemplate}_${pal}.glb`;
-      if (!studioViewer.src || !studioViewer.src.endsWith(targetPaletteGlb)) {
-        studioViewer.src = targetPaletteGlb;
-      }
+    const baseToUse = activeBaseModel || (activeTemplate !== 'custom' ? activeTemplate : 'crate');
+    const targetPaletteGlb = `/models/${baseToUse}_${pal}.glb`;
+    if (!studioViewer.src || !studioViewer.src.endsWith(targetPaletteGlb)) {
+      studioViewer.src = targetPaletteGlb;
     }
   }
 
   // Load Template
   function loadTemplate(tplKey: string) {
     activeTemplate = tplKey;
+    activeBaseModel = tplKey;
     const tpl = TEMPLATES[tplKey] || TEMPLATES['crate'];
     fileContents['generator'] = tpl.generator;
     fileContents['config'] = tpl.config;
@@ -765,6 +837,8 @@ Nuevo generador procedural creado con ModelCoder Web Studio.
     if (studioViewer) {
       studioViewer.src = tpl.model;
       studioViewer.scale = '1 1 1';
+      studioViewer.style.filter = 'brightness(1.4)';
+      setTimeout(() => { if (studioViewer) studioViewer.style.filter = 'none'; }, 200);
     }
     if (viewportModelName) {
       viewportModelName.textContent = tplKey.toUpperCase();
@@ -1235,6 +1309,31 @@ class EnergyCoreConfig(BaseAssetConfig):
     fileContents['manifest'] = typeof data.manifest === 'string' ? data.manifest : JSON.stringify(data.manifest, null, 2);
     fileContents['readme'] = data.readme;
 
+    // Parse manifest tags and palette
+    let tags: string[] = [];
+    let initialPalette = 'industrial_hazard';
+    try {
+      const parsed = typeof data.manifest === 'string' ? JSON.parse(data.manifest) : data.manifest;
+      if (Array.isArray(parsed.tags)) tags = parsed.tags;
+      const palParam = parsed?.parameters?.find((p: any) => p.key === 'palette_name' || p.key === 'palette');
+      if (palParam?.default) initialPalette = palParam.default;
+    } catch (e) {}
+
+    // Find best 3D archetype model
+    activeBaseModel = findBestMatchingGlb(data.family, data.name || '', tags);
+
+    // Update 3D viewport IMMEDIATELY with the matched model and palette!
+    if (studioViewer) {
+      const targetGlb = `/models/${activeBaseModel}_${initialPalette}.glb`;
+      studioViewer.src = targetGlb;
+      studioViewer.scale = '1 1 1';
+      // Flash effect to give immediate visual feedback of model change
+      studioViewer.style.filter = 'brightness(1.5) contrast(1.2)';
+      setTimeout(() => {
+        if (studioViewer) studioViewer.style.filter = 'none';
+      }, 250);
+    }
+
     loadFile(activeFile);
     runLinter();
     syncInspectorFromManifest();
@@ -1246,8 +1345,13 @@ class EnergyCoreConfig(BaseAssetConfig):
     if (aiLoadingStatus) {
       aiLoadingStatus.style.display = 'block';
       aiLoadingStatus.className = 'ai-status-indicator status-ok';
-      aiLoadingStatus.innerHTML = `✅ [ GENERACIÓN EXITOSA ] Generador de <strong>"${data.name || data.family}"</strong> cargado con 4 archivos en el Studio.`;
+      aiLoadingStatus.innerHTML = `✅ [ GENERACIÓN EXITOSA ] Modelo 3D de <strong>"${data.name || data.family}"</strong> cargado y sincronizado en el Visor.`;
     }
+
+    // Apply live parameters after form is populated
+    setTimeout(() => {
+      applyStudioLiveTransforms();
+    }, 50);
   }
 
   // Handle Quick Chips

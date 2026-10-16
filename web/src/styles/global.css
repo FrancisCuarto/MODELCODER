@@ -58,9 +58,9 @@ html, body {
   background-color: #000424;
   color: var(--text-main);
   font-family: var(--font-mono);
-  line-height: 1.45;
-  -webkit-font-smoothing: none; /* Authentic pixel sharpness */
-  image-rendering: pixelated;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 body {
@@ -74,7 +74,7 @@ body {
   background-attachment: fixed;
 }
 
-/* CRT Scanlines Layer */
+/* CRT Scanlines Layer (Softened vintage atmosphere) */
 .ps1-scanlines {
   position: fixed;
   top: 0;
@@ -85,21 +85,27 @@ body {
   z-index: 9999;
   background: linear-gradient(
     rgba(18, 16, 16, 0) 50%, 
-    rgba(0, 0, 0, 0.22) 50%
+    rgba(0, 0, 0, 0.25) 50%
   );
   background-size: 100% 4px;
-  opacity: 0.7;
+  opacity: 0.18;
 }
 
 /* Links */
 a {
   color: var(--ps1-cyan);
   text-decoration: none;
+  transition: color 0.12s ease;
 }
 
 a:hover {
   color: var(--ps1-gold);
   text-decoration: underline;
+}
+
+:focus-visible {
+  outline: 2px solid var(--ps1-cyan);
+  outline-offset: 2px;
 }
 
 /* ==========================================================================
@@ -311,16 +317,18 @@ main.site-content {
 }
 
 .btn-primary, .btn-gold {
-  background: #8e732c;
-  color: #000000;
+  background: #ffcc00;
+  color: #000424;
   font-weight: 700;
-  border-color: var(--ps1-gold-light);
+  border-color: #ffe680;
+  box-shadow: 2px 2px 0px #000000, inset 1px 1px 0px #ffffff;
 }
 
 .btn-primary:hover, .btn-gold:hover {
-  background: #b5953d;
-  color: #000000;
+  background: #ffd633;
+  color: #000424;
   border-color: #ffffff;
+  box-shadow: 2px 2px 0px #000000;
 }
 
 .btn-cyan {
@@ -443,4 +451,18 @@ footer.site-footer {
   font-family: var(--font-pixel);
   font-size: 0.65rem;
   padding: 0.2rem 0.5rem;
+}
+
+/* Accessibility: Respect Reduced Motion Preference */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .status-dot {
+    animation: none !important;
+    opacity: 1 !important;
+  }
 }
