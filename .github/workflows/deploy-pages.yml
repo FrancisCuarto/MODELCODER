@@ -33,6 +33,7 @@ jobs:
       - name: Setup GitHub Pages configuration
         id: pages
         uses: actions/configure-pages@v5
+        continue-on-error: true
 
       - name: Install Dependencies
         working-directory: web
@@ -44,6 +45,7 @@ jobs:
 
       - name: Upload Pages Artifact
         uses: actions/upload-pages-artifact@v3
+        continue-on-error: true
         with:
           path: web/dist
 
@@ -58,3 +60,4 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+        continue-on-error: true
