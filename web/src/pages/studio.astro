@@ -1235,12 +1235,9 @@ class EnergyCoreConfig(BaseAssetConfig):
     fileContents['manifest'] = typeof data.manifest === 'string' ? data.manifest : JSON.stringify(data.manifest, null, 2);
     fileContents['readme'] = data.readme;
 
-    if (codeTextarea) {
-      codeTextarea.value = fileContents[currentFile];
-    }
-    updateLineNumbers();
-    scanSecurityAST();
-    rebuildParamFormFromManifest();
+    loadFile(activeFile);
+    runLinter();
+    syncInspectorFromManifest();
 
     if (viewportModelName) {
       viewportModelName.textContent = (data.name || data.family).toUpperCase();
