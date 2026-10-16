@@ -1023,15 +1023,19 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     });
 
     outlinerTreeList.querySelectorAll('.btn-outliner-dup').forEach((el) => {
-      e.stopPropagation();
-      const idx = parseInt((e.currentTarget as HTMLElement).dataset.idx || '0', 10);
-      duplicateComponent(idx);
+      el.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const idx = parseInt((e.currentTarget as HTMLElement).dataset.idx || '0', 10);
+        duplicateComponent(idx);
+      });
     });
 
     outlinerTreeList.querySelectorAll('.btn-outliner-del').forEach((el) => {
-      e.stopPropagation();
-      const idx = parseInt((e.currentTarget as HTMLElement).dataset.idx || '0', 10);
-      deleteComponent(idx);
+      el.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const idx = parseInt((e.currentTarget as HTMLElement).dataset.idx || '0', 10);
+        deleteComponent(idx);
+      });
     });
   }
 
