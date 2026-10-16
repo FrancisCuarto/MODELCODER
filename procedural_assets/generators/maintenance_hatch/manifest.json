@@ -1,0 +1,153 @@
+{
+  "id": "below_nominal.architecture.maintenance_hatch",
+  "name": "Escotilla de Mantenimiento Estanca",
+  "version": "1.0.0",
+  "description": "Compuerta estanca de acceso técnico para pozos de servicio, conductos de climatización y túneles de cables en mamparos de la estación Europa. Incorpora cerco perimetral con brida de atornillado reforzada, bisagras de palastro macizo, volante central de apriete con mecanismo de trinchas excéntricas, junta tórica de neopreno perimetral e indicador luminoso de presurización.",
+  "author": {
+    "name": "ModelCoder Core Team",
+    "github": "FrancisCuarto"
+  },
+  "license": "CC-BY-4.0",
+  "category": "architecture",
+  "tags": [
+    "psx",
+    "low-poly",
+    "hatch",
+    "door",
+    "bulkhead",
+    "maintenance",
+    "airtight",
+    "architecture",
+    "below_nominal"
+  ],
+  "parameters": [
+    {
+      "key": "hatch_shape",
+      "label": "Geometría de Escotilla",
+      "type": "enum",
+      "options": [
+        {"value": "square", "label": "Cuadrada"},
+        {"value": "octagonal_round", "label": "Octogonal"}
+      ],
+      "default": "square",
+      "group": "Geometría"
+    },
+    {
+      "key": "width",
+      "label": "Ancho (m)",
+      "type": "float",
+      "default": 0.80,
+      "min": 0.60,
+      "max": 1.20,
+      "step": 0.05,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "height",
+      "label": "Alto (m)",
+      "type": "float",
+      "default": 0.80,
+      "min": 0.60,
+      "max": 1.20,
+      "step": 0.05,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "open_angle",
+      "label": "Ángulo de Apertura (°)",
+      "type": "float",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 85.0,
+      "step": 5.0,
+      "group": "Mecanismo"
+    },
+    {
+      "key": "dogging_mechanism",
+      "label": "Mecanismo de Cierre",
+      "type": "enum",
+      "options": [
+        {"value": "central_wheel", "label": "Volante Central"},
+        {"value": "perimeter_latches", "label": "Trinchas Perimetrales"},
+        {"value": "quick_release", "label": "Palanca Rápida"}
+      ],
+      "default": "central_wheel",
+      "group": "Mecanismo"
+    },
+    {
+      "key": "has_viewport",
+      "label": "Ojo de Buey / Mirilla",
+      "type": "bool",
+      "default": false,
+      "group": "Equipamiento"
+    },
+    {
+      "key": "has_interlock_light",
+      "label": "Piloto de Presión / Interlock",
+      "type": "bool",
+      "default": true,
+      "group": "Equipamiento"
+    },
+    {
+      "key": "wear_level",
+      "label": "Nivel de Desgaste",
+      "type": "float",
+      "default": 0.45,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.05,
+      "group": "Material"
+    }
+  ],
+  "presets": [
+    {
+      "id": "sealed_nominal",
+      "label": "Servicio Sellada",
+      "description": "Escotilla cuadrada con volante central cerrada y presurizada con testigo verde.",
+      "values": {
+        "hatch_shape": "square",
+        "width": 0.80,
+        "height": 0.80,
+        "open_angle": 0.0,
+        "dogging_mechanism": "central_wheel",
+        "has_viewport": false,
+        "has_interlock_light": true,
+        "wear_level": 0.30
+      }
+    },
+    {
+      "id": "octagonal_open",
+      "label": "Acceso Octogonal Abierto",
+      "description": "Compuerta octogonal con mirilla abatida a 75 grados para ingreso de personal.",
+      "values": {
+        "hatch_shape": "octagonal_round",
+        "width": 0.90,
+        "height": 0.90,
+        "open_angle": 75.0,
+        "dogging_mechanism": "perimeter_latches",
+        "has_viewport": true,
+        "has_interlock_light": true,
+        "wear_level": 0.50
+      }
+    },
+    {
+      "id": "derelict_forced",
+      "label": "Derelict Forzada",
+      "description": "Escotilla con picaduras de óxido profundo y marcas de peligro descoloridas.",
+      "values": {
+        "hatch_shape": "square",
+        "width": 0.80,
+        "height": 0.80,
+        "open_angle": 20.0,
+        "dogging_mechanism": "quick_release",
+        "has_viewport": false,
+        "has_interlock_light": false,
+        "wear_level": 0.75
+      }
+    }
+  ],
+  "export_capabilities": {
+    "supports_collision": true,
+    "default_collision_suffix": "-convcolonly"
+  }
+}

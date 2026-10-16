@@ -1,0 +1,95 @@
+{
+  "generator": "ServiceLiftDoorGenerator",
+  "model_name": "service_lift_door",
+  "seed": 42,
+  "timestamp": "2026-10-16T15:11:25.426238Z",
+  "mesh_metrics": {
+    "triangle_count": 212,
+    "vertex_count": 140,
+    "target_tri_budget": 620,
+    "budget_compliance_ratio": 0.34,
+    "dimensions_meters": {
+      "width": 2.31,
+      "height": 0.28,
+      "depth": 2.68
+    },
+    "has_vertex_colors": true,
+    "materials_assigned": [
+      "mat_psx_industrial_hazard_casing_w45"
+    ]
+  },
+  "config_parameters": {
+    "seed": 42,
+    "target_tri_budget": 620,
+    "name": "service_lift_door",
+    "wear_level": 0.45,
+    "add_collision_mesh": false,
+    "collision_type": "box",
+    "collision_suffix": "-convcolonly",
+    "pivot_rule": "wall_back",
+    "export_subcomponents": false,
+    "palette_name": "industrial_hazard",
+    "emission_scale": 1.0,
+    "extra_params": {},
+    "door_width": 1.8,
+    "door_height": 2.4,
+    "frame_depth": 0.25,
+    "door_state": "closed",
+    "has_call_station": true,
+    "has_capacity_sign": true,
+    "has_toe_guard_kickplate": true
+  },
+  "sockets": [
+    {
+      "name": "socket_player_interact",
+      "position": [
+        0.0,
+        -0.69,
+        0.0
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "Standard player character interaction stand point"
+    },
+    {
+      "name": "socket_item_spawn",
+      "position": [
+        0.0,
+        0.0,
+        2.7
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "Prop or pickup spawn snap position (keycards, ammo, medical items)"
+    },
+    {
+      "name": "socket_light",
+      "position": [
+        0.0,
+        0.0,
+        2.278
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "OmniLight3D / SpotLight3D mount anchor point"
+    }
+  ],
+  "godot_4_compatibility": {
+    "format": "glTF 2.0 Binary (.glb)",
+    "unit": "meters (1.0 Blender unit = 1.0 Godot unit)",
+    "forward_axis": "-Z",
+    "up_axis": "+Y",
+    "collision_mesh_convention": "Child node with -col or -colonly creates Godot StaticBody3D collision shape",
+    "vertex_colors": "Exported in COLOR_0 accessor (usable with StandardMaterial3D or PSX shader)",
+    "pbr_materials": "Exported as glTF PBR metallic/roughness + emissive"
+  }
+}

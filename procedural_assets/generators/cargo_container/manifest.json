@@ -1,0 +1,160 @@
+{
+  "id": "below_nominal.cargo.cargo_container",
+  "name": "Contenedor Modular de Almacén",
+  "version": "1.0.0",
+  "description": "Contenedor de transporte intermodal estandarizado para bodegas de carga, hangares y zonas de estiba en Europa. Chapa de acero plegada con nervaduras corrugadas de alta rigidez estructural, 8 cantoneras de izaje de fundición de acero con orificios de trincaje ISO, doble puerta abatible trasera con barras de cierre vertical y palancas de leva precintables, túneles inferiores de horquilla para carretillas pesadas y placas de mercancías peligrosas.",
+  "author": {
+    "name": "ModelCoder Core Team",
+    "github": "FrancisCuarto"
+  },
+  "license": "CC-BY-4.0",
+  "category": "cargo",
+  "tags": [
+    "psx",
+    "low-poly",
+    "container",
+    "cargo",
+    "freight",
+    "shipping",
+    "warehouse",
+    "logistics",
+    "below_nominal"
+  ],
+  "parameters": [
+    {
+      "key": "container_length",
+      "label": "Largo del Contenedor (m)",
+      "type": "float",
+      "default": 2.40,
+      "min": 1.60,
+      "max": 3.60,
+      "step": 0.20,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "container_width",
+      "label": "Ancho del Contenedor (m)",
+      "type": "float",
+      "default": 1.30,
+      "min": 1.00,
+      "max": 2.00,
+      "step": 0.10,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "container_height",
+      "label": "Alto del Contenedor (m)",
+      "type": "float",
+      "default": 1.40,
+      "min": 1.00,
+      "max": 2.00,
+      "step": 0.10,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "corrugation_ribs",
+      "label": "Costillas Corrugadas",
+      "type": "int",
+      "default": 5,
+      "min": 3,
+      "max": 8,
+      "step": 1,
+      "group": "Estructura"
+    },
+    {
+      "key": "doors_open_angle",
+      "label": "Ángulo de Apertura de Puertas (°)",
+      "type": "float",
+      "default": 0.0,
+      "min": 0.0,
+      "max": 85.0,
+      "step": 5.0,
+      "group": "Operación"
+    },
+    {
+      "key": "cargo_class",
+      "label": "Clase de Carga",
+      "type": "enum",
+      "options": [
+        {"value": "general_supplies", "label": "Suministros Generales"},
+        {"value": "cryo_hazard", "label": "Criopeligro"},
+        {"value": "armory_munitions", "label": "Armería y Munición"}
+      ],
+      "default": "general_supplies",
+      "group": "Configuración"
+    },
+    {
+      "key": "container_condition",
+      "label": "Condición Mecánica",
+      "type": "enum",
+      "options": [
+        {"value": "nominal", "label": "Nominal"},
+        {"value": "dented_impact", "label": "Impacto / Abolladuras"},
+        {"value": "derelict_rusted", "label": "Oxidado Abandonado"}
+      ],
+      "default": "nominal",
+      "group": "Estado"
+    },
+    {
+      "key": "wear_level",
+      "label": "Nivel de Desgaste",
+      "type": "float",
+      "default": 0.45,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.05,
+      "group": "Material"
+    }
+  ],
+  "presets": [
+    {
+      "id": "sealed_supplies",
+      "label": "Suministros Cerrado",
+      "description": "Contenedor estándar de víveres sellado con barras de trincaje en posición.",
+      "values": {
+        "container_length": 2.40,
+        "container_width": 1.30,
+        "container_height": 1.40,
+        "corrugation_ribs": 5,
+        "doors_open_angle": 0.0,
+        "cargo_class": "general_supplies",
+        "container_condition": "nominal",
+        "wear_level": 0.35
+      }
+    },
+    {
+      "id": "cryo_hazard_sealed",
+      "label": "Carga Peligrosa Criogénica",
+      "description": "Contenedor con señalética de biopeligro cian y placas de advertencia química.",
+      "values": {
+        "container_length": 2.60,
+        "container_width": 1.40,
+        "container_height": 1.50,
+        "corrugation_ribs": 6,
+        "doors_open_angle": 0.0,
+        "cargo_class": "cryo_hazard",
+        "container_condition": "nominal",
+        "wear_level": 0.40
+      }
+    },
+    {
+      "id": "unloading_inspection",
+      "label": "Descarga / Inspección",
+      "description": "Puertas dobles abiertas de par en par revelando el interior de la bahía de estiba.",
+      "values": {
+        "container_length": 2.40,
+        "container_width": 1.30,
+        "container_height": 1.40,
+        "corrugation_ribs": 5,
+        "doors_open_angle": 75.0,
+        "cargo_class": "armory_munitions",
+        "container_condition": "dented_impact",
+        "wear_level": 0.60
+      }
+    }
+  ],
+  "export_capabilities": {
+    "supports_collision": true,
+    "default_collision_suffix": "-convcolonly"
+  }
+}

@@ -1490,6 +1490,147 @@
     "config_code": "from dataclasses import dataclass\nfrom ...core.base_config import BaseAssetConfig\n\n@dataclass\nclass CableBundleConfig(BaseAssetConfig):\n    \"\"\"\n    Configuration for sprawling Europa facility industrial wiring, sagging umbilical cables,\n    and wall/ceiling cable tray raceways.\n    \"\"\"\n    length: float = 2.0\n    bundle_type: str = \"hanging_umbilical\"  # \"hanging_umbilical\", \"ladder_rack_tray\", \"vertical_riser\"\n    cable_count: int = 4\n    max_sag: float = 0.28\n\n    # Environmental hazards\n    has_severed_wire: bool = False  # Broken wire cut and dangling\n    has_support_ties: bool = True  # Steel band zip ties holding bundle together\n    has_junction_box: bool = True  # Wall breakout terminal junction box at start\n\n    name: str = \"cable_bundle\"\n    target_tri_budget: int = 320\n    wear_level: float = 0.65\n"
   },
   {
+    "id": "below_nominal.infrastructure.cable_tray",
+    "family": "cable_tray",
+    "name": "Bandeja Portacables Industrial",
+    "version": "1.0.0",
+    "description": "Canalización portacables suspendida tipo escalera o canastilla ranurada para distribución de cableado eléctrico, de fibra y potencia a lo largo de galerías y techos técnicos de la estación espacial. Perfiles laterales en C galvanizados, peldaños tubulares de sujeción, mazos de cableado de alta y baja tensión con bridas de precinto, tirantes roscados de anclaje superior a vigas y tramos opcionales de tapa de protección contra esquirlas.",
+    "category": "infrastructure",
+    "tags": [
+      "psx",
+      "low-poly",
+      "cable_tray",
+      "wiring",
+      "ceiling",
+      "ladder",
+      "corridor",
+      "infrastructure",
+      "below_nominal"
+    ],
+    "author": {
+      "name": "ModelCoder Core Team",
+      "github": "FrancisCuarto"
+    },
+    "license": "CC-BY-4.0",
+    "compatibility": {},
+    "parameters": [
+      {
+        "key": "tray_length",
+        "label": "Longitud de Tramo (m)",
+        "type": "float",
+        "default": 2.0,
+        "group": "Dimensiones",
+        "min": 1.0,
+        "max": 4.0,
+        "step": 0.25
+      },
+      {
+        "key": "tray_width",
+        "label": "Ancho de Bandeja (m)",
+        "type": "float",
+        "default": 0.45,
+        "group": "Dimensiones",
+        "min": 0.25,
+        "max": 0.8,
+        "step": 0.05
+      },
+      {
+        "key": "has_cover",
+        "label": "Tapa Protectora Superior",
+        "type": "bool",
+        "default": false,
+        "group": "Configuración"
+      },
+      {
+        "key": "has_suspension_rods",
+        "label": "Varillas Roscadas al Techo",
+        "type": "bool",
+        "default": true,
+        "group": "Configuración"
+      },
+      {
+        "key": "cable_density",
+        "label": "Densidad de Cableado",
+        "type": "float",
+        "default": 0.7,
+        "group": "Cableado",
+        "min": 0.0,
+        "max": 1.0,
+        "step": 0.1
+      },
+      {
+        "key": "has_hanging_cables",
+        "label": "Cables Sueltos Colgantes",
+        "type": "bool",
+        "default": true,
+        "group": "Cableado"
+      },
+      {
+        "key": "wear_level",
+        "label": "Nivel de Desgaste / Grime",
+        "type": "float",
+        "default": 0.45,
+        "group": "Material",
+        "min": 0.0,
+        "max": 1.0,
+        "step": 0.05
+      }
+    ],
+    "presets": [
+      {
+        "id": "tidy_routed",
+        "name": "tidy_routed",
+        "values": {
+          "tray_length": 2.0,
+          "tray_width": 0.45,
+          "has_cover": false,
+          "has_suspension_rods": true,
+          "cable_density": 0.6,
+          "has_hanging_cables": false,
+          "wear_level": 0.25
+        },
+        "description": "Bandeja suspendida con cables de potencia agrupados y tirantes rectos sin descolgamientos."
+      },
+      {
+        "id": "overloaded_sagging",
+        "name": "overloaded_sagging",
+        "values": {
+          "tray_length": 2.5,
+          "tray_width": 0.6,
+          "has_cover": false,
+          "has_suspension_rods": true,
+          "cable_density": 1.0,
+          "has_hanging_cables": true,
+          "wear_level": 0.5
+        },
+        "description": "Bandeja saturada al 100% de cables con mazos colgando por los laterales."
+      },
+      {
+        "id": "covered_conduit",
+        "name": "covered_conduit",
+        "values": {
+          "tray_length": 2.0,
+          "tray_width": 0.45,
+          "has_cover": true,
+          "has_suspension_rods": true,
+          "cable_density": 0.5,
+          "has_hanging_cables": false,
+          "wear_level": 0.35
+        },
+        "description": "Bandeja con tapa protectora atornillada para zonas de tráfico o riesgo de impacto."
+      }
+    ],
+    "export_capabilities": {
+      "supports_collision": true,
+      "default_collision_suffix": "-convcolonly"
+    },
+    "has_model": true,
+    "model_url": "/models/cable_tray.glb",
+    "file_size_bytes": 127624,
+    "source_code": "import bpy\nimport bmesh\nimport math\nfrom mathutils import Vector\nfrom typing import Dict, Any\n\nfrom ...core.base_generator import BaseAssetGenerator\nfrom ...core.mesh_builder import MeshBuilder\nfrom ...core.texture_atlas import PS1TextureAtlas\nfrom .config import CableTrayConfig\n\nclass CableTrayGenerator(BaseAssetGenerator):\n    \"\"\"\n    Procedural PSX generator for industrial overhead cable ladder trays.\n    Constructs galvanized C-channel stringers, slotted ladder rungs, suspension drop rods,\n    bundled heavy electrical/telecom cables, and optional perforated top covers.\n    \"\"\"\n\n    def generate(self, config: CableTrayConfig = None) -> bpy.types.Object:\n        if config is not None:\n            self.config = config\n        elif not hasattr(self, \"config\") or self.config is None:\n            self.config = CableTrayConfig()\n\n        self.clean_context()\n        self.material_manager = self.get_material_manager(self.config)\n        MeshBuilder.set_active_material_manager(self.material_manager)\n\n        obj, bm = self.create_mesh_object(self.config.name)\n        self.material_manager.assign_to_mesh(obj)\n        m_idx = self.material_manager.material_indices\n\n        l = self.config.tray_length\n        w = self.config.tray_width\n        h = self.config.tray_height\n        half_l = l * 0.5\n        half_w = w * 0.5\n\n        metal_mat = m_idx.get(\"dark_metal\", m_idx.get(\"casing\", 0))\n        casing_mat = m_idx.get(\"casing\", 0)\n        accent_mat = m_idx.get(\"accent\", m_idx.get(\"casing\", 0))\n\n        metal_rgba = self.material_manager.get_rgba(\"dark_metal\")\n        casing_rgba = self.material_manager.get_rgba(\"casing\")\n        rubber_rgba = (0.12, 0.13, 0.14, 1.0)\n        power_cable_rgba = (0.80, 0.35, 0.15, 1.0)\n\n        # -------------------------------------------------------------\n        # 1. Longitudinal Side Rails (C-channel stringers)\n        # -------------------------------------------------------------\n        rail_th = 0.025\n        for sx in (-half_w + rail_th * 0.5, half_w - rail_th * 0.5):\n            MeshBuilder.add_box(\n                bm,\n                size=(rail_th, l, h),\n                offset=(sx, 0.0, 0.0),\n                mat_idx=metal_mat,\n                rgba=metal_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n            )\n            # Top stiffening lip\n            MeshBuilder.add_box(\n                bm,\n                size=(rail_th * 1.5, l, 0.015),\n                offset=(sx, 0.0, h * 0.5 - 0.0075),\n                mat_idx=metal_mat,\n                rgba=metal_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"metal_light_brushed\")\n            )\n\n        # -------------------------------------------------------------\n        # 2. Transverse Cross Rungs (Ladder bottom supports)\n        # -------------------------------------------------------------\n        rung_spacing = max(0.20, self.config.rung_spacing)\n        rung_count = max(3, int(l / rung_spacing))\n        actual_step = l / (rung_count + 1)\n        inner_w = w - rail_th * 2\n\n        for i in range(1, rung_count + 1):\n            ry = -half_l + i * actual_step\n            MeshBuilder.add_box(\n                bm,\n                size=(inner_w, 0.035, 0.018),\n                offset=(0.0, ry, -h * 0.5 + 0.009),\n                mat_idx=metal_mat,\n                rgba=metal_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"metal_light_brushed\")\n            )\n\n        # -------------------------------------------------------------\n        # 3. Bundled Cables Resting on Rungs\n        # -------------------------------------------------------------\n        if self.config.cable_density > 0.05:\n            # 3 main longitudinal cable bundles\n            bundle_radii = [0.035, 0.028, 0.032, 0.022]\n            bundle_xs = [-inner_w * 0.30, -inner_w * 0.05, inner_w * 0.22, inner_w * 0.38]\n            bundle_mats = [rubber_rgba, power_cable_rgba, rubber_rgba, (0.2, 0.55, 0.85, 1.0)]\n\n            num_cables = min(len(bundle_xs), max(1, int(len(bundle_xs) * self.config.cable_density * 1.2)))\n            for ci in range(num_cables):\n                bx = bundle_xs[ci]\n                br = bundle_radii[ci]\n                b_rgba = bundle_mats[ci]\n                bz = -h * 0.5 + 0.018 + br\n\n                MeshBuilder.add_cylinder(\n                    bm,\n                    radius=br,\n                    depth=l * 0.98,\n                    segments=5,\n                    offset=(bx, 0.0, bz),\n                    axis='Y',\n                    mat_idx=metal_mat,\n                    rgba=b_rgba,\n                    uv_rect=PS1TextureAtlas.get_rect(\"rubber_black\")\n                )\n\n                # Plastic zip-ties / cable cleats along length\n                for ti in range(1, rung_count + 1, 2):\n                    ty = -half_l + ti * actual_step\n                    MeshBuilder.add_box(\n                        bm,\n                        size=(br * 2.4, 0.015, 0.01),\n                        offset=(bx, ty, bz + br),\n                        mat_idx=accent_mat,\n                        rgba=(0.95, 0.85, 0.2, 1.0),\n                        uv_rect=PS1TextureAtlas.get_rect(\"hazard_stripes\")\n                    )\n\n        # -------------------------------------------------------------\n        # 4. Sagging / Dangling Loose Wires (Optional)\n        # -------------------------------------------------------------\n        if self.config.has_hanging_cables:\n            # Droop loop extending down on one side\n            wire_r = 0.012\n            wire_x = half_w - 0.02\n            MeshBuilder.add_cylinder(\n                bm,\n                radius=wire_r,\n                depth=0.25,\n                segments=4,\n                offset=(wire_x + 0.03, 0.0, -h * 0.5 - 0.10),\n                axis='Z',\n                mat_idx=metal_mat,\n                rgba=rubber_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"rubber_black\")\n            )\n            MeshBuilder.add_cylinder(\n                bm,\n                radius=wire_r,\n                depth=0.18,\n                segments=4,\n                offset=(wire_x + 0.03, 0.08, -h * 0.5 - 0.16),\n                axis='Y',\n                mat_idx=metal_mat,\n                rgba=rubber_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"rubber_black\")\n            )\n\n        # -------------------------------------------------------------\n        # 5. Top Perforated Dust Cover (Optional)\n        # -------------------------------------------------------------\n        if self.config.has_cover:\n            cover_th = 0.012\n            MeshBuilder.add_box(\n                bm,\n                size=(w + 0.02, l, cover_th),\n                offset=(0.0, 0.0, h * 0.5 + cover_th * 0.5),\n                mat_idx=casing_mat,\n                rgba=casing_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"vent_grill\")\n            )\n\n        # -------------------------------------------------------------\n        # 6. Suspension Drop Rods & Beam Clamps (Optional)\n        # -------------------------------------------------------------\n        if self.config.has_suspension_rods:\n            rod_r = 0.012\n            rod_h = 0.60\n            for sy in (-half_l + 0.25, half_l - 0.25):\n                # Cross trapeze channel under the tray\n                MeshBuilder.add_box(\n                    bm,\n                    size=(w + 0.10, 0.045, 0.03),\n                    offset=(0.0, sy, -h * 0.5 - 0.015),\n                    mat_idx=metal_mat,\n                    rgba=metal_rgba,\n                    uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n                )\n                # Vertical threaded rods on left and right\n                for rx in (-(w + 0.08) * 0.5, (w + 0.08) * 0.5):\n                    # Vertical rod\n                    MeshBuilder.add_box(\n                        bm,\n                        size=(rod_r * 2, rod_r * 2, rod_h),\n                        offset=(rx, sy, -h * 0.5 + rod_h * 0.5),\n                        mat_idx=metal_mat,\n                        rgba=metal_rgba,\n                        uv_rect=PS1TextureAtlas.get_rect(\"metal_light_brushed\")\n                    )\n                    # Ceiling unistrut bracket / flange\n                    MeshBuilder.add_box(\n                        bm,\n                        size=(0.06, 0.06, 0.02),\n                        offset=(rx, sy, -h * 0.5 + rod_h),\n                        mat_idx=metal_mat,\n                        rgba=metal_rgba,\n                        uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n                    )\n\n        self.finalize_mesh(obj, bm)\n        self.compact_materials(obj)\n        return obj\n",
+    "config_code": "from dataclasses import dataclass\nfrom ...core.base_config import BaseAssetConfig\n\n@dataclass\nclass CableTrayConfig(BaseAssetConfig):\n    \"\"\"Configuration for Industrial Overhead Wire-Mesh / Ladder Cable Tray.\"\"\"\n    tray_length: float = 2.00\n    tray_width: float = 0.45\n    tray_height: float = 0.10\n    rung_spacing: float = 0.25          # Distance between cross rungs along length\n    has_cover: bool = False             # Top slotted metal dust cover plate\n    has_suspension_rods: bool = True    # Ceiling threaded suspension drop rods with mounting brackets\n    cable_density: float = 0.70         # Fill density of power and data cables (0.0 to 1.0)\n    has_hanging_cables: bool = True     # Dangling or sagging loose secondary wires\n\n    name: str = \"cable_tray\"\n    pivot_rule: str = \"center\"\n    palette_name: str = \"industrial_hazard\"\n    wear_level: float = 0.45\n    target_tri_budget: int = 520\n"
+  },
+  {
     "id": "below_nominal.fixtures.canteen_counter",
     "family": "canteen_counter",
     "name": "Mostrador de Comedor y Cafetería",
@@ -1723,6 +1864,356 @@
     "file_size_bytes": 109368,
     "source_code": "import random\nimport math\nimport bpy\nimport bmesh\nfrom mathutils import Vector\n\nfrom ...core.base_generator import BaseGenerator\nfrom ...core.mesh_builder import MeshBuilder\nfrom ...core.materials import MaterialManager\nfrom .config import CanteenCounterConfig\n\nclass CanteenCounterGenerator(BaseGenerator):\n    \"\"\"Generates industrial cafeteria service counters with tray slides and roll-up shutters.\"\"\"\n\n    def generate(self, config: CanteenCounterConfig) -> bpy.types.Object:\n        random.seed(config.seed)\n\n        obj, bm = self.create_mesh_object(config.name)\n        mat_mgr = self.get_material_manager(config)\n\n        w = config.width\n        d = config.depth\n        h = config.height\n\n        m_steel = mat_mgr.get_material_index(\"mounting\")\n        m_body = mat_mgr.get_material_index(\"locker_gray\")\n        m_frame = mat_mgr.get_material_index(\"casing\")\n        m_shutter = mat_mgr.get_material_index(\"vent\")\n\n        # 1. Base Counter Cabinet\n        plinth_h = 0.08\n        cab_h = h - plinth_h\n        cab_z = plinth_h + cab_h / 2\n\n        # Recessed dark plinth\n        MeshBuilder.add_box(bm, (0, 0, plinth_h / 2), (w - 0.06, d - 0.06, plinth_h), m_frame, \"plinth\")\n        # Main cabinet body\n        MeshBuilder.add_box(bm, (0, 0, cab_z), (w, d, cab_h), m_body, \"counter_cabinet\")\n        # Stainless steel service countertop\n        top_th = 0.05\n        top_z = h + top_th / 2\n        MeshBuilder.add_box(bm, (0, 0, top_z), (w + 0.04, d + 0.04, top_th), m_steel, \"counter_top\")\n\n        # 2. Inset Bain-Marie Steam Table Pans\n        if config.has_steam_pans:\n            pan_w = 0.32\n            pan_d = 0.45\n            pan_depth = 0.03\n            pan_x_offsets = [-w * 0.30, 0.0, w * 0.30]\n            for px in pan_x_offsets:\n                # Recessed pan well\n                MeshBuilder.add_box(bm, (px, -0.05, top_z + 0.01), (pan_w, pan_d, 0.02), m_frame, \"steam_pan_well\")\n                # Handle bar on lid\n                MeshBuilder.add_box(bm, (px, -0.05, top_z + 0.03), (0.12, 0.03, 0.015), m_steel, \"pan_handle\")\n\n        # 3. Front Tubular Tray Slider Rails\n        if config.has_tray_rails:\n            rail_z = h - 0.08\n            rail_y = (d / 2) + 0.16\n            rail_len = w + 0.08\n            tube_r = 0.018\n\n            # 3 Parallel horizontal tubular rails\n            for r_idx in range(3):\n                ry = (d / 2) + 0.08 + (r_idx * 0.08)\n                MeshBuilder.add_cylinder(bm, (0, ry, rail_z), tube_r, rail_len, sides=4, axis='X', mat_idx=m_steel, name=f\"tray_rail_{r_idx}\")\n\n            # 3 Triangular cantilever support brackets\n            for bx in (-w * 0.38, 0.0, w * 0.38):\n                MeshBuilder.add_box(bm, (bx, (d / 2) + 0.14, rail_z - 0.04), (0.04, 0.24, 0.03), m_steel, \"bracket_horiz\")\n                # Diagonal strut to cabinet\n                MeshBuilder.add_box(bm, (bx, (d / 2) + 0.08, rail_z - 0.12), (0.04, 0.14, 0.03), m_steel, \"bracket_diag\")\n\n        # 4. Overhead Service Hatch Bulkhead Frame & Slatted Roll-up Shutter\n        if config.counter_type == \"service_hatch\":\n            post_h = 1.30\n            post_top_z = h + post_h\n            # Left & Right heavy vertical channel posts\n            for px in (-w / 2 - 0.02, w / 2 + 0.02):\n                MeshBuilder.add_box(bm, (px, -d / 4, h + post_h / 2), (0.08, 0.08, post_h), m_frame, \"hatch_post\")\n\n            # Header housing box for rolled-up shutter\n            header_h = 0.35\n            header_z = post_top_z - header_h / 2\n            MeshBuilder.add_box(bm, (0, -d / 4, header_z), (w + 0.12, 0.18, header_h), m_frame, \"shutter_header_box\")\n\n            # Shutter curtain (persiana metálica)\n            shutter_total_h = post_h - header_h\n            curtain_w = w\n            if config.roll_up_shutter == \"closed\":\n                curtain_h = shutter_total_h\n                curtain_z = h + curtain_h / 2\n                MeshBuilder.add_box(bm, (0, -d / 4, curtain_z), (curtain_w, 0.03, curtain_h), m_shutter, \"shutter_curtain\")\n            elif config.roll_up_shutter == \"half_open\":\n                curtain_h = shutter_total_h * 0.50\n                curtain_z = post_top_z - header_h - curtain_h / 2\n                MeshBuilder.add_box(bm, (0, -d / 4, curtain_z), (curtain_w, 0.03, curtain_h), m_shutter, \"shutter_curtain\")\n\n        mat_mgr.assign_to_mesh(obj)\n        self.finalize_mesh(obj, bm)\n        return obj\n",
     "config_code": "from dataclasses import dataclass\nfrom ...core.base_config import BaseAssetConfig\n\n@dataclass\nclass CanteenCounterConfig(BaseAssetConfig):\n    \"\"\"Configuration for mess hall service counters, food hatches, and cafeteria steam tables.\"\"\"\n    counter_type: str = \"service_hatch\"     # \"service_hatch\", \"buffet_island\", \"tray_slider_station\"\n    width: float = 1.80                     # Counter width in meters\n    depth: float = 0.80                     # Depth in meters\n    height: float = 1.10                    # Service counter height in meters\n    roll_up_shutter: str = \"half_open\"      # \"closed\", \"half_open\", \"open\"\n    has_tray_rails: bool = True             # Tubular front rails for sliding cafeteria trays\n    has_steam_pans: bool = True             # Inset bain-marie stainless food warming wells\n    palette_name: str = \"industrial_hazard\"\n    target_tri_budget: int = 320\n"
+  },
+  {
+    "id": "below_nominal.cargo.cargo_container",
+    "family": "cargo_container",
+    "name": "Contenedor Modular de Almacén",
+    "version": "1.0.0",
+    "description": "Contenedor de transporte intermodal estandarizado para bodegas de carga, hangares y zonas de estiba en Europa. Chapa de acero plegada con nervaduras corrugadas de alta rigidez estructural, 8 cantoneras de izaje de fundición de acero con orificios de trincaje ISO, doble puerta abatible trasera con barras de cierre vertical y palancas de leva precintables, túneles inferiores de horquilla para carretillas pesadas y placas de mercancías peligrosas.",
+    "category": "cargo",
+    "tags": [
+      "psx",
+      "low-poly",
+      "container",
+      "cargo",
+      "freight",
+      "shipping",
+      "warehouse",
+      "logistics",
+      "below_nominal"
+    ],
+    "author": {
+      "name": "ModelCoder Core Team",
+      "github": "FrancisCuarto"
+    },
+    "license": "CC-BY-4.0",
+    "compatibility": {},
+    "parameters": [
+      {
+        "key": "container_length",
+        "label": "Largo del Contenedor (m)",
+        "type": "float",
+        "default": 2.4,
+        "group": "Dimensiones",
+        "min": 1.6,
+        "max": 3.6,
+        "step": 0.2
+      },
+      {
+        "key": "container_width",
+        "label": "Ancho del Contenedor (m)",
+        "type": "float",
+        "default": 1.3,
+        "group": "Dimensiones",
+        "min": 1.0,
+        "max": 2.0,
+        "step": 0.1
+      },
+      {
+        "key": "container_height",
+        "label": "Alto del Contenedor (m)",
+        "type": "float",
+        "default": 1.4,
+        "group": "Dimensiones",
+        "min": 1.0,
+        "max": 2.0,
+        "step": 0.1
+      },
+      {
+        "key": "corrugation_ribs",
+        "label": "Costillas Corrugadas",
+        "type": "int",
+        "default": 5,
+        "group": "Estructura",
+        "min": 3.0,
+        "max": 8.0,
+        "step": 1.0
+      },
+      {
+        "key": "doors_open_angle",
+        "label": "Ángulo de Apertura de Puertas (°)",
+        "type": "float",
+        "default": 0.0,
+        "group": "Operación",
+        "min": 0.0,
+        "max": 85.0,
+        "step": 5.0
+      },
+      {
+        "key": "cargo_class",
+        "label": "Clase de Carga",
+        "type": "enum",
+        "default": "general_supplies",
+        "group": "Configuración",
+        "options": [
+          {
+            "value": "general_supplies",
+            "label": "Suministros Generales"
+          },
+          {
+            "value": "cryo_hazard",
+            "label": "Criopeligro"
+          },
+          {
+            "value": "armory_munitions",
+            "label": "Armería y Munición"
+          }
+        ]
+      },
+      {
+        "key": "container_condition",
+        "label": "Condición Mecánica",
+        "type": "enum",
+        "default": "nominal",
+        "group": "Estado",
+        "options": [
+          {
+            "value": "nominal",
+            "label": "Nominal"
+          },
+          {
+            "value": "dented_impact",
+            "label": "Impacto / Abolladuras"
+          },
+          {
+            "value": "derelict_rusted",
+            "label": "Oxidado Abandonado"
+          }
+        ]
+      },
+      {
+        "key": "wear_level",
+        "label": "Nivel de Desgaste",
+        "type": "float",
+        "default": 0.45,
+        "group": "Material",
+        "min": 0.0,
+        "max": 1.0,
+        "step": 0.05
+      }
+    ],
+    "presets": [
+      {
+        "id": "sealed_supplies",
+        "name": "sealed_supplies",
+        "values": {
+          "container_length": 2.4,
+          "container_width": 1.3,
+          "container_height": 1.4,
+          "corrugation_ribs": 5,
+          "doors_open_angle": 0.0,
+          "cargo_class": "general_supplies",
+          "container_condition": "nominal",
+          "wear_level": 0.35
+        },
+        "description": "Contenedor estándar de víveres sellado con barras de trincaje en posición."
+      },
+      {
+        "id": "cryo_hazard_sealed",
+        "name": "cryo_hazard_sealed",
+        "values": {
+          "container_length": 2.6,
+          "container_width": 1.4,
+          "container_height": 1.5,
+          "corrugation_ribs": 6,
+          "doors_open_angle": 0.0,
+          "cargo_class": "cryo_hazard",
+          "container_condition": "nominal",
+          "wear_level": 0.4
+        },
+        "description": "Contenedor con señalética de biopeligro cian y placas de advertencia química."
+      },
+      {
+        "id": "unloading_inspection",
+        "name": "unloading_inspection",
+        "values": {
+          "container_length": 2.4,
+          "container_width": 1.3,
+          "container_height": 1.4,
+          "corrugation_ribs": 5,
+          "doors_open_angle": 75.0,
+          "cargo_class": "armory_munitions",
+          "container_condition": "dented_impact",
+          "wear_level": 0.6
+        },
+        "description": "Puertas dobles abiertas de par en par revelando el interior de la bahía de estiba."
+      }
+    ],
+    "export_capabilities": {
+      "supports_collision": true,
+      "default_collision_suffix": "-convcolonly"
+    },
+    "has_model": true,
+    "model_url": "/models/cargo_container.glb",
+    "file_size_bytes": 118340,
+    "source_code": "import bpy\nimport bmesh\nimport math\nfrom mathutils import Vector\nfrom typing import Dict, Any\n\nfrom ...core.base_generator import BaseAssetGenerator\nfrom ...core.mesh_builder import MeshBuilder\nfrom ...core.texture_atlas import PS1TextureAtlas\nfrom .config import CargoContainerConfig\n\nclass CargoContainerGenerator(BaseAssetGenerator):\n    \"\"\"\n    Procedural PSX generator for standardized interstellar logistics cargo containers.\n    Builds structural ISO corner twistlock castings, corrugated side wall panels,\n    forklift tine pocket channels, roof reinforcement ribs, hinged rear cargo doors with vertical cam rods,\n    and hazard classification placards.\n    \"\"\"\n\n    def generate(self, config: CargoContainerConfig = None) -> bpy.types.Object:\n        if config is not None:\n            self.config = config\n        elif not hasattr(self, \"config\") or self.config is None:\n            self.config = CargoContainerConfig()\n\n        self.clean_context()\n        self.material_manager = self.get_material_manager(self.config)\n        MeshBuilder.set_active_material_manager(self.material_manager)\n\n        obj, bm = self.create_mesh_object(self.config.name)\n        self.material_manager.assign_to_mesh(obj)\n        m_idx = self.material_manager.material_indices\n\n        l = self.config.container_length\n        w = self.config.container_width\n        h = self.config.container_height\n        half_l = l * 0.5\n        half_w = w * 0.5\n\n        metal_mat = m_idx.get(\"dark_metal\", m_idx.get(\"casing\", 0))\n        casing_mat = m_idx.get(\"casing\", 0)\n        accent_mat = m_idx.get(\"accent\", m_idx.get(\"casing\", 0))\n\n        metal_rgba = self.material_manager.get_rgba(\"dark_metal\")\n        casing_rgba = self.material_manager.get_rgba(\"casing\")\n\n        # Color based on cargo class\n        c_class = self.config.cargo_class\n        if c_class == \"cryo_hazard\":\n            body_rgba = (0.20, 0.45, 0.55, 1.0)\n            hazard_uv = \"oxygen_cyan_glow\"\n        elif c_class == \"armory_munitions\":\n            body_rgba = (0.50, 0.22, 0.18, 1.0)\n            hazard_uv = \"hazard_stripes\"\n        else:\n            body_rgba = casing_rgba\n            hazard_uv = \"caution_label\"\n\n        # -------------------------------------------------------------\n        # 1. Main Hull Enclosure (Walls, Roof, Floor)\n        # -------------------------------------------------------------\n        wall_th = 0.04\n        # Floor slab\n        MeshBuilder.add_box(\n            bm,\n            size=(w - 0.04, l - 0.04, wall_th),\n            offset=(0.0, 0.0, wall_th * 0.5),\n            mat_idx=metal_mat,\n            rgba=metal_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n        )\n        # Roof slab\n        MeshBuilder.add_box(\n            bm,\n            size=(w - 0.04, l - 0.04, wall_th),\n            offset=(0.0, 0.0, h - wall_th * 0.5),\n            mat_idx=casing_mat,\n            rgba=body_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"painted_metal_white\")\n        )\n        # Front sealed bulkhead wall (at -half_l)\n        MeshBuilder.add_box(\n            bm,\n            size=(w - 0.04, wall_th, h - wall_th * 2),\n            offset=(0.0, -half_l + wall_th * 0.5, h * 0.5),\n            mat_idx=casing_mat,\n            rgba=body_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"painted_metal_white\")\n        )\n        # Left wall\n        MeshBuilder.add_box(\n            bm,\n            size=(wall_th, l - 0.04, h - wall_th * 2),\n            offset=(-half_w + wall_th * 0.5, 0.0, h * 0.5),\n            mat_idx=casing_mat,\n            rgba=body_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"painted_metal_white\")\n        )\n        # Right wall\n        MeshBuilder.add_box(\n            bm,\n            size=(wall_th, l - 0.04, h - wall_th * 2),\n            offset=(half_w - wall_th * 0.5, 0.0, h * 0.5),\n            mat_idx=casing_mat,\n            rgba=body_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"painted_metal_white\")\n        )\n\n        # -------------------------------------------------------------\n        # 2. Eight Heavy ISO Corner Twistlock Castings\n        # -------------------------------------------------------------\n        cast_s = 0.12\n        for cx in (-half_w + cast_s * 0.5, half_w - cast_s * 0.5):\n            for cy in (-half_l + cast_s * 0.5, half_l - cast_s * 0.5):\n                for cz in (cast_s * 0.5, h - cast_s * 0.5):\n                    # Casting cube block\n                    MeshBuilder.add_box(\n                        bm,\n                        size=(cast_s, cast_s, cast_s),\n                        offset=(cx, cy, cz),\n                        mat_idx=metal_mat,\n                        rgba=metal_rgba,\n                        uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n                    )\n\n        # -------------------------------------------------------------\n        # 3. Corrugated Side Wall Reinforcement Ribs\n        # -------------------------------------------------------------\n        ribs = max(3, min(self.config.corrugation_ribs, 8))\n        rib_span = l - cast_s * 2.2\n        rib_step = rib_span / (ribs + 1)\n        rib_w = 0.025\n        rib_d = 0.08\n        rib_h = h - cast_s * 1.5\n\n        for ri in range(1, ribs + 1):\n            ry = -half_l + cast_s * 1.1 + ri * rib_step\n            # Left side rib\n            MeshBuilder.add_box(\n                bm,\n                size=(rib_w, rib_d, rib_h),\n                offset=(-half_w - rib_w * 0.5 + 0.01, ry, h * 0.5),\n                mat_idx=casing_mat,\n                rgba=body_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"painted_metal_white\")\n            )\n            # Right side rib\n            MeshBuilder.add_box(\n                bm,\n                size=(rib_w, rib_d, rib_h),\n                offset=(half_w + rib_w * 0.5 - 0.01, ry, h * 0.5),\n                mat_idx=casing_mat,\n                rgba=body_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"painted_metal_white\")\n            )\n\n        # -------------------------------------------------------------\n        # 4. Transverse Forklift Pocket Sleeves\n        # -------------------------------------------------------------\n        if self.config.has_forklift_pockets:\n            pocket_w = w * 1.01\n            pocket_l = 0.22\n            pocket_h = 0.10\n            for py in (-half_l * 0.35, half_l * 0.35):\n                # Tunnel sleeve\n                MeshBuilder.add_box(\n                    bm,\n                    size=(pocket_w, pocket_l, pocket_h),\n                    offset=(0.0, py, pocket_h * 0.5 + 0.01),\n                    mat_idx=metal_mat,\n                    rgba=(0.12, 0.12, 0.14, 1.0),\n                    uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n                )\n\n        # -------------------------------------------------------------\n        # 5. Rear Cargo Access Doors (at +half_l)\n        # -------------------------------------------------------------\n        door_w = (w - cast_s * 1.8) * 0.5\n        door_th = 0.04\n        door_h = h - cast_s * 1.8\n        door_z = h * 0.5\n\n        angle_deg = max(0.0, min(self.config.doors_open_angle, 85.0))\n        angle_rad = math.radians(angle_deg)\n        cos_d = math.cos(angle_rad)\n        sin_d = math.sin(angle_rad)\n\n        # Left door hinge at (-door_w, half_l - 0.02)\n        lh_x = -door_w\n        lh_y = half_l - 0.02\n        # Right door hinge at (door_w, half_l - 0.02)\n        rh_x = door_w\n        rh_y = half_l - 0.02\n\n        def rotate_door_left(lx, ly, lz):\n            dx = lx - lh_x\n            dy = ly - lh_y\n            rx = lh_x + dx * cos_d + dy * sin_d\n            ry = lh_y - dx * sin_d + dy * cos_d\n            return (rx, ry, lz)\n\n        def rotate_door_right(lx, ly, lz):\n            dx = lx - rh_x\n            dy = ly - rh_y\n            rx = rh_x + dx * cos_d - dy * sin_d\n            ry = rh_y + dx * sin_d + dy * cos_d\n            return (rx, ry, lz)\n\n        # Left Door Slab\n        p_ldoor = rotate_door_left(-door_w * 0.5, half_l - door_th * 0.5, door_z)\n        MeshBuilder.add_box(\n            bm,\n            size=(door_w, door_th, door_h),\n            offset=p_ldoor,\n            mat_idx=casing_mat,\n            rgba=body_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"painted_metal_white\")\n        )\n        # Right Door Slab\n        p_rdoor = rotate_door_right(door_w * 0.5, half_l - door_th * 0.5, door_z)\n        MeshBuilder.add_box(\n            bm,\n            size=(door_w, door_th, door_h),\n            offset=p_rdoor,\n            mat_idx=casing_mat,\n            rgba=body_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"painted_metal_white\")\n        )\n\n        # Vertical Locking Cam Rods\n        # Left door rod\n        p_lrod = rotate_door_left(-door_w * 0.25, half_l + 0.015, door_z)\n        MeshBuilder.add_cylinder(\n            bm,\n            radius=0.016,\n            depth=door_h * 0.95,\n            segments=5,\n            offset=p_lrod,\n            axis='Z',\n            mat_idx=metal_mat,\n            rgba=metal_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"metal_light_brushed\")\n        )\n        # Right door rod\n        p_rrod = rotate_door_right(door_w * 0.25, half_l + 0.015, door_z)\n        MeshBuilder.add_cylinder(\n            bm,\n            radius=0.016,\n            depth=door_h * 0.95,\n            segments=5,\n            offset=p_rrod,\n            axis='Z',\n            mat_idx=metal_mat,\n            rgba=metal_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"metal_light_brushed\")\n        )\n\n        # -------------------------------------------------------------\n        # 6. Hazard Placards & Stencils\n        # -------------------------------------------------------------\n        # Side hazard diamond plaque\n        MeshBuilder.add_box(\n            bm,\n            size=(0.02, 0.24, 0.24),\n            offset=(-half_w - 0.015, 0.0, h * 0.65),\n            mat_idx=accent_mat,\n            rgba=(0.95, 0.85, 0.20, 1.0),\n            uv_rect=PS1TextureAtlas.get_rect(hazard_uv)\n        )\n        MeshBuilder.add_box(\n            bm,\n            size=(0.02, 0.24, 0.24),\n            offset=(half_w + 0.015, 0.0, h * 0.65),\n            mat_idx=accent_mat,\n            rgba=(0.95, 0.85, 0.20, 1.0),\n            uv_rect=PS1TextureAtlas.get_rect(hazard_uv)\n        )\n\n        self.finalize_mesh(obj, bm)\n        self.compact_materials(obj)\n        return obj\n",
+    "config_code": "from dataclasses import dataclass\nfrom ...core.base_config import BaseAssetConfig\n\n@dataclass\nclass CargoContainerConfig(BaseAssetConfig):\n    \"\"\"Configuration for Standardized Interstellar Logistics Cargo Container.\"\"\"\n    container_length: float = 2.40\n    container_width: float = 1.30\n    container_height: float = 1.40\n    corrugation_ribs: int = 5           # 3 to 8 structural corrugated side wall ribs\n    doors_open_angle: float = 0.0       # 0.0 = dogged shut, 85.0 = swung open\n    has_forklift_pockets: bool = True   # Bottom transverse rectangular sleeves for forklift tines\n    cargo_class: str = \"general_supplies\" # \"general_supplies\", \"cryo_hazard\", \"armory_munitions\"\n    container_condition: str = \"nominal\" # \"nominal\", \"dented_impact\", \"derelict_rusted\"\n\n    name: str = \"cargo_container\"\n    pivot_rule: str = \"floor_center\"\n    palette_name: str = \"industrial_hazard\"\n    wear_level: float = 0.45\n    target_tri_budget: int = 650\n"
+  },
+  {
+    "id": "below_nominal.cargo.cargo_pallet",
+    "family": "cargo_pallet",
+    "name": "Palé Industrial de Carga 4 Vías",
+    "version": "1.0.0",
+    "description": "Base de estiba y transporte logístico de 4 entradas para carretillas elevadoras y transpaletas de la estación. Fabricado en polímero técnico reciclado de alta densidad o estructura de acero tubular reforzado, tablillas superiores antideslizantes con biselado de entrada para horquillas, 9 tacos esquineros macizos, anclajes perimetrales para cinchas tensoras de amarre y carga opcional estibada.",
+    "category": "cargo",
+    "tags": [
+      "psx",
+      "low-poly",
+      "pallet",
+      "cargo",
+      "freight",
+      "warehouse",
+      "logistics",
+      "below_nominal"
+    ],
+    "author": {
+      "name": "ModelCoder Core Team",
+      "github": "FrancisCuarto"
+    },
+    "license": "CC-BY-4.0",
+    "compatibility": {},
+    "parameters": [
+      {
+        "key": "length",
+        "label": "Largo de Plataforma (m)",
+        "type": "float",
+        "default": 1.2,
+        "group": "Dimensiones",
+        "min": 0.8,
+        "max": 1.6,
+        "step": 0.05
+      },
+      {
+        "key": "width",
+        "label": "Ancho de Plataforma (m)",
+        "type": "float",
+        "default": 1.0,
+        "group": "Dimensiones",
+        "min": 0.8,
+        "max": 1.4,
+        "step": 0.05
+      },
+      {
+        "key": "deck_style",
+        "label": "Tipo de Tablero",
+        "type": "enum",
+        "default": "slotted_deck",
+        "group": "Estructura",
+        "options": [
+          {
+            "value": "slotted_deck",
+            "label": "Tablillas Ranuradas"
+          },
+          {
+            "value": "solid_flat",
+            "label": "Tablero Macizo"
+          },
+          {
+            "value": "reinforced_steel",
+            "label": "Acero Reforzado"
+          }
+        ]
+      },
+      {
+        "key": "has_cargo_payload",
+        "label": "Carga Estibada Sobre Plataforma",
+        "type": "bool",
+        "default": false,
+        "group": "Carga"
+      },
+      {
+        "key": "has_strap_down",
+        "label": "Cinchas Tensoras con Trinquetes",
+        "type": "bool",
+        "default": true,
+        "group": "Carga"
+      },
+      {
+        "key": "pallet_condition",
+        "label": "Condición Estructural",
+        "type": "enum",
+        "default": "nominal",
+        "group": "Estado",
+        "options": [
+          {
+            "value": "nominal",
+            "label": "Nominal"
+          },
+          {
+            "value": "damaged_corner",
+            "label": "Esquina Dañada"
+          },
+          {
+            "value": "chemical_stained",
+            "label": "Manchado Químico"
+          }
+        ]
+      },
+      {
+        "key": "wear_level",
+        "label": "Desgaste y Suciedad",
+        "type": "float",
+        "default": 0.5,
+        "group": "Material",
+        "min": 0.0,
+        "max": 1.0,
+        "step": 0.05
+      }
+    ],
+    "presets": [
+      {
+        "id": "empty_warehouse",
+        "name": "empty_warehouse",
+        "values": {
+          "length": 1.2,
+          "width": 1.0,
+          "deck_style": "slotted_deck",
+          "has_cargo_payload": false,
+          "has_strap_down": false,
+          "pallet_condition": "nominal",
+          "wear_level": 0.35
+        },
+        "description": "Palé de tablillas ranurado listo para carga en almacén."
+      },
+      {
+        "id": "loaded_secured",
+        "name": "loaded_secured",
+        "values": {
+          "length": 1.2,
+          "width": 1.0,
+          "deck_style": "slotted_deck",
+          "has_cargo_payload": true,
+          "has_strap_down": true,
+          "pallet_condition": "nominal",
+          "wear_level": 0.4
+        },
+        "description": "Palé con cajas de raciones sintéticas flejadas con cinchas de seguridad."
+      },
+      {
+        "id": "damaged_impact",
+        "name": "damaged_impact",
+        "values": {
+          "length": 1.2,
+          "width": 1.0,
+          "deck_style": "reinforced_steel",
+          "has_cargo_payload": false,
+          "has_strap_down": true,
+          "pallet_condition": "damaged_corner",
+          "wear_level": 0.7
+        },
+        "description": "Palé reforzado de acero con esquina dañada por impacto de transpaleta."
+      }
+    ],
+    "export_capabilities": {
+      "supports_collision": true,
+      "default_collision_suffix": "-convcolonly"
+    },
+    "has_model": true,
+    "model_url": "/models/cargo_pallet.glb",
+    "file_size_bytes": 110992,
+    "source_code": "import bpy\nimport bmesh\nimport math\nfrom mathutils import Vector\nfrom typing import Dict, Any\n\nfrom ...core.base_generator import BaseAssetGenerator\nfrom ...core.mesh_builder import MeshBuilder\nfrom ...core.texture_atlas import PS1TextureAtlas\nfrom .config import CargoPalletConfig\n\nclass CargoPalletGenerator(BaseAssetGenerator):\n    \"\"\"\n    Procedural PSX generator for industrial 4-way logistics cargo pallets.\n    Builds bottom skid runners, 9-block riser columns, upper deck slats or solid plates,\n    fork entry chamfers, tie-down ratchet straps, and optional stacked cargo payload boxes.\n    \"\"\"\n\n    def generate(self, config: CargoPalletConfig = None) -> bpy.types.Object:\n        if config is not None:\n            self.config = config\n        elif not hasattr(self, \"config\") or self.config is None:\n            self.config = CargoPalletConfig()\n\n        self.clean_context()\n        self.material_manager = self.get_material_manager(self.config)\n        MeshBuilder.set_active_material_manager(self.material_manager)\n\n        obj, bm = self.create_mesh_object(self.config.name)\n        self.material_manager.assign_to_mesh(obj)\n        m_idx = self.material_manager.material_indices\n\n        l = self.config.length\n        w = self.config.width\n        h = self.config.height\n        half_l = l * 0.5\n        half_w = w * 0.5\n\n        metal_mat = m_idx.get(\"dark_metal\", m_idx.get(\"casing\", 0))\n        casing_mat = m_idx.get(\"casing\", 0)\n        accent_mat = m_idx.get(\"accent\", m_idx.get(\"casing\", 0))\n\n        metal_rgba = self.material_manager.get_rgba(\"dark_metal\")\n        casing_rgba = self.material_manager.get_rgba(\"casing\")\n        wood_polymer_rgba = (0.28, 0.25, 0.22, 1.0)\n        crate_rgba = (0.45, 0.40, 0.32, 1.0)\n        strap_rgba = (0.95, 0.75, 0.15, 1.0)\n\n        # -------------------------------------------------------------\n        # 1. Bottom Runner Skids (3 boards in Y)\n        # -------------------------------------------------------------\n        skid_th = 0.022\n        skid_w = 0.12\n        for sx in (-half_w + skid_w * 0.5, 0.0, half_w - skid_w * 0.5):\n            MeshBuilder.add_box(\n                bm,\n                size=(skid_w, l, skid_th),\n                offset=(sx, 0.0, skid_th * 0.5),\n                mat_idx=casing_mat,\n                rgba=wood_polymer_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n            )\n\n        # -------------------------------------------------------------\n        # 2. Nine Riser Bearing Blocks (3x3 grid)\n        # -------------------------------------------------------------\n        block_w = 0.12\n        block_l = 0.12\n        block_h = h - skid_th * 2 - 0.025\n        block_z = skid_th + block_h * 0.5\n\n        is_damaged = (self.config.pallet_condition == \"damaged_corner\")\n\n        for bx in (-half_w + block_w * 0.5, 0.0, half_w - block_w * 0.5):\n            for by in (-half_l + block_l * 0.5, 0.0, half_l - block_l * 0.5):\n                # Omit front-left corner block if damaged\n                if is_damaged and bx < -half_w * 0.5 and by < -half_l * 0.5:\n                    # Broken splinter stump\n                    MeshBuilder.add_box(\n                        bm,\n                        size=(block_w * 0.6, block_l * 0.6, block_h * 0.35),\n                        offset=(bx, by, skid_th + block_h * 0.175),\n                        mat_idx=metal_mat,\n                        rgba=metal_rgba,\n                        uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n                    )\n                    continue\n\n                MeshBuilder.add_box(\n                    bm,\n                    size=(block_w, block_l, block_h),\n                    offset=(bx, by, block_z),\n                    mat_idx=casing_mat,\n                    rgba=wood_polymer_rgba,\n                    uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n                )\n\n        # -------------------------------------------------------------\n        # 3. Intermediate Stringer Boards (3 boards in Y atop blocks)\n        # -------------------------------------------------------------\n        stringer_th = 0.022\n        stringer_z = skid_th + block_h + stringer_th * 0.5\n        for sx in (-half_w + skid_w * 0.5, 0.0, half_w - skid_w * 0.5):\n            MeshBuilder.add_box(\n                bm,\n                size=(skid_w, l, stringer_th),\n                offset=(sx, 0.0, stringer_z),\n                mat_idx=casing_mat,\n                rgba=wood_polymer_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n            )\n\n        # -------------------------------------------------------------\n        # 4. Top Deck Construction\n        # -------------------------------------------------------------\n        deck_th = 0.022\n        deck_z = h - deck_th * 0.5\n        style = self.config.deck_style\n\n        if style == \"solid_flat\":\n            MeshBuilder.add_box(\n                bm,\n                size=(w, l, deck_th),\n                offset=(0.0, 0.0, deck_z),\n                mat_idx=casing_mat,\n                rgba=wood_polymer_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n            )\n        elif style == \"reinforced_steel\":\n            # Perimeter steel tube frame with cross bracing\n            MeshBuilder.add_box(\n                bm,\n                size=(w, l, deck_th),\n                offset=(0.0, 0.0, deck_z),\n                mat_idx=metal_mat,\n                rgba=metal_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"metal_light_brushed\")\n            )\n            # Center diamond plate insert\n            MeshBuilder.add_box(\n                bm,\n                size=(w * 0.85, l * 0.85, deck_th * 1.1),\n                offset=(0.0, 0.0, deck_z),\n                mat_idx=casing_mat,\n                rgba=casing_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"vent_grill\")\n            )\n        else: # slotted_deck (traditional pallet slats)\n            slat_count = 6\n            slat_w = 0.11\n            slat_spacing = (l - slat_w) / (slat_count - 1)\n            for i in range(slat_count):\n                sy = -half_l + slat_w * 0.5 + i * slat_spacing\n                MeshBuilder.add_box(\n                    bm,\n                    size=(w, slat_w, deck_th),\n                    offset=(0.0, sy, deck_z),\n                    mat_idx=casing_mat,\n                    rgba=wood_polymer_rgba,\n                    uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n                )\n\n        # -------------------------------------------------------------\n        # 5. Stacked Cargo Payload (Optional)\n        # -------------------------------------------------------------\n        if self.config.has_cargo_payload:\n            # 2 modular shipping boxes stacked on deck\n            box1_w = w * 0.45\n            box1_l = l * 0.45\n            box1_h = 0.50\n\n            # Front-left crate\n            MeshBuilder.add_box(\n                bm,\n                size=(box1_w, box1_l, box1_h),\n                offset=(-half_w * 0.45, -half_l * 0.40, h + box1_h * 0.5),\n                mat_idx=casing_mat,\n                rgba=crate_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"beige_plastic_worn\")\n            )\n            # Rear-right crate\n            MeshBuilder.add_box(\n                bm,\n                size=(box1_w * 1.1, box1_l * 1.1, box1_h * 1.1),\n                offset=(half_w * 0.40, half_l * 0.35, h + box1_h * 0.55),\n                mat_idx=metal_mat,\n                rgba=(0.35, 0.45, 0.40, 1.0),\n                uv_rect=PS1TextureAtlas.get_rect(\"painted_metal_white\")\n            )\n            # Small top supply container\n            MeshBuilder.add_box(\n                bm,\n                size=(box1_w * 0.8, box1_l * 0.8, 0.35),\n                offset=(-half_w * 0.35, -half_l * 0.35, h + box1_h + 0.175),\n                mat_idx=accent_mat,\n                rgba=(0.85, 0.35, 0.15, 1.0),\n                uv_rect=PS1TextureAtlas.get_rect(\"hazard_stripes\")\n            )\n\n        # -------------------------------------------------------------\n        # 6. Ratchet Tie-Down Straps (Optional)\n        # -------------------------------------------------------------\n        if self.config.has_strap_down:\n            strap_w = 0.035\n            for sx in (-half_w * 0.40, half_w * 0.40):\n                # Vertical strap bands across pallet sides\n                strap_h = 0.70 if self.config.has_cargo_payload else h\n                MeshBuilder.add_box(\n                    bm,\n                    size=(strap_w, l * 1.02, 0.012),\n                    offset=(sx, 0.0, strap_h * 0.5),\n                    mat_idx=accent_mat,\n                    rgba=strap_rgba,\n                    uv_rect=PS1TextureAtlas.get_rect(\"hazard_stripes\")\n                )\n                # Metal ratchet buckle\n                MeshBuilder.add_box(\n                    bm,\n                    size=(0.06, 0.05, 0.035),\n                    offset=(sx, half_l * 0.85, strap_h * 0.6),\n                    mat_idx=metal_mat,\n                    rgba=metal_rgba,\n                    uv_rect=PS1TextureAtlas.get_rect(\"metal_light_brushed\")\n                )\n\n        self.finalize_mesh(obj, bm)\n        self.compact_materials(obj)\n        return obj\n",
+    "config_code": "from dataclasses import dataclass\nfrom ...core.base_config import BaseAssetConfig\n\n@dataclass\nclass CargoPalletConfig(BaseAssetConfig):\n    \"\"\"Configuration for Heavy Industrial 4-Way Entry Logistics Cargo Pallet.\"\"\"\n    length: float = 1.20\n    width: float = 1.00\n    height: float = 0.16\n    deck_style: str = \"slotted_deck\"     # \"slotted_deck\", \"solid_flat\", \"reinforced_steel\"\n    has_cargo_payload: bool = False      # Stacked ration supply crates strapped onto deck\n    has_strap_down: bool = True          # High-tensile ratchet tie-down straps with buckles\n    pallet_condition: str = \"nominal\"    # \"nominal\", \"damaged_corner\", \"chemical_stained\"\n\n    name: str = \"cargo_pallet\"\n    pivot_rule: str = \"floor_center\"\n    palette_name: str = \"industrial_hazard\"\n    wear_level: float = 0.50\n    target_tri_budget: int = 380\n"
   },
   {
     "id": "below_nominal.medical.chemical_cabinet",
@@ -4839,6 +5330,161 @@
     "config_code": "from dataclasses import dataclass\nfrom ...core.base_config import BaseAssetConfig\n\n@dataclass\nclass FireExtinguisherConfig(BaseAssetConfig):\n    \"\"\"\n    Configuration for Facility Fire Extinguishers and Emergency Stations.\n    Includes pressurized tanks, pressure gauges, wall cabinets with broken glass, and hoses.\n    \"\"\"\n    tank_radius: float = 0.08\n    tank_height: float = 0.45\n\n    # Mounting & Enclosure\n    mount_style: str = \"wall_bracket\"  # \"wall_bracket\", \"emergency_cabinet\", \"floor_stand\"\n    cabinet_width: float = 0.36\n    cabinet_height: float = 0.75\n    cabinet_depth: float = 0.22\n    cabinet_glass_state: str = \"intact\"  # \"intact\", \"broken_shattered\", \"door_open\"\n\n    # Details\n    has_pressure_gauge: bool = True\n    has_hose_nozzle: bool = True\n    has_wall_sign: bool = True  # Identification placard above extinguisher\n\n    name: str = \"fire_extinguisher\"\n    target_tri_budget: int = 340\n    wear_level: float = 0.60\n"
   },
   {
+    "id": "below_nominal.architecture.floor_grating",
+    "family": "floor_grating",
+    "name": "Rejilla de Suelo y Pasarela de Trinchera",
+    "version": "1.0.0",
+    "description": "Panel de rejilla de acero galvanizado ranurado para pasarelas industriales, canaletas de servicio y fosas de ventilación de estación sub-oceánica. Marco perimetral embutido en ángulo de acero, pletinas portantes transversales con borde antideslizante, varillas redondas de trabazón electrosoldadas, muesca rebajada para uña de izaje manual y reborde perimetral pintado con franjas de advertencia amarillo/negro.",
+    "category": "architecture",
+    "tags": [
+      "psx",
+      "low-poly",
+      "floor",
+      "grate",
+      "trench",
+      "walkway",
+      "steel",
+      "architecture",
+      "below_nominal"
+    ],
+    "author": {
+      "name": "ModelCoder Core Team",
+      "github": "FrancisCuarto"
+    },
+    "license": "CC-BY-4.0",
+    "compatibility": {},
+    "parameters": [
+      {
+        "key": "panel_length",
+        "label": "Largo del Panel (m)",
+        "type": "float",
+        "default": 1.0,
+        "group": "Dimensiones",
+        "min": 0.5,
+        "max": 2.0,
+        "step": 0.1
+      },
+      {
+        "key": "panel_width",
+        "label": "Ancho del Panel (m)",
+        "type": "float",
+        "default": 1.0,
+        "group": "Dimensiones",
+        "min": 0.5,
+        "max": 2.0,
+        "step": 0.1
+      },
+      {
+        "key": "bar_density",
+        "label": "Pletinas Portantes",
+        "type": "int",
+        "default": 8,
+        "group": "Estructura",
+        "min": 4.0,
+        "max": 12.0,
+        "step": 1.0
+      },
+      {
+        "key": "is_raised",
+        "label": "Panel Levantado / Inclinado",
+        "type": "bool",
+        "default": false,
+        "group": "Estado"
+      },
+      {
+        "key": "trench_state",
+        "label": "Condición de la Trinchera",
+        "type": "enum",
+        "default": "flush",
+        "group": "Estado",
+        "options": [
+          {
+            "value": "flush",
+            "label": "Enrasada"
+          },
+          {
+            "value": "propped_open",
+            "label": "Levantada en Ángulo"
+          },
+          {
+            "value": "corroded_bent",
+            "label": "Corroída y Combeada"
+          }
+        ]
+      },
+      {
+        "key": "has_warning_stripe",
+        "label": "Franja Perimetral de Peligro",
+        "type": "bool",
+        "default": true,
+        "group": "Señalética"
+      },
+      {
+        "key": "wear_level",
+        "label": "Desgaste y Óxido",
+        "type": "float",
+        "default": 0.5,
+        "group": "Material",
+        "min": 0.0,
+        "max": 1.0,
+        "step": 0.05
+      }
+    ],
+    "presets": [
+      {
+        "id": "walkway_flush",
+        "name": "walkway_flush",
+        "values": {
+          "panel_length": 1.0,
+          "panel_width": 1.0,
+          "bar_density": 8,
+          "is_raised": false,
+          "trench_state": "flush",
+          "has_warning_stripe": true,
+          "wear_level": 0.35
+        },
+        "description": "Rejilla estándar encastrada en el suelo de tránsito peatonal de la estación."
+      },
+      {
+        "id": "pipe_access_open",
+        "name": "pipe_access_open",
+        "values": {
+          "panel_length": 1.0,
+          "panel_width": 1.0,
+          "bar_density": 7,
+          "is_raised": true,
+          "trench_state": "propped_open",
+          "has_warning_stripe": true,
+          "wear_level": 0.5
+        },
+        "description": "Panel levantado en ángulo mostrando la cavidad y tubería subyacente de la trinchera."
+      },
+      {
+        "id": "technical_corroded",
+        "name": "technical_corroded",
+        "values": {
+          "panel_length": 1.2,
+          "panel_width": 0.8,
+          "bar_density": 6,
+          "is_raised": false,
+          "trench_state": "corroded_bent",
+          "has_warning_stripe": false,
+          "wear_level": 0.75
+        },
+        "description": "Panel desgastado con costras de óxido pesado y barras ligeramente combadas."
+      }
+    ],
+    "export_capabilities": {
+      "supports_collision": true,
+      "default_collision_suffix": "-convcolonly"
+    },
+    "has_model": true,
+    "model_url": "/models/floor_grating.glb",
+    "file_size_bytes": 109644,
+    "source_code": "import bpy\nimport bmesh\nimport math\nfrom mathutils import Vector\nfrom typing import Dict, Any\n\nfrom ...core.base_generator import BaseAssetGenerator\nfrom ...core.mesh_builder import MeshBuilder\nfrom ...core.texture_atlas import PS1TextureAtlas\nfrom .config import FloorGratingConfig\n\nclass FloorGratingGenerator(BaseAssetGenerator):\n    \"\"\"\n    Procedural PSX generator for industrial floor trench gratings.\n    Builds cast recessed curb frames, bearing bar arrays, cross-tie rods,\n    service trench cavities with sub-floor conduits, and propped-open inspection variants.\n    \"\"\"\n\n    def generate(self, config: FloorGratingConfig = None) -> bpy.types.Object:\n        if config is not None:\n            self.config = config\n        elif not hasattr(self, \"config\") or self.config is None:\n            self.config = FloorGratingConfig()\n\n        self.clean_context()\n        self.material_manager = self.get_material_manager(self.config)\n        MeshBuilder.set_active_material_manager(self.material_manager)\n\n        obj, bm = self.create_mesh_object(self.config.name)\n        self.material_manager.assign_to_mesh(obj)\n        m_idx = self.material_manager.material_indices\n\n        l = self.config.panel_length\n        w = self.config.panel_width\n        d = self.config.grate_depth\n        half_l = l * 0.5\n        half_w = w * 0.5\n\n        metal_mat = m_idx.get(\"dark_metal\", m_idx.get(\"casing\", 0))\n        casing_mat = m_idx.get(\"casing\", 0)\n        accent_mat = m_idx.get(\"accent\", m_idx.get(\"casing\", 0))\n\n        metal_rgba = self.material_manager.get_rgba(\"dark_metal\")\n        casing_rgba = self.material_manager.get_rgba(\"casing\")\n        rust_rgba = (0.50, 0.28, 0.18, 1.0)\n        pipe_rgba = (0.22, 0.45, 0.55, 1.0)\n\n        # -------------------------------------------------------------\n        # 1. Floor Curb Frame & Perimeter Warning Stripe\n        # -------------------------------------------------------------\n        curb_w = 0.05\n        curb_h = d * 1.10\n\n        if self.config.has_recessed_frame:\n            # 4 border curbs surrounding the trench\n            curb_uv = \"hazard_stripes\" if self.config.has_warning_stripe else \"metal_dark_grime\"\n            curb_rgba = (0.95, 0.85, 0.2, 1.0) if self.config.has_warning_stripe else metal_rgba\n\n            # North curb\n            MeshBuilder.add_box(\n                bm,\n                size=(w + curb_w * 2, curb_w, curb_h),\n                offset=(0.0, half_l + curb_w * 0.5, curb_h * 0.5),\n                mat_idx=accent_mat if self.config.has_warning_stripe else metal_mat,\n                rgba=curb_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(curb_uv)\n            )\n            # South curb\n            MeshBuilder.add_box(\n                bm,\n                size=(w + curb_w * 2, curb_w, curb_h),\n                offset=(0.0, -half_l - curb_w * 0.5, curb_h * 0.5),\n                mat_idx=accent_mat if self.config.has_warning_stripe else metal_mat,\n                rgba=curb_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(curb_uv)\n            )\n            # West curb\n            MeshBuilder.add_box(\n                bm,\n                size=(curb_w, l, curb_h),\n                offset=(-half_w - curb_w * 0.5, 0.0, curb_h * 0.5),\n                mat_idx=accent_mat if self.config.has_warning_stripe else metal_mat,\n                rgba=curb_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(curb_uv)\n            )\n            # East curb\n            MeshBuilder.add_box(\n                bm,\n                size=(curb_w, l, curb_h),\n                offset=(half_w + curb_w * 0.5, 0.0, curb_h * 0.5),\n                mat_idx=accent_mat if self.config.has_warning_stripe else metal_mat,\n                rgba=curb_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(curb_uv)\n            )\n\n        # -------------------------------------------------------------\n        # 2. Sub-Floor Trench Cavity and Utilities\n        # -------------------------------------------------------------\n        trench_depth = 0.28\n        # Concrete / steel trench lining bottom\n        MeshBuilder.add_box(\n            bm,\n            size=(w, l, 0.02),\n            offset=(0.0, 0.0, -trench_depth),\n            mat_idx=metal_mat,\n            rgba=(0.10, 0.11, 0.12, 1.0),\n            uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n        )\n        # Process pipe running inside trench\n        MeshBuilder.add_cylinder(\n            bm,\n            radius=0.065,\n            depth=l * 1.05,\n            segments=6,\n            offset=(0.0, 0.0, -trench_depth + 0.09),\n            axis='Y',\n            mat_idx=metal_mat,\n            rgba=pipe_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n        )\n        # Power conduit along side\n        MeshBuilder.add_cylinder(\n            bm,\n            radius=0.035,\n            depth=l * 1.05,\n            segments=5,\n            offset=(-half_w * 0.60, 0.0, -trench_depth + 0.05),\n            axis='Y',\n            mat_idx=metal_mat,\n            rgba=(0.15, 0.15, 0.16, 1.0),\n            uv_rect=PS1TextureAtlas.get_rect(\"rubber_black\")\n        )\n\n        # -------------------------------------------------------------\n        # 3. Grating Panel Geometry (Flat or Propped Open)\n        # -------------------------------------------------------------\n        is_open = self.config.is_raised or (self.config.trench_state == \"propped_open\")\n        tilt_angle = math.radians(35.0) if is_open else 0.0\n        cos_t = math.cos(tilt_angle)\n        sin_t = math.sin(tilt_angle)\n\n        hinge_y = half_l - 0.02\n        hinge_z = curb_h * 0.5\n\n        def transform_point(local_x, local_y, local_z):\n            if not is_open:\n                return (local_x, local_y, local_z)\n            # Rotate around hinge along X axis\n            dy = local_y - hinge_y\n            dz = local_z - hinge_z\n            new_y = hinge_y + dy * cos_t - dz * sin_t\n            new_z = hinge_z + dy * sin_t + dz * cos_t\n            return (local_x, new_y, new_z)\n\n        # Outer frame of the grating panel\n        grate_w = w - 0.015\n        grate_l = l - 0.015\n        half_gw = grate_w * 0.5\n        half_gl = grate_l * 0.5\n        frame_th = 0.025\n\n        # 4 perimeter frame bars of the panel\n        # Front frame bar\n        p1 = transform_point(0.0, -half_gl + frame_th * 0.5, d * 0.5)\n        MeshBuilder.add_box(bm, size=(grate_w, frame_th, d), offset=p1, mat_idx=metal_mat, rgba=metal_rgba, uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\"))\n        # Rear frame bar\n        p2 = transform_point(0.0, half_gl - frame_th * 0.5, d * 0.5)\n        MeshBuilder.add_box(bm, size=(grate_w, frame_th, d), offset=p2, mat_idx=metal_mat, rgba=metal_rgba, uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\"))\n        # Left frame bar\n        p3 = transform_point(-half_gw + frame_th * 0.5, 0.0, d * 0.5)\n        MeshBuilder.add_box(bm, size=(frame_th, grate_l, d), offset=p3, mat_idx=metal_mat, rgba=metal_rgba, uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\"))\n        # Right frame bar\n        p4 = transform_point(half_gw - frame_th * 0.5, 0.0, d * 0.5)\n        MeshBuilder.add_box(bm, size=(frame_th, grate_l, d), offset=p4, mat_idx=metal_mat, rgba=metal_rgba, uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\"))\n\n        # Longitudinal bearing bars\n        bars = max(4, min(self.config.bar_density, 12))\n        inner_pw = grate_w - frame_th * 2\n        bar_spacing = inner_pw / (bars + 1)\n        bar_th = 0.014\n        bar_h = d * 0.90\n\n        for bi in range(1, bars + 1):\n            bx = -half_gw + frame_th + bi * bar_spacing\n            pt = transform_point(bx, 0.0, d * 0.5)\n            MeshBuilder.add_box(\n                bm,\n                size=(bar_th, grate_l - frame_th * 2, bar_h),\n                offset=pt,\n                mat_idx=casing_mat,\n                rgba=rust_rgba if self.config.trench_state == \"corroded_bent\" else metal_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"vent_grill\")\n            )\n\n        # Transverse cross-tie rods\n        tie_count = 3\n        tie_spacing = (grate_l - frame_th * 2) / (tie_count + 1)\n        for ti in range(1, tie_count + 1):\n            ty = -half_gl + frame_th + ti * tie_spacing\n            pt = transform_point(0.0, ty, d * 0.70)\n            MeshBuilder.add_box(\n                bm,\n                size=(inner_pw, 0.012, 0.012),\n                offset=pt,\n                mat_idx=metal_mat,\n                rgba=metal_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"metal_light_brushed\")\n            )\n\n        # Lifting finger notch / hook slot\n        p_notch = transform_point(0.0, -half_gl + frame_th * 1.5, d * 0.5)\n        MeshBuilder.add_box(\n            bm,\n            size=(0.08, 0.03, d * 0.5),\n            offset=p_notch,\n            mat_idx=metal_mat,\n            rgba=(0.08, 0.08, 0.09, 1.0),\n            uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n        )\n\n        # Kickstand rod if propped open\n        if is_open:\n            MeshBuilder.add_box(\n                bm,\n                size=(0.02, 0.02, 0.45),\n                offset=(-half_gw * 0.8, -half_gl * 0.2, 0.20),\n                mat_idx=accent_mat,\n                rgba=(0.85, 0.55, 0.20, 1.0),\n                uv_rect=PS1TextureAtlas.get_rect(\"metal_light_brushed\")\n            )\n\n        self.finalize_mesh(obj, bm)\n        self.compact_materials(obj)\n        return obj\n",
+    "config_code": "from dataclasses import dataclass\nfrom ...core.base_config import BaseAssetConfig\n\n@dataclass\nclass FloorGratingConfig(BaseAssetConfig):\n    \"\"\"Configuration for Heavy Industrial Floor Trench Grating.\"\"\"\n    panel_length: float = 1.00\n    panel_width: float = 1.00\n    grate_depth: float = 0.06\n    bar_density: int = 8                # 5 to 12 longitudinal load-bearing grating bars\n    is_raised: bool = False             # Trench cover propped open at an angle\n    has_recessed_frame: bool = True     # Outer recessed cast curb frame\n    has_warning_stripe: bool = True     # Yellow/black perimeter warning border\n    trench_state: str = \"flush\"         # \"flush\", \"propped_open\", \"corroded_bent\"\n\n    name: str = \"floor_grating\"\n    pivot_rule: str = \"floor_center\"\n    palette_name: str = \"industrial_hazard\"\n    wear_level: float = 0.50\n    target_tri_budget: int = 460\n"
+  },
+  {
     "id": "below_nominal.engineering.fuse_box",
     "family": "fuse_box",
     "name": "Caja Mural de Fusibles Industriales",
@@ -5898,6 +6544,148 @@
     "config_code": "from dataclasses import dataclass\nfrom ...core.base_config import BaseAssetConfig\n\n@dataclass\nclass LabWorkstationConfig(BaseAssetConfig):\n    \"\"\"Configuration for Modular Laboratory Research Workstation.\"\"\"\n    width: float = 1.6\n    depth: float = 0.8\n    height: float = 1.8                  # Counter height ~0.9m, top of reagent shelf ~1.8m\n    has_sink: bool = True               # Chemical wash basin and tall gooseneck faucet\n    has_upper_shelf: bool = True        # Multi-tier reagent bottle and rack shelving\n    has_terminal_screen: bool = True    # Articulated lab telemetry CRT display\n    drawer_units: int = 2               # Under-counter drawer pedestals (1 to 3)\n\n    name: str = \"lab_workstation\"\n    palette_name: str = \"medbay_clean\"\n    wear_level: float = 0.35\n    target_tri_budget: int = 750\n"
   },
   {
+    "id": "below_nominal.architecture.ladder",
+    "family": "ladder",
+    "name": "Escalera Fija Vertical con Jaula",
+    "version": "1.0.0",
+    "description": "Escalera vertical metálica de seguridad para silos, pozos de ascenso y niveles técnicos de la estación espacial. Largueros rectangulares macizos de pletina de acero, peldaños tubulares antideslizantes electrosoldados con estrías, escuadras de distanciamiento a mamparo con placas de anclaje de 4 tornillos, jaula de aros quitamiedos antikaídas en los tramos superiores y pasamanos abocinados para salida en plataforma.",
+    "category": "architecture",
+    "tags": [
+      "psx",
+      "low-poly",
+      "ladder",
+      "cage",
+      "vertical",
+      "safety",
+      "access",
+      "architecture",
+      "below_nominal"
+    ],
+    "author": {
+      "name": "ModelCoder Core Team",
+      "github": "FrancisCuarto"
+    },
+    "license": "CC-BY-4.0",
+    "compatibility": {},
+    "parameters": [
+      {
+        "key": "ladder_height",
+        "label": "Altura Total (m)",
+        "type": "float",
+        "default": 3.0,
+        "group": "Dimensiones",
+        "min": 1.8,
+        "max": 6.0,
+        "step": 0.2
+      },
+      {
+        "key": "ladder_width",
+        "label": "Ancho de Peldaños (m)",
+        "type": "float",
+        "default": 0.5,
+        "group": "Dimensiones",
+        "min": 0.35,
+        "max": 0.7,
+        "step": 0.05
+      },
+      {
+        "key": "has_safety_cage",
+        "label": "Jaula de Seguridad Antikaídas",
+        "type": "bool",
+        "default": true,
+        "group": "Configuración"
+      },
+      {
+        "key": "has_walkthrough_top",
+        "label": "Pasamanos Abocinados de Salida",
+        "type": "bool",
+        "default": true,
+        "group": "Configuración"
+      },
+      {
+        "key": "ladder_condition",
+        "label": "Estado Físico",
+        "type": "enum",
+        "default": "nominal",
+        "group": "Estado",
+        "options": [
+          {
+            "value": "nominal",
+            "label": "Nominal"
+          },
+          {
+            "value": "rusted_damaged",
+            "label": "Corroída / Dañada"
+          },
+          {
+            "value": "missing_rung",
+            "label": "Peldaño Ausente"
+          }
+        ]
+      },
+      {
+        "key": "wear_level",
+        "label": "Desgaste y Desconchón",
+        "type": "float",
+        "default": 0.45,
+        "group": "Material",
+        "min": 0.0,
+        "max": 1.0,
+        "step": 0.05
+      }
+    ],
+    "presets": [
+      {
+        "id": "full_safety_cage",
+        "name": "full_safety_cage",
+        "values": {
+          "ladder_height": 3.0,
+          "ladder_width": 0.5,
+          "has_safety_cage": true,
+          "has_walkthrough_top": true,
+          "ladder_condition": "nominal",
+          "wear_level": 0.25
+        },
+        "description": "Escalera de 3m con jaula protectora superior y pasamanos de salida sobre plataforma."
+      },
+      {
+        "id": "direct_technical",
+        "name": "direct_technical",
+        "values": {
+          "ladder_height": 2.4,
+          "ladder_width": 0.45,
+          "has_safety_cage": false,
+          "has_walkthrough_top": false,
+          "ladder_condition": "nominal",
+          "wear_level": 0.4
+        },
+        "description": "Escalera compacta sin jaula para pozos estrechos y mamparos de servicio."
+      },
+      {
+        "id": "missing_step_derelict",
+        "name": "missing_step_derelict",
+        "values": {
+          "ladder_height": 3.0,
+          "ladder_width": 0.5,
+          "has_safety_cage": true,
+          "has_walkthrough_top": true,
+          "ladder_condition": "missing_rung",
+          "wear_level": 0.7
+        },
+        "description": "Escalera con peldaño ausente forzado y corrosión por filtración de agua salina."
+      }
+    ],
+    "export_capabilities": {
+      "supports_collision": true,
+      "default_collision_suffix": "-convcolonly"
+    },
+    "has_model": true,
+    "model_url": "/models/ladder.glb",
+    "file_size_bytes": 129368,
+    "source_code": "import bpy\nimport bmesh\nimport math\nfrom mathutils import Vector\nfrom typing import Dict, Any\n\nfrom ...core.base_generator import BaseAssetGenerator\nfrom ...core.mesh_builder import MeshBuilder\nfrom ...core.texture_atlas import PS1TextureAtlas\nfrom .config import LadderConfig\n\nclass LadderGenerator(BaseAssetGenerator):\n    \"\"\"\n    Procedural PSX generator for industrial vertical access ladders with safety cages.\n    Builds steel stringers, anti-slip rungs, wall standoff brackets, top walkthrough egress handrails,\n    and hoop safety cages for high elevation climb safety.\n    \"\"\"\n\n    def generate(self, config: LadderConfig = None) -> bpy.types.Object:\n        if config is not None:\n            self.config = config\n        elif not hasattr(self, \"config\") or self.config is None:\n            self.config = LadderConfig()\n\n        self.clean_context()\n        self.material_manager = self.get_material_manager(self.config)\n        MeshBuilder.set_active_material_manager(self.material_manager)\n\n        obj, bm = self.create_mesh_object(self.config.name)\n        self.material_manager.assign_to_mesh(obj)\n        m_idx = self.material_manager.material_indices\n\n        h = self.config.ladder_height\n        w = self.config.ladder_width\n        half_w = w * 0.5\n\n        metal_mat = m_idx.get(\"dark_metal\", m_idx.get(\"casing\", 0))\n        casing_mat = m_idx.get(\"casing\", 0)\n        accent_mat = m_idx.get(\"accent\", m_idx.get(\"casing\", 0))\n\n        metal_rgba = self.material_manager.get_rgba(\"dark_metal\")\n        casing_rgba = self.material_manager.get_rgba(\"casing\")\n        yellow_rgba = (0.95, 0.85, 0.20, 1.0)\n\n        # -------------------------------------------------------------\n        # 1. Main Vertical Side Stringers\n        # -------------------------------------------------------------\n        stringer_w = 0.04\n        stringer_d = 0.06\n        for sx in (-half_w, half_w):\n            MeshBuilder.add_box(\n                bm,\n                size=(stringer_w, stringer_d, h),\n                offset=(sx, 0.0, h * 0.5),\n                mat_idx=casing_mat,\n                rgba=casing_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"painted_metal_white\")\n            )\n\n        # -------------------------------------------------------------\n        # 2. Ladder Rungs\n        # -------------------------------------------------------------\n        spacing = max(0.25, self.config.rung_spacing)\n        rung_count = max(4, int(h / spacing))\n        inner_w = w - stringer_w\n\n        for ri in range(1, rung_count):\n            rz = ri * spacing\n            if rz >= h - 0.15:\n                break\n\n            # Missing rung simulation\n            if self.config.ladder_condition == \"missing_rung\" and ri == 4:\n                # Broken stub brackets only\n                for sx in (-half_w + 0.02, half_w - 0.02):\n                    MeshBuilder.add_box(\n                        bm,\n                        size=(0.025, 0.03, 0.025),\n                        offset=(sx, 0.0, rz),\n                        mat_idx=metal_mat,\n                        rgba=metal_rgba,\n                        uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n                    )\n                continue\n\n            # Full welded tubular rung\n            MeshBuilder.add_cylinder(\n                bm,\n                radius=0.016,\n                depth=inner_w,\n                segments=5,\n                offset=(0.0, 0.0, rz),\n                axis='X',\n                mat_idx=metal_mat,\n                rgba=metal_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"metal_light_brushed\")\n            )\n\n        # -------------------------------------------------------------\n        # 3. Wall Standoff Brackets (Anchors extending backwards in -Y)\n        # -------------------------------------------------------------\n        standoff_count = max(2, min(self.config.standoff_bracket_count, 5))\n        standoff_spacing = h / standoff_count\n        standoff_depth = 0.20\n\n        for si in range(1, standoff_count + 1):\n            sz = (si - 0.5) * standoff_spacing\n            for sx in (-half_w, half_w):\n                # Horizontal standoff bar\n                MeshBuilder.add_box(\n                    bm,\n                    size=(0.035, standoff_depth, 0.035),\n                    offset=(sx, -standoff_depth * 0.5, sz),\n                    mat_idx=metal_mat,\n                    rgba=metal_rgba,\n                    uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n                )\n                # Wall mounting flange plate\n                MeshBuilder.add_box(\n                    bm,\n                    size=(0.08, 0.015, 0.08),\n                    offset=(sx, -standoff_depth, sz),\n                    mat_idx=metal_mat,\n                    rgba=metal_rgba,\n                    uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n                )\n\n        # -------------------------------------------------------------\n        # 4. Top Walkthrough Egress Handrails (Optional)\n        # -------------------------------------------------------------\n        if self.config.has_walkthrough_top:\n            flair_h = 0.85\n            for sx, sign_x in ((-half_w, -1), (half_w, 1)):\n                # Vertical extension\n                MeshBuilder.add_box(\n                    bm,\n                    size=(stringer_w, stringer_d, flair_h),\n                    offset=(sx + sign_x * 0.06, 0.0, h + flair_h * 0.5),\n                    mat_idx=casing_mat,\n                    rgba=casing_rgba,\n                    uv_rect=PS1TextureAtlas.get_rect(\"painted_metal_white\")\n                )\n                # Top return loop elbow\n                MeshBuilder.add_box(\n                    bm,\n                    size=(0.12, stringer_d, stringer_w),\n                    offset=(sx + sign_x * 0.06, 0.0, h + flair_h),\n                    mat_idx=accent_mat,\n                    rgba=yellow_rgba,\n                    uv_rect=PS1TextureAtlas.get_rect(\"hazard_stripes\")\n                )\n\n        # -------------------------------------------------------------\n        # 5. Protective Safety Hoop Cage (Optional)\n        # -------------------------------------------------------------\n        if self.config.has_safety_cage:\n            cage_start = max(1.2, min(self.config.cage_start_height, h - 0.8))\n            cage_span = h - cage_start\n            hoop_spacing = 0.65\n            hoop_count = max(2, int(cage_span / hoop_spacing) + 1)\n\n            cage_radius = w * 0.72\n            cage_center_y = cage_radius * 0.85\n\n            for hi in range(hoop_count):\n                hz = cage_start + hi * hoop_spacing\n                if hz > h + 0.05:\n                    break\n\n                # Semi-circular protective hoop (approximated by 3 straight segments)\n                # Left diagonal forward strut\n                MeshBuilder.add_box(\n                    bm,\n                    size=(0.03, cage_center_y, 0.025),\n                    offset=(-half_w * 0.85, cage_center_y * 0.5, hz),\n                    mat_idx=accent_mat,\n                    rgba=yellow_rgba,\n                    uv_rect=PS1TextureAtlas.get_rect(\"hazard_stripes\")\n                )\n                # Right diagonal forward strut\n                MeshBuilder.add_box(\n                    bm,\n                    size=(0.03, cage_center_y, 0.025),\n                    offset=(half_w * 0.85, cage_center_y * 0.5, hz),\n                    mat_idx=accent_mat,\n                    rgba=yellow_rgba,\n                    uv_rect=PS1TextureAtlas.get_rect(\"hazard_stripes\")\n                )\n                # Front cross bar\n                MeshBuilder.add_box(\n                    bm,\n                    size=(w * 1.15, 0.03, 0.025),\n                    offset=(0.0, cage_center_y, hz),\n                    mat_idx=accent_mat,\n                    rgba=yellow_rgba,\n                    uv_rect=PS1TextureAtlas.get_rect(\"hazard_stripes\")\n                )\n\n            # Vertical longitudinal cage tie straps (left, center, right)\n            strap_len = cage_span + 0.10\n            strap_z = cage_start + strap_len * 0.5\n            for st_x, st_y in ((-half_w * 0.85, cage_center_y), (0.0, cage_center_y + 0.01), (half_w * 0.85, cage_center_y)):\n                MeshBuilder.add_box(\n                    bm,\n                    size=(0.02, 0.015, strap_len),\n                    offset=(st_x, st_y, strap_z),\n                    mat_idx=metal_mat,\n                    rgba=metal_rgba,\n                    uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n                )\n\n        self.finalize_mesh(obj, bm)\n        self.compact_materials(obj)\n        return obj\n",
+    "config_code": "from dataclasses import dataclass\nfrom ...core.base_config import BaseAssetConfig\n\n@dataclass\nclass LadderConfig(BaseAssetConfig):\n    \"\"\"Configuration for Heavy Industrial Vertical Access Ladder with Safety Cage.\"\"\"\n    ladder_height: float = 3.00\n    ladder_width: float = 0.50\n    rung_spacing: float = 0.30\n    has_safety_cage: bool = True        # Protective steel hoop cage at elevated section\n    cage_start_height: float = 1.60     # Elevation where protective hoops begin\n    has_walkthrough_top: bool = True    # Extended flared handrails above top rung\n    standoff_bracket_count: int = 3     # Pairs of wall mounting standoff brackets\n    ladder_condition: str = \"nominal\"   # \"nominal\", \"rusted_damaged\", \"missing_rung\"\n\n    name: str = \"ladder\"\n    pivot_rule: str = \"floor_center\"\n    palette_name: str = \"industrial_hazard\"\n    wear_level: float = 0.45\n    target_tri_budget: int = 580\n"
+  },
+  {
     "id": "below_nominal.fixtures.light_fixture",
     "family": "light_fixture",
     "name": "Lámpara de Techo / Luminaria",
@@ -6637,6 +7425,181 @@
     "file_size_bytes": 114504,
     "source_code": "import random\nimport math\nimport bpy\nimport bmesh\nfrom mathutils import Vector\n\nfrom ...core.base_generator import BaseGenerator\nfrom ...core.mesh_builder import MeshBuilder\nfrom ...core.materials import MaterialManager\nfrom .config import LockerBenchConfig\n\nclass LockerBenchGenerator(BaseGenerator):\n    \"\"\"Generates changing room benches with perforated seats, boot racks, and forgotten crew gear.\"\"\"\n\n    def generate(self, config: LockerBenchConfig) -> bpy.types.Object:\n        random.seed(config.seed)\n\n        obj, bm = self.create_mesh_object(config.name)\n        mat_mgr = self.get_material_manager(config)\n\n        length = config.length\n        w = config.width\n        h = config.height\n\n        m_steel = mat_mgr.get_material_index(\"mounting\")\n        m_frame = mat_mgr.get_material_index(\"casing\")\n        m_plank = mat_mgr.get_material_index(\"locker_gray\")\n        m_boot = mat_mgr.get_material_index(\"rubber_tire\")\n        m_gear = mat_mgr.get_material_index(\"chair_vinyl\")\n\n        # 1. Legs / Base Structure\n        leg_y_off = (length / 2) - 0.15\n        leg_x_off = (w / 2) - 0.06\n\n        if config.leg_style == \"slab_sides\":\n            # 2 Thick flat end plates\n            for ly in (-leg_y_off, leg_y_off):\n                MeshBuilder.add_box(bm, (0, ly, (h - 0.04) / 2), (w - 0.04, 0.05, h - 0.04), m_frame, \"leg_slab\")\n        else: # tubular_flanged\n            tube_r = 0.022\n            leg_h = h - 0.04\n            for ly in (-leg_y_off, leg_y_off):\n                for lx in (-leg_x_off, leg_x_off):\n                    # Tubular leg\n                    MeshBuilder.add_cylinder(bm, (lx, ly, leg_h / 2), tube_r, leg_h, sides=6, mat_idx=m_frame, name=\"leg_tube\")\n                    # Floor flange plate\n                    MeshBuilder.add_cylinder(bm, (lx, ly, 0.015), tube_r + 0.025, 0.03, sides=6, mat_idx=m_steel, name=\"floor_flange\")\n\n            # Under-seat longitudinal stringer rails\n            MeshBuilder.add_box(bm, (-leg_x_off, 0, h - 0.04), (0.04, length - 0.10, 0.03), m_frame, \"rail_L\")\n            MeshBuilder.add_box(bm, (leg_x_off, 0, h - 0.04), (0.04, length - 0.10, 0.03), m_frame, \"rail_R\")\n\n        # 2. Lower Mag-Boot Shelf Rack\n        if config.has_shoe_shelf:\n            shelf_z = 0.14\n            # 3 Longitudinal rods\n            for rx in (-w * 0.28, 0.0, w * 0.28):\n                MeshBuilder.add_cylinder(bm, (rx, 0, shelf_z), 0.01, length - 0.20, sides=4, axis='Y', mat_idx=m_steel, name=\"boot_rod\")\n            # Cross supports at legs\n            for ly in (-leg_y_off, leg_y_off):\n                MeshBuilder.add_box(bm, (0, ly, shelf_z), (w - 0.10, 0.03, 0.02), m_frame, \"shelf_crossbar\")\n\n        # 3. Top Seat Planks / Perforated Slabs\n        seat_z = h - 0.02\n        if config.bench_type == \"composite_slats\":\n            # 3 Longitudinal slat planks\n            slat_w = (w - 0.06) / 3\n            for si in range(3):\n                sx = -w / 2 + 0.03 + si * (slat_w + 0.01) + slat_w / 2\n                MeshBuilder.add_box(bm, (sx, 0, seat_z), (slat_w, length, 0.035), m_plank, f\"slat_{si}\")\n        else: # perforated_metal or boot_rack_integrated\n            # Solid seat with beveled edges\n            MeshBuilder.add_box(bm, (0, 0, seat_z), (w, length, 0.04), m_plank, \"seat_plank\")\n            # Steel edge reinforcement brackets\n            MeshBuilder.add_box(bm, (0, -length / 2 + 0.02, seat_z), (w + 0.01, 0.04, 0.045), m_steel, \"edge_cap_1\")\n            MeshBuilder.add_box(bm, (0, length / 2 - 0.02, seat_z), (w + 0.01, 0.04, 0.045), m_steel, \"edge_cap_2\")\n\n        # 4. Forgotten Crew Gear (Abandoned boots or rolled emergency towel)\n        if config.has_forgotten_gear:\n            # Pair of magnetic boots under bench on shelf\n            boot_y = -length * 0.25\n            for bx in (-0.08, 0.08):\n                MeshBuilder.add_box(bm, (bx, boot_y, 0.22), (0.10, 0.22, 0.12), m_boot, \"mag_boot\")\n            # Rolled survival towel / jacket on seat\n            gear_y = length * 0.30\n            MeshBuilder.add_cylinder(bm, (0, gear_y, h + 0.06), 0.065, 0.28, sides=8, axis='Y', mat_idx=m_gear, name=\"rolled_jacket\")\n\n        mat_mgr.assign_to_mesh(obj)\n        self.finalize_mesh(obj, bm)\n        return obj\n",
     "config_code": "from dataclasses import dataclass\nfrom ...core.base_config import BaseAssetConfig\n\n@dataclass\nclass LockerBenchConfig(BaseAssetConfig):\n    \"\"\"Configuration for locker room benches, airlock changing seats, and boot rack benches.\"\"\"\n    bench_type: str = \"perforated_metal\"    # \"perforated_metal\", \"composite_slats\", \"boot_rack_integrated\"\n    length: float = 1.60                    # Bench length in meters\n    width: float = 0.45                     # Seat depth in meters\n    height: float = 0.48                    # Seat height in meters\n    has_shoe_shelf: bool = True             # Lower wire grid shelf for magnetic boots\n    leg_style: str = \"tubular_flanged\"      # \"tubular_flanged\", \"slab_sides\"\n    has_forgotten_gear: bool = True         # Left-behind boots or rolled emergency towel\n    palette_name: str = \"industrial_hazard\"\n    target_tri_budget: int = 300\n"
+  },
+  {
+    "id": "below_nominal.architecture.maintenance_hatch",
+    "family": "maintenance_hatch",
+    "name": "Escotilla de Mantenimiento Estanca",
+    "version": "1.0.0",
+    "description": "Compuerta estanca de acceso técnico para pozos de servicio, conductos de climatización y túneles de cables en mamparos de la estación Europa. Incorpora cerco perimetral con brida de atornillado reforzada, bisagras de palastro macizo, volante central de apriete con mecanismo de trinchas excéntricas, junta tórica de neopreno perimetral e indicador luminoso de presurización.",
+    "category": "architecture",
+    "tags": [
+      "psx",
+      "low-poly",
+      "hatch",
+      "door",
+      "bulkhead",
+      "maintenance",
+      "airtight",
+      "architecture",
+      "below_nominal"
+    ],
+    "author": {
+      "name": "ModelCoder Core Team",
+      "github": "FrancisCuarto"
+    },
+    "license": "CC-BY-4.0",
+    "compatibility": {},
+    "parameters": [
+      {
+        "key": "hatch_shape",
+        "label": "Geometría de Escotilla",
+        "type": "enum",
+        "default": "square",
+        "group": "Geometría",
+        "options": [
+          {
+            "value": "square",
+            "label": "Cuadrada"
+          },
+          {
+            "value": "octagonal_round",
+            "label": "Octogonal"
+          }
+        ]
+      },
+      {
+        "key": "width",
+        "label": "Ancho (m)",
+        "type": "float",
+        "default": 0.8,
+        "group": "Dimensiones",
+        "min": 0.6,
+        "max": 1.2,
+        "step": 0.05
+      },
+      {
+        "key": "height",
+        "label": "Alto (m)",
+        "type": "float",
+        "default": 0.8,
+        "group": "Dimensiones",
+        "min": 0.6,
+        "max": 1.2,
+        "step": 0.05
+      },
+      {
+        "key": "open_angle",
+        "label": "Ángulo de Apertura (°)",
+        "type": "float",
+        "default": 0.0,
+        "group": "Mecanismo",
+        "min": 0.0,
+        "max": 85.0,
+        "step": 5.0
+      },
+      {
+        "key": "dogging_mechanism",
+        "label": "Mecanismo de Cierre",
+        "type": "enum",
+        "default": "central_wheel",
+        "group": "Mecanismo",
+        "options": [
+          {
+            "value": "central_wheel",
+            "label": "Volante Central"
+          },
+          {
+            "value": "perimeter_latches",
+            "label": "Trinchas Perimetrales"
+          },
+          {
+            "value": "quick_release",
+            "label": "Palanca Rápida"
+          }
+        ]
+      },
+      {
+        "key": "has_viewport",
+        "label": "Ojo de Buey / Mirilla",
+        "type": "bool",
+        "default": false,
+        "group": "Equipamiento"
+      },
+      {
+        "key": "has_interlock_light",
+        "label": "Piloto de Presión / Interlock",
+        "type": "bool",
+        "default": true,
+        "group": "Equipamiento"
+      },
+      {
+        "key": "wear_level",
+        "label": "Nivel de Desgaste",
+        "type": "float",
+        "default": 0.45,
+        "group": "Material",
+        "min": 0.0,
+        "max": 1.0,
+        "step": 0.05
+      }
+    ],
+    "presets": [
+      {
+        "id": "sealed_nominal",
+        "name": "sealed_nominal",
+        "values": {
+          "hatch_shape": "square",
+          "width": 0.8,
+          "height": 0.8,
+          "open_angle": 0.0,
+          "dogging_mechanism": "central_wheel",
+          "has_viewport": false,
+          "has_interlock_light": true,
+          "wear_level": 0.3
+        },
+        "description": "Escotilla cuadrada con volante central cerrada y presurizada con testigo verde."
+      },
+      {
+        "id": "octagonal_open",
+        "name": "octagonal_open",
+        "values": {
+          "hatch_shape": "octagonal_round",
+          "width": 0.9,
+          "height": 0.9,
+          "open_angle": 75.0,
+          "dogging_mechanism": "perimeter_latches",
+          "has_viewport": true,
+          "has_interlock_light": true,
+          "wear_level": 0.5
+        },
+        "description": "Compuerta octogonal con mirilla abatida a 75 grados para ingreso de personal."
+      },
+      {
+        "id": "derelict_forced",
+        "name": "derelict_forced",
+        "values": {
+          "hatch_shape": "square",
+          "width": 0.8,
+          "height": 0.8,
+          "open_angle": 20.0,
+          "dogging_mechanism": "quick_release",
+          "has_viewport": false,
+          "has_interlock_light": false,
+          "wear_level": 0.75
+        },
+        "description": "Escotilla con picaduras de óxido profundo y marcas de peligro descoloridas."
+      }
+    ],
+    "export_capabilities": {
+      "supports_collision": true,
+      "default_collision_suffix": "-convcolonly"
+    },
+    "has_model": true,
+    "model_url": "/models/maintenance_hatch.glb",
+    "file_size_bytes": 106508,
+    "source_code": "import bpy\nimport bmesh\nimport math\nfrom mathutils import Vector\nfrom typing import Dict, Any\n\nfrom ...core.base_generator import BaseAssetGenerator\nfrom ...core.mesh_builder import MeshBuilder\nfrom ...core.texture_atlas import PS1TextureAtlas\nfrom .config import MaintenanceHatchConfig\n\nclass MaintenanceHatchGenerator(BaseAssetGenerator):\n    \"\"\"\n    Procedural PSX generator for pressure-tight utility maintenance hatches.\n    Builds bulkhead coaming frames, hinged access leaves with rotation angles,\n    central handwheel or perimeter dogging latches, viewports, and interlock beacons.\n    \"\"\"\n\n    def generate(self, config: MaintenanceHatchConfig = None) -> bpy.types.Object:\n        if config is not None:\n            self.config = config\n        elif not hasattr(self, \"config\") or self.config is None:\n            self.config = MaintenanceHatchConfig()\n\n        self.clean_context()\n        self.material_manager = self.get_material_manager(self.config)\n        MeshBuilder.set_active_material_manager(self.material_manager)\n\n        obj, bm = self.create_mesh_object(self.config.name)\n        self.material_manager.assign_to_mesh(obj)\n        m_idx = self.material_manager.material_indices\n\n        w = self.config.width\n        h = self.config.height\n        d = self.config.hatch_depth\n        half_w = w * 0.5\n        half_h = h * 0.5\n\n        metal_mat = m_idx.get(\"dark_metal\", m_idx.get(\"casing\", 0))\n        casing_mat = m_idx.get(\"casing\", 0)\n        accent_mat = m_idx.get(\"accent\", m_idx.get(\"casing\", 0))\n\n        metal_rgba = self.material_manager.get_rgba(\"dark_metal\")\n        casing_rgba = self.material_manager.get_rgba(\"casing\")\n        rubber_rgba = (0.12, 0.12, 0.14, 1.0)\n        wheel_rgba = (0.85, 0.40, 0.15, 1.0)\n\n        # -------------------------------------------------------------\n        # 1. Bulkhead Perimeter Coaming Frame\n        # -------------------------------------------------------------\n        flange_th = 0.035\n        coaming_w = 0.06\n        # Top frame\n        MeshBuilder.add_box(\n            bm,\n            size=(w + coaming_w * 2, d * 0.5, coaming_w),\n            offset=(0.0, d * 0.25, half_h + coaming_w * 0.5),\n            mat_idx=casing_mat,\n            rgba=casing_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"painted_metal_white\")\n        )\n        # Bottom frame\n        MeshBuilder.add_box(\n            bm,\n            size=(w + coaming_w * 2, d * 0.5, coaming_w),\n            offset=(0.0, d * 0.25, -half_h - coaming_w * 0.5),\n            mat_idx=casing_mat,\n            rgba=casing_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"painted_metal_white\")\n        )\n        # Left frame\n        MeshBuilder.add_box(\n            bm,\n            size=(coaming_w, d * 0.5, h),\n            offset=(-half_w - coaming_w * 0.5, d * 0.25, 0.0),\n            mat_idx=casing_mat,\n            rgba=casing_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"painted_metal_white\")\n        )\n        # Right frame\n        MeshBuilder.add_box(\n            bm,\n            size=(coaming_w, d * 0.5, h),\n            offset=(half_w + coaming_w * 0.5, d * 0.25, 0.0),\n            mat_idx=casing_mat,\n            rgba=casing_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"painted_metal_white\")\n        )\n\n        # Dark interior cavity backing (utility void)\n        MeshBuilder.add_box(\n            bm,\n            size=(w - 0.02, 0.01, h - 0.02),\n            offset=(0.0, 0.01, 0.0),\n            mat_idx=metal_mat,\n            rgba=(0.06, 0.07, 0.08, 1.0),\n            uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n        )\n\n        # -------------------------------------------------------------\n        # 2. Heavy Bulkhead Strap Hinges (Left side)\n        # -------------------------------------------------------------\n        hinge_x = -half_w - coaming_w * 0.2\n        hinge_y = d * 0.5\n        for hz in (-half_h * 0.65, half_h * 0.65):\n            MeshBuilder.add_box(\n                bm,\n                size=(0.045, 0.06, 0.08),\n                offset=(hinge_x, hinge_y, hz),\n                mat_idx=metal_mat,\n                rgba=metal_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n            )\n            # Hinge pin\n            MeshBuilder.add_cylinder(\n                bm,\n                radius=0.014,\n                depth=0.10,\n                segments=5,\n                offset=(hinge_x, hinge_y, hz),\n                axis='Z',\n                mat_idx=metal_mat,\n                rgba=metal_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"metal_light_brushed\")\n            )\n\n        # -------------------------------------------------------------\n        # 3. Rotating Hatch Leaf\n        # -------------------------------------------------------------\n        angle_rad = math.radians(self.config.open_angle)\n        cos_a = math.cos(angle_rad)\n        sin_a = math.sin(angle_rad)\n\n        def rotate_point(lx, ly, lz):\n            # Rotate around (hinge_x, hinge_y) in XY plane\n            dx = lx - hinge_x\n            dy = ly - hinge_y\n            rx = hinge_x + dx * cos_a - dy * sin_a\n            ry = hinge_y + dx * sin_a + dy * cos_a\n            return (rx, ry, lz)\n\n        # Main hatch door slab\n        door_th = 0.045\n        door_w = w * 0.96\n        door_h = h * 0.96\n\n        p_door = rotate_point(0.0, d * 0.5 + door_th * 0.5, 0.0)\n        MeshBuilder.add_box(\n            bm,\n            size=(door_w, door_th, door_h),\n            offset=p_door,\n            mat_idx=casing_mat,\n            rgba=casing_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"painted_metal_white\")\n        )\n\n        # Neoprene sealing gasket lip\n        p_seal = rotate_point(0.0, d * 0.5 - 0.005, 0.0)\n        MeshBuilder.add_box(\n            bm,\n            size=(door_w * 0.98, 0.012, door_h * 0.98),\n            offset=p_seal,\n            mat_idx=metal_mat,\n            rgba=rubber_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"rubber_black\")\n        )\n\n        # Diagonal cross-stiffening rib on the face of the hatch\n        p_rib1 = rotate_point(0.0, d * 0.5 + door_th + 0.01, 0.0)\n        MeshBuilder.add_box(\n            bm,\n            size=(door_w * 0.85, 0.018, 0.035),\n            offset=p_rib1,\n            mat_idx=metal_mat,\n            rgba=metal_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n        )\n        MeshBuilder.add_box(\n            bm,\n            size=(0.035, 0.018, door_h * 0.85),\n            offset=p_rib1,\n            mat_idx=metal_mat,\n            rgba=metal_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n        )\n\n        # -------------------------------------------------------------\n        # 4. Dogging Latch Mechanism\n        # -------------------------------------------------------------\n        mech = self.config.dogging_mechanism\n        mech_y = d * 0.5 + door_th + 0.02\n\n        if mech == \"central_wheel\":\n            # Handwheel center hub\n            p_hub = rotate_point(0.0, mech_y + 0.02, 0.0)\n            MeshBuilder.add_cylinder(\n                bm,\n                radius=0.045,\n                depth=0.04,\n                segments=6,\n                offset=p_hub,\n                axis='Y',\n                mat_idx=metal_mat,\n                rgba=metal_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"metal_light_brushed\")\n            )\n            # Handwheel outer ring\n            p_ring = rotate_point(0.0, mech_y + 0.04, 0.0)\n            MeshBuilder.add_cylinder(\n                bm,\n                radius=0.14,\n                depth=0.02,\n                segments=8,\n                offset=p_ring,\n                axis='Y',\n                mat_idx=accent_mat,\n                rgba=wheel_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"hazard_stripes\")\n            )\n            # Wheel spokes (horizontal & vertical bars)\n            MeshBuilder.add_box(\n                bm,\n                size=(0.26, 0.016, 0.02),\n                offset=p_ring,\n                mat_idx=metal_mat,\n                rgba=metal_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"metal_light_brushed\")\n            )\n            MeshBuilder.add_box(\n                bm,\n                size=(0.02, 0.016, 0.26),\n                offset=p_ring,\n                mat_idx=metal_mat,\n                rgba=metal_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"metal_light_brushed\")\n            )\n\n        elif mech == \"perimeter_latches\":\n            # 4 rotating dog-clamps on corners\n            for cx in (-door_w * 0.35, door_w * 0.35):\n                for cz in (-door_h * 0.35, door_h * 0.35):\n                    p_latch = rotate_point(cx, mech_y + 0.015, cz)\n                    MeshBuilder.add_box(\n                        bm,\n                        size=(0.06, 0.025, 0.035),\n                        offset=p_latch,\n                        mat_idx=metal_mat,\n                        rgba=metal_rgba,\n                        uv_rect=PS1TextureAtlas.get_rect(\"metal_light_brushed\")\n                    )\n\n        else: # quick_release lever\n            p_lever = rotate_point(0.0, mech_y + 0.02, 0.0)\n            MeshBuilder.add_box(\n                bm,\n                size=(0.04, 0.04, 0.05),\n                offset=p_lever,\n                mat_idx=metal_mat,\n                rgba=metal_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n            )\n            # Heavy throw arm\n            MeshBuilder.add_box(\n                bm,\n                size=(0.025, 0.02, 0.28),\n                offset=rotate_point(0.0, mech_y + 0.04, 0.08),\n                mat_idx=accent_mat,\n                rgba=(0.90, 0.15, 0.12, 1.0),\n                uv_rect=PS1TextureAtlas.get_rect(\"button_red\")\n            )\n\n        # -------------------------------------------------------------\n        # 5. Reinforced Viewport (Optional)\n        # -------------------------------------------------------------\n        if self.config.has_viewport:\n            p_vp = rotate_point(0.0, d * 0.5 + door_th * 0.5, door_h * 0.25)\n            # Steel peephole rim\n            MeshBuilder.add_cylinder(\n                bm,\n                radius=0.09,\n                depth=door_th * 1.3,\n                segments=6,\n                offset=p_vp,\n                axis='Y',\n                mat_idx=metal_mat,\n                rgba=metal_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n            )\n            # Glass center\n            MeshBuilder.add_cylinder(\n                bm,\n                radius=0.065,\n                depth=door_th * 1.35,\n                segments=6,\n                offset=p_vp,\n                axis='Y',\n                mat_idx=accent_mat,\n                rgba=(0.3, 0.65, 0.75, 1.0),\n                uv_rect=PS1TextureAtlas.get_rect(\"glass_reinforced\")\n            )\n\n        # -------------------------------------------------------------\n        # 6. Overhead Interlock / Pressure Status Light (Optional)\n        # -------------------------------------------------------------\n        if self.config.has_interlock_light:\n            light_z = half_h + coaming_w + 0.06\n            # Mount box\n            MeshBuilder.add_box(\n                bm,\n                size=(0.10, 0.05, 0.06),\n                offset=(0.0, d * 0.35, light_z),\n                mat_idx=metal_mat,\n                rgba=metal_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n            )\n            # Indicator lens (Green = pressurized/nominal, Red = open/alarm)\n            is_closed = (self.config.open_angle <= 5.0)\n            lens_uv = \"led_green\" if is_closed else \"led_red\"\n            lens_rgba = (0.2, 0.9, 0.3, 1.0) if is_closed else (0.95, 0.15, 0.1, 1.0)\n\n            MeshBuilder.add_box(\n                bm,\n                size=(0.06, 0.02, 0.035),\n                offset=(0.0, d * 0.35 + 0.03, light_z),\n                mat_idx=accent_mat,\n                rgba=lens_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(lens_uv)\n            )\n\n        self.finalize_mesh(obj, bm)\n        self.compact_materials(obj)\n        return obj\n",
+    "config_code": "from dataclasses import dataclass\nfrom ...core.base_config import BaseAssetConfig\n\n@dataclass\nclass MaintenanceHatchConfig(BaseAssetConfig):\n    \"\"\"Configuration for Pressure-Tight Utility Maintenance Access Hatch.\"\"\"\n    hatch_shape: str = \"square\"         # \"square\", \"octagonal_round\"\n    width: float = 0.80\n    height: float = 0.80\n    hatch_depth: float = 0.14\n    open_angle: float = 0.0             # 0.0 = dogged shut, 80.0 = swung open\n    dogging_mechanism: str = \"central_wheel\" # \"central_wheel\", \"perimeter_latches\", \"quick_release\"\n    has_viewport: bool = False          # Small thick reinforced observation port\n    has_interlock_light: bool = True    # Overhead pressure status LED interlock beacon\n\n    name: str = \"maintenance_hatch\"\n    pivot_rule: str = \"wall_back\"\n    palette_name: str = \"industrial_hazard\"\n    wear_level: float = 0.45\n    target_tri_budget: int = 540\n"
   },
   {
     "id": "below_nominal.medical.medical_screen",
@@ -8881,6 +9844,164 @@
     "file_size_bytes": 98464,
     "source_code": "import math\nimport mathutils\nimport bmesh\nimport bpy\n\nfrom ...core.base_generator import BaseAssetGenerator, ValidationReport\nfrom ...core.mesh_builder import MeshBuilder\nfrom ...core.materials import MaterialManager\nfrom .config import OfficeDoorConfig\n\nclass OfficeDoorGenerator(BaseAssetGenerator):\n    \"\"\"Procedural generator for glazed office, clinic, and laboratory doors.\"\"\"\n\n    def generate(self, config: OfficeDoorConfig) -> bpy.types.Object:\n        mesh = bpy.data.meshes.new(name=f\"{config.name}_mesh\")\n        obj = bpy.data.objects.new(name=config.name, object_data=mesh)\n        bpy.context.collection.objects.link(obj)\n\n        mat_mgr = self.get_material_manager(config)\n        mat_mgr.assign_to_mesh(obj)\n\n        bm = bmesh.new()\n        color_layer = bm.loops.layers.color.new(\"Col\")\n        uv_layer = bm.loops.layers.uv.new(\"UVMap\")\n\n        w = config.width\n        h = config.height\n        fd = config.frame_depth\n        half_w = w * 0.5\n\n        # Materials\n        m_frame = mat_mgr.get_index(\"door_frame_heavy\")\n        r_frame = mat_mgr.get_rect(\"metal_dark_grime\")\n\n        m_leaf = mat_mgr.get_index(\"locker_gray\")\n        r_leaf = mat_mgr.get_rect(\"beige_plastic_worn\")\n\n        m_glass = mat_mgr.get_index(\"glass_observation\")\n        r_glass = mat_mgr.get_rect(\"glass_observation\")\n\n        m_trim = mat_mgr.get_index(\"wall_support_beam\")\n        r_trim = mat_mgr.get_rect(\"metal_light_brushed\")\n\n        m_kick = mat_mgr.get_index(\"mounting\")\n        r_kick = mat_mgr.get_rect(\"metal_light_brushed\")\n\n        m_rust = mat_mgr.get_index(\"rust_patch\")\n        r_rust = mat_mgr.get_rect(\"rust_heavy\")\n\n        # -------------------------------------------------------------\n        # 1. OUTER DOOR FRAME (Jambs, Header, Threshold)\n        # -------------------------------------------------------------\n        jamb_thick = 0.08\n        header_h = 0.10\n        inner_w = w - (jamb_thick * 2.0)\n        inner_h = h - header_h\n\n        # Transom window split if enabled\n        transom_h = 0.45 if config.has_transom else 0.0\n        door_clear_h = inner_h - transom_h\n\n        # Left Jamb (-X)\n        MeshBuilder.add_box(\n            bm,\n            size=mathutils.Vector((jamb_thick, fd, h)),\n            offset=mathutils.Vector((-half_w + jamb_thick * 0.5, 0.0, h * 0.5)),\n            mat_idx=m_frame,\n            uv_layer=uv_layer,\n            uv_rect=r_frame,\n            color_layer=color_layer,\n            rgba=(0.20, 0.22, 0.24, 1.0)\n        )\n        # Right Jamb (+X)\n        MeshBuilder.add_box(\n            bm,\n            size=mathutils.Vector((jamb_thick, fd, h)),\n            offset=mathutils.Vector((half_w - jamb_thick * 0.5, 0.0, h * 0.5)),\n            mat_idx=m_frame,\n            uv_layer=uv_layer,\n            uv_rect=r_frame,\n            color_layer=color_layer,\n            rgba=(0.20, 0.22, 0.24, 1.0)\n        )\n        # Top Header Lintel\n        MeshBuilder.add_box(\n            bm,\n            size=mathutils.Vector((w, fd, header_h)),\n            offset=mathutils.Vector((0.0, 0.0, h - header_h * 0.5)),\n            mat_idx=m_frame,\n            uv_layer=uv_layer,\n            uv_rect=r_frame,\n            color_layer=color_layer,\n            rgba=(0.20, 0.22, 0.24, 1.0)\n        )\n\n        # Transom Window\n        if config.has_transom:\n            transom_mullion_h = 0.06\n            transom_z = door_clear_h + transom_mullion_h * 0.5\n            # Intermediate mullion bar\n            MeshBuilder.add_box(\n                bm,\n                size=mathutils.Vector((inner_w, fd * 0.85, transom_mullion_h)),\n                offset=mathutils.Vector((0.0, 0.0, transom_z)),\n                mat_idx=m_frame,\n                uv_layer=uv_layer,\n                uv_rect=r_frame,\n                color_layer=color_layer\n            )\n            # Transom glass\n            transom_glass_h = transom_h - transom_mullion_h\n            MeshBuilder.add_box(\n                bm,\n                size=mathutils.Vector((inner_w * 0.95, 0.03, transom_glass_h * 0.90)),\n                offset=mathutils.Vector((0.0, 0.0, door_clear_h + transom_mullion_h + transom_glass_h * 0.5)),\n                mat_idx=m_glass,\n                uv_layer=uv_layer,\n                uv_rect=r_glass,\n                color_layer=color_layer,\n                rgba=(0.08, 0.12, 0.16, 0.85)\n            )\n\n        # -------------------------------------------------------------\n        # 2. DOOR LEAF / PANELS (With pivot open angle)\n        # -------------------------------------------------------------\n        leaf_thick = 0.045\n        open_rad = math.radians(min(95.0, max(0.0, config.open_angle_deg)))\n\n        def build_single_leaf(leaf_w: float, pivot_x: float, sign_dir: float):\n            \"\"\"Builds a door leaf rotated around pivot_x by open_rad.\"\"\"\n            leaf_h = door_clear_h - 0.02\n\n            # Rotation matrix around pivot point (pivot_x, 0, 0)\n            rot_mat = mathutils.Matrix.Rotation(sign_dir * open_rad, 4, 'Z')\n            piv_vec = mathutils.Vector((pivot_x, 0.0, 0.0))\n\n            def transform_pt(local_pt: mathutils.Vector) -> mathutils.Vector:\n                return piv_vec + rot_mat @ (local_pt - piv_vec)\n\n            # Local center of leaf when closed\n            center_x = pivot_x + (sign_dir * leaf_w * 0.5)\n\n            # Glazed window cutout dimensions\n            win_w = leaf_w * 0.55\n            win_h = leaf_h * 0.45\n            win_z = leaf_h * 0.62  # Centered at eye level\n            win_x = center_x\n\n            # Frame around leaf window:\n            # 1. Bottom section (with kickplate)\n            bot_h = win_z - (win_h * 0.5)\n            geom_bot = bmesh.ops.create_cube(bm, size=1.0)\n            v_bot = [v for v in geom_bot[\"verts\"] if isinstance(v, bmesh.types.BMVert)]\n            for v in v_bot:\n                v.co.x = v.co.x * leaf_w + center_x\n                v.co.y = v.co.y * leaf_thick\n                v.co.z = v.co.z * bot_h + (bot_h * 0.5)\n                v.co = transform_pt(v.co)\n            for f in bm.faces:\n                if all(vt in set(v_bot) for vt in f.verts):\n                    MeshBuilder.apply_face_attributes(f, m_leaf, (0.35, 0.38, 0.40, 1.0), color_layer)\n                    MeshBuilder.apply_face_uv_rect(f, uv_layer, r_leaf)\n\n            # Kickplate on bottom 0.22m\n            if config.has_kickplate:\n                kp_h = 0.22\n                geom_kp = bmesh.ops.create_cube(bm, size=1.0)\n                v_kp = [v for v in geom_kp[\"verts\"] if isinstance(v, bmesh.types.BMVert)]\n                for v in v_kp:\n                    v.co.x = v.co.x * (leaf_w - 0.02) + center_x\n                    v.co.y = v.co.y * (leaf_thick + 0.01)\n                    v.co.z = v.co.z * kp_h + (kp_h * 0.5)\n                    v.co = transform_pt(v.co)\n                for f in bm.faces:\n                    if all(vt in set(v_kp) for vt in f.verts):\n                        MeshBuilder.apply_face_attributes(f, m_kick, (0.6, 0.6, 0.6, 1.0), color_layer)\n                        MeshBuilder.apply_face_uv_rect(f, uv_layer, r_kick)\n\n            # 2. Top section above window\n            top_h = leaf_h - (win_z + win_h * 0.5)\n            geom_top = bmesh.ops.create_cube(bm, size=1.0)\n            v_top = [v for v in geom_top[\"verts\"] if isinstance(v, bmesh.types.BMVert)]\n            for v in v_top:\n                v.co.x = v.co.x * leaf_w + center_x\n                v.co.y = v.co.y * leaf_thick\n                v.co.z = v.co.z * top_h + (leaf_h - top_h * 0.5)\n                v.co = transform_pt(v.co)\n            for f in bm.faces:\n                if all(vt in set(v_top) for vt in f.verts):\n                    MeshBuilder.apply_face_attributes(f, m_leaf, (0.35, 0.38, 0.40, 1.0), color_layer)\n                    MeshBuilder.apply_face_uv_rect(f, uv_layer, r_leaf)\n\n            # 3. Left and right window stiles\n            stile_w = (leaf_w - win_w) * 0.5\n            for sign_s, st_x in [(-1, center_x - leaf_w * 0.5 + stile_w * 0.5), (1, center_x + leaf_w * 0.5 - stile_w * 0.5)]:\n                geom_st = bmesh.ops.create_cube(bm, size=1.0)\n                v_st = [v for v in geom_st[\"verts\"] if isinstance(v, bmesh.types.BMVert)]\n                for v in v_st:\n                    v.co.x = v.co.x * stile_w + st_x\n                    v.co.y = v.co.y * leaf_thick\n                    v.co.z = v.co.z * win_h + win_z\n                    v.co = transform_pt(v.co)\n                for f in bm.faces:\n                    if all(vt in set(v_st) for vt in f.verts):\n                        MeshBuilder.apply_face_attributes(f, m_leaf, (0.35, 0.38, 0.40, 1.0), color_layer)\n                        MeshBuilder.apply_face_uv_rect(f, uv_layer, r_leaf)\n\n            # 4. Glazed window pane\n            if config.glass_damage != \"shattered_missing\":\n                geom_gl = bmesh.ops.create_cube(bm, size=1.0)\n                v_gl = [v for v in geom_gl[\"verts\"] if isinstance(v, bmesh.types.BMVert)]\n                for v in v_gl:\n                    v.co.x = v.co.x * (win_w - 0.02) + win_x\n                    v.co.y = v.co.y * 0.015\n                    v.co.z = v.co.z * (win_h - 0.02) + win_z\n                    v.co = transform_pt(v.co)\n                for f in bm.faces:\n                    if all(vt in set(v_gl) for vt in f.verts):\n                        MeshBuilder.apply_face_attributes(f, m_glass, (0.10, 0.14, 0.18, 0.85), color_layer)\n                        MeshBuilder.apply_face_uv_rect(f, uv_layer, r_glass)\n\n            # 5. Handle / Push Bar\n            bar_y = -leaf_thick * 0.5 - 0.025\n            bar_z = leaf_h * 0.48\n            if config.handle_type == \"horizontal_push_bar\":\n                geom_pb = bmesh.ops.create_cube(bm, size=1.0)\n                v_pb = [v for v in geom_pb[\"verts\"] if isinstance(v, bmesh.types.BMVert)]\n                for v in v_pb:\n                    v.co.x = v.co.x * (leaf_w * 0.75) + center_x\n                    v.co.y = v.co.y * 0.035 + bar_y\n                    v.co.z = v.co.z * 0.045 + bar_z\n                    v.co = transform_pt(v.co)\n                for f in bm.faces:\n                    if all(vt in set(v_pb) for vt in f.verts):\n                        MeshBuilder.apply_face_attributes(f, m_trim, (0.7, 0.7, 0.7, 1.0), color_layer)\n                        MeshBuilder.apply_face_uv_rect(f, uv_layer, r_trim)\n\n            elif config.handle_type == \"industrial_lever\":\n                h_x = center_x + (sign_dir * (leaf_w * 0.35))\n                geom_lv = bmesh.ops.create_cube(bm, size=1.0)\n                v_lv = [v for v in geom_lv[\"verts\"] if isinstance(v, bmesh.types.BMVert)]\n                for v in v_lv:\n                    v.co.x = v.co.x * 0.12 + h_x\n                    v.co.y = v.co.y * 0.04 + bar_y\n                    v.co.z = v.co.z * 0.025 + bar_z\n                    v.co = transform_pt(v.co)\n                for f in bm.faces:\n                    if all(vt in set(v_lv) for vt in f.verts):\n                        MeshBuilder.apply_face_attributes(f, m_trim, (0.7, 0.7, 0.7, 1.0), color_layer)\n                        MeshBuilder.apply_face_uv_rect(f, uv_layer, r_trim)\n\n        if config.door_style == \"double_swing\":\n            half_leaf_w = inner_w * 0.5\n            # Left Leaf (pivots at left jamb)\n            build_single_leaf(leaf_w=half_leaf_w, pivot_x=-half_w + jamb_thick, sign_dir=1.0)\n            # Right Leaf (pivots at right jamb)\n            build_single_leaf(leaf_w=half_leaf_w, pivot_x=half_w - jamb_thick, sign_dir=-1.0)\n        else: # single_swing / sliding_pocket\n            build_single_leaf(leaf_w=inner_w, pivot_x=-half_w + jamb_thick, sign_dir=1.0)\n\n        bm.to_mesh(mesh)\n        bm.free()\n        mesh.update()\n        return obj\n\n    def validate(self, obj: bpy.types.Object, config: OfficeDoorConfig) -> ValidationReport:\n        return super().validate(obj, config)\n",
     "config_code": "from dataclasses import dataclass\nfrom ...core.base_config import BaseAssetConfig\n\n@dataclass\nclass OfficeDoorConfig(BaseAssetConfig):\n    \"\"\"Configuration for glazed office, laboratory, and clinic doors with reinforced glass.\"\"\"\n    door_style: str = \"single_swing\"        # \"single_swing\", \"double_swing\", \"sliding_pocket\"\n    glass_type: str = \"wired_safety_glass\"  # \"wired_safety_glass\", \"clear_tinted\", \"frosted_privacy\"\n    width: float = 1.20                     # Overall frame width in meters\n    height: float = 2.40                    # Overall frame height in meters\n    frame_depth: float = 0.22               # Wall jamb thickness in meters\n    open_angle_deg: float = 0.0             # 0.0 = closed, 20.0 = ajar, 85.0 = open\n    glass_damage: str = \"intact\"            # \"intact\", \"cracked_spiderweb\", \"shattered_missing\"\n    handle_type: str = \"horizontal_push_bar\"# \"horizontal_push_bar\", \"industrial_lever\", \"recessed_pull\"\n    has_kickplate: bool = True              # Heavy steel bottom kickplate\n    has_transom: bool = False               # Upper observation transom window above door header\n    palette_name: str = \"industrial_hazard\"\n    target_tri_budget: int = 420\n"
+  },
+  {
+    "id": "below_nominal.infrastructure.overhead_pipe_support",
+    "family": "overhead_pipe_support",
+    "name": "Soporte Aéreo de Tuberías",
+    "version": "1.0.0",
+    "description": "Estructura de suspensión tipo trapecio unistrut de acero estructural para anclar líneas de tuberías de refrigerante, agua y vapor a las vigas del techo. Incorpora mordazas de viga en I con pernos de bloqueo, varillas roscadas de soporte vertical, perfiles canal ranurados, abrazaderas de fijación en U con tuercas hexagonales y tramos de tubería con código de color industrial.",
+    "category": "infrastructure",
+    "tags": [
+      "psx",
+      "low-poly",
+      "pipe_support",
+      "hanger",
+      "trapeze",
+      "ceiling",
+      "pipes",
+      "infrastructure",
+      "below_nominal"
+    ],
+    "author": {
+      "name": "ModelCoder Core Team",
+      "github": "FrancisCuarto"
+    },
+    "license": "CC-BY-4.0",
+    "compatibility": {},
+    "parameters": [
+      {
+        "key": "hanger_width",
+        "label": "Ancho del Bastidor (m)",
+        "type": "float",
+        "default": 1.1,
+        "group": "Dimensiones",
+        "min": 0.6,
+        "max": 2.0,
+        "step": 0.1
+      },
+      {
+        "key": "drop_height",
+        "label": "Altura de Caída (m)",
+        "type": "float",
+        "default": 0.85,
+        "group": "Dimensiones",
+        "min": 0.4,
+        "max": 1.6,
+        "step": 0.05
+      },
+      {
+        "key": "pipe_slots",
+        "label": "Ranuras de Tubería",
+        "type": "int",
+        "default": 3,
+        "group": "Configuración",
+        "min": 1.0,
+        "max": 4.0,
+        "step": 1.0
+      },
+      {
+        "key": "pipe_tier_count",
+        "label": "Niveles de Soporte",
+        "type": "int",
+        "default": 1,
+        "group": "Configuración",
+        "min": 1.0,
+        "max": 2.0,
+        "step": 1.0
+      },
+      {
+        "key": "has_pipes_included",
+        "label": "Incluir Tuberías Pasantes",
+        "type": "bool",
+        "default": true,
+        "group": "Configuración"
+      },
+      {
+        "key": "hanger_state",
+        "label": "Estado Mecánico",
+        "type": "enum",
+        "default": "nominal",
+        "group": "Estado",
+        "options": [
+          {
+            "value": "nominal",
+            "label": "Nominal"
+          },
+          {
+            "value": "bent_overload",
+            "label": "Sobrecarga Deformada"
+          },
+          {
+            "value": "missing_clamp",
+            "label": "Abrazadera Ausente"
+          }
+        ]
+      },
+      {
+        "key": "wear_level",
+        "label": "Nivel de Corrosión",
+        "type": "float",
+        "default": 0.45,
+        "group": "Material",
+        "min": 0.0,
+        "max": 1.0,
+        "step": 0.05
+      }
+    ],
+    "presets": [
+      {
+        "id": "nominal_tri_pipe",
+        "name": "nominal_tri_pipe",
+        "values": {
+          "hanger_width": 1.1,
+          "drop_height": 0.85,
+          "pipe_slots": 3,
+          "pipe_tier_count": 1,
+          "has_pipes_included": true,
+          "hanger_state": "nominal",
+          "wear_level": 0.3
+        },
+        "description": "Soporte de trapecio simétrico con 3 líneas de tuberías aseguradas con abrazaderas U."
+      },
+      {
+        "id": "bent_double_tier",
+        "name": "bent_double_tier",
+        "values": {
+          "hanger_width": 1.3,
+          "drop_height": 1.1,
+          "pipe_slots": 4,
+          "pipe_tier_count": 2,
+          "has_pipes_included": true,
+          "hanger_state": "bent_overload",
+          "wear_level": 0.55
+        },
+        "description": "Soporte de doble nivel con travesaño inferior combeado por exceso de carga de fluido."
+      },
+      {
+        "id": "maintenance_empty",
+        "name": "maintenance_empty",
+        "values": {
+          "hanger_width": 0.9,
+          "drop_height": 0.7,
+          "pipe_slots": 2,
+          "pipe_tier_count": 1,
+          "has_pipes_included": false,
+          "hanger_state": "missing_clamp",
+          "wear_level": 0.6
+        },
+        "description": "Bastidor sin tuberías intermedias con abrazadera faltante y marcas de óxido."
+      }
+    ],
+    "export_capabilities": {
+      "supports_collision": true,
+      "default_collision_suffix": "-convcolonly"
+    },
+    "has_model": true,
+    "model_url": "/models/overhead_pipe_support.glb",
+    "file_size_bytes": 119500,
+    "source_code": "import bpy\nimport bmesh\nimport math\nfrom mathutils import Vector\nfrom typing import Dict, Any\n\nfrom ...core.base_generator import BaseAssetGenerator\nfrom ...core.mesh_builder import MeshBuilder\nfrom ...core.texture_atlas import PS1TextureAtlas\nfrom .config import OverheadPipeSupportConfig\n\nclass OverheadPipeSupportGenerator(BaseAssetGenerator):\n    \"\"\"\n    Procedural PSX generator for industrial overhead trapeze pipe supports.\n    Builds structural beam clamps, threaded vertical drop rods, unistrut cross-channels,\n    U-bolt pipe clamps, and through-running process conduits with industrial markings.\n    \"\"\"\n\n    def generate(self, config: OverheadPipeSupportConfig = None) -> bpy.types.Object:\n        if config is not None:\n            self.config = config\n        elif not hasattr(self, \"config\") or self.config is None:\n            self.config = OverheadPipeSupportConfig()\n\n        self.clean_context()\n        self.material_manager = self.get_material_manager(self.config)\n        MeshBuilder.set_active_material_manager(self.material_manager)\n\n        obj, bm = self.create_mesh_object(self.config.name)\n        self.material_manager.assign_to_mesh(obj)\n        m_idx = self.material_manager.material_indices\n\n        w = self.config.hanger_width\n        dh = self.config.drop_height\n        half_w = w * 0.5\n\n        metal_mat = m_idx.get(\"dark_metal\", m_idx.get(\"casing\", 0))\n        casing_mat = m_idx.get(\"casing\", 0)\n        accent_mat = m_idx.get(\"accent\", m_idx.get(\"casing\", 0))\n\n        metal_rgba = self.material_manager.get_rgba(\"dark_metal\")\n        casing_rgba = self.material_manager.get_rgba(\"casing\")\n        coolant_rgba = (0.15, 0.65, 0.75, 1.0)\n        fuel_rgba = (0.85, 0.40, 0.15, 1.0)\n        steam_rgba = (0.75, 0.75, 0.78, 1.0)\n\n        # -------------------------------------------------------------\n        # 1. Top I-Beam Flange Clamps & Ceiling Brackets\n        # -------------------------------------------------------------\n        if self.config.has_beam_clamps:\n            for sx in (-half_w, half_w):\n                # Flange jaw clamp body\n                MeshBuilder.add_box(\n                    bm,\n                    size=(0.09, 0.08, 0.06),\n                    offset=(sx, 0.0, dh * 0.5),\n                    mat_idx=metal_mat,\n                    rgba=metal_rgba,\n                    uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n                )\n                # Heavy square lock bolt\n                MeshBuilder.add_box(\n                    bm,\n                    size=(0.035, 0.035, 0.04),\n                    offset=(sx, 0.0, dh * 0.5 + 0.04),\n                    mat_idx=metal_mat,\n                    rgba=metal_rgba,\n                    uv_rect=PS1TextureAtlas.get_rect(\"metal_light_brushed\")\n                )\n\n        # -------------------------------------------------------------\n        # 2. Vertical Threaded Suspension Drop Rods\n        # -------------------------------------------------------------\n        rod_r = 0.014\n        for sx in (-half_w, half_w):\n            # Hex nut at top\n            MeshBuilder.add_box(\n                bm,\n                size=(0.04, 0.04, 0.025),\n                offset=(sx, 0.0, dh * 0.5 - 0.03),\n                mat_idx=metal_mat,\n                rgba=metal_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"metal_light_brushed\")\n            )\n            # Long threaded drop rod\n            MeshBuilder.add_box(\n                bm,\n                size=(rod_r * 2, rod_r * 2, dh),\n                offset=(sx, 0.0, 0.0),\n                mat_idx=metal_mat,\n                rgba=metal_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"metal_light_brushed\")\n            )\n            # Hex nut at bottom\n            MeshBuilder.add_box(\n                bm,\n                size=(0.04, 0.04, 0.025),\n                offset=(sx, 0.0, -dh * 0.5 + 0.02),\n                mat_idx=metal_mat,\n                rgba=metal_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"metal_light_brushed\")\n            )\n\n        # -------------------------------------------------------------\n        # 3. Horizontal Unistrut Cross-Channel Tiers\n        # -------------------------------------------------------------\n        tiers = max(1, min(self.config.pipe_tier_count, 2))\n        is_bent = (self.config.hanger_state == \"bent_overload\")\n\n        for ti in range(tiers):\n            tz = -dh * 0.5 + 0.04 + ti * 0.35\n            # Main slotted channel\n            channel_w = w + 0.12\n            channel_d = 0.05\n            channel_h = 0.045\n\n            MeshBuilder.add_box(\n                bm,\n                size=(channel_w, channel_d, channel_h),\n                offset=(0.0, 0.0, tz),\n                mat_idx=casing_mat,\n                rgba=casing_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n            )\n\n            # Plastic/rubber end caps on unistrut\n            for ex in (-channel_w * 0.5 + 0.01, channel_w * 0.5 - 0.01):\n                MeshBuilder.add_box(\n                    bm,\n                    size=(0.02, channel_d * 1.05, channel_h * 1.05),\n                    offset=(ex, 0.0, tz),\n                    mat_idx=accent_mat,\n                    rgba=(0.95, 0.85, 0.2, 1.0),\n                    uv_rect=PS1TextureAtlas.get_rect(\"hazard_stripes\")\n                )\n\n            # ---------------------------------------------------------\n            # 4. Pipe Clamps and Conduits on this Tier\n            # ---------------------------------------------------------\n            slots = max(1, min(self.config.pipe_slots, 4))\n            slot_spacing = (w - 0.15) / (slots + 1)\n            pipe_diameters = [0.12, 0.09, 0.14, 0.08]\n            pipe_colors = [coolant_rgba, fuel_rgba, steam_rgba, coolant_rgba]\n\n            for si in range(1, slots + 1):\n                px = -half_w + 0.075 + si * slot_spacing\n                p_dia = pipe_diameters[(si - 1) % len(pipe_diameters)]\n                p_rad = p_dia * 0.5\n                p_rgba = pipe_colors[(si - 1) % len(pipe_colors)]\n                py_pipe = 0.0\n                pz_pipe = tz + channel_h * 0.5 + p_rad\n\n                # Clamp condition check\n                clamp_missing = (self.config.hanger_state == \"missing_clamp\" and si == slots)\n\n                # Clamp saddle base on channel\n                MeshBuilder.add_box(\n                    bm,\n                    size=(p_dia * 1.15, 0.04, 0.018),\n                    offset=(px, 0.0, tz + channel_h * 0.5 + 0.009),\n                    mat_idx=metal_mat,\n                    rgba=metal_rgba,\n                    uv_rect=PS1TextureAtlas.get_rect(\"metal_light_brushed\")\n                )\n\n                if not clamp_missing:\n                    # U-Bolt loop over the pipe\n                    u_height = p_dia + 0.03\n                    for ux in (px - p_rad - 0.012, px + p_rad + 0.012):\n                        # Vertical legs of U-bolt\n                        MeshBuilder.add_box(\n                            bm,\n                            size=(0.014, 0.014, u_height),\n                            offset=(ux, 0.0, tz + channel_h * 0.5 + u_height * 0.5),\n                            mat_idx=metal_mat,\n                            rgba=metal_rgba,\n                            uv_rect=PS1TextureAtlas.get_rect(\"metal_light_brushed\")\n                        )\n                    # Top cross bar of U-bolt\n                    MeshBuilder.add_box(\n                        bm,\n                        size=(p_dia + 0.038, 0.02, 0.014),\n                        offset=(px, 0.0, pz_pipe + p_rad + 0.01),\n                        mat_idx=metal_mat,\n                        rgba=metal_rgba,\n                        uv_rect=PS1TextureAtlas.get_rect(\"metal_light_brushed\")\n                    )\n\n                # Process pipe running through support\n                if self.config.has_pipes_included:\n                    pipe_len = 1.40\n                    MeshBuilder.add_cylinder(\n                        bm,\n                        radius=p_rad,\n                        depth=pipe_len,\n                        segments=6,\n                        offset=(px, py_pipe, pz_pipe),\n                        axis='Y',\n                        mat_idx=metal_mat,\n                        rgba=p_rgba,\n                        uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n                    )\n                    # Pipe identification label bands\n                    MeshBuilder.add_box(\n                        bm,\n                        size=(p_dia * 1.05, 0.04, p_dia * 1.05),\n                        offset=(px, 0.25, pz_pipe),\n                        mat_idx=accent_mat,\n                        rgba=(0.95, 0.85, 0.2, 1.0),\n                        uv_rect=PS1TextureAtlas.get_rect(\"caution_label\")\n                    )\n\n        self.finalize_mesh(obj, bm)\n        self.compact_materials(obj)\n        return obj\n",
+    "config_code": "from dataclasses import dataclass\nfrom ...core.base_config import BaseAssetConfig\n\n@dataclass\nclass OverheadPipeSupportConfig(BaseAssetConfig):\n    \"\"\"Configuration for Heavy Industrial Overhead Trapeze Pipe Support.\"\"\"\n    hanger_width: float = 1.10\n    drop_height: float = 0.85\n    pipe_tier_count: int = 1            # 1 or 2 horizontal trapeze unistrut tiers\n    pipe_slots: int = 3                 # 2 to 4 pipe clamp positions per tier\n    has_pipes_included: bool = True     # Longitudinal process pipes passing through clamps\n    has_beam_clamps: bool = True        # Top I-beam flange attachment clamp shoes\n    hanger_state: str = \"nominal\"       # \"nominal\", \"bent_overload\", \"missing_clamp\"\n\n    name: str = \"overhead_pipe_support\"\n    pivot_rule: str = \"center\"\n    palette_name: str = \"industrial_hazard\"\n    wear_level: float = 0.45\n    target_tri_budget: int = 480\n"
   },
   {
     "id": "below_nominal.fixtures.oxygen_regulator",
@@ -12179,6 +13300,152 @@
     "file_size_bytes": 35696,
     "source_code": "import math\nimport mathutils\nimport bmesh\nimport bpy\nimport random\nfrom typing import Optional\n\nfrom ...core.base_generator import BaseAssetGenerator\nfrom ...core.materials import MaterialManager\nfrom ...core.mesh_builder import MeshBuilder\nfrom .config import ServerRackConfig\n\nclass ServerRackGenerator(BaseAssetGenerator[ServerRackConfig]):\n    \"\"\"Procedural generator for consciousness storage and server racks (PSX low-poly).\"\"\"\n\n    def generate(self, config: ServerRackConfig) -> bpy.types.Object:\n        self.clean_context()\n        rng = random.Random(config.seed)\n\n        self.material_manager = self.get_material_manager(config)\n        mesh_name = f\"{config.name}_mesh\"\n        obj_name = config.name\n\n        if obj_name in bpy.data.objects:\n            bpy.data.objects.remove(bpy.data.objects[obj_name], do_unlink=True)\n        if mesh_name in bpy.data.meshes:\n            bpy.data.meshes.remove(bpy.data.meshes[mesh_name], do_unlink=True)\n\n        mesh = bpy.data.meshes.new(mesh_name)\n        obj = bpy.data.objects.new(obj_name, mesh)\n        bpy.context.collection.objects.link(obj)\n\n        self.material_manager.assign_to_mesh(obj)\n        m_idx = self.material_manager.material_indices\n        rgba = {k: self.material_manager.get_rgba(k) for k in self.material_manager.palette.keys()}\n\n        bm = bmesh.new()\n        col_layer = bm.loops.layers.color.new(\"Color\")\n\n        rack_w = config.width\n        rack_h = config.height\n        rack_d = config.depth\n\n        # 1. Outer Cabinet Enclosure\n        MeshBuilder.add_box(\n            bm=bm,\n            size=mathutils.Vector((rack_w, rack_h, rack_d)),\n            offset=mathutils.Vector((0.0, rack_h / 2.0, 0.0)),\n            mat_idx=m_idx.get(\"casing\", 0),\n            rgba=rgba.get(\"casing\", (0.15, 0.15, 0.15, 1.0)),\n            color_layer=col_layer\n        )\n\n        inner_w = rack_w * 0.85\n        inner_h = rack_h * 0.90\n        front_z = (rack_d / 2.0) + 0.005\n\n        # 2. Stacked Server Blades\n        blade_count = max(3, min(8, config.blade_units))\n        blade_h = (inner_h * 0.95) / blade_count\n        start_y = (rack_h / 2.0) - (inner_h / 2.0) + (blade_h / 2.0) + 0.03\n\n        for b in range(blade_count):\n            by = start_y + (b * blade_h)\n            blade_offset = mathutils.Vector((0.0, by, front_z))\n\n            # Check if this blade is the Service Terminal (usually middle blade #2 or #3)\n            is_terminal_blade = config.has_service_terminal and (b == 2)\n\n            if is_terminal_blade:\n                # 1U Slide-out Service Terminal\n                MeshBuilder.add_box(\n                    bm=bm,\n                    size=mathutils.Vector((inner_w, blade_h * 0.88, 0.06)),\n                    offset=mathutils.Vector((0.0, by, front_z + 0.015)),\n                    mat_idx=m_idx.get(\"casing_inner\", 0),\n                    rgba=rgba.get(\"casing_inner\", (0.25, 0.25, 0.25, 1.0)),\n                    color_layer=col_layer\n                )\n                # Miniature CRT display on left\n                MeshBuilder.add_box(\n                    bm=bm,\n                    size=mathutils.Vector((0.14, blade_h * 0.65, 0.02)),\n                    offset=mathutils.Vector((-inner_w * 0.25, by, front_z + 0.045)),\n                    mat_idx=m_idx.get(\"crt_screen_green\", 0),\n                    rgba=rgba.get(\"crt_screen_green\", (0.1, 0.9, 0.3, 1.0)),\n                    color_layer=col_layer\n                )\n                # Miniature keyboard on right\n                MeshBuilder.add_box(\n                    bm=bm,\n                    size=mathutils.Vector((inner_w * 0.35, blade_h * 0.55, 0.015)),\n                    offset=mathutils.Vector((inner_w * 0.15, by, front_z + 0.045)),\n                    mat_idx=m_idx.get(\"button_gray\", 0),\n                    rgba=rgba.get(\"button_gray\", (0.4, 0.4, 0.4, 1.0)),\n                    color_layer=col_layer\n                )\n\n            else:\n                # Standard Blade Face\n                MeshBuilder.add_box(\n                    bm=bm,\n                    size=mathutils.Vector((inner_w, blade_h * 0.88, 0.03)),\n                    offset=blade_offset,\n                    mat_idx=m_idx.get(\"server_blade_metal\", 0),\n                    rgba=rgba.get(\"server_blade_metal\", (0.2, 0.2, 0.2, 1.0)),\n                    color_layer=col_layer\n                )\n\n                # Consciousness Storage Cartridges\n                if config.rack_type == \"consciousness_bank\":\n                    for slot in range(3):\n                        if rng.random() <= config.cartridge_occupancy:\n                            slot_x = -inner_w * 0.3 + (slot * (inner_w * 0.3))\n                            cartridge_pos = mathutils.Vector((slot_x, by, front_z + 0.02))\n                            MeshBuilder.add_box(\n                                bm=bm,\n                                size=mathutils.Vector((0.06, blade_h * 0.55, 0.025)),\n                                offset=cartridge_pos,\n                                mat_idx=m_idx.get(\"memory_cartridge\", 0),\n                                rgba=rgba.get(\"memory_cartridge\", (0.8, 0.5, 0.1, 1.0)),\n                                color_layer=col_layer\n                            )\n\n            # Activity LEDs on right side\n            led_x = (inner_w / 2.0) - 0.04\n            led_color = \"led_green\" if rng.random() > 0.35 else \"led_yellow\"\n            MeshBuilder.add_cylinder(\n                bm=bm,\n                radius=0.008,\n                depth=0.012,\n                segments=4,\n                offset=mathutils.Vector((led_x, by, front_z + 0.02)),\n                axis='Z',\n                mat_idx=m_idx.get(led_color, 0),\n                rgba=rgba.get(led_color, (0.2, 0.9, 0.2, 1.0)),\n                color_layer=col_layer,\n                smooth=False\n            )\n\n        # 3. Cooling System (Cryo pipes vs Louvers)\n        if config.cooling_system == \"cooling_pipes\":\n            # Dual vertical cryo-refrigeration conduits on side edges\n            for side in (-1.0, 1.0):\n                px = side * ((rack_w / 2.0) - 0.04)\n                MeshBuilder.add_cylinder(\n                    bm=bm,\n                    radius=0.03,\n                    depth=rack_h * 0.9,\n                    segments=5,\n                    offset=mathutils.Vector((px, rack_h / 2.0, front_z + 0.02)),\n                    axis='Y',\n                    mat_idx=m_idx.get(\"pipe_industrial\", 0),\n                    rgba=rgba.get(\"pipe_industrial\", (0.4, 0.4, 0.4, 1.0)),\n                    color_layer=col_layer,\n                    smooth=False\n                )\n\n        # 4. Top Overhead Cable Conduit\n        if config.has_cable_conduit:\n            conduit_pos = mathutils.Vector((0.0, rack_h + 0.04, 0.0))\n            MeshBuilder.add_cylinder(\n                bm=bm,\n                radius=0.05,\n                depth=rack_w * 0.9,\n                segments=5,\n                offset=conduit_pos,\n                axis='X',\n                mat_idx=m_idx.get(\"casing_inner\", 0),\n                rgba=rgba.get(\"casing_inner\", (0.3, 0.3, 0.3, 1.0)),\n                color_layer=col_layer,\n                smooth=False\n            )\n\n        # 5. Side Louvers\n        if config.has_side_louvers:\n            for side in (-1.0, 1.0):\n                for v in range(3):\n                    vy = (rack_h * 0.4) + (v * 0.18)\n                    vent_offset = mathutils.Vector((side * (rack_w / 2.0 + 0.004), vy, 0.0))\n                    MeshBuilder.add_box(\n                        bm=bm,\n                        size=mathutils.Vector((0.01, 0.04, rack_d * 0.5)),\n                        offset=vent_offset,\n                        mat_idx=m_idx.get(\"switch_base\", 0),\n                        rgba=rgba.get(\"switch_base\", (0.1, 0.1, 0.1, 1.0)),\n                        color_layer=col_layer\n                    )\n\n        bm.to_mesh(mesh)\n        bm.free()\n        mesh.update()\n        return obj\n",
     "config_code": "from dataclasses import dataclass\nfrom ...core.base_config import BaseAssetConfig\n\n@dataclass\nclass ServerRackConfig(BaseAssetConfig):\n    \"\"\"Configuration for consciousness memory storage and server racks.\"\"\"\n    rack_type: str = \"consciousness_bank\"  # \"consciousness_bank\", \"telemetry_server\", \"cryo_cooling_rack\"\n    width: float = 0.80\n    height: float = 2.00\n    depth: float = 0.85\n\n    blade_units: int = 6\n    cartridge_occupancy: float = 0.80  # 0.0 = all slots empty, 1.0 = fully populated\n    cooling_system: str = \"cooling_pipes\"  # \"cooling_pipes\", \"louver_vents\", \"mesh_grill\"\n    has_service_terminal: bool = True  # Pull-out 1U monitor & keyboard tray\n    has_cable_conduit: bool = True\n    has_side_louvers: bool = True\n\n    name: str = \"consciousness_server_rack\"\n    target_tri_budget: int = 500\n"
+  },
+  {
+    "id": "below_nominal.architecture.service_lift_door",
+    "family": "service_lift_door",
+    "name": "Puerta de Montacargas Industrial",
+    "version": "1.0.0",
+    "description": "Portal reforzado de montacargas para transporte de maquinaria pesada, contenedores y suministros entre niveles de la estación. Marco estructural de vigas canal de acero con guías de rodillos, puertas de apertura telescópica bipartita de doble panel, placa protectora inferior estriada contra golpes de carretillas elevadoras, botonera de llamada con indicador de piso y placa de carga máxima autorizada.",
+    "category": "architecture",
+    "tags": [
+      "psx",
+      "low-poly",
+      "elevator",
+      "lift",
+      "door",
+      "freight",
+      "cargo",
+      "architecture",
+      "below_nominal"
+    ],
+    "author": {
+      "name": "ModelCoder Core Team",
+      "github": "FrancisCuarto"
+    },
+    "license": "CC-BY-4.0",
+    "compatibility": {},
+    "parameters": [
+      {
+        "key": "door_width",
+        "label": "Ancho de Van (m)",
+        "type": "float",
+        "default": 1.8,
+        "group": "Dimensiones",
+        "min": 1.4,
+        "max": 2.8,
+        "step": 0.1
+      },
+      {
+        "key": "door_height",
+        "label": "Alto de Van (m)",
+        "type": "float",
+        "default": 2.4,
+        "group": "Dimensiones",
+        "min": 2.0,
+        "max": 3.2,
+        "step": 0.1
+      },
+      {
+        "key": "door_state",
+        "label": "Estado de la Puerta",
+        "type": "enum",
+        "default": "closed",
+        "group": "Operación",
+        "options": [
+          {
+            "value": "closed",
+            "label": "Cerrada"
+          },
+          {
+            "value": "open_partial",
+            "label": "Abierta Parcial"
+          },
+          {
+            "value": "jammed_open",
+            "label": "Atascada"
+          },
+          {
+            "value": "maintenance_locked",
+            "label": "Bloqueo de Mantenimiento"
+          }
+        ]
+      },
+      {
+        "key": "has_call_station",
+        "label": "Botonera de Llamada",
+        "type": "bool",
+        "default": true,
+        "group": "Equipamiento"
+      },
+      {
+        "key": "has_capacity_sign",
+        "label": "Placa de Carga Máxima (SWL)",
+        "type": "bool",
+        "default": true,
+        "group": "Equipamiento"
+      },
+      {
+        "key": "wear_level",
+        "label": "Nivel de Desgaste y Golpes",
+        "type": "float",
+        "default": 0.45,
+        "group": "Material",
+        "min": 0.0,
+        "max": 1.0,
+        "step": 0.05
+      }
+    ],
+    "presets": [
+      {
+        "id": "closed_standby",
+        "name": "closed_standby",
+        "values": {
+          "door_width": 1.8,
+          "door_height": 2.4,
+          "door_state": "closed",
+          "has_call_station": true,
+          "has_capacity_sign": true,
+          "wear_level": 0.35
+        },
+        "description": "Montacargas en reposo cerrado con indicador de nivel en espera."
+      },
+      {
+        "id": "open_loading",
+        "name": "open_loading",
+        "values": {
+          "door_width": 2.0,
+          "door_height": 2.5,
+          "door_state": "open_partial",
+          "has_call_station": true,
+          "has_capacity_sign": true,
+          "wear_level": 0.45
+        },
+        "description": "Puertas telescópicas abiertas de par en par listas para recepción de palés."
+      },
+      {
+        "id": "jammed_maintenance",
+        "name": "jammed_maintenance",
+        "values": {
+          "door_width": 1.8,
+          "door_height": 2.4,
+          "door_state": "jammed_open",
+          "has_call_station": true,
+          "has_capacity_sign": true,
+          "wear_level": 0.65
+        },
+        "description": "Elevador averiado con puertas entreabiertas atrancadas y señalización de peligro."
+      }
+    ],
+    "export_capabilities": {
+      "supports_collision": true,
+      "default_collision_suffix": "-convcolonly"
+    },
+    "has_model": true,
+    "model_url": "/models/service_lift_door.glb",
+    "file_size_bytes": 102600,
+    "source_code": "import bpy\nimport bmesh\nimport math\nfrom mathutils import Vector\nfrom typing import Dict, Any\n\nfrom ...core.base_generator import BaseAssetGenerator\nfrom ...core.mesh_builder import MeshBuilder\nfrom ...core.texture_atlas import PS1TextureAtlas\nfrom .config import ServiceLiftDoorConfig\n\nclass ServiceLiftDoorGenerator(BaseAssetGenerator):\n    \"\"\"\n    Procedural PSX generator for heavy industrial freight elevator / service lift doors.\n    Builds structural channel jambs, overhead counterweight cable housings, bi-parting door leaves,\n    forklift impact kickplates, hall call stations, and SWL load capacity plaques.\n    \"\"\"\n\n    def generate(self, config: ServiceLiftDoorConfig = None) -> bpy.types.Object:\n        if config is not None:\n            self.config = config\n        elif not hasattr(self, \"config\") or self.config is None:\n            self.config = ServiceLiftDoorConfig()\n\n        self.clean_context()\n        self.material_manager = self.get_material_manager(self.config)\n        MeshBuilder.set_active_material_manager(self.material_manager)\n\n        obj, bm = self.create_mesh_object(self.config.name)\n        self.material_manager.assign_to_mesh(obj)\n        m_idx = self.material_manager.material_indices\n\n        w = self.config.door_width\n        h = self.config.door_height\n        d = self.config.frame_depth\n        half_w = w * 0.5\n\n        metal_mat = m_idx.get(\"dark_metal\", m_idx.get(\"casing\", 0))\n        casing_mat = m_idx.get(\"casing\", 0)\n        accent_mat = m_idx.get(\"accent\", m_idx.get(\"casing\", 0))\n        screen_mat = m_idx.get(\"screen\", m_idx.get(\"casing\", 0))\n\n        metal_rgba = self.material_manager.get_rgba(\"dark_metal\")\n        casing_rgba = self.material_manager.get_rgba(\"casing\")\n        kickplate_rgba = (0.35, 0.36, 0.38, 1.0)\n        hazard_rgba = (0.95, 0.85, 0.20, 1.0)\n\n        # -------------------------------------------------------------\n        # 1. Structural Frame Portal (Jambs and Lintel Header)\n        # -------------------------------------------------------------\n        jamb_w = 0.16\n        lintel_h = 0.28\n        # Left column jamb\n        MeshBuilder.add_box(\n            bm,\n            size=(jamb_w, d, h + lintel_h),\n            offset=(-half_w - jamb_w * 0.5, d * 0.5, (h + lintel_h) * 0.5),\n            mat_idx=casing_mat,\n            rgba=casing_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"painted_metal_white\")\n        )\n        # Right column jamb\n        MeshBuilder.add_box(\n            bm,\n            size=(jamb_w, d, h + lintel_h),\n            offset=(half_w + jamb_w * 0.5, d * 0.5, (h + lintel_h) * 0.5),\n            mat_idx=casing_mat,\n            rgba=casing_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"painted_metal_white\")\n        )\n        # Heavy overhead lintel header beam\n        MeshBuilder.add_box(\n            bm,\n            size=(w + jamb_w * 2, d * 1.10, lintel_h),\n            offset=(0.0, d * 0.5, h + lintel_h * 0.5),\n            mat_idx=casing_mat,\n            rgba=casing_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"painted_metal_white\")\n        )\n        # Hazard stripe band across the lintel soffit\n        MeshBuilder.add_box(\n            bm,\n            size=(w, 0.02, 0.08),\n            offset=(0.0, d * 0.5 + 0.05, h + 0.04),\n            mat_idx=accent_mat,\n            rgba=hazard_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"hazard_stripes\")\n        )\n\n        # Floor threshold guide track\n        MeshBuilder.add_box(\n            bm,\n            size=(w, d * 0.70, 0.03),\n            offset=(0.0, d * 0.5, 0.015),\n            mat_idx=metal_mat,\n            rgba=metal_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n        )\n\n        # Dark lift shaft interior void\n        MeshBuilder.add_box(\n            bm,\n            size=(w, 0.02, h),\n            offset=(0.0, 0.01, h * 0.5),\n            mat_idx=metal_mat,\n            rgba=(0.05, 0.06, 0.07, 1.0),\n            uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n        )\n\n        # -------------------------------------------------------------\n        # 2. Bi-Parting Telescoping Door Leaves\n        # -------------------------------------------------------------\n        leaf_w = w * 0.51\n        leaf_th = 0.045\n        leaf_h = h * 0.98\n\n        state = self.config.door_state\n        if state == \"closed\" or state == \"maintenance_locked\":\n            offset_left = -leaf_w * 0.5\n            offset_right = leaf_w * 0.5\n        elif state == \"open_partial\":\n            offset_left = -leaf_w * 0.5 - w * 0.35\n            offset_right = leaf_w * 0.5 + w * 0.35\n        elif state == \"jammed_open\":\n            offset_left = -leaf_w * 0.5 - w * 0.20\n            offset_right = leaf_w * 0.5 + w * 0.12\n        else:\n            offset_left = -leaf_w * 0.5\n            offset_right = leaf_w * 0.5\n\n        door_y = d * 0.5\n\n        # Left Door Leaf\n        MeshBuilder.add_box(\n            bm,\n            size=(leaf_w, leaf_th, leaf_h),\n            offset=(offset_left, door_y, leaf_h * 0.5),\n            mat_idx=metal_mat,\n            rgba=metal_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n        )\n        # Right Door Leaf\n        MeshBuilder.add_box(\n            bm,\n            size=(leaf_w, leaf_th, leaf_h),\n            offset=(offset_right, door_y + 0.015, leaf_h * 0.5),\n            mat_idx=metal_mat,\n            rgba=metal_rgba,\n            uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n        )\n\n        # Lower anti-impact kickplates on both leaves\n        if self.config.has_toe_guard_kickplate:\n            kick_h = 0.55\n            # Left kickplate\n            MeshBuilder.add_box(\n                bm,\n                size=(leaf_w * 0.96, 0.015, kick_h),\n                offset=(offset_left, door_y + leaf_th * 0.5 + 0.008, kick_h * 0.5 + 0.04),\n                mat_idx=metal_mat,\n                rgba=kickplate_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"metal_light_brushed\")\n            )\n            # Right kickplate\n            MeshBuilder.add_box(\n                bm,\n                size=(leaf_w * 0.96, 0.015, kick_h),\n                offset=(offset_right, door_y + leaf_th * 0.5 + 0.023, kick_h * 0.5 + 0.04),\n                mat_idx=metal_mat,\n                rgba=kickplate_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"metal_light_brushed\")\n            )\n\n        # Upper vision panel slits\n        slit_h = 0.40\n        slit_w = 0.12\n        slit_z = h * 0.65\n        # Left vision panel\n        MeshBuilder.add_box(\n            bm,\n            size=(slit_w, leaf_th * 1.2, slit_h),\n            offset=(offset_left + leaf_w * 0.2, door_y, slit_z),\n            mat_idx=accent_mat,\n            rgba=(0.3, 0.55, 0.65, 1.0),\n            uv_rect=PS1TextureAtlas.get_rect(\"glass_reinforced\")\n        )\n        # Right vision panel\n        MeshBuilder.add_box(\n            bm,\n            size=(slit_w, leaf_th * 1.2, slit_h),\n            offset=(offset_right - leaf_w * 0.2, door_y + 0.015, slit_z),\n            mat_idx=accent_mat,\n            rgba=(0.3, 0.55, 0.65, 1.0),\n            uv_rect=PS1TextureAtlas.get_rect(\"glass_reinforced\")\n        )\n\n        # Maintenance Lockout Bar (if locked)\n        if state == \"maintenance_locked\":\n            MeshBuilder.add_box(\n                bm,\n                size=(w * 0.85, 0.03, 0.08),\n                offset=(0.0, door_y + leaf_th + 0.03, h * 0.5),\n                mat_idx=accent_mat,\n                rgba=hazard_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"hazard_stripes\")\n            )\n\n        # -------------------------------------------------------------\n        # 3. Wall Hall Call Station & Floor Display\n        # -------------------------------------------------------------\n        if self.config.has_call_station:\n            call_x = half_w + jamb_w + 0.12\n            call_y = d * 0.45\n            call_z = 1.35\n            # Call box enclosure\n            MeshBuilder.add_box(\n                bm,\n                size=(0.14, 0.08, 0.32),\n                offset=(call_x, call_y, call_z),\n                mat_idx=metal_mat,\n                rgba=metal_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n            )\n            # Digital floor LED segment\n            MeshBuilder.add_box(\n                bm,\n                size=(0.08, 0.015, 0.06),\n                offset=(call_x, call_y + 0.045, call_z + 0.09),\n                mat_idx=screen_mat,\n                rgba=(0.95, 0.65, 0.15, 1.0),\n                uv_rect=PS1TextureAtlas.get_rect(\"crt_screen_amber\")\n            )\n            # Call call button (illuminated halo)\n            MeshBuilder.add_cylinder(\n                bm,\n                radius=0.022,\n                depth=0.02,\n                segments=6,\n                offset=(call_x, call_y + 0.045, call_z - 0.02),\n                axis='Y',\n                mat_idx=accent_mat,\n                rgba=(0.95, 0.85, 0.20, 1.0),\n                uv_rect=PS1TextureAtlas.get_rect(\"button_yellow\")\n            )\n            # Key switch slot\n            MeshBuilder.add_box(\n                bm,\n                size=(0.03, 0.01, 0.03),\n                offset=(call_x, call_y + 0.045, call_z - 0.09),\n                mat_idx=metal_mat,\n                rgba=metal_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"switch_metal\")\n            )\n\n        # -------------------------------------------------------------\n        # 4. SWL Capacity Warning Sign\n        # -------------------------------------------------------------\n        if self.config.has_capacity_sign:\n            sign_z = h + lintel_h * 0.5\n            MeshBuilder.add_box(\n                bm,\n                size=(0.65, 0.015, 0.14),\n                offset=(0.0, d + 0.01, sign_z),\n                mat_idx=accent_mat,\n                rgba=hazard_rgba,\n                uv_rect=PS1TextureAtlas.get_rect(\"caution_label\")\n            )\n\n        self.finalize_mesh(obj, bm)\n        self.compact_materials(obj)\n        return obj\n",
+    "config_code": "from dataclasses import dataclass\nfrom ...core.base_config import BaseAssetConfig\n\n@dataclass\nclass ServiceLiftDoorConfig(BaseAssetConfig):\n    \"\"\"Configuration for Heavy Industrial Freight Elevator / Service Lift Door.\"\"\"\n    door_width: float = 1.80\n    door_height: float = 2.40\n    frame_depth: float = 0.25\n    door_state: str = \"closed\"          # \"closed\", \"open_partial\", \"jammed_open\", \"maintenance_locked\"\n    has_call_station: bool = True       # Wall-mounted hall call box with floor indicator and key switch\n    has_capacity_sign: bool = True      # Heavy SWL 5000 KG load capacity warning placard\n    has_toe_guard_kickplate: bool = True # Ribbed steel diamond kickplate on lower door panels\n\n    name: str = \"service_lift_door\"\n    pivot_rule: str = \"wall_back\"\n    palette_name: str = \"industrial_hazard\"\n    wear_level: float = 0.45\n    target_tri_budget: int = 620\n"
   },
   {
     "id": "below_nominal.infrastructure.sign_placard",

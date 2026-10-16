@@ -1,0 +1,239 @@
+{
+  "export_metadata": {
+    "generator": "CargoPalletGenerator",
+    "asset_name": "cargo_pallet",
+    "timestamp": "2026-10-16T15:11:24.110102Z",
+    "format": "glTF 2.0 Binary (.glb)",
+    "output_file": "D:\\MODELCODER\\web\\public\\models\\cargo_pallet.glb",
+    "file_size_bytes": 110992,
+    "file_size_kb": 108.39
+  },
+  "normalization": {
+    "units": "Meters (1 Blender unit = 1.0 Godot unit)",
+    "scale_applied": true,
+    "rotation_applied": true,
+    "location_applied": true,
+    "pivot_rule": "floor_center",
+    "pivot_offset_applied": [
+      -0.0,
+      -0.0,
+      -0.0
+    ],
+    "normals_shading": "Flat (poly.use_smooth = False, PS1 low-poly crisp)",
+    "normals_recalculated": true,
+    "uv_mapping": "TEXCOORD_0 (Component-mapped to PS1 Weathered Texture Atlas)",
+    "vertex_colors": "COLOR_0 (Col / PS1 Gouraud tinting and wear)"
+  },
+  "dimensions_meters": {
+    "x": 1.0,
+    "y": 1.224,
+    "z": 0.16
+  },
+  "geometry_metrics": {
+    "total_triangles": 300,
+    "total_vertices": 200,
+    "target_tri_budget": 380,
+    "budget_compliance_ratio": 0.79,
+    "object_count": 4,
+    "hierarchy": [
+      {
+        "name": "cargo_pallet",
+        "type": "MESH",
+        "parent": null,
+        "triangles": 300,
+        "vertices": 200
+      },
+      {
+        "name": "socket_item_spawn",
+        "type": "EMPTY",
+        "parent": "cargo_pallet",
+        "triangles": 0,
+        "vertices": 0
+      },
+      {
+        "name": "socket_light",
+        "type": "EMPTY",
+        "parent": "cargo_pallet",
+        "triangles": 0,
+        "vertices": 0
+      },
+      {
+        "name": "socket_player_interact",
+        "type": "EMPTY",
+        "parent": "cargo_pallet",
+        "triangles": 0,
+        "vertices": 0
+      }
+    ]
+  },
+  "materials": {
+    "count": 1,
+    "compacted": true,
+    "list": [
+      {
+        "name": "mat_psx_industrial_hazard_casing_w50",
+        "roughness": 0.68,
+        "metallic": 0.18,
+        "emission": "None"
+      }
+    ]
+  },
+  "collision": {
+    "enabled": false,
+    "node_name": "None",
+    "shape_type": "box",
+    "godot_suffix": "-convcolonly",
+    "extents": [
+      1.0,
+      1.224,
+      0.16
+    ]
+  },
+  "sockets": [
+    {
+      "name": "socket_player_interact",
+      "position": [
+        0.0,
+        -1.162,
+        0.0
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "Standard player character interaction stand point"
+    },
+    {
+      "name": "socket_item_spawn",
+      "position": [
+        0.0,
+        0.0,
+        0.18
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "Prop or pickup spawn snap position (keycards, ammo, medical items)"
+    },
+    {
+      "name": "socket_light",
+      "position": [
+        0.0,
+        0.0,
+        0.136
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "OmniLight3D / SpotLight3D mount anchor point"
+    }
+  ],
+  "godot_4_validation": {
+    "bounds_aabb": {
+      "position": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "size": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "collision_shape_count": 0,
+    "errors": [],
+    "file": "D:\\MODELCODER\\web\\public\\models\\cargo_pallet.glb",
+    "materials": [
+      "mat_psx_industrial_hazard_casing_w50"
+    ],
+    "mesh_count": 1,
+    "nodes": [
+      {
+        "class": "Node3D",
+        "depth": 0,
+        "name": "cargo_pallet2"
+      },
+      {
+        "aabb": {
+          "position": [
+            -0.5,
+            0.0,
+            -0.612
+          ],
+          "size": [
+            1.0,
+            0.16,
+            1.224
+          ]
+        },
+        "class": "MeshInstance3D",
+        "depth": 1,
+        "has_uv": true,
+        "materials": [
+          "mat_psx_industrial_hazard_casing_w50"
+        ],
+        "name": "cargo_pallet",
+        "surface_count": 1
+      },
+      {
+        "class": "Node3D",
+        "depth": 2,
+        "name": "socket_item_spawn"
+      },
+      {
+        "class": "Node3D",
+        "depth": 2,
+        "name": "socket_light"
+      },
+      {
+        "class": "Node3D",
+        "depth": 2,
+        "name": "socket_player_interact"
+      }
+    ],
+    "root_class": "Node3D",
+    "root_name": "cargo_pallet2",
+    "socket_count": 3,
+    "sockets": [
+      {
+        "name": "socket_item_spawn",
+        "position": [
+          0.0,
+          0.18,
+          0.0
+        ]
+      },
+      {
+        "name": "socket_light",
+        "position": [
+          0.0,
+          0.136,
+          0.0
+        ]
+      },
+      {
+        "name": "socket_player_interact",
+        "position": [
+          0.0,
+          0.0,
+          1.162
+        ]
+      }
+    ],
+    "static_body_count": 0,
+    "total_surfaces": 1,
+    "valid": true,
+    "warnings": [],
+    "tested_in_godot": true,
+    "success": true,
+    "exit_code": 0,
+    "godot_binary": "C:\\Users\\lopez\\Downloads\\Godot_v4.5.1-stable_win64.exe\\Godot_v4.5.1-stable_win64_console.exe"
+  },
+  "warnings": []
+}

@@ -1,0 +1,239 @@
+{
+  "export_metadata": {
+    "generator": "CableTrayGenerator",
+    "asset_name": "cable_tray",
+    "timestamp": "2026-10-16T15:11:23.523659Z",
+    "format": "glTF 2.0 Binary (.glb)",
+    "output_file": "D:\\MODELCODER\\web\\public\\models\\cable_tray.glb",
+    "file_size_bytes": 127624,
+    "file_size_kb": 124.63
+  },
+  "normalization": {
+    "units": "Meters (1 Blender unit = 1.0 Godot unit)",
+    "scale_applied": true,
+    "rotation_applied": true,
+    "location_applied": true,
+    "pivot_rule": "center",
+    "pivot_offset_applied": [
+      -0.0,
+      -0.0,
+      -0.1425
+    ],
+    "normals_shading": "Flat (poly.use_smooth = False, PS1 low-poly crisp)",
+    "normals_recalculated": true,
+    "uv_mapping": "TEXCOORD_0 (Component-mapped to PS1 Weathered Texture Atlas)",
+    "vertex_colors": "COLOR_0 (Col / PS1 Gouraud tinting and wear)"
+  },
+  "dimensions_meters": {
+    "x": 0.59,
+    "y": 2.0,
+    "z": 0.835
+  },
+  "geometry_metrics": {
+    "total_triangles": 480,
+    "total_vertices": 318,
+    "target_tri_budget": 520,
+    "budget_compliance_ratio": 0.92,
+    "object_count": 4,
+    "hierarchy": [
+      {
+        "name": "cable_tray",
+        "type": "MESH",
+        "parent": null,
+        "triangles": 474,
+        "vertices": 318
+      },
+      {
+        "name": "socket_item_spawn",
+        "type": "EMPTY",
+        "parent": "cable_tray",
+        "triangles": 0,
+        "vertices": 0
+      },
+      {
+        "name": "socket_light",
+        "type": "EMPTY",
+        "parent": "cable_tray",
+        "triangles": 0,
+        "vertices": 0
+      },
+      {
+        "name": "socket_player_interact",
+        "type": "EMPTY",
+        "parent": "cable_tray",
+        "triangles": 0,
+        "vertices": 0
+      }
+    ]
+  },
+  "materials": {
+    "count": 1,
+    "compacted": true,
+    "list": [
+      {
+        "name": "mat_psx_industrial_hazard_casing_w45",
+        "roughness": 0.68,
+        "metallic": 0.18,
+        "emission": "None"
+      }
+    ]
+  },
+  "collision": {
+    "enabled": false,
+    "node_name": "None",
+    "shape_type": "box",
+    "godot_suffix": "-convcolonly",
+    "extents": [
+      0.59,
+      2.0,
+      0.835
+    ]
+  },
+  "sockets": [
+    {
+      "name": "socket_player_interact",
+      "position": [
+        0.0,
+        -1.55,
+        0.0
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "Standard player character interaction stand point"
+    },
+    {
+      "name": "socket_item_spawn",
+      "position": [
+        0.0,
+        0.0,
+        0.855
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "Prop or pickup spawn snap position (keycards, ammo, medical items)"
+    },
+    {
+      "name": "socket_light",
+      "position": [
+        0.0,
+        0.0,
+        0.71
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "OmniLight3D / SpotLight3D mount anchor point"
+    }
+  ],
+  "godot_4_validation": {
+    "bounds_aabb": {
+      "position": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "size": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "collision_shape_count": 0,
+    "errors": [],
+    "file": "D:\\MODELCODER\\web\\public\\models\\cable_tray.glb",
+    "materials": [
+      "mat_psx_industrial_hazard_casing_w45"
+    ],
+    "mesh_count": 1,
+    "nodes": [
+      {
+        "class": "Node3D",
+        "depth": 0,
+        "name": "cable_tray2"
+      },
+      {
+        "aabb": {
+          "position": [
+            -0.295,
+            -0.418,
+            -1.0
+          ],
+          "size": [
+            0.59,
+            0.835,
+            2.0
+          ]
+        },
+        "class": "MeshInstance3D",
+        "depth": 1,
+        "has_uv": true,
+        "materials": [
+          "mat_psx_industrial_hazard_casing_w45"
+        ],
+        "name": "cable_tray",
+        "surface_count": 1
+      },
+      {
+        "class": "Node3D",
+        "depth": 2,
+        "name": "socket_item_spawn"
+      },
+      {
+        "class": "Node3D",
+        "depth": 2,
+        "name": "socket_light"
+      },
+      {
+        "class": "Node3D",
+        "depth": 2,
+        "name": "socket_player_interact"
+      }
+    ],
+    "root_class": "Node3D",
+    "root_name": "cable_tray2",
+    "socket_count": 3,
+    "sockets": [
+      {
+        "name": "socket_item_spawn",
+        "position": [
+          0.0,
+          0.713,
+          0.0
+        ]
+      },
+      {
+        "name": "socket_light",
+        "position": [
+          0.0,
+          0.567,
+          0.0
+        ]
+      },
+      {
+        "name": "socket_player_interact",
+        "position": [
+          0.0,
+          -0.142,
+          1.55
+        ]
+      }
+    ],
+    "static_body_count": 0,
+    "total_surfaces": 1,
+    "valid": true,
+    "warnings": [],
+    "tested_in_godot": true,
+    "success": true,
+    "exit_code": 0,
+    "godot_binary": "C:\\Users\\lopez\\Downloads\\Godot_v4.5.1-stable_win64.exe\\Godot_v4.5.1-stable_win64_console.exe"
+  },
+  "warnings": []
+}

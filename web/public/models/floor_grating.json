@@ -1,0 +1,96 @@
+{
+  "generator": "FloorGratingGenerator",
+  "model_name": "floor_grating",
+  "seed": 42,
+  "timestamp": "2026-10-16T15:11:24.201423Z",
+  "mesh_metrics": {
+    "triangle_count": 288,
+    "vertex_count": 190,
+    "target_tri_budget": 460,
+    "budget_compliance_ratio": 0.63,
+    "dimensions_meters": {
+      "width": 1.1,
+      "height": 1.1,
+      "depth": 0.356
+    },
+    "has_vertex_colors": true,
+    "materials_assigned": [
+      "mat_psx_industrial_hazard_casing_w50"
+    ]
+  },
+  "config_parameters": {
+    "seed": 42,
+    "target_tri_budget": 460,
+    "name": "floor_grating",
+    "wear_level": 0.5,
+    "add_collision_mesh": false,
+    "collision_type": "box",
+    "collision_suffix": "-convcolonly",
+    "pivot_rule": "floor_center",
+    "export_subcomponents": false,
+    "palette_name": "industrial_hazard",
+    "emission_scale": 1.0,
+    "extra_params": {},
+    "panel_length": 1.0,
+    "panel_width": 1.0,
+    "grate_depth": 0.06,
+    "bar_density": 8,
+    "is_raised": false,
+    "has_recessed_frame": true,
+    "has_warning_stripe": true,
+    "trench_state": "flush"
+  },
+  "sockets": [
+    {
+      "name": "socket_player_interact",
+      "position": [
+        0.0,
+        -1.1,
+        0.0
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "Standard player character interaction stand point"
+    },
+    {
+      "name": "socket_item_spawn",
+      "position": [
+        0.0,
+        0.0,
+        0.376
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "Prop or pickup spawn snap position (keycards, ammo, medical items)"
+    },
+    {
+      "name": "socket_light",
+      "position": [
+        0.0,
+        0.0,
+        0.303
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "OmniLight3D / SpotLight3D mount anchor point"
+    }
+  ],
+  "godot_4_compatibility": {
+    "format": "glTF 2.0 Binary (.glb)",
+    "unit": "meters (1.0 Blender unit = 1.0 Godot unit)",
+    "forward_axis": "-Z",
+    "up_axis": "+Y",
+    "collision_mesh_convention": "Child node with -col or -colonly creates Godot StaticBody3D collision shape",
+    "vertex_colors": "Exported in COLOR_0 accessor (usable with StandardMaterial3D or PSX shader)",
+    "pbr_materials": "Exported as glTF PBR metallic/roughness + emissive"
+  }
+}

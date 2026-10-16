@@ -1,0 +1,126 @@
+{
+  "id": "below_nominal.architecture.ladder",
+  "name": "Escalera Fija Vertical con Jaula",
+  "version": "1.0.0",
+  "description": "Escalera vertical metálica de seguridad para silos, pozos de ascenso y niveles técnicos de la estación espacial. Largueros rectangulares macizos de pletina de acero, peldaños tubulares antideslizantes electrosoldados con estrías, escuadras de distanciamiento a mamparo con placas de anclaje de 4 tornillos, jaula de aros quitamiedos antikaídas en los tramos superiores y pasamanos abocinados para salida en plataforma.",
+  "author": {
+    "name": "ModelCoder Core Team",
+    "github": "FrancisCuarto"
+  },
+  "license": "CC-BY-4.0",
+  "category": "architecture",
+  "tags": [
+    "psx",
+    "low-poly",
+    "ladder",
+    "cage",
+    "vertical",
+    "safety",
+    "access",
+    "architecture",
+    "below_nominal"
+  ],
+  "parameters": [
+    {
+      "key": "ladder_height",
+      "label": "Altura Total (m)",
+      "type": "float",
+      "default": 3.0,
+      "min": 1.8,
+      "max": 6.0,
+      "step": 0.2,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "ladder_width",
+      "label": "Ancho de Peldaños (m)",
+      "type": "float",
+      "default": 0.50,
+      "min": 0.35,
+      "max": 0.70,
+      "step": 0.05,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "has_safety_cage",
+      "label": "Jaula de Seguridad Antikaídas",
+      "type": "bool",
+      "default": true,
+      "group": "Configuración"
+    },
+    {
+      "key": "has_walkthrough_top",
+      "label": "Pasamanos Abocinados de Salida",
+      "type": "bool",
+      "default": true,
+      "group": "Configuración"
+    },
+    {
+      "key": "ladder_condition",
+      "label": "Estado Físico",
+      "type": "enum",
+      "options": [
+        {"value": "nominal", "label": "Nominal"},
+        {"value": "rusted_damaged", "label": "Corroída / Dañada"},
+        {"value": "missing_rung", "label": "Peldaño Ausente"}
+      ],
+      "default": "nominal",
+      "group": "Estado"
+    },
+    {
+      "key": "wear_level",
+      "label": "Desgaste y Desconchón",
+      "type": "float",
+      "default": 0.45,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.05,
+      "group": "Material"
+    }
+  ],
+  "presets": [
+    {
+      "id": "full_safety_cage",
+      "label": "Seguridad Completa",
+      "description": "Escalera de 3m con jaula protectora superior y pasamanos de salida sobre plataforma.",
+      "values": {
+        "ladder_height": 3.0,
+        "ladder_width": 0.50,
+        "has_safety_cage": true,
+        "has_walkthrough_top": true,
+        "ladder_condition": "nominal",
+        "wear_level": 0.25
+      }
+    },
+    {
+      "id": "direct_technical",
+      "label": "Técnica Directa",
+      "description": "Escalera compacta sin jaula para pozos estrechos y mamparos de servicio.",
+      "values": {
+        "ladder_height": 2.4,
+        "ladder_width": 0.45,
+        "has_safety_cage": false,
+        "has_walkthrough_top": false,
+        "ladder_condition": "nominal",
+        "wear_level": 0.40
+      }
+    },
+    {
+      "id": "missing_step_derelict",
+      "label": "Acceso Deteriorado",
+      "description": "Escalera con peldaño ausente forzado y corrosión por filtración de agua salina.",
+      "values": {
+        "ladder_height": 3.0,
+        "ladder_width": 0.50,
+        "has_safety_cage": true,
+        "has_walkthrough_top": true,
+        "ladder_condition": "missing_rung",
+        "wear_level": 0.70
+      }
+    }
+  ],
+  "export_capabilities": {
+    "supports_collision": true,
+    "default_collision_suffix": "-convcolonly"
+  }
+}

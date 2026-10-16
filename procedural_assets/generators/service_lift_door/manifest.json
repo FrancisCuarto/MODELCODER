@@ -1,0 +1,127 @@
+{
+  "id": "below_nominal.architecture.service_lift_door",
+  "name": "Puerta de Montacargas Industrial",
+  "version": "1.0.0",
+  "description": "Portal reforzado de montacargas para transporte de maquinaria pesada, contenedores y suministros entre niveles de la estación. Marco estructural de vigas canal de acero con guías de rodillos, puertas de apertura telescópica bipartita de doble panel, placa protectora inferior estriada contra golpes de carretillas elevadoras, botonera de llamada con indicador de piso y placa de carga máxima autorizada.",
+  "author": {
+    "name": "ModelCoder Core Team",
+    "github": "FrancisCuarto"
+  },
+  "license": "CC-BY-4.0",
+  "category": "architecture",
+  "tags": [
+    "psx",
+    "low-poly",
+    "elevator",
+    "lift",
+    "door",
+    "freight",
+    "cargo",
+    "architecture",
+    "below_nominal"
+  ],
+  "parameters": [
+    {
+      "key": "door_width",
+      "label": "Ancho de Van (m)",
+      "type": "float",
+      "default": 1.80,
+      "min": 1.40,
+      "max": 2.80,
+      "step": 0.10,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "door_height",
+      "label": "Alto de Van (m)",
+      "type": "float",
+      "default": 2.40,
+      "min": 2.00,
+      "max": 3.20,
+      "step": 0.10,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "door_state",
+      "label": "Estado de la Puerta",
+      "type": "enum",
+      "options": [
+        {"value": "closed", "label": "Cerrada"},
+        {"value": "open_partial", "label": "Abierta Parcial"},
+        {"value": "jammed_open", "label": "Atascada"},
+        {"value": "maintenance_locked", "label": "Bloqueo de Mantenimiento"}
+      ],
+      "default": "closed",
+      "group": "Operación"
+    },
+    {
+      "key": "has_call_station",
+      "label": "Botonera de Llamada",
+      "type": "bool",
+      "default": true,
+      "group": "Equipamiento"
+    },
+    {
+      "key": "has_capacity_sign",
+      "label": "Placa de Carga Máxima (SWL)",
+      "type": "bool",
+      "default": true,
+      "group": "Equipamiento"
+    },
+    {
+      "key": "wear_level",
+      "label": "Nivel de Desgaste y Golpes",
+      "type": "float",
+      "default": 0.45,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.05,
+      "group": "Material"
+    }
+  ],
+  "presets": [
+    {
+      "id": "closed_standby",
+      "label": "Operativa Cerrada",
+      "description": "Montacargas en reposo cerrado con indicador de nivel en espera.",
+      "values": {
+        "door_width": 1.80,
+        "door_height": 2.40,
+        "door_state": "closed",
+        "has_call_station": true,
+        "has_capacity_sign": true,
+        "wear_level": 0.35
+      }
+    },
+    {
+      "id": "open_loading",
+      "label": "Carga Activa",
+      "description": "Puertas telescópicas abiertas de par en par listas para recepción de palés.",
+      "values": {
+        "door_width": 2.00,
+        "door_height": 2.50,
+        "door_state": "open_partial",
+        "has_call_station": true,
+        "has_capacity_sign": true,
+        "wear_level": 0.45
+      }
+    },
+    {
+      "id": "jammed_maintenance",
+      "label": "Mantenimiento / Bloqueada",
+      "description": "Elevador averiado con puertas entreabiertas atrancadas y señalización de peligro.",
+      "values": {
+        "door_width": 1.80,
+        "door_height": 2.40,
+        "door_state": "jammed_open",
+        "has_call_station": true,
+        "has_capacity_sign": true,
+        "wear_level": 0.65
+      }
+    }
+  ],
+  "export_capabilities": {
+    "supports_collision": true,
+    "default_collision_suffix": "-convcolonly"
+  }
+}

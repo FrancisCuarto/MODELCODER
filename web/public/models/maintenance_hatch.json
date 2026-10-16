@@ -1,0 +1,96 @@
+{
+  "generator": "MaintenanceHatchGenerator",
+  "model_name": "maintenance_hatch",
+  "seed": 42,
+  "timestamp": "2026-10-16T15:11:24.807744Z",
+  "mesh_metrics": {
+    "triangle_count": 260,
+    "vertex_count": 168,
+    "target_tri_budget": 540,
+    "budget_compliance_ratio": 0.48,
+    "dimensions_meters": {
+      "width": 0.92,
+      "height": 0.185,
+      "depth": 1.01
+    },
+    "has_vertex_colors": true,
+    "materials_assigned": [
+      "mat_psx_industrial_hazard_casing_w45"
+    ]
+  },
+  "config_parameters": {
+    "seed": 42,
+    "target_tri_budget": 540,
+    "name": "maintenance_hatch",
+    "wear_level": 0.45,
+    "add_collision_mesh": false,
+    "collision_type": "box",
+    "collision_suffix": "-convcolonly",
+    "pivot_rule": "wall_back",
+    "export_subcomponents": false,
+    "palette_name": "industrial_hazard",
+    "emission_scale": 1.0,
+    "extra_params": {},
+    "hatch_shape": "square",
+    "width": 0.8,
+    "height": 0.8,
+    "hatch_depth": 0.14,
+    "open_angle": 0.0,
+    "dogging_mechanism": "central_wheel",
+    "has_viewport": false,
+    "has_interlock_light": true
+  },
+  "sockets": [
+    {
+      "name": "socket_player_interact",
+      "position": [
+        0.0,
+        -0.643,
+        0.0
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "Standard player character interaction stand point"
+    },
+    {
+      "name": "socket_item_spawn",
+      "position": [
+        0.0,
+        0.0,
+        1.03
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "Prop or pickup spawn snap position (keycards, ammo, medical items)"
+    },
+    {
+      "name": "socket_light",
+      "position": [
+        0.0,
+        0.0,
+        0.858
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "OmniLight3D / SpotLight3D mount anchor point"
+    }
+  ],
+  "godot_4_compatibility": {
+    "format": "glTF 2.0 Binary (.glb)",
+    "unit": "meters (1.0 Blender unit = 1.0 Godot unit)",
+    "forward_axis": "-Z",
+    "up_axis": "+Y",
+    "collision_mesh_convention": "Child node with -col or -colonly creates Godot StaticBody3D collision shape",
+    "vertex_colors": "Exported in COLOR_0 accessor (usable with StandardMaterial3D or PSX shader)",
+    "pbr_materials": "Exported as glTF PBR metallic/roughness + emissive"
+  }
+}

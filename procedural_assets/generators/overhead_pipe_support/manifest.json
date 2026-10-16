@@ -1,0 +1,142 @@
+{
+  "id": "below_nominal.infrastructure.overhead_pipe_support",
+  "name": "Soporte Aéreo de Tuberías",
+  "version": "1.0.0",
+  "description": "Estructura de suspensión tipo trapecio unistrut de acero estructural para anclar líneas de tuberías de refrigerante, agua y vapor a las vigas del techo. Incorpora mordazas de viga en I con pernos de bloqueo, varillas roscadas de soporte vertical, perfiles canal ranurados, abrazaderas de fijación en U con tuercas hexagonales y tramos de tubería con código de color industrial.",
+  "author": {
+    "name": "ModelCoder Core Team",
+    "github": "FrancisCuarto"
+  },
+  "license": "CC-BY-4.0",
+  "category": "infrastructure",
+  "tags": [
+    "psx",
+    "low-poly",
+    "pipe_support",
+    "hanger",
+    "trapeze",
+    "ceiling",
+    "pipes",
+    "infrastructure",
+    "below_nominal"
+  ],
+  "parameters": [
+    {
+      "key": "hanger_width",
+      "label": "Ancho del Bastidor (m)",
+      "type": "float",
+      "default": 1.10,
+      "min": 0.60,
+      "max": 2.00,
+      "step": 0.10,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "drop_height",
+      "label": "Altura de Caída (m)",
+      "type": "float",
+      "default": 0.85,
+      "min": 0.40,
+      "max": 1.60,
+      "step": 0.05,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "pipe_slots",
+      "label": "Ranuras de Tubería",
+      "type": "int",
+      "default": 3,
+      "min": 1,
+      "max": 4,
+      "step": 1,
+      "group": "Configuración"
+    },
+    {
+      "key": "pipe_tier_count",
+      "label": "Niveles de Soporte",
+      "type": "int",
+      "default": 1,
+      "min": 1,
+      "max": 2,
+      "step": 1,
+      "group": "Configuración"
+    },
+    {
+      "key": "has_pipes_included",
+      "label": "Incluir Tuberías Pasantes",
+      "type": "bool",
+      "default": true,
+      "group": "Configuración"
+    },
+    {
+      "key": "hanger_state",
+      "label": "Estado Mecánico",
+      "type": "enum",
+      "options": [
+        {"value": "nominal", "label": "Nominal"},
+        {"value": "bent_overload", "label": "Sobrecarga Deformada"},
+        {"value": "missing_clamp", "label": "Abrazadera Ausente"}
+      ],
+      "default": "nominal",
+      "group": "Estado"
+    },
+    {
+      "key": "wear_level",
+      "label": "Nivel de Corrosión",
+      "type": "float",
+      "default": 0.45,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.05,
+      "group": "Material"
+    }
+  ],
+  "presets": [
+    {
+      "id": "nominal_tri_pipe",
+      "label": "Instalación Nominal",
+      "description": "Soporte de trapecio simétrico con 3 líneas de tuberías aseguradas con abrazaderas U.",
+      "values": {
+        "hanger_width": 1.10,
+        "drop_height": 0.85,
+        "pipe_slots": 3,
+        "pipe_tier_count": 1,
+        "has_pipes_included": true,
+        "hanger_state": "nominal",
+        "wear_level": 0.30
+      }
+    },
+    {
+      "id": "bent_double_tier",
+      "label": "Sobrecarga Deformada",
+      "description": "Soporte de doble nivel con travesaño inferior combeado por exceso de carga de fluido.",
+      "values": {
+        "hanger_width": 1.30,
+        "drop_height": 1.10,
+        "pipe_slots": 4,
+        "pipe_tier_count": 2,
+        "has_pipes_included": true,
+        "hanger_state": "bent_overload",
+        "wear_level": 0.55
+      }
+    },
+    {
+      "id": "maintenance_empty",
+      "label": "Línea en Mantenimiento",
+      "description": "Bastidor sin tuberías intermedias con abrazadera faltante y marcas de óxido.",
+      "values": {
+        "hanger_width": 0.90,
+        "drop_height": 0.70,
+        "pipe_slots": 2,
+        "pipe_tier_count": 1,
+        "has_pipes_included": false,
+        "hanger_state": "missing_clamp",
+        "wear_level": 0.60
+      }
+    }
+  ],
+  "export_capabilities": {
+    "supports_collision": true,
+    "default_collision_suffix": "-convcolonly"
+  }
+}

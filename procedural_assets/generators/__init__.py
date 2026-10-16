@@ -79,6 +79,16 @@ from .battery_bank import BatteryBankConfig, BatteryBankGenerator
 from .generator_unit import GeneratorUnitConfig, GeneratorUnitGenerator
 from .coolant_pipe_junction import CoolantPipeJunctionConfig, CoolantPipeJunctionGenerator
 
+# Lote E: Infraestructura Modular y Logística (Familias 73-80)
+from .cable_tray import CableTrayConfig, CableTrayGenerator
+from .overhead_pipe_support import OverheadPipeSupportConfig, OverheadPipeSupportGenerator
+from .floor_grating import FloorGratingConfig, FloorGratingGenerator
+from .maintenance_hatch import MaintenanceHatchConfig, MaintenanceHatchGenerator
+from .ladder import LadderConfig, LadderGenerator
+from .service_lift_door import ServiceLiftDoorConfig, ServiceLiftDoorGenerator
+from .cargo_pallet import CargoPalletConfig, CargoPalletGenerator
+from .cargo_container import CargoContainerConfig, CargoContainerGenerator
+
 GENERATOR_REGISTRY = {
     # Environment & Architectural Tiles
     "station_corridor": (StationCorridorConfig, StationCorridorGenerator),
@@ -171,6 +181,16 @@ GENERATOR_REGISTRY = {
     "battery_bank": (BatteryBankConfig, BatteryBankGenerator),
     "generator_unit": (GeneratorUnitConfig, GeneratorUnitGenerator),
     "coolant_pipe_junction": (CoolantPipeJunctionConfig, CoolantPipeJunctionGenerator),
+
+    # Lote E: Infraestructura Modular y Logística (Familias 73-80)
+    "cable_tray": (CableTrayConfig, CableTrayGenerator),
+    "overhead_pipe_support": (OverheadPipeSupportConfig, OverheadPipeSupportGenerator),
+    "floor_grating": (FloorGratingConfig, FloorGratingGenerator),
+    "maintenance_hatch": (MaintenanceHatchConfig, MaintenanceHatchGenerator),
+    "ladder": (LadderConfig, LadderGenerator),
+    "service_lift_door": (ServiceLiftDoorConfig, ServiceLiftDoorGenerator),
+    "cargo_pallet": (CargoPalletConfig, CargoPalletGenerator),
+    "cargo_container": (CargoContainerConfig, CargoContainerGenerator),
 }
 
 # Dynamic auto-discovery for community-contributed generator families
@@ -269,5 +289,13 @@ __all__ = [
     "BatteryBankConfig", "BatteryBankGenerator",
     "GeneratorUnitConfig", "GeneratorUnitGenerator",
     "CoolantPipeJunctionConfig", "CoolantPipeJunctionGenerator",
+    "CableTrayConfig", "CableTrayGenerator",
+    "OverheadPipeSupportConfig", "OverheadPipeSupportGenerator",
+    "FloorGratingConfig", "FloorGratingGenerator",
+    "MaintenanceHatchConfig", "MaintenanceHatchGenerator",
+    "LadderConfig", "LadderGenerator",
+    "ServiceLiftDoorConfig", "ServiceLiftDoorGenerator",
+    "CargoPalletConfig", "CargoPalletGenerator",
+    "CargoContainerConfig", "CargoContainerGenerator",
 ]
 

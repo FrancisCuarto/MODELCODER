@@ -1,0 +1,134 @@
+{
+  "id": "below_nominal.infrastructure.cable_tray",
+  "name": "Bandeja Portacables Industrial",
+  "version": "1.0.0",
+  "description": "Canalización portacables suspendida tipo escalera o canastilla ranurada para distribución de cableado eléctrico, de fibra y potencia a lo largo de galerías y techos técnicos de la estación espacial. Perfiles laterales en C galvanizados, peldaños tubulares de sujeción, mazos de cableado de alta y baja tensión con bridas de precinto, tirantes roscados de anclaje superior a vigas y tramos opcionales de tapa de protección contra esquirlas.",
+  "author": {
+    "name": "ModelCoder Core Team",
+    "github": "FrancisCuarto"
+  },
+  "license": "CC-BY-4.0",
+  "category": "infrastructure",
+  "tags": [
+    "psx",
+    "low-poly",
+    "cable_tray",
+    "wiring",
+    "ceiling",
+    "ladder",
+    "corridor",
+    "infrastructure",
+    "below_nominal"
+  ],
+  "parameters": [
+    {
+      "key": "tray_length",
+      "label": "Longitud de Tramo (m)",
+      "type": "float",
+      "default": 2.0,
+      "min": 1.0,
+      "max": 4.0,
+      "step": 0.25,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "tray_width",
+      "label": "Ancho de Bandeja (m)",
+      "type": "float",
+      "default": 0.45,
+      "min": 0.25,
+      "max": 0.80,
+      "step": 0.05,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "has_cover",
+      "label": "Tapa Protectora Superior",
+      "type": "bool",
+      "default": false,
+      "group": "Configuración"
+    },
+    {
+      "key": "has_suspension_rods",
+      "label": "Varillas Roscadas al Techo",
+      "type": "bool",
+      "default": true,
+      "group": "Configuración"
+    },
+    {
+      "key": "cable_density",
+      "label": "Densidad de Cableado",
+      "type": "float",
+      "default": 0.70,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.1,
+      "group": "Cableado"
+    },
+    {
+      "key": "has_hanging_cables",
+      "label": "Cables Sueltos Colgantes",
+      "type": "bool",
+      "default": true,
+      "group": "Cableado"
+    },
+    {
+      "key": "wear_level",
+      "label": "Nivel de Desgaste / Grime",
+      "type": "float",
+      "default": 0.45,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.05,
+      "group": "Material"
+    }
+  ],
+  "presets": [
+    {
+      "id": "tidy_routed",
+      "label": "Ordenado",
+      "description": "Bandeja suspendida con cables de potencia agrupados y tirantes rectos sin descolgamientos.",
+      "values": {
+        "tray_length": 2.0,
+        "tray_width": 0.45,
+        "has_cover": false,
+        "has_suspension_rods": true,
+        "cable_density": 0.60,
+        "has_hanging_cables": false,
+        "wear_level": 0.25
+      }
+    },
+    {
+      "id": "overloaded_sagging",
+      "label": "Sobrecargado",
+      "description": "Bandeja saturada al 100% de cables con mazos colgando por los laterales.",
+      "values": {
+        "tray_length": 2.5,
+        "tray_width": 0.60,
+        "has_cover": false,
+        "has_suspension_rods": true,
+        "cable_density": 1.0,
+        "has_hanging_cables": true,
+        "wear_level": 0.50
+      }
+    },
+    {
+      "id": "covered_conduit",
+      "label": "Canalización Cerrada",
+      "description": "Bandeja con tapa protectora atornillada para zonas de tráfico o riesgo de impacto.",
+      "values": {
+        "tray_length": 2.0,
+        "tray_width": 0.45,
+        "has_cover": true,
+        "has_suspension_rods": true,
+        "cable_density": 0.50,
+        "has_hanging_cables": false,
+        "wear_level": 0.35
+      }
+    }
+  ],
+  "export_capabilities": {
+    "supports_collision": true,
+    "default_collision_suffix": "-convcolonly"
+  }
+}

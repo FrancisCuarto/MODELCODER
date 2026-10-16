@@ -1,0 +1,239 @@
+{
+  "export_metadata": {
+    "generator": "ServiceLiftDoorGenerator",
+    "asset_name": "service_lift_door",
+    "timestamp": "2026-10-16T15:11:25.626561Z",
+    "format": "glTF 2.0 Binary (.glb)",
+    "output_file": "D:\\MODELCODER\\web\\public\\models\\service_lift_door.glb",
+    "file_size_bytes": 102600,
+    "file_size_kb": 100.2
+  },
+  "normalization": {
+    "units": "Meters (1 Blender unit = 1.0 Godot unit)",
+    "scale_applied": true,
+    "rotation_applied": true,
+    "location_applied": true,
+    "pivot_rule": "wall_back",
+    "pivot_offset_applied": [
+      -0.095,
+      0.0125,
+      -0.0
+    ],
+    "normals_shading": "Flat (poly.use_smooth = False, PS1 low-poly crisp)",
+    "normals_recalculated": true,
+    "uv_mapping": "TEXCOORD_0 (Component-mapped to PS1 Weathered Texture Atlas)",
+    "vertex_colors": "COLOR_0 (Col / PS1 Gouraud tinting and wear)"
+  },
+  "dimensions_meters": {
+    "x": 2.31,
+    "y": 0.28,
+    "z": 2.68
+  },
+  "geometry_metrics": {
+    "total_triangles": 212,
+    "total_vertices": 140,
+    "target_tri_budget": 620,
+    "budget_compliance_ratio": 0.34,
+    "object_count": 4,
+    "hierarchy": [
+      {
+        "name": "service_lift_door",
+        "type": "MESH",
+        "parent": null,
+        "triangles": 208,
+        "vertices": 140
+      },
+      {
+        "name": "socket_item_spawn",
+        "type": "EMPTY",
+        "parent": "service_lift_door",
+        "triangles": 0,
+        "vertices": 0
+      },
+      {
+        "name": "socket_light",
+        "type": "EMPTY",
+        "parent": "service_lift_door",
+        "triangles": 0,
+        "vertices": 0
+      },
+      {
+        "name": "socket_player_interact",
+        "type": "EMPTY",
+        "parent": "service_lift_door",
+        "triangles": 0,
+        "vertices": 0
+      }
+    ]
+  },
+  "materials": {
+    "count": 1,
+    "compacted": true,
+    "list": [
+      {
+        "name": "mat_psx_industrial_hazard_casing_w45",
+        "roughness": 0.68,
+        "metallic": 0.18,
+        "emission": "None"
+      }
+    ]
+  },
+  "collision": {
+    "enabled": false,
+    "node_name": "None",
+    "shape_type": "box",
+    "godot_suffix": "-convcolonly",
+    "extents": [
+      2.31,
+      0.28,
+      2.68
+    ]
+  },
+  "sockets": [
+    {
+      "name": "socket_player_interact",
+      "position": [
+        0.0,
+        -0.69,
+        0.0
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "Standard player character interaction stand point"
+    },
+    {
+      "name": "socket_item_spawn",
+      "position": [
+        0.0,
+        0.0,
+        2.7
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "Prop or pickup spawn snap position (keycards, ammo, medical items)"
+    },
+    {
+      "name": "socket_light",
+      "position": [
+        0.0,
+        0.0,
+        2.278
+      ],
+      "rotation_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "description": "OmniLight3D / SpotLight3D mount anchor point"
+    }
+  ],
+  "godot_4_validation": {
+    "bounds_aabb": {
+      "position": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "size": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "collision_shape_count": 0,
+    "errors": [],
+    "file": "D:\\MODELCODER\\web\\public\\models\\service_lift_door.glb",
+    "materials": [
+      "mat_psx_industrial_hazard_casing_w45"
+    ],
+    "mesh_count": 1,
+    "nodes": [
+      {
+        "class": "Node3D",
+        "depth": 0,
+        "name": "service_lift_door2"
+      },
+      {
+        "aabb": {
+          "position": [
+            -1.155,
+            0.0,
+            -0.28
+          ],
+          "size": [
+            2.31,
+            2.68,
+            0.28
+          ]
+        },
+        "class": "MeshInstance3D",
+        "depth": 1,
+        "has_uv": true,
+        "materials": [
+          "mat_psx_industrial_hazard_casing_w45"
+        ],
+        "name": "service_lift_door",
+        "surface_count": 1
+      },
+      {
+        "class": "Node3D",
+        "depth": 2,
+        "name": "socket_item_spawn"
+      },
+      {
+        "class": "Node3D",
+        "depth": 2,
+        "name": "socket_light"
+      },
+      {
+        "class": "Node3D",
+        "depth": 2,
+        "name": "socket_player_interact"
+      }
+    ],
+    "root_class": "Node3D",
+    "root_name": "service_lift_door2",
+    "socket_count": 3,
+    "sockets": [
+      {
+        "name": "socket_item_spawn",
+        "position": [
+          -0.095,
+          2.7,
+          -0.013
+        ]
+      },
+      {
+        "name": "socket_light",
+        "position": [
+          -0.095,
+          2.278,
+          -0.013
+        ]
+      },
+      {
+        "name": "socket_player_interact",
+        "position": [
+          -0.095,
+          0.0,
+          0.678
+        ]
+      }
+    ],
+    "static_body_count": 0,
+    "total_surfaces": 1,
+    "valid": true,
+    "warnings": [],
+    "tested_in_godot": true,
+    "success": true,
+    "exit_code": 0,
+    "godot_binary": "C:\\Users\\lopez\\Downloads\\Godot_v4.5.1-stable_win64.exe\\Godot_v4.5.1-stable_win64_console.exe"
+  },
+  "warnings": []
+}

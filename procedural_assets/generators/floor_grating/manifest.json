@@ -1,0 +1,139 @@
+{
+  "id": "below_nominal.architecture.floor_grating",
+  "name": "Rejilla de Suelo y Pasarela de Trinchera",
+  "version": "1.0.0",
+  "description": "Panel de rejilla de acero galvanizado ranurado para pasarelas industriales, canaletas de servicio y fosas de ventilación de estación sub-oceánica. Marco perimetral embutido en ángulo de acero, pletinas portantes transversales con borde antideslizante, varillas redondas de trabazón electrosoldadas, muesca rebajada para uña de izaje manual y reborde perimetral pintado con franjas de advertencia amarillo/negro.",
+  "author": {
+    "name": "ModelCoder Core Team",
+    "github": "FrancisCuarto"
+  },
+  "license": "CC-BY-4.0",
+  "category": "architecture",
+  "tags": [
+    "psx",
+    "low-poly",
+    "floor",
+    "grate",
+    "trench",
+    "walkway",
+    "steel",
+    "architecture",
+    "below_nominal"
+  ],
+  "parameters": [
+    {
+      "key": "panel_length",
+      "label": "Largo del Panel (m)",
+      "type": "float",
+      "default": 1.0,
+      "min": 0.5,
+      "max": 2.0,
+      "step": 0.1,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "panel_width",
+      "label": "Ancho del Panel (m)",
+      "type": "float",
+      "default": 1.0,
+      "min": 0.5,
+      "max": 2.0,
+      "step": 0.1,
+      "group": "Dimensiones"
+    },
+    {
+      "key": "bar_density",
+      "label": "Pletinas Portantes",
+      "type": "int",
+      "default": 8,
+      "min": 4,
+      "max": 12,
+      "step": 1,
+      "group": "Estructura"
+    },
+    {
+      "key": "is_raised",
+      "label": "Panel Levantado / Inclinado",
+      "type": "bool",
+      "default": false,
+      "group": "Estado"
+    },
+    {
+      "key": "trench_state",
+      "label": "Condición de la Trinchera",
+      "type": "enum",
+      "options": [
+        {"value": "flush", "label": "Enrasada"},
+        {"value": "propped_open", "label": "Levantada en Ángulo"},
+        {"value": "corroded_bent", "label": "Corroída y Combeada"}
+      ],
+      "default": "flush",
+      "group": "Estado"
+    },
+    {
+      "key": "has_warning_stripe",
+      "label": "Franja Perimetral de Peligro",
+      "type": "bool",
+      "default": true,
+      "group": "Señalética"
+    },
+    {
+      "key": "wear_level",
+      "label": "Desgaste y Óxido",
+      "type": "float",
+      "default": 0.50,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.05,
+      "group": "Material"
+    }
+  ],
+  "presets": [
+    {
+      "id": "walkway_flush",
+      "label": "Pasarela Enrasada",
+      "description": "Rejilla estándar encastrada en el suelo de tránsito peatonal de la estación.",
+      "values": {
+        "panel_length": 1.0,
+        "panel_width": 1.0,
+        "bar_density": 8,
+        "is_raised": false,
+        "trench_state": "flush",
+        "has_warning_stripe": true,
+        "wear_level": 0.35
+      }
+    },
+    {
+      "id": "pipe_access_open",
+      "label": "Acceso a Tuberías Abierto",
+      "description": "Panel levantado en ángulo mostrando la cavidad y tubería subyacente de la trinchera.",
+      "values": {
+        "panel_length": 1.0,
+        "panel_width": 1.0,
+        "bar_density": 7,
+        "is_raised": true,
+        "trench_state": "propped_open",
+        "has_warning_stripe": true,
+        "wear_level": 0.50
+      }
+    },
+    {
+      "id": "technical_corroded",
+      "label": "Zona Técnica Corroída",
+      "description": "Panel desgastado con costras de óxido pesado y barras ligeramente combadas.",
+      "values": {
+        "panel_length": 1.2,
+        "panel_width": 0.8,
+        "bar_density": 6,
+        "is_raised": false,
+        "trench_state": "corroded_bent",
+        "has_warning_stripe": false,
+        "wear_level": 0.75
+      }
+    }
+  ],
+  "export_capabilities": {
+    "supports_collision": true,
+    "default_collision_suffix": "-convcolonly"
+  }
+}
