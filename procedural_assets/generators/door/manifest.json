@@ -2,8 +2,8 @@
   "$schema": "https://raw.githubusercontent.com/usuario/modelcoder-community/main/schemas/generator-v1.json",
   "id": "below_nominal.architecture.door",
   "version": "1.0.0",
-  "name": "Door",
-  "description": "Generador procedural paramétrico de door para Below Nominal.",
+  "name": "Puerta Corrediza Industrial",
+  "description": "Puerta corrediza automatizada para mamparas y accesos entre sectores. Podés ajustar el ancho, alto, franjas de peligro y luces de estado para descargar en formato GLB.",
   "author": {
     "name": "Below Nominal Team",
     "github": "below-nominal",
@@ -25,7 +25,7 @@
   "parameters": [
     {
       "key": "seed",
-      "label": "Seed",
+      "label": "Semilla Aleatoria",
       "type": "seed",
       "default": 42,
       "group": "Rendimiento",
@@ -35,7 +35,7 @@
     },
     {
       "key": "target_tri_budget",
-      "label": "Target Tri Budget",
+      "label": "Presupuesto de Triángulos",
       "type": "int",
       "default": 480,
       "group": "Rendimiento",
@@ -44,59 +44,59 @@
     },
     {
       "key": "name",
-      "label": "Name",
+      "label": "Nombre de Instancia",
       "type": "string",
       "default": "station_door",
       "group": "General"
     },
     {
       "key": "wear_level",
-      "label": "Wear Level",
+      "label": "Nivel de Desgaste",
       "type": "float",
       "default": 0.5,
       "group": "Materiales",
-      "min": 0.0,
-      "max": 1.0,
+      "min": 0,
+      "max": 1,
       "step": 0.05
     },
     {
       "key": "add_collision_mesh",
-      "label": "Add Collision Mesh",
+      "label": "Generar Colisión",
       "type": "boolean",
       "default": false,
-      "group": "General"
+      "group": "Opciones de Exportación"
     },
     {
       "key": "collision_type",
-      "label": "Collision Type",
+      "label": "Tipo de Colisión",
       "type": "string",
       "default": "box",
-      "group": "General"
+      "group": "Opciones de Exportación"
     },
     {
       "key": "collision_suffix",
-      "label": "Collision Suffix",
+      "label": "Sufijo de Colisión",
       "type": "string",
       "default": "-convcolonly",
-      "group": "General"
+      "group": "Opciones de Exportación"
     },
     {
       "key": "pivot_rule",
-      "label": "Pivot Rule",
+      "label": "Regla de Pivote",
       "type": "string",
       "default": "floor_center",
-      "group": "General"
+      "group": "Opciones de Exportación"
     },
     {
       "key": "export_subcomponents",
-      "label": "Export Subcomponents",
+      "label": "Exportar Subcomponentes",
       "type": "boolean",
       "default": false,
-      "group": "General"
+      "group": "Opciones de Exportación"
     },
     {
       "key": "palette_name",
-      "label": "Palette Name",
+      "label": "Paleta de Color",
       "type": "enum",
       "default": "industrial_hazard",
       "group": "Materiales",
@@ -125,11 +125,11 @@
     },
     {
       "key": "emission_scale",
-      "label": "Emission Scale",
+      "label": "Intensidad de Emisión",
       "type": "float",
-      "default": 1.0,
-      "group": "General",
-      "min": 0.0,
+      "default": 1,
+      "group": "Materiales",
+      "min": 0,
       "step": 0.05
     },
     {
@@ -148,20 +148,20 @@
     },
     {
       "key": "width",
-      "label": "Width",
+      "label": "Ancho (m)",
       "type": "float",
-      "default": 2.0,
+      "default": 2,
       "group": "Dimensiones",
-      "min": 0.0,
+      "min": 0,
       "step": 0.05
     },
     {
       "key": "height",
-      "label": "Height",
+      "label": "Alto (m)",
       "type": "float",
       "default": 2.4,
       "group": "Dimensiones",
-      "min": 0.0,
+      "min": 0,
       "step": 0.05
     },
     {
@@ -170,7 +170,7 @@
       "type": "float",
       "default": 0.35,
       "group": "General",
-      "min": 0.0,
+      "min": 0,
       "step": 0.05
     },
     {
@@ -179,16 +179,16 @@
       "type": "float",
       "default": 0.18,
       "group": "General",
-      "min": 0.0,
+      "min": 0,
       "step": 0.05
     },
     {
       "key": "open_ratio",
       "label": "Open Ratio",
       "type": "float",
-      "default": 0.0,
+      "default": 0,
       "group": "General",
-      "min": 0.0,
+      "min": 0,
       "step": 0.05
     },
     {
@@ -243,13 +243,13 @@
         "pivot_rule": "floor_center",
         "export_subcomponents": false,
         "palette_name": "industrial_hazard",
-        "emission_scale": 1.0,
+        "emission_scale": 1,
         "door_type": "standard_sliding",
-        "width": 2.0,
+        "width": 2,
         "height": 2.4,
         "frame_depth": 0.35,
         "frame_thickness": 0.18,
-        "open_ratio": 0.0,
+        "open_ratio": 0,
         "access_interface": "card_reader",
         "has_reinforced_window": true,
         "has_hazard_stripes": true,

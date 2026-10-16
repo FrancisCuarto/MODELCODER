@@ -35,16 +35,38 @@ const categories = [
         Si te interesa, también podés descubrir y personalizar el código Python que los construye.
       </p>
 
-      <div class="hero-actions-row">
-        <a href="#generators-container" class="btn btn-primary">
-          [ EXPLORAR MODELOS ↓ ]
-        </a>
-        <a href="/contribute" class="btn btn-cyan">
-          [ CÓMO FUNCIONA ]
-        </a>
-        <a href="/studio" class="btn btn-gold">
-          ⚡ STUDIO 3D CON IA
-        </a>
+      <!-- Dos Recorridos Claros: Usar vs Crear -->
+      <div class="user-journeys-container">
+        <div class="journey-card ps1-inset journey-user">
+          <div class="journey-header">
+            <span class="journey-badge">[ RECORRIDO PRINCIPAL ]</span>
+            <h2 class="journey-title">Quiero usar y personalizar un modelo</h2>
+          </div>
+          <p class="journey-desc">
+            Elegí un objeto del catálogo, ajustá sus dimensiones o colores con controles visuales y descargá tu archivo <strong>.GLB</strong> listo para tu motor o escena. No necesitás conocimientos técnicos.
+          </p>
+          <a href="#catalog-controls" class="btn btn-primary journey-btn">
+            [ EXPLORAR EL CATÁLOGO ({catalog.length}) ↓ ]
+          </a>
+        </div>
+
+        <div class="journey-card ps1-inset journey-creator">
+          <div class="journey-header">
+            <span class="journey-badge journey-badge-gold">[ HERRAMIENTAS AVANZADAS ]</span>
+            <h2 class="journey-title">Quiero crear o programar generadores</h2>
+          </div>
+          <p class="journey-desc">
+            Diseñá nuevos objetos describiéndolos con <strong>Gemini 3.8 Flash</strong> o editá código Python en vivo para Blender. Podés publicar tus modelos en el repositorio abierto.
+          </p>
+          <div class="journey-links-row">
+            <a href="/studio" class="btn btn-gold journey-btn">
+              ⚡ STUDIO 3D CON IA
+            </a>
+            <a href="/contribute" class="btn btn-outline journey-btn">
+              📖 CÓMO FUNCIONA
+            </a>
+          </div>
+        </div>
       </div>
 
       <!-- Explicación en 3 pasos -->
@@ -52,7 +74,7 @@ const categories = [
         <div class="step-card ps1-inset">
           <div class="step-badge">PASO 01</div>
           <h3 class="step-title">Elegí un objeto</h3>
-          <p class="step-desc">Explorá 44 modelos low-poly organizados por categorías según lo que necesite tu escena.</p>
+          <p class="step-desc">Explorá los {catalog.length} modelos low-poly organizados por categorías según lo que necesite tu escena.</p>
         </div>
         <div class="step-card ps1-inset">
           <div class="step-badge">PASO 02</div>
@@ -324,11 +346,76 @@ const categories = [
     max-width: 1000px;
   }
 
-  .hero-actions-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.75rem;
+  /* Dual User Journeys */
+  .user-journeys-container {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.25rem;
     margin-bottom: 2rem;
+  }
+
+  .journey-card {
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    background: #090e1c;
+    border: 2px outset var(--ps1-steel);
+  }
+
+  .journey-user {
+    border-left: 4px solid var(--ps1-cyan);
+  }
+
+  .journey-creator {
+    border-left: 4px solid var(--ps1-gold);
+    background: #0d1222;
+  }
+
+  .journey-badge {
+    font-family: var(--font-pixel);
+    font-size: 0.65rem;
+    color: var(--ps1-cyan);
+    letter-spacing: 0.05em;
+    display: block;
+    margin-bottom: 0.25rem;
+  }
+
+  .journey-badge-gold {
+    color: var(--ps1-gold);
+  }
+
+  .journey-title {
+    font-family: var(--font-pixel);
+    font-size: 0.9rem;
+    color: #ffffff;
+    margin: 0;
+    line-height: 1.35;
+  }
+
+  .journey-desc {
+    font-size: 0.85rem;
+    color: #b0c0d8;
+    line-height: 1.5;
+    margin: 0;
+    flex: 1;
+  }
+
+  .journey-btn {
+    text-align: center;
+    font-size: 0.75rem;
+    padding: 0.6rem 0.85rem;
+    text-decoration: none;
+  }
+
+  .journey-links-row {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .journey-links-row .journey-btn {
+    flex: 1;
   }
 
   /* 3-Step Guide */
@@ -618,6 +705,9 @@ const categories = [
   }
 
   @media (max-width: 768px) {
+    .user-journeys-container {
+      grid-template-columns: 1fr;
+    }
     .three-steps-container {
       grid-template-columns: 1fr;
     }

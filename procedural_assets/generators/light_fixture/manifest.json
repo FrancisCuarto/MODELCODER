@@ -2,8 +2,8 @@
   "$schema": "https://raw.githubusercontent.com/usuario/modelcoder-community/main/schemas/generator-v1.json",
   "id": "below_nominal.fixtures.light_fixture",
   "version": "1.0.0",
-  "name": "Light Fixture",
-  "description": "Generador procedural paramétrico de light fixture para Below Nominal.",
+  "name": "Lámpara de Techo / Luminaria",
+  "description": "Dispositivo de iluminación para techos y pasillos transitables. Podés configurar la longitud, rejilla y escala de emisión para descargar en formato GLB.",
   "author": {
     "name": "Below Nominal Team",
     "github": "below-nominal",
@@ -25,7 +25,7 @@
   "parameters": [
     {
       "key": "seed",
-      "label": "Seed",
+      "label": "Semilla Aleatoria",
       "type": "seed",
       "default": 42,
       "group": "Rendimiento",
@@ -35,7 +35,7 @@
     },
     {
       "key": "target_tri_budget",
-      "label": "Target Tri Budget",
+      "label": "Presupuesto de Triángulos",
       "type": "int",
       "default": 340,
       "group": "Rendimiento",
@@ -44,59 +44,59 @@
     },
     {
       "key": "name",
-      "label": "Name",
+      "label": "Nombre de Instancia",
       "type": "string",
       "default": "light_fixture",
       "group": "General"
     },
     {
       "key": "wear_level",
-      "label": "Wear Level",
+      "label": "Nivel de Desgaste",
       "type": "float",
       "default": 0.65,
       "group": "Materiales",
-      "min": 0.0,
-      "max": 1.0,
+      "min": 0,
+      "max": 1,
       "step": 0.05
     },
     {
       "key": "add_collision_mesh",
-      "label": "Add Collision Mesh",
+      "label": "Generar Colisión",
       "type": "boolean",
       "default": false,
-      "group": "General"
+      "group": "Opciones de Exportación"
     },
     {
       "key": "collision_type",
-      "label": "Collision Type",
+      "label": "Tipo de Colisión",
       "type": "string",
       "default": "box",
-      "group": "General"
+      "group": "Opciones de Exportación"
     },
     {
       "key": "collision_suffix",
-      "label": "Collision Suffix",
+      "label": "Sufijo de Colisión",
       "type": "string",
       "default": "-convcolonly",
-      "group": "General"
+      "group": "Opciones de Exportación"
     },
     {
       "key": "pivot_rule",
-      "label": "Pivot Rule",
+      "label": "Regla de Pivote",
       "type": "string",
       "default": "floor_center",
-      "group": "General"
+      "group": "Opciones de Exportación"
     },
     {
       "key": "export_subcomponents",
-      "label": "Export Subcomponents",
+      "label": "Exportar Subcomponentes",
       "type": "boolean",
       "default": false,
-      "group": "General"
+      "group": "Opciones de Exportación"
     },
     {
       "key": "palette_name",
-      "label": "Palette Name",
+      "label": "Paleta de Color",
       "type": "enum",
       "default": "industrial_hazard",
       "group": "Materiales",
@@ -125,11 +125,11 @@
     },
     {
       "key": "emission_scale",
-      "label": "Emission Scale",
+      "label": "Intensidad de Emisión",
       "type": "float",
-      "default": 1.0,
-      "group": "General",
-      "min": 0.0,
+      "default": 1,
+      "group": "Materiales",
+      "min": 0,
       "step": 0.05
     },
     {
@@ -148,29 +148,29 @@
     },
     {
       "key": "length",
-      "label": "Length",
+      "label": "Largo (m)",
       "type": "float",
       "default": 1.2,
       "group": "Dimensiones",
-      "min": 0.0,
+      "min": 0,
       "step": 0.05
     },
     {
       "key": "width",
-      "label": "Width",
+      "label": "Ancho (m)",
       "type": "float",
       "default": 0.28,
       "group": "Dimensiones",
-      "min": 0.0,
+      "min": 0,
       "step": 0.05
     },
     {
       "key": "depth",
-      "label": "Depth",
+      "label": "Profundidad (m)",
       "type": "float",
       "default": 0.1,
       "group": "Dimensiones",
-      "min": 0.0,
+      "min": 0,
       "step": 0.05
     },
     {
@@ -227,7 +227,7 @@
         "pivot_rule": "floor_center",
         "export_subcomponents": false,
         "palette_name": "industrial_hazard",
-        "emission_scale": 1.0,
+        "emission_scale": 1,
         "fixture_type": "fluorescent_troffer",
         "length": 1.2,
         "width": 0.28,

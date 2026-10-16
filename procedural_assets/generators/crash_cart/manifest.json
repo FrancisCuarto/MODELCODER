@@ -3,7 +3,7 @@
   "id": "below_nominal.medical.crash_cart",
   "version": "1.0.0",
   "name": "Carro de Paro / Emergencia Médica",
-  "description": "Carro de reanimación hospitalario industrial con cajones extensibles escalonados, monitor desfibrilador CRT superior abombado, ruedas pivotantes y bastidor para cilindros de oxígeno.",
+  "description": "Carro hospitalario rodante de reanimación con cajones modulares y monitor superior. Podés configurar la cantidad de gavetas y paleta de color para descargar en formato GLB.",
   "author": {
     "name": "Below Nominal Team",
     "github": "below-nominal",
@@ -11,7 +11,17 @@
   },
   "license": "CC-BY-4.0",
   "category": "medical",
-  "tags": ["medical", "emergency", "crash_cart", "defibrillator", "crt", "oxygen", "sci-fi", "psx", "low-poly"],
+  "tags": [
+    "medical",
+    "emergency",
+    "crash_cart",
+    "defibrillator",
+    "crt",
+    "oxygen",
+    "sci-fi",
+    "psx",
+    "low-poly"
+  ],
   "compatibility": {
     "engine_version": ">=1.5.0",
     "blender_version": ">=4.2"
@@ -35,10 +45,22 @@
       "default": "staggered",
       "description": "Patrón de apertura de los cajones",
       "options": [
-        {"value": "staggered", "label": "Escalonado (procedural dinámico)"},
-        {"value": "all_closed", "label": "Todos Cerrados"},
-        {"value": "top_open", "label": "Solo Superior Abierto"},
-        {"value": "all_open", "label": "Todos Abiertos"}
+        {
+          "value": "staggered",
+          "label": "Escalonado (procedural dinámico)"
+        },
+        {
+          "value": "all_closed",
+          "label": "Todos Cerrados"
+        },
+        {
+          "value": "top_open",
+          "label": "Solo Superior Abierto"
+        },
+        {
+          "value": "all_open",
+          "label": "Todos Abiertos"
+        }
       ],
       "group": "Cajonera"
     },
@@ -49,9 +71,18 @@
       "default": "metal_bar",
       "description": "Tipo de manija o tirador de las gavetas",
       "options": [
-        {"value": "metal_bar", "label": "Barra Cilíndrica de Acero"},
-        {"value": "recessed_lip", "label": "Uñero / Ranura Embutida"},
-        {"value": "industrial_latch", "label": "Cierre Industrial"}
+        {
+          "value": "metal_bar",
+          "label": "Barra Cilíndrica de Acero"
+        },
+        {
+          "value": "recessed_lip",
+          "label": "Uñero / Ranura Embutida"
+        },
+        {
+          "value": "industrial_latch",
+          "label": "Cierre Industrial"
+        }
       ],
       "group": "Cajonera"
     },
@@ -70,9 +101,18 @@
       "default": "green",
       "description": "Color de emisión del monitor",
       "options": [
-        {"value": "green", "label": "Fósforo Verde Médico"},
-        {"value": "amber", "label": "Fósforo Ámbar Táctico"},
-        {"value": "off", "label": "Pantalla Apagada"}
+        {
+          "value": "green",
+          "label": "Fósforo Verde Médico"
+        },
+        {
+          "value": "amber",
+          "label": "Fósforo Ámbar Táctico"
+        },
+        {
+          "value": "off",
+          "label": "Pantalla Apagada"
+        }
       ],
       "group": "Monitor"
     },
@@ -105,39 +145,63 @@
     },
     {
       "key": "body_color_preset",
-      "label": "Pintura de Chasis",
+      "label": "Paleta de Color",
       "type": "enum",
       "default": "red_emergency",
       "description": "Color base del cuerpo metálico",
       "options": [
-        {"value": "red_emergency", "label": "Rojo Emergencia Sanitaria"},
-        {"value": "dirty_beige", "label": "Beige Desgastado de Laboratorio"},
-        {"value": "hazard_yellow", "label": "Amarillo Hazard de Taller"}
+        {
+          "value": "red_emergency",
+          "label": "Rojo Emergencia Sanitaria"
+        },
+        {
+          "value": "dirty_beige",
+          "label": "Beige Desgastado de Laboratorio"
+        },
+        {
+          "value": "hazard_yellow",
+          "label": "Amarillo Hazard de Taller"
+        }
       ],
       "group": "Materiales"
     },
     {
       "key": "palette_name",
-      "label": "Paleta de Sector",
+      "label": "Paleta de Color",
       "type": "enum",
       "default": "medbay_clean",
       "description": "Esquema cromático y de herrumbre sectorial",
       "options": [
-        {"value": "industrial_hazard", "label": "Industrial Hazard"},
-        {"value": "medbay_clean", "label": "Medbay Clean"},
-        {"value": "command_bridge", "label": "Command Bridge"},
-        {"value": "habitation_worn", "label": "Habitation Worn"},
-        {"value": "derelict_decay", "label": "Derelict Decay"}
+        {
+          "value": "industrial_hazard",
+          "label": "Industrial Hazard"
+        },
+        {
+          "value": "medbay_clean",
+          "label": "Medbay Clean"
+        },
+        {
+          "value": "command_bridge",
+          "label": "Command Bridge"
+        },
+        {
+          "value": "habitation_worn",
+          "label": "Habitation Worn"
+        },
+        {
+          "value": "derelict_decay",
+          "label": "Derelict Decay"
+        }
       ],
       "group": "Materiales"
     },
     {
       "key": "wear_level",
-      "label": "Nivel de Desgaste (0 a 1)",
+      "label": "Nivel de Desgaste",
       "type": "float",
       "default": 0.65,
-      "min": 0.0,
-      "max": 1.0,
+      "min": 0,
+      "max": 1,
       "step": 0.05,
       "description": "Corrosión y raspaduras en la pintura",
       "group": "Materiales"
@@ -148,7 +212,7 @@
       "type": "seed",
       "default": 1337,
       "description": "Semilla generadora determinista",
-      "group": "Aleatoriedad"
+      "group": "Rendimiento"
     }
   ],
   "presets": [
@@ -165,7 +229,7 @@
         "oxygen_tank_count": 2,
         "body_color_preset": "red_emergency",
         "palette_name": "medbay_clean",
-        "wear_level": 0.40
+        "wear_level": 0.4
       }
     },
     {

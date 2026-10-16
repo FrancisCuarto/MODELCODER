@@ -2,8 +2,8 @@
   "$schema": "https://raw.githubusercontent.com/usuario/modelcoder-community/main/schemas/generator-v1.json",
   "id": "below_nominal.furniture.mess_table",
   "version": "1.0.0",
-  "name": "Mess Table",
-  "description": "Generador procedural paramétrico de mess table para Below Nominal.",
+  "name": "Mesa de Comedor con Bancos",
+  "description": "Mesa comunitaria con bancos integrados para áreas sociales y comedores. Podés modificar el largo y capacidad de asientos para descargar en formato GLB.",
   "author": {
     "name": "Below Nominal Team",
     "github": "below-nominal",
@@ -25,7 +25,7 @@
   "parameters": [
     {
       "key": "seed",
-      "label": "Seed",
+      "label": "Semilla Aleatoria",
       "type": "seed",
       "default": 42,
       "group": "Rendimiento",
@@ -35,7 +35,7 @@
     },
     {
       "key": "target_tri_budget",
-      "label": "Target Tri Budget",
+      "label": "Presupuesto de Triángulos",
       "type": "int",
       "default": 450,
       "group": "Rendimiento",
@@ -44,59 +44,59 @@
     },
     {
       "key": "name",
-      "label": "Name",
+      "label": "Nombre de Instancia",
       "type": "string",
       "default": "asset",
       "group": "General"
     },
     {
       "key": "wear_level",
-      "label": "Wear Level",
+      "label": "Nivel de Desgaste",
       "type": "float",
       "default": 0.5,
       "group": "Materiales",
-      "min": 0.0,
-      "max": 1.0,
+      "min": 0,
+      "max": 1,
       "step": 0.05
     },
     {
       "key": "add_collision_mesh",
-      "label": "Add Collision Mesh",
+      "label": "Generar Colisión",
       "type": "boolean",
       "default": false,
-      "group": "General"
+      "group": "Opciones de Exportación"
     },
     {
       "key": "collision_type",
-      "label": "Collision Type",
+      "label": "Tipo de Colisión",
       "type": "string",
       "default": "box",
-      "group": "General"
+      "group": "Opciones de Exportación"
     },
     {
       "key": "collision_suffix",
-      "label": "Collision Suffix",
+      "label": "Sufijo de Colisión",
       "type": "string",
       "default": "-convcolonly",
-      "group": "General"
+      "group": "Opciones de Exportación"
     },
     {
       "key": "pivot_rule",
-      "label": "Pivot Rule",
+      "label": "Regla de Pivote",
       "type": "string",
       "default": "floor_center",
-      "group": "General"
+      "group": "Opciones de Exportación"
     },
     {
       "key": "export_subcomponents",
-      "label": "Export Subcomponents",
+      "label": "Exportar Subcomponentes",
       "type": "boolean",
       "default": false,
-      "group": "General"
+      "group": "Opciones de Exportación"
     },
     {
       "key": "palette_name",
-      "label": "Palette Name",
+      "label": "Paleta de Color",
       "type": "enum",
       "default": "industrial_hazard",
       "group": "Materiales",
@@ -125,11 +125,11 @@
     },
     {
       "key": "emission_scale",
-      "label": "Emission Scale",
+      "label": "Intensidad de Emisión",
       "type": "float",
-      "default": 1.0,
-      "group": "General",
-      "min": 0.0,
+      "default": 1,
+      "group": "Materiales",
+      "min": 0,
       "step": 0.05
     },
     {
@@ -161,7 +161,7 @@
       "type": "float",
       "default": 0.9,
       "group": "General",
-      "min": 0.0,
+      "min": 0,
       "step": 0.05
     },
     {
@@ -170,7 +170,7 @@
       "type": "float",
       "default": 1.8,
       "group": "General",
-      "min": 0.0,
+      "min": 0,
       "step": 0.05
     },
     {
@@ -179,7 +179,7 @@
       "type": "float",
       "default": 0.78,
       "group": "General",
-      "min": 0.0,
+      "min": 0,
       "step": 0.05
     },
     {
@@ -220,7 +220,7 @@
         "pivot_rule": "floor_center",
         "export_subcomponents": false,
         "palette_name": "industrial_hazard",
-        "emission_scale": 1.0,
+        "emission_scale": 1,
         "table_type": "bolted_stools_4",
         "stool_count": 4,
         "table_width": 0.9,

@@ -97,29 +97,30 @@ gen.parameters.forEach((param: any) => {
           )}
         </div>
 
-        <!-- Quick Direct Download & Helper under Viewport -->
-        <div class="viewport-quick-bar">
-          <a 
-            href={gen.model_url} 
-            download={`${gen.family}.glb`}
-            class="btn btn-primary btn-quick-dl" 
-            title="Descargar archivo GLB directamente para tu motor de juego"
-          >
-            💾 DESCARGAR MODELO (.GLB)
-          </a>
+        <!-- Live Telemetry & Tip Bar under Viewport -->
+        <div class="viewport-status-bar">
+          <div class="status-indicator-row">
+            <span class="status-dot-pulse"></span>
+            <span id="viewer-status-text" class="status-live-text">● Vista previa 3D interactiva en tiempo real</span>
+          </div>
           <p class="viewport-hint">
-            💡 Arrastrá para rotar el objeto en 360°, hacé zoom con la rueda y observá los cambios en tiempo real.
+            💡 Arrastrá con el ratón para rotar en 360°, rueda para zoom. Los ajustes de la derecha se previsualizan al instante.
           </p>
         </div>
       </div>
 
-      <!-- Collapsible Technical Capabilities -->
-      <details class="ps1-window summary-window">
-        <summary class="ps1-titlebar summary-toggle">
-          <span>// ESPECIFICACIONES TÉCNICAS (CLIC PARA EXPANDIR)</span>
-          <span class="meta-pill-ver">MALLA LOW-POLY</span>
+      <!-- Herramientas Avanzadas para Desarrolladores (Plegado por defecto) -->
+      <details class="ps1-window advanced-tools-window">
+        <summary class="ps1-titlebar advanced-tools-summary">
+          <span>⚙️ HERRAMIENTAS AVANZADAS (PYTHON, CLI Y MANIFIESTO)</span>
+          <span class="meta-pill-ver">DESARROLLADORES</span>
         </summary>
-        <div class="summary-body">
+        <div class="advanced-tools-body">
+          <p class="advanced-tools-intro">
+            Información técnica, código fuente y comandos para reproducir este modelo de forma nativa en Blender o scripts propios:
+          </p>
+
+          <!-- Especificaciones Técnicas -->
           <div class="capabilities-grid">
             <div class="ps1-inset cap-card">
               <span class="cap-label">PRESUPUESTO TRIÁNGULOS</span>
@@ -142,25 +143,53 @@ gen.parameters.forEach((param: any) => {
               </span>
             </div>
           </div>
-        </div>
-      </details>
 
-      <!-- Collapsible Source Code Inspection -->
-      <details class="ps1-window code-window">
-        <summary class="ps1-titlebar code-toggle">
-          <span>// CÓDIGO PYTHON DEL GENERADOR [generator.py] (CLIC PARA EXPANDIR)</span>
-          <span class="meta-pill-ver">BLENDER API</span>
-        </summary>
-        <div class="code-body">
-          <p style="font-size: 0.8rem; color: var(--text-dim); margin-bottom: 0.75rem;">
-            Instrucciones en Python que construyen la geometría proceduralmente dentro de Blender:
-          </p>
-          <div style="display: flex; justify-content: flex-end; margin-bottom: 0.5rem;">
-            <button id="copy-code-btn" type="button" class="btn btn-outline" style="padding: 0.25rem 0.6rem; font-size: 0.65rem;">
-              [ COPIAR CÓDIGO ]
-            </button>
+          <!-- Código Python del Generador -->
+          <div class="advanced-sub-block">
+            <div class="advanced-sub-header">
+              <span class="sub-title">// CÓDIGO PYTHON PROCEDURAL [generator.py]</span>
+              <button id="copy-code-btn" type="button" class="btn btn-outline btn-sm">
+                [ COPIAR CÓDIGO ]
+              </button>
+            </div>
+            <pre class="ps1-inset code-block"><code id="python-source">{gen.source_code}</code></pre>
           </div>
-          <pre class="ps1-inset code-block"><code id="python-source">{gen.source_code}</code></pre>
+
+          <!-- Blender CLI Command -->
+          <div class="advanced-sub-block">
+            <div class="advanced-sub-header">
+              <span class="sub-title">// COMANDO CLI DE BLENDER</span>
+              <button id="copy-cli-btn" class="btn btn-outline btn-sm">
+                [ COPIAR ]
+              </button>
+            </div>
+            <div class="ps1-inset cli-box">
+              <code id="cli-command-output" class="cli-code">
+                blender -b --python generate.py -- --family {gen.family}
+              </code>
+            </div>
+          </div>
+
+          <!-- Descarga de Manifiesto y Lanzador Local -->
+          <div class="advanced-footer-row">
+            <a 
+              href={`data:text/json;charset=utf-8,${encodeURIComponent(JSON.stringify(gen, null, 2))}`}
+              download={`${gen.family}_manifest.json`}
+              class="btn btn-outline"
+              style="flex: 1; font-size: 0.7rem; text-align: center;"
+            >
+              📥 DESCARGAR MANIFIESTO (.JSON)
+            </a>
+            <a 
+              href="/INICIAR_MODELCODER.bat" 
+              download="INICIAR_MODELCODER.bat" 
+              class="btn btn-gold" 
+              style="font-size: 0.7rem; text-align: center;"
+              title="Descargar lanzador automatizado para Windows"
+            >
+              ⚡ LANZADOR LOCAL (.BAT)
+            </a>
+          </div>
         </div>
       </details>
     </div>
@@ -304,100 +333,74 @@ gen.parameters.forEach((param: any) => {
             ))}
           </form>
 
-          <!-- Action Buttons Box -->
-          <div class="action-buttons-box">
-            <!-- Custom GLB Download -->
-            <button type="button" id="download-custom-glb-btn" class="btn btn-primary" style="width: 100%;">
-              💾 DESCARGAR GLB PERSONALIZADO
+          <!-- Sección de Descarga Inequívoca y Asistencia -->
+          <div class="download-section-box">
+            <!-- Acción Principal Única -->
+            <button type="button" id="download-custom-glb-btn" class="btn btn-primary btn-download-hero">
+              💾 DESCARGAR MODELO PERSONALIZADO (.GLB)
             </button>
 
-            <!-- Live Geometry Generation Trigger -->
-            <button type="button" id="live-generate-btn" class="btn btn-cyan" style="width: 100%;">
-              ⚡ GENERAR MALLA 3D EN VIVO
-            </button>
+            <!-- Acción Secundaria Claramente Diferenciada -->
+            <div class="secondary-download-row">
+              <span class="secondary-download-label">¿Preferís el archivo base original sin alterar?</span>
+              <a 
+                href={gen.model_url} 
+                download={`${gen.family}.glb`}
+                class="secondary-download-link"
+                title="Descargar archivo GLB original sin las modificaciones del formulario"
+              >
+                Bajar versión base original (.glb) ➜
+              </a>
+            </div>
 
-            <div id="live-generate-status" class="live-status-box" style="display: none;"></div>
-
-            <!-- Optional Remote Worker URL Config Accordion -->
-            <details class="worker-config-details" id="worker-config-details">
-              <summary class="worker-config-summary">⚙️ Conectar Servidor de Generación (Local o Nube)</summary>
-              <div class="worker-config-box">
-                <div style="margin-bottom: 0.75rem; border-bottom: 1px dashed rgba(255,255,255,0.1); padding-bottom: 0.6rem;">
-                  <span style="font-size: 0.68rem; color: var(--ps1-cyan); font-family: var(--font-pixel); display: block; margin-bottom: 0.35rem;">
-                    ACCESOS RÁPIDOS 1-CLIC:
-                  </span>
-                  <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
-                    <a 
-                      href="/INICIAR_MODELCODER.bat" 
-                      download="INICIAR_MODELCODER.bat" 
-                      class="btn btn-gold" 
-                      style="font-size: 0.65rem; padding: 0.25rem 0.5rem; text-decoration: none;"
-                    >
-                      📥 Bajar Lanzador Local (.bat)
-                    </a>
-                    <a 
-                      href="https://codespaces.new/FrancisCuarto/MODELCODER" 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
-                      class="btn btn-cyan" 
-                      style="font-size: 0.65rem; padding: 0.25rem 0.5rem; text-decoration: none;"
-                    >
-                      ☁️ Abrir en Codespaces
-                    </a>
-                  </div>
-                </div>
-
-                <label for="worker-url-input" class="field-label" style="font-size: 0.7rem;">URL del Worker Remoto o Local:</label>
-                <div style="display: flex; gap: 0.4rem; margin-top: 0.3rem;">
-                  <input 
-                    type="text" 
-                    id="worker-url-input" 
-                    placeholder="http://localhost:8000/api/generate o https://space.hf.space/api/generate" 
-                    class="form-input" 
-                    style="flex: 1; font-size: 0.75rem;"
-                  />
-                  <button type="button" id="save-worker-url-btn" class="btn btn-outline" style="padding: 0.3rem 0.6rem; font-size: 0.7rem;">
-                    Guardar
-                  </button>
-                </div>
-                <div style="display: flex; gap: 0.4rem; margin-top: 0.4rem; flex-wrap: wrap;">
-                  <button type="button" id="set-localhost-btn" class="btn btn-outline" style="font-size: 0.62rem; padding: 0.2rem 0.45rem;">
-                    ⚡ Usar Localhost (8000)
-                  </button>
-                  <button type="button" id="clear-worker-btn" class="btn btn-outline" style="font-size: 0.62rem; padding: 0.2rem 0.45rem; color: #ff8888;">
-                    ✕ Desconectar (Modo Navegador)
-                  </button>
-                </div>
-                <div id="worker-ping-status" style="font-size: 0.68rem; margin-top: 0.45rem; display: none;"></div>
+            <!-- Cartel de Éxito y Guía de Importación Post-Descarga -->
+            <div id="download-success-box" class="ps1-inset download-success-box" style="display: none;">
+              <div class="success-header-row">
+                <span class="success-badge">✅ MODELO DESCARGADO</span>
+                <span class="success-filename">{gen.family}_custom.glb</span>
               </div>
-            </details>
-          </div>
-
-          <!-- Dynamic CLI Command Generator Box -->
-          <div class="ps1-window cli-window">
-            <div class="ps1-titlebar" style="font-size: 0.7rem;">
-              <span>// BLENDER_CLI_COMMAND</span>
-              <button id="copy-cli-btn" class="btn btn-outline" style="padding: 0.15rem 0.45rem; font-size: 0.65rem;">
-                [ COPIAR ]
+              <p class="success-message">
+                Tu modelo está listo. Podés importarlo en Godot, Unity, Blender u otro programa compatible con GLB.
+              </p>
+              <button type="button" id="toggle-import-guide-btn" class="btn btn-cyan btn-sm" style="width: 100%; margin-top: 0.4rem;">
+                📖 ¿CÓMO USO ESTE ARCHIVO EN MI MOTOR?
               </button>
-            </div>
-            <div style="padding: 0.6rem; background: #060912;">
-              <code id="cli-command-output" class="cli-code">
-                blender -b --python generate.py -- --family {gen.family}
-              </code>
-            </div>
-          </div>
 
-          <!-- Base Manifest Download -->
-          <div style="margin-top: 1rem;">
-            <a 
-              href={`data:text/json;charset=utf-8,${encodeURIComponent(JSON.stringify(gen, null, 2))}`}
-              download={`${gen.family}_manifest.json`}
-              class="btn btn-outline" 
-              style="width: 100%; font-size: 0.7rem;"
-            >
-              [ DESCARGAR MANIFIESTO (.JSON) ]
-            </a>
+              <!-- Panel Desplegable de Instrucciones de Importación -->
+              <div id="import-guide-panel" class="import-guide-panel" style="display: none;">
+                <div class="import-step-card">
+                  <span class="import-engine-name">🎮 Godot 4:</span>
+                  <p class="import-step-text">
+                    Arrastrá el archivo <code>.glb</code> a tu carpeta <code>res://assets/</code>. Godot generará automáticamente la escena o nodo 3D con materiales listos.
+                  </p>
+                </div>
+                <div class="import-step-card">
+                  <span class="import-engine-name">⚡ Unity:</span>
+                  <p class="import-step-text">
+                    Colocá el <code>.glb</code> en la carpeta <code>Assets/</code> de tu proyecto. Arrastralo directamente a la jerarquía de tu escena o conviértelo en Prefab.
+                  </p>
+                </div>
+                <div class="import-step-card">
+                  <span class="import-engine-name">🎨 Blender:</span>
+                  <p class="import-step-text">
+                    En Blender andá a <code>Archivo &gt; Importar &gt; glTF 2.0 (.glb)</code>. Conserva las coordenadas UV y el origen centrado en el suelo.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Reporte de Problemas de este Modelo -->
+            <div class="report-problem-box">
+              <span class="report-problem-text">¿Encontraste algún problema o defecto en este modelo?</span>
+              <a 
+                href={`https://github.com/FrancisCuarto/MODELCODER/issues/new?title=%5BReporte%5D+${encodeURIComponent(gen.name)}&body=Familia%3A+${gen.family}%0AVersi%C3%B3n%3A+${gen.version}%0A%0A%C2%BFQu%C3%A9+problema+encontraste+en+el+modelo+o+descarga%3F%3A%0A`}
+                target="_blank" 
+                rel="noopener noreferrer"
+                class="report-problem-link"
+              >
+                Reportar error en GitHub ➜
+              </a>
+            </div>
           </div>
         </div>
       </div>
@@ -481,6 +484,31 @@ gen.parameters.forEach((param: any) => {
   const downloadGlbBtn = document.querySelector('a[download$=".glb"]') as HTMLAnchorElement;
   const liveGenBtn = document.getElementById('live-generate-btn') as HTMLButtonElement;
   const liveStatus = document.getElementById('live-generate-status');
+  const downloadSuccessBox = document.getElementById('download-success-box');
+  const toggleImportGuideBtn = document.getElementById('toggle-import-guide-btn');
+  const importGuidePanel = document.getElementById('import-guide-panel');
+  const viewerStatusText = document.getElementById('viewer-status-text');
+
+  toggleImportGuideBtn?.addEventListener('click', () => {
+    if (importGuidePanel) {
+      const isClosed = importGuidePanel.style.display === 'none';
+      importGuidePanel.style.display = isClosed ? 'flex' : 'none';
+      if (toggleImportGuideBtn) {
+        toggleImportGuideBtn.textContent = isClosed 
+          ? '▲ OCULTAR GUÍA DE IMPORTACIÓN' 
+          : '📖 ¿CÓMO USO ESTE ARCHIVO EN MI MOTOR?';
+      }
+    }
+  });
+
+  function showDownloadSuccess() {
+    if (downloadSuccessBox) {
+      downloadSuccessBox.style.display = 'block';
+    }
+    if (viewerStatusText) {
+      viewerStatusText.textContent = '✅ Modelo personalizado descargado correctamente';
+    }
+  }
 
   // URL family from path
   const pathParts = window.location.pathname.split('/').filter(Boolean);
@@ -790,15 +818,17 @@ gen.parameters.forEach((param: any) => {
         a.download = `${familyName}.glb`;
         a.click();
       }
+      showDownloadSuccess();
     } catch (err) {
       // Fallback to base model
       const a = document.createElement('a');
       a.href = `/models/${familyName}.glb`;
       a.download = `${familyName}.glb`;
       a.click();
+      showDownloadSuccess();
     } finally {
       downloadCustomGlbBtn.disabled = false;
-      downloadCustomGlbBtn.textContent = '💾 DESCARGAR GLB PERSONALIZADO';
+      downloadCustomGlbBtn.textContent = '💾 DESCARGAR MODELO PERSONALIZADO (.GLB)';
     }
   });
 
@@ -1003,29 +1033,48 @@ gen.parameters.forEach((param: any) => {
 </script>
 
 <style>
-  /* Quick Direct Download Bar under Viewport */
-  .viewport-quick-bar {
+  /* Live Telemetry & Status Bar under Viewport */
+  .viewport-status-bar {
     padding: 0.85rem 1rem;
     background: #080d1a;
     border-top: 2px solid var(--ps1-steel);
     display: flex;
     flex-direction: column;
+    gap: 0.45rem;
+  }
+
+  .status-indicator-row {
+    display: flex;
+    align-items: center;
     gap: 0.5rem;
   }
 
-  .btn-quick-dl {
-    width: 100%;
-    font-size: 0.85rem;
-    padding: 0.7rem;
-    text-shadow: none;
+  .status-dot-pulse {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--ps1-green);
+    box-shadow: 0 0 8px var(--ps1-green);
+    animation: statusPulse 2s infinite ease-in-out;
+  }
+
+  @keyframes statusPulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.85); }
+  }
+
+  .status-live-text {
+    font-family: var(--font-pixel);
+    font-size: 0.7rem;
+    color: var(--ps1-cyan);
+    letter-spacing: 0.04em;
   }
 
   .viewport-hint {
     font-size: 0.78rem;
     color: var(--text-dim);
     margin: 0;
-    text-align: center;
-    line-height: 1.4;
+    line-height: 1.45;
   }
 
   /* Model Info Header Card */
@@ -1481,15 +1530,63 @@ gen.parameters.forEach((param: any) => {
     font-family: var(--font-mono);
   }
 
-  .action-buttons-box {
+  /* Advanced Tools Accordion (Developer Section) */
+  .advanced-tools-window {
     margin-top: 1rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.65rem;
+    background: #080c16;
   }
 
-  .cli-window {
-    margin-top: 1.25rem;
+  .advanced-tools-summary {
+    cursor: pointer;
+    user-select: none;
+    font-size: 0.72rem;
+  }
+
+  .advanced-tools-summary:hover {
+    color: var(--ps1-gold-light);
+  }
+
+  .advanced-tools-body {
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    background: #060912;
+  }
+
+  .advanced-tools-intro {
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    margin: 0;
+    line-height: 1.45;
+  }
+
+  .advanced-sub-block {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .advanced-sub-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .sub-title {
+    font-family: var(--font-pixel);
+    font-size: 0.68rem;
+    color: var(--ps1-cyan);
+  }
+
+  .btn-sm {
+    font-size: 0.65rem;
+    padding: 0.25rem 0.55rem;
+  }
+
+  .cli-box {
+    padding: 0.6rem;
+    background: #04060c;
   }
 
   .cli-code {
@@ -1502,54 +1599,173 @@ gen.parameters.forEach((param: any) => {
     user-select: all;
   }
 
-  .live-status-box {
-    padding: 0.55rem 0.75rem;
-    border: 2px inset var(--ps1-steel);
-    font-family: var(--font-mono);
-    font-size: 0.78rem;
-    line-height: 1.4;
+  .advanced-footer-row {
+    display: flex;
+    gap: 0.65rem;
+    flex-wrap: wrap;
+    margin-top: 0.25rem;
   }
 
-  .status-loading {
-    background: #061824;
-    border-color: var(--ps1-cyan-dim);
-    color: var(--ps1-cyan);
+  /* Single Unequivocal Download Section */
+  .download-section-box {
+    margin-top: 1.25rem;
+    padding-top: 1rem;
+    border-top: 2px solid var(--ps1-steel);
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
   }
 
-  .status-success {
-    background: #082110;
-    border-color: var(--ps1-green-dim);
-    color: var(--ps1-green);
+  .btn-download-hero {
+    width: 100%;
+    font-size: 0.88rem;
+    padding: 0.85rem 1rem;
+    text-shadow: none;
+    box-shadow: 2px 2px 0px #000;
   }
 
-  .status-info {
-    background: #141b29;
-    border-color: var(--ps1-steel-light);
-    color: #e0e8f5;
+  .secondary-download-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    padding: 0.3rem 0.5rem;
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px dashed var(--ps1-steel);
   }
 
-  .worker-config-details {
-    margin-top: 0.5rem;
-    border: 1px solid var(--ps1-steel);
-    background: #080b14;
-    padding: 0.4rem;
-  }
-
-  .worker-config-summary {
-    font-family: var(--font-pixel);
-    font-size: 0.68rem;
+  .secondary-download-label {
+    font-size: 0.72rem;
     color: var(--text-dim);
-    cursor: pointer;
   }
 
-  .worker-config-summary:hover {
+  .secondary-download-link {
+    font-size: 0.72rem;
+    color: var(--ps1-cyan);
+    text-decoration: underline;
+    font-family: var(--font-mono);
+  }
+
+  .secondary-download-link:hover {
     color: var(--ps1-gold);
   }
 
-  .worker-config-box {
-    margin-top: 0.5rem;
-    padding-top: 0.5rem;
-    border-top: 1px dashed var(--ps1-steel);
+  /* Post-Download Confirmation Box */
+  .download-success-box {
+    padding: 0.85rem;
+    background: #051a0d;
+    border: 2px inset var(--ps1-green-dim);
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    animation: fadeInSuccess 0.3s ease-out;
+  }
+
+  @keyframes fadeInSuccess {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .success-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  .success-badge {
+    font-family: var(--font-pixel);
+    font-size: 0.72rem;
+    color: var(--ps1-green);
+    letter-spacing: 0.04em;
+  }
+
+  .success-filename {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: #a0c4aa;
+  }
+
+  .success-message {
+    font-size: 0.82rem;
+    color: #e2f5e8;
+    line-height: 1.45;
+    margin: 0;
+  }
+
+  /* Quick Import Guide */
+  .import-guide-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+    padding: 0.75rem;
+    background: #070c18;
+    border: 1px inset var(--ps1-steel);
+    margin-top: 0.4rem;
+  }
+
+  .import-step-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    padding-bottom: 0.45rem;
+  }
+
+  .import-step-card:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+
+  .import-engine-name {
+    font-family: var(--font-pixel);
+    font-size: 0.7rem;
+    color: var(--ps1-gold);
+    margin: 0;
+  }
+
+  .import-step-text {
+    font-size: 0.78rem;
+    color: #c2cfdf;
+    line-height: 1.4;
+    margin: 0;
+  }
+
+  .import-step-text code {
+    background: #000000;
+    color: var(--ps1-cyan);
+    padding: 0.1rem 0.3rem;
+  }
+
+  /* Report Problem */
+  .report-problem-box {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    padding: 0.5rem 0.65rem;
+    background: #090e1c;
+    border: 1px solid var(--ps1-steel);
+    margin-top: 0.4rem;
+  }
+
+  .report-problem-text {
+    font-size: 0.72rem;
+    color: var(--text-dim);
+  }
+
+  .report-problem-link {
+    font-size: 0.72rem;
+    color: var(--ps1-gold);
+    text-decoration: underline;
+    font-family: var(--font-mono);
+  }
+
+  .report-problem-link:hover {
+    color: #ffffff;
   }
 
   @media (max-width: 1024px) {

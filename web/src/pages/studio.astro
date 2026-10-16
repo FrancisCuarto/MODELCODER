@@ -88,6 +88,24 @@ import catalog from '../data/catalog.json';
           </div>
         </div>
 
+        <!-- AI Scope and Pre-requisites Information -->
+        <div class="ai-briefing-box ps1-inset">
+          <div class="briefing-lead">
+            <span class="briefing-badge">[ CREACIÓN POR TEXTO ]</span>
+            <strong class="briefing-title">Creá un generador 3D describiéndolo con tus palabras:</strong>
+          </div>
+          <p class="briefing-text">
+            Por ejemplo: <em>"una consola metálica con tres pantallas y botones rojos"</em> o <em>"cápsula vertical con visor térmico"</em>. La IA genera el código Python paramétrico y el manifiesto con estética retro PSX (bajo conteo de polígonos).
+          </p>
+          <div class="briefing-req-row">
+            <span class="req-label">⚙️ Requisito:</span>
+            <span class="req-desc">Clave gratuita de <strong>Google AI Studio</strong> (se guarda de forma segura únicamente en tu navegador).</span>
+            <button type="button" id="btn-quick-key-open" class="btn btn-outline" style="font-size: 0.65rem; padding: 0.2rem 0.5rem;">
+              🔑 Configurar Clave
+            </button>
+          </div>
+        </div>
+
         <!-- Prompt Input and Action Row -->
         <div class="ai-prompt-row">
           <div class="prompt-input-wrap">
@@ -1075,6 +1093,14 @@ Nuevo generador procedural creado con ModelCoder Web Studio.
     geminiApiKeyInput.value = savedGeminiKey;
   }
 
+  const btnQuickKeyOpen = document.getElementById('btn-quick-key-open');
+  btnQuickKeyOpen?.addEventListener('click', () => {
+    if (geminiKeyDrawer) {
+      geminiKeyDrawer.style.display = 'block';
+      geminiApiKeyInput?.focus();
+    }
+  });
+
   toggleGeminiKeyBtn?.addEventListener('click', () => {
     if (geminiKeyDrawer) {
       const isHidden = geminiKeyDrawer.style.display === 'none';
@@ -1909,6 +1935,70 @@ Responde ÚNICAMENTE con el objeto JSON estructurado.`;
     padding: 0.75rem;
     background: #050810;
     border: 1px dashed rgba(255, 204, 0, 0.4);
+  }
+
+  /* AI Briefing Box */
+  .ai-briefing-box {
+    padding: 0.85rem 1rem;
+    background: #060a16;
+    border: 1px solid var(--ps1-steel);
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .briefing-lead {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .briefing-badge {
+    font-family: var(--font-pixel);
+    font-size: 0.65rem;
+    color: var(--ps1-cyan);
+    letter-spacing: 0.04em;
+  }
+
+  .briefing-title {
+    font-size: 0.82rem;
+    color: #ffffff;
+    font-family: var(--font-pixel);
+  }
+
+  .briefing-text {
+    font-size: 0.8rem;
+    color: #a0b2c8;
+    line-height: 1.45;
+    margin: 0;
+  }
+
+  .briefing-text em {
+    color: var(--ps1-gold);
+    font-style: normal;
+  }
+
+  .briefing-req-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-top: 0.25rem;
+    padding-top: 0.4rem;
+    border-top: 1px dashed rgba(255, 255, 255, 0.08);
+  }
+
+  .req-label {
+    font-family: var(--font-pixel);
+    font-size: 0.65rem;
+    color: var(--ps1-gold);
+  }
+
+  .req-desc {
+    font-size: 0.76rem;
+    color: var(--text-dim);
+    flex: 1;
   }
 
   .ai-prompt-row {

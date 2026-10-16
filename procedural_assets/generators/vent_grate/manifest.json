@@ -2,8 +2,8 @@
   "$schema": "https://raw.githubusercontent.com/usuario/modelcoder-community/main/schemas/generator-v1.json",
   "id": "below_nominal.fixtures.vent_grate",
   "version": "1.0.0",
-  "name": "Vent Grate",
-  "description": "Generador procedural paramétrico de vent grate para Below Nominal.",
+  "name": "Rejilla de Ventilación",
+  "description": "Enrejado metálico de lamas para conductos de aire y filtrado. Podés personalizar el ancho, alto y ángulo de las ranuras para descargar en formato GLB.",
   "author": {
     "name": "Below Nominal Team",
     "github": "below-nominal",
@@ -25,7 +25,7 @@
   "parameters": [
     {
       "key": "seed",
-      "label": "Seed",
+      "label": "Semilla Aleatoria",
       "type": "seed",
       "default": 42,
       "group": "Rendimiento",
@@ -35,7 +35,7 @@
     },
     {
       "key": "target_tri_budget",
-      "label": "Target Tri Budget",
+      "label": "Presupuesto de Triángulos",
       "type": "int",
       "default": 280,
       "group": "Rendimiento",
@@ -44,59 +44,59 @@
     },
     {
       "key": "name",
-      "label": "Name",
+      "label": "Nombre de Instancia",
       "type": "string",
       "default": "vent_grate",
       "group": "General"
     },
     {
       "key": "wear_level",
-      "label": "Wear Level",
+      "label": "Nivel de Desgaste",
       "type": "float",
       "default": 0.7,
       "group": "Materiales",
-      "min": 0.0,
-      "max": 1.0,
+      "min": 0,
+      "max": 1,
       "step": 0.05
     },
     {
       "key": "add_collision_mesh",
-      "label": "Add Collision Mesh",
+      "label": "Generar Colisión",
       "type": "boolean",
       "default": false,
-      "group": "General"
+      "group": "Opciones de Exportación"
     },
     {
       "key": "collision_type",
-      "label": "Collision Type",
+      "label": "Tipo de Colisión",
       "type": "string",
       "default": "box",
-      "group": "General"
+      "group": "Opciones de Exportación"
     },
     {
       "key": "collision_suffix",
-      "label": "Collision Suffix",
+      "label": "Sufijo de Colisión",
       "type": "string",
       "default": "-convcolonly",
-      "group": "General"
+      "group": "Opciones de Exportación"
     },
     {
       "key": "pivot_rule",
-      "label": "Pivot Rule",
+      "label": "Regla de Pivote",
       "type": "string",
       "default": "floor_center",
-      "group": "General"
+      "group": "Opciones de Exportación"
     },
     {
       "key": "export_subcomponents",
-      "label": "Export Subcomponents",
+      "label": "Exportar Subcomponentes",
       "type": "boolean",
       "default": false,
-      "group": "General"
+      "group": "Opciones de Exportación"
     },
     {
       "key": "palette_name",
-      "label": "Palette Name",
+      "label": "Paleta de Color",
       "type": "enum",
       "default": "industrial_hazard",
       "group": "Materiales",
@@ -125,11 +125,11 @@
     },
     {
       "key": "emission_scale",
-      "label": "Emission Scale",
+      "label": "Intensidad de Emisión",
       "type": "float",
-      "default": 1.0,
-      "group": "General",
-      "min": 0.0,
+      "default": 1,
+      "group": "Materiales",
+      "min": 0,
       "step": 0.05
     },
     {
@@ -141,20 +141,20 @@
     },
     {
       "key": "width",
-      "label": "Width",
+      "label": "Ancho (m)",
       "type": "float",
       "default": 0.6,
       "group": "Dimensiones",
-      "min": 0.0,
+      "min": 0,
       "step": 0.05
     },
     {
       "key": "height",
-      "label": "Height",
+      "label": "Alto (m)",
       "type": "float",
       "default": 0.6,
       "group": "Dimensiones",
-      "min": 0.0,
+      "min": 0,
       "step": 0.05
     },
     {
@@ -163,7 +163,7 @@
       "type": "float",
       "default": 0.05,
       "group": "General",
-      "min": 0.0,
+      "min": 0,
       "step": 0.05
     },
     {
@@ -172,7 +172,7 @@
       "type": "float",
       "default": 0.25,
       "group": "General",
-      "min": 0.0,
+      "min": 0,
       "step": 0.05
     },
     {
@@ -193,9 +193,9 @@
       "key": "hanging_angle",
       "label": "Hanging Angle",
       "type": "float",
-      "default": 28.0,
+      "default": 28,
       "group": "General",
-      "min": 0.0,
+      "min": 0,
       "step": 0.05
     },
     {
@@ -218,9 +218,9 @@
       "key": "fan_rotation_deg",
       "label": "Fan Rotation Deg",
       "type": "float",
-      "default": 15.0,
+      "default": 15,
       "group": "General",
-      "min": 0.0,
+      "min": 0,
       "step": 0.05
     }
   ],
@@ -240,17 +240,17 @@
         "pivot_rule": "floor_center",
         "export_subcomponents": false,
         "palette_name": "industrial_hazard",
-        "emission_scale": 1.0,
+        "emission_scale": 1,
         "width": 0.6,
         "height": 0.6,
         "frame_depth": 0.05,
         "duct_depth": 0.25,
         "grate_type": "wall_louver",
         "grate_state": "bolted_intact",
-        "hanging_angle": 28.0,
+        "hanging_angle": 28,
         "has_fan_blades": true,
         "fan_blade_count": 4,
-        "fan_rotation_deg": 15.0
+        "fan_rotation_deg": 15
       }
     }
   ],

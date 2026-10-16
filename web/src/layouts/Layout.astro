@@ -5,6 +5,7 @@ interface Props {
 }
 
 const { title, description = "Biblioteca abierta de generadores procedurales 3D para Below Nominal" } = Astro.props;
+import catalog from '../data/catalog.json';
 import '../styles/global.css';
 ---
 
@@ -41,14 +42,13 @@ import '../styles/global.css';
 
         <div class="system-status-indicator" title="Modelos 3D disponibles para personalizar y descargar">
           <span class="status-dot"></span>
-          <span class="status-text">44 MODELOS LISTOS</span>
+          <span class="status-text">{catalog.length} MODELOS DISPONIBLES</span>
         </div>
 
         <nav class="nav-links">
           <a href="/" class="nav-link">&gt; Catálogo</a>
-          <a href="/studio" class="nav-link" style="color: var(--ps1-gold); border-color: var(--ps1-gold);">&gt; Studio 3D</a>
+          <a href="/studio" class="nav-link nav-link-studio" style="color: var(--ps1-gold); border-color: var(--ps1-gold);">&gt; Studio 3D (Crear)</a>
           <a href="/contribute" class="nav-link">&gt; Cómo funciona</a>
-          <a href="/INICIAR_MODELCODER.bat" download="INICIAR_MODELCODER.bat" class="nav-link" style="color: var(--ps1-cyan);" title="Descargar lanzador automatizado para Windows">&gt; Lanzador (.bat)</a>
           <a href="https://github.com/FrancisCuarto/MODELCODER" target="_blank" rel="noopener noreferrer" class="nav-link nav-link-gh" title="Ver código fuente en GitHub">
             &gt; GitHub
           </a>

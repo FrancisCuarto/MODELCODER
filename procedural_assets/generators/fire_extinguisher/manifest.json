@@ -2,8 +2,8 @@
   "$schema": "https://raw.githubusercontent.com/usuario/modelcoder-community/main/schemas/generator-v1.json",
   "id": "below_nominal.fixtures.fire_extinguisher",
   "version": "1.0.0",
-  "name": "Fire Extinguisher",
-  "description": "Generador procedural paramétrico de fire extinguisher para Below Nominal.",
+  "name": "Extintor de Emergencia y Soporte",
+  "description": "Cilindro de extinción de incendios presurizado con manómetro y soporte de pared. Podés ajustar la escala y paleta de seguridad para descargar en formato GLB.",
   "author": {
     "name": "Below Nominal Team",
     "github": "below-nominal",
@@ -25,7 +25,7 @@
   "parameters": [
     {
       "key": "seed",
-      "label": "Seed",
+      "label": "Semilla Aleatoria",
       "type": "seed",
       "default": 42,
       "group": "Rendimiento",
@@ -35,7 +35,7 @@
     },
     {
       "key": "target_tri_budget",
-      "label": "Target Tri Budget",
+      "label": "Presupuesto de Triángulos",
       "type": "int",
       "default": 340,
       "group": "Rendimiento",
@@ -44,59 +44,59 @@
     },
     {
       "key": "name",
-      "label": "Name",
+      "label": "Nombre de Instancia",
       "type": "string",
       "default": "fire_extinguisher",
       "group": "General"
     },
     {
       "key": "wear_level",
-      "label": "Wear Level",
+      "label": "Nivel de Desgaste",
       "type": "float",
       "default": 0.6,
       "group": "Materiales",
-      "min": 0.0,
-      "max": 1.0,
+      "min": 0,
+      "max": 1,
       "step": 0.05
     },
     {
       "key": "add_collision_mesh",
-      "label": "Add Collision Mesh",
+      "label": "Generar Colisión",
       "type": "boolean",
       "default": false,
-      "group": "General"
+      "group": "Opciones de Exportación"
     },
     {
       "key": "collision_type",
-      "label": "Collision Type",
+      "label": "Tipo de Colisión",
       "type": "string",
       "default": "box",
-      "group": "General"
+      "group": "Opciones de Exportación"
     },
     {
       "key": "collision_suffix",
-      "label": "Collision Suffix",
+      "label": "Sufijo de Colisión",
       "type": "string",
       "default": "-convcolonly",
-      "group": "General"
+      "group": "Opciones de Exportación"
     },
     {
       "key": "pivot_rule",
-      "label": "Pivot Rule",
+      "label": "Regla de Pivote",
       "type": "string",
       "default": "floor_center",
-      "group": "General"
+      "group": "Opciones de Exportación"
     },
     {
       "key": "export_subcomponents",
-      "label": "Export Subcomponents",
+      "label": "Exportar Subcomponentes",
       "type": "boolean",
       "default": false,
-      "group": "General"
+      "group": "Opciones de Exportación"
     },
     {
       "key": "palette_name",
-      "label": "Palette Name",
+      "label": "Paleta de Color",
       "type": "enum",
       "default": "industrial_hazard",
       "group": "Materiales",
@@ -125,11 +125,11 @@
     },
     {
       "key": "emission_scale",
-      "label": "Emission Scale",
+      "label": "Intensidad de Emisión",
       "type": "float",
-      "default": 1.0,
-      "group": "General",
-      "min": 0.0,
+      "default": 1,
+      "group": "Materiales",
+      "min": 0,
       "step": 0.05
     },
     {
@@ -145,7 +145,7 @@
       "type": "float",
       "default": 0.08,
       "group": "General",
-      "min": 0.0,
+      "min": 0,
       "step": 0.05
     },
     {
@@ -154,7 +154,7 @@
       "type": "float",
       "default": 0.45,
       "group": "General",
-      "min": 0.0,
+      "min": 0,
       "step": 0.05
     },
     {
@@ -170,7 +170,7 @@
       "type": "float",
       "default": 0.36,
       "group": "General",
-      "min": 0.0,
+      "min": 0,
       "step": 0.05
     },
     {
@@ -179,7 +179,7 @@
       "type": "float",
       "default": 0.75,
       "group": "General",
-      "min": 0.0,
+      "min": 0,
       "step": 0.05
     },
     {
@@ -188,7 +188,7 @@
       "type": "float",
       "default": 0.22,
       "group": "General",
-      "min": 0.0,
+      "min": 0,
       "step": 0.05
     },
     {
@@ -236,7 +236,7 @@
         "pivot_rule": "floor_center",
         "export_subcomponents": false,
         "palette_name": "industrial_hazard",
-        "emission_scale": 1.0,
+        "emission_scale": 1,
         "tank_radius": 0.08,
         "tank_height": 0.45,
         "mount_style": "wall_bracket",

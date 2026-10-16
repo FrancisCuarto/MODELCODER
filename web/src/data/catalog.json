@@ -4,7 +4,7 @@
     "family": "access_card_lvl1",
     "name": "Tarjeta de Acceso Nivel 1",
     "version": "1.0.0",
-    "description": "Tarjeta de identificación de seguridad nivel 1 con estética PSX.",
+    "description": "Tarjeta de identificación y pase de seguridad con chip de contacto y banda magnética. Podés personalizar sus medidas de ancho, alto y grosor para descargar en formato GLB.",
     "category": "fixtures",
     "tags": [
       "psx",
@@ -21,7 +21,7 @@
     "parameters": [
       {
         "key": "width",
-        "label": "Ancho",
+        "label": "Ancho (m)",
         "type": "float",
         "default": 0.085,
         "group": "Dimensiones",
@@ -31,7 +31,7 @@
       },
       {
         "key": "height",
-        "label": "Alto",
+        "label": "Alto (m)",
         "type": "float",
         "default": 0.055,
         "group": "Dimensiones",
@@ -41,7 +41,7 @@
       },
       {
         "key": "thickness",
-        "label": "Grosor",
+        "label": "Grosor (m)",
         "type": "float",
         "default": 0.004,
         "group": "Dimensiones",
@@ -73,16 +73,16 @@
     "export_capabilities": {},
     "has_model": true,
     "model_url": "/models/access_card_lvl1.glb",
-    "file_size_bytes": 87404,
-    "source_code": "import bpy\nimport bmesh\nimport math\nfrom ...core.base_generator import BaseAssetGenerator\nfrom ...materials.palette import get_or_create_material\n\nclass AccessCardGenerator(BaseAssetGenerator):\n    def generate(self, config=None) -> bpy.types.Object:\n        if config is not None:\n            self.config = config\n        mesh = bpy.data.meshes.new(\"AccessCard\")\n        obj = bpy.data.objects.new(\"AccessCard\", mesh)\n        bpy.context.collection.objects.link(obj)\n        bm = bmesh.new()\n\n        # Base card dimensions\n        w = self.config.width / 2\n        h = self.config.height / 2\n        t = self.config.thickness / 2\n\n        # Create main body\n        bm_cube = bmesh.ops.create_cube(bm, size=1.0)\n        bmesh.ops.scale(bm, vec=(w, h, t), verts=bm.verts)\n\n        # Create a small hole for the lanyard (PSX style: just a small square cutout)\n        hole_size = 0.005\n        hole_x = w - 0.01\n        hole_y = 0\n        \n        # Simple bevel for corners (low poly)\n        bmesh.ops.bevel(bm, geom=bm.edges, offset=0.002, segments=1, profile=0.5)\n\n        # Add a \"chip\" or \"magnetic stripe\" detail using a separate small cube to keep geometry clean\n        chip_w = self.config.chip_size / 2\n        chip_h = self.config.chip_size / 2\n        chip_t = 0.001\n        \n        import mathutils\n        matrix_chip = mathutils.Matrix.Translation((-w * 0.5, h * 0.3, t))\n        bmesh.ops.create_cube(bm, size=1.0, matrix=matrix_chip)\n        # Scale the last added verts (the chip)\n        chip_verts = [v for v in bm.verts if v.select]\n        # Note: In a real script we'd track indices, here we simplify for the procedural generation\n        \n        bm.to_mesh(mesh)\n        bm.free()\n\n        # Material setup\n        mat = get_or_create_material(self.config.palette_name)\n        if obj.data.materials:\n            obj.data.materials[0] = mat\n        else:\n            obj.data.materials.append(mat)\n\n        if len(obj.data.color_attributes) == 0:\n            obj.data.color_attributes.new(name=\"Col\", type='BYTE_COLOR', domain='CORNER')\n        if len(obj.data.uv_layers) == 0:\n            obj.data.uv_layers.new(name=\"UVMap\")\n\n        self.compact_materials(obj)\n        return obj\n",
+    "file_size_bytes": 89184,
+    "source_code": "import bpy\nimport bmesh\nimport mathutils\nfrom ...core.base_generator import BaseAssetGenerator\nfrom ...core.mesh_builder import MeshBuilder\nfrom ...core.texture_atlas import PS1TextureAtlas\n\nclass AccessCardGenerator(BaseAssetGenerator):\n    \"\"\"\n    Procedural keycard generator with PSX aesthetics, security badge stripes,\n    microchip contact pads and magnetic stripe.\n    \"\"\"\n\n    def generate(self, config=None) -> bpy.types.Object:\n        if config is not None:\n            self.config = config\n        self.clean_context()\n        self.material_manager = self.get_material_manager(self.config)\n        MeshBuilder.set_active_material_manager(self.material_manager)\n\n        mesh = bpy.data.meshes.new(\"AccessCard\")\n        obj = bpy.data.objects.new(\"AccessCard\", mesh)\n        bpy.context.collection.objects.link(obj)\n\n        self.material_manager.assign_to_mesh(obj)\n        m_idx = self.material_manager.material_indices\n\n        bm = bmesh.new()\n        uv_layer = bm.loops.layers.uv.new(\"UVMap\")\n        col_layer = bm.loops.layers.color.new(\"Col\")\n\n        w = self.config.width / 2.0\n        h = self.config.height / 2.0\n        t = self.config.thickness / 2.0\n\n        # Card body (white retro composite plastic)\n        card_rect = PS1TextureAtlas.get_rect(\"painted_metal_white\")\n        card_mat = m_idx.get(\"casing\", 0)\n        card_rgba = (0.88, 0.90, 0.92, 1.0)\n\n        # Base card\n        res = bmesh.ops.create_cube(bm, size=1.0)\n        bmesh.ops.scale(bm, vec=(w, h, t), verts=bm.verts)\n\n        for face in list(bm.faces):\n            if abs(face.normal.z) > 0.5:\n                MeshBuilder.apply_face_attributes(face, card_mat, card_rgba, col_layer)\n                MeshBuilder.apply_face_uv_rect(face, uv_layer, card_rect)\n            else:\n                edge_rect = PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n                MeshBuilder.apply_face_attributes(face, card_mat, (0.45, 0.45, 0.50, 1.0), col_layer)\n                MeshBuilder.apply_face_uv_rect(face, uv_layer, edge_rect)\n\n        # Security level indicator header band\n        header_h = h * 0.35\n        header_mat = m_idx.get(\"hazard_yellow\", m_idx.get(\"sign_caution\", 0))\n        header_rect = PS1TextureAtlas.get_rect(\"caution_label\")\n        header_trans = mathutils.Matrix.Translation((0.0, h - header_h / 2.0, t + 0.0002))\n        h_cube = bmesh.ops.create_cube(bm, size=1.0, matrix=header_trans)\n        h_verts = list(h_cube[\"verts\"])\n        bmesh.ops.scale(bm, vec=(w * 0.95, header_h / 2.0, 0.0002), verts=h_verts)\n        for face in [f for f in bm.faces if any(v in h_verts for v in f.verts)]:\n            MeshBuilder.apply_face_attributes(face, header_mat, (0.92, 0.78, 0.12, 1.0), col_layer)\n            MeshBuilder.apply_face_uv_rect(face, uv_layer, header_rect)\n\n        # Golden security microchip\n        chip_size = getattr(self.config, \"chip_size\", 0.014)\n        chip_mat = m_idx.get(\"brass\", m_idx.get(\"casing\", 0))\n        chip_rect = PS1TextureAtlas.get_rect(\"cartridge_amber\")\n        chip_trans = mathutils.Matrix.Translation((-w * 0.4, -h * 0.15, t + 0.0004))\n        c_cube = bmesh.ops.create_cube(bm, size=1.0, matrix=chip_trans)\n        c_verts = list(c_cube[\"verts\"])\n        bmesh.ops.scale(bm, vec=(chip_size / 2.0, chip_size / 2.0, 0.0002), verts=c_verts)\n        for face in [f for f in bm.faces if any(v in c_verts for v in f.verts)]:\n            MeshBuilder.apply_face_attributes(face, chip_mat, (0.88, 0.68, 0.18, 1.0), col_layer)\n            MeshBuilder.apply_face_uv_rect(face, uv_layer, chip_rect)\n\n        # Magnetic stripe on the back\n        mag_rect = PS1TextureAtlas.get_rect(\"metal_dark_grime\")\n        mag_mat = m_idx.get(\"dark_metal\", m_idx.get(\"casing\", 0))\n        mag_trans = mathutils.Matrix.Translation((0.0, h * 0.4, -(t + 0.0003)))\n        m_cube = bmesh.ops.create_cube(bm, size=1.0, matrix=mag_trans)\n        m_verts = list(m_cube[\"verts\"])\n        bmesh.ops.scale(bm, vec=(w, h * 0.22, 0.0002), verts=m_verts)\n        for face in [f for f in bm.faces if any(v in m_verts for v in f.verts)]:\n            MeshBuilder.apply_face_attributes(face, mag_mat, (0.12, 0.12, 0.14, 1.0), col_layer)\n            MeshBuilder.apply_face_uv_rect(face, uv_layer, mag_rect)\n\n        bm.to_mesh(mesh)\n        bm.free()\n\n        self.compact_materials(obj)\n        return obj\n",
     "config_code": "from dataclasses import dataclass\nfrom ...core.base_config import BaseAssetConfig\n\n@dataclass\nclass AccessCardConfig(BaseAssetConfig):\n    width: float = 0.085\n    height: float = 0.055\n    thickness: float = 0.004\n    chip_size: float = 0.015\n    palette_name: str = \"industrial_hazard\"\n"
   },
   {
     "id": "below_nominal.medical.autopsy_table",
     "family": "autopsy_table",
-    "name": "Mesa de Autopsia y Disección",
+    "name": "Mesa Quirúrgica y Autopsia",
     "version": "1.0.0",
-    "description": "Mesa quirúrgica mortuoria para autopsias y cuarentena con canaleta de drenaje de fluidos, lámpara cenital articulada, correas de contención y frascos de especímenes biológicos.",
+    "description": "Mesa médica mortuoria de acero inoxidable con canal perimetral de drenaje. Podés modificar el largo, ancho y lámpara superior para descargar en formato GLB.",
     "category": "medical",
     "tags": [
       "medical",
@@ -151,7 +151,7 @@
       },
       {
         "key": "height",
-        "label": "Altura (m)",
+        "label": "Alto (m)",
         "type": "float",
         "default": 0.85,
         "group": "Dimensiones",
@@ -227,7 +227,7 @@
       },
       {
         "key": "palette_name",
-        "label": "Paleta de Sector",
+        "label": "Paleta de Color",
         "type": "enum",
         "default": "medbay_clean",
         "group": "Materiales",
@@ -257,7 +257,7 @@
       },
       {
         "key": "wear_level",
-        "label": "Nivel de Desgaste (0 a 1)",
+        "label": "Nivel de Desgaste",
         "type": "float",
         "default": 0.65,
         "group": "Materiales",
@@ -271,7 +271,7 @@
         "label": "Semilla Aleatoria",
         "type": "seed",
         "default": 1337,
-        "group": "Aleatoriedad",
+        "group": "Rendimiento",
         "description": "Semilla generadora determinista"
       }
     ],
@@ -324,9 +324,9 @@
   {
     "id": "below_nominal.furniture.bridge_console_desk",
     "family": "bridge_console_desk",
-    "name": "Bridge Console Desk",
+    "name": "Consola de Mando y Navegación",
     "version": "1.0.0",
-    "description": "Generador procedural paramétrico de bridge console desk para Below Nominal.",
+    "description": "Escritorio de control con pantallas anguladas y paneles de navegación. Podés ajustar el nivel de desgaste, paleta y accesorios para descargar en formato GLB.",
     "category": "furniture",
     "tags": [
       "furniture",
@@ -348,7 +348,7 @@
     "parameters": [
       {
         "key": "seed",
-        "label": "Seed",
+        "label": "Semilla Aleatoria",
         "type": "seed",
         "default": 42,
         "group": "Rendimiento",
@@ -358,7 +358,7 @@
       },
       {
         "key": "target_tri_budget",
-        "label": "Target Tri Budget",
+        "label": "Presupuesto de Triángulos",
         "type": "int",
         "default": 380,
         "group": "Rendimiento",
@@ -367,14 +367,14 @@
       },
       {
         "key": "name",
-        "label": "Name",
+        "label": "Nombre de Instancia",
         "type": "string",
         "default": "asset",
         "group": "General"
       },
       {
         "key": "wear_level",
-        "label": "Wear Level",
+        "label": "Nivel de Desgaste",
         "type": "float",
         "default": 0.5,
         "group": "Materiales",
@@ -384,42 +384,42 @@
       },
       {
         "key": "add_collision_mesh",
-        "label": "Add Collision Mesh",
+        "label": "Generar Colisión",
         "type": "boolean",
         "default": false,
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "collision_type",
-        "label": "Collision Type",
+        "label": "Tipo de Colisión",
         "type": "string",
         "default": "box",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "collision_suffix",
-        "label": "Collision Suffix",
+        "label": "Sufijo de Colisión",
         "type": "string",
         "default": "-convcolonly",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "pivot_rule",
-        "label": "Pivot Rule",
+        "label": "Regla de Pivote",
         "type": "string",
         "default": "floor_center",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "export_subcomponents",
-        "label": "Export Subcomponents",
+        "label": "Exportar Subcomponentes",
         "type": "boolean",
         "default": false,
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "palette_name",
-        "label": "Palette Name",
+        "label": "Paleta de Color",
         "type": "enum",
         "default": "industrial_hazard",
         "group": "Materiales",
@@ -448,10 +448,10 @@
       },
       {
         "key": "emission_scale",
-        "label": "Emission Scale",
+        "label": "Intensidad de Emisión",
         "type": "float",
-        "default": 1.0,
-        "group": "General",
+        "default": 1,
+        "group": "Materiales",
         "min": 0.0,
         "step": 0.05
       },
@@ -471,7 +471,7 @@
       },
       {
         "key": "width",
-        "label": "Width",
+        "label": "Ancho (m)",
         "type": "float",
         "default": 2.2,
         "group": "Dimensiones",
@@ -480,7 +480,7 @@
       },
       {
         "key": "depth",
-        "label": "Depth",
+        "label": "Profundidad (m)",
         "type": "float",
         "default": 1.6,
         "group": "Dimensiones",
@@ -489,7 +489,7 @@
       },
       {
         "key": "height",
-        "label": "Height",
+        "label": "Alto (m)",
         "type": "float",
         "default": 1.05,
         "group": "Dimensiones",
@@ -549,7 +549,7 @@
           "pivot_rule": "floor_center",
           "export_subcomponents": false,
           "palette_name": "industrial_hazard",
-          "emission_scale": 1.0,
+          "emission_scale": 1,
           "console_shape": "u_shaped",
           "width": 2.2,
           "depth": 1.6,
@@ -577,9 +577,9 @@
   {
     "id": "below_nominal.furniture.bunk_bed",
     "family": "bunk_bed",
-    "name": "Bunk Bed",
+    "name": "Cama Litera Modular",
     "version": "1.0.0",
-    "description": "Generador procedural paramétrico de bunk bed para Below Nominal.",
+    "description": "Litera metálica de dos niveles con escalera de acceso frontal. Podés ajustar sus medidas, nivel de desgaste y paleta de color para descargar en formato GLB.",
     "category": "furniture",
     "tags": [
       "furniture",
@@ -601,7 +601,7 @@
     "parameters": [
       {
         "key": "seed",
-        "label": "Seed",
+        "label": "Semilla Aleatoria",
         "type": "seed",
         "default": 42,
         "group": "Rendimiento",
@@ -611,7 +611,7 @@
       },
       {
         "key": "target_tri_budget",
-        "label": "Target Tri Budget",
+        "label": "Presupuesto de Triángulos",
         "type": "int",
         "default": 480,
         "group": "Rendimiento",
@@ -620,14 +620,14 @@
       },
       {
         "key": "name",
-        "label": "Name",
+        "label": "Nombre de Instancia",
         "type": "string",
         "default": "asset",
         "group": "General"
       },
       {
         "key": "wear_level",
-        "label": "Wear Level",
+        "label": "Nivel de Desgaste",
         "type": "float",
         "default": 0.5,
         "group": "Materiales",
@@ -637,42 +637,42 @@
       },
       {
         "key": "add_collision_mesh",
-        "label": "Add Collision Mesh",
+        "label": "Generar Colisión",
         "type": "boolean",
         "default": false,
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "collision_type",
-        "label": "Collision Type",
+        "label": "Tipo de Colisión",
         "type": "string",
         "default": "box",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "collision_suffix",
-        "label": "Collision Suffix",
+        "label": "Sufijo de Colisión",
         "type": "string",
         "default": "-convcolonly",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "pivot_rule",
-        "label": "Pivot Rule",
+        "label": "Regla de Pivote",
         "type": "string",
         "default": "floor_center",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "export_subcomponents",
-        "label": "Export Subcomponents",
+        "label": "Exportar Subcomponentes",
         "type": "boolean",
         "default": false,
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "palette_name",
-        "label": "Palette Name",
+        "label": "Paleta de Color",
         "type": "enum",
         "default": "industrial_hazard",
         "group": "Materiales",
@@ -701,10 +701,10 @@
       },
       {
         "key": "emission_scale",
-        "label": "Emission Scale",
+        "label": "Intensidad de Emisión",
         "type": "float",
-        "default": 1.0,
-        "group": "General",
+        "default": 1,
+        "group": "Materiales",
         "min": 0.0,
         "step": 0.05
       },
@@ -724,7 +724,7 @@
       },
       {
         "key": "width",
-        "label": "Width",
+        "label": "Ancho (m)",
         "type": "float",
         "default": 1.05,
         "group": "Dimensiones",
@@ -733,7 +733,7 @@
       },
       {
         "key": "length",
-        "label": "Length",
+        "label": "Largo (m)",
         "type": "float",
         "default": 2.05,
         "group": "Dimensiones",
@@ -742,7 +742,7 @@
       },
       {
         "key": "height",
-        "label": "Height",
+        "label": "Alto (m)",
         "type": "float",
         "default": 2.05,
         "group": "Dimensiones",
@@ -821,7 +821,7 @@
           "pivot_rule": "floor_center",
           "export_subcomponents": false,
           "palette_name": "industrial_hazard",
-          "emission_scale": 1.0,
+          "emission_scale": 1,
           "frame_style": "tubular_metal",
           "width": 1.05,
           "length": 2.05,
@@ -852,9 +852,9 @@
   {
     "id": "below_nominal.infrastructure.cable_bundle",
     "family": "cable_bundle",
-    "name": "Cable Bundle",
+    "name": "Mazo de Cables y Conductos",
     "version": "1.0.0",
-    "description": "Generador procedural paramétrico de cable bundle para Below Nominal.",
+    "description": "Conjunto de cables y canalizaciones industriales adosables a paredes o techos. Podés personalizar el grosor, longitud y paleta de aislamiento para descargar en formato GLB.",
     "category": "infrastructure",
     "tags": [
       "infrastructure",
@@ -876,7 +876,7 @@
     "parameters": [
       {
         "key": "seed",
-        "label": "Seed",
+        "label": "Semilla Aleatoria",
         "type": "seed",
         "default": 42,
         "group": "Rendimiento",
@@ -886,7 +886,7 @@
       },
       {
         "key": "target_tri_budget",
-        "label": "Target Tri Budget",
+        "label": "Presupuesto de Triángulos",
         "type": "int",
         "default": 320,
         "group": "Rendimiento",
@@ -895,14 +895,14 @@
       },
       {
         "key": "name",
-        "label": "Name",
+        "label": "Nombre de Instancia",
         "type": "string",
         "default": "cable_bundle",
         "group": "General"
       },
       {
         "key": "wear_level",
-        "label": "Wear Level",
+        "label": "Nivel de Desgaste",
         "type": "float",
         "default": 0.65,
         "group": "Materiales",
@@ -912,42 +912,42 @@
       },
       {
         "key": "add_collision_mesh",
-        "label": "Add Collision Mesh",
+        "label": "Generar Colisión",
         "type": "boolean",
         "default": false,
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "collision_type",
-        "label": "Collision Type",
+        "label": "Tipo de Colisión",
         "type": "string",
         "default": "box",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "collision_suffix",
-        "label": "Collision Suffix",
+        "label": "Sufijo de Colisión",
         "type": "string",
         "default": "-convcolonly",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "pivot_rule",
-        "label": "Pivot Rule",
+        "label": "Regla de Pivote",
         "type": "string",
         "default": "floor_center",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "export_subcomponents",
-        "label": "Export Subcomponents",
+        "label": "Exportar Subcomponentes",
         "type": "boolean",
         "default": false,
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "palette_name",
-        "label": "Palette Name",
+        "label": "Paleta de Color",
         "type": "enum",
         "default": "industrial_hazard",
         "group": "Materiales",
@@ -976,10 +976,10 @@
       },
       {
         "key": "emission_scale",
-        "label": "Emission Scale",
+        "label": "Intensidad de Emisión",
         "type": "float",
-        "default": 1.0,
-        "group": "General",
+        "default": 1,
+        "group": "Materiales",
         "min": 0.0,
         "step": 0.05
       },
@@ -992,9 +992,9 @@
       },
       {
         "key": "length",
-        "label": "Length",
+        "label": "Largo (m)",
         "type": "float",
-        "default": 2.0,
+        "default": 2,
         "group": "Dimensiones",
         "min": 0.0,
         "step": 0.05
@@ -1061,8 +1061,8 @@
           "pivot_rule": "floor_center",
           "export_subcomponents": false,
           "palette_name": "industrial_hazard",
-          "emission_scale": 1.0,
-          "length": 2.0,
+          "emission_scale": 1,
+          "length": 2,
           "bundle_type": "hanging_umbilical",
           "cable_count": 4,
           "max_sag": 0.28,
@@ -1087,9 +1087,9 @@
   {
     "id": "below_nominal.fixtures.canteen_counter",
     "family": "canteen_counter",
-    "name": "Canteen Counter",
+    "name": "Mostrador de Comedor y Cafetería",
     "version": "1.0.0",
-    "description": "Generador procedural paramétrico de canteen counter para Below Nominal.",
+    "description": "Mostrador de servicio con bandeja y división para zonas de descanso o cafeterías. Podés ajustar dimensiones y paleta para descargar en formato GLB.",
     "category": "fixtures",
     "tags": [
       "fixtures",
@@ -1111,7 +1111,7 @@
     "parameters": [
       {
         "key": "seed",
-        "label": "Seed",
+        "label": "Semilla Aleatoria",
         "type": "seed",
         "default": 42,
         "group": "Rendimiento",
@@ -1121,7 +1121,7 @@
       },
       {
         "key": "target_tri_budget",
-        "label": "Target Tri Budget",
+        "label": "Presupuesto de Triángulos",
         "type": "int",
         "default": 320,
         "group": "Rendimiento",
@@ -1130,14 +1130,14 @@
       },
       {
         "key": "name",
-        "label": "Name",
+        "label": "Nombre de Instancia",
         "type": "string",
         "default": "asset",
         "group": "General"
       },
       {
         "key": "wear_level",
-        "label": "Wear Level",
+        "label": "Nivel de Desgaste",
         "type": "float",
         "default": 0.5,
         "group": "Materiales",
@@ -1147,42 +1147,42 @@
       },
       {
         "key": "add_collision_mesh",
-        "label": "Add Collision Mesh",
+        "label": "Generar Colisión",
         "type": "boolean",
         "default": false,
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "collision_type",
-        "label": "Collision Type",
+        "label": "Tipo de Colisión",
         "type": "string",
         "default": "box",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "collision_suffix",
-        "label": "Collision Suffix",
+        "label": "Sufijo de Colisión",
         "type": "string",
         "default": "-convcolonly",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "pivot_rule",
-        "label": "Pivot Rule",
+        "label": "Regla de Pivote",
         "type": "string",
         "default": "floor_center",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "export_subcomponents",
-        "label": "Export Subcomponents",
+        "label": "Exportar Subcomponentes",
         "type": "boolean",
         "default": false,
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "palette_name",
-        "label": "Palette Name",
+        "label": "Paleta de Color",
         "type": "enum",
         "default": "industrial_hazard",
         "group": "Materiales",
@@ -1211,10 +1211,10 @@
       },
       {
         "key": "emission_scale",
-        "label": "Emission Scale",
+        "label": "Intensidad de Emisión",
         "type": "float",
-        "default": 1.0,
-        "group": "General",
+        "default": 1,
+        "group": "Materiales",
         "min": 0.0,
         "step": 0.05
       },
@@ -1234,7 +1234,7 @@
       },
       {
         "key": "width",
-        "label": "Width",
+        "label": "Ancho (m)",
         "type": "float",
         "default": 1.8,
         "group": "Dimensiones",
@@ -1243,7 +1243,7 @@
       },
       {
         "key": "depth",
-        "label": "Depth",
+        "label": "Profundidad (m)",
         "type": "float",
         "default": 0.8,
         "group": "Dimensiones",
@@ -1252,7 +1252,7 @@
       },
       {
         "key": "height",
-        "label": "Height",
+        "label": "Alto (m)",
         "type": "float",
         "default": 1.1,
         "group": "Dimensiones",
@@ -1296,7 +1296,7 @@
           "pivot_rule": "floor_center",
           "export_subcomponents": false,
           "palette_name": "industrial_hazard",
-          "emission_scale": 1.0,
+          "emission_scale": 1,
           "counter_type": "service_hatch",
           "width": 1.8,
           "depth": 0.8,
@@ -1322,9 +1322,9 @@
   {
     "id": "below_nominal.medical.chemical_cabinet",
     "family": "chemical_cabinet",
-    "name": "Chemical Cabinet",
+    "name": "Gabinete de Químicos y Reactivos",
     "version": "1.0.0",
-    "description": "Generador procedural paramétrico de chemical cabinet para Below Nominal.",
+    "description": "Armario metálico reforzado para almacenamiento de sustancias y reactivos de laboratorio. Podés ajustar sus dimensiones y puertas para descargar en formato GLB.",
     "category": "medical",
     "tags": [
       "medical",
@@ -1346,7 +1346,7 @@
     "parameters": [
       {
         "key": "seed",
-        "label": "Seed",
+        "label": "Semilla Aleatoria",
         "type": "seed",
         "default": 42,
         "group": "Rendimiento",
@@ -1356,7 +1356,7 @@
       },
       {
         "key": "target_tri_budget",
-        "label": "Target Tri Budget",
+        "label": "Presupuesto de Triángulos",
         "type": "int",
         "default": 450,
         "group": "Rendimiento",
@@ -1365,14 +1365,14 @@
       },
       {
         "key": "name",
-        "label": "Name",
+        "label": "Nombre de Instancia",
         "type": "string",
         "default": "asset",
         "group": "General"
       },
       {
         "key": "wear_level",
-        "label": "Wear Level",
+        "label": "Nivel de Desgaste",
         "type": "float",
         "default": 0.5,
         "group": "Materiales",
@@ -1382,42 +1382,42 @@
       },
       {
         "key": "add_collision_mesh",
-        "label": "Add Collision Mesh",
+        "label": "Generar Colisión",
         "type": "boolean",
         "default": false,
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "collision_type",
-        "label": "Collision Type",
+        "label": "Tipo de Colisión",
         "type": "string",
         "default": "box",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "collision_suffix",
-        "label": "Collision Suffix",
+        "label": "Sufijo de Colisión",
         "type": "string",
         "default": "-convcolonly",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "pivot_rule",
-        "label": "Pivot Rule",
+        "label": "Regla de Pivote",
         "type": "string",
         "default": "floor_center",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "export_subcomponents",
-        "label": "Export Subcomponents",
+        "label": "Exportar Subcomponentes",
         "type": "boolean",
         "default": false,
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "palette_name",
-        "label": "Palette Name",
+        "label": "Paleta de Color",
         "type": "enum",
         "default": "industrial_hazard",
         "group": "Materiales",
@@ -1446,10 +1446,10 @@
       },
       {
         "key": "emission_scale",
-        "label": "Emission Scale",
+        "label": "Intensidad de Emisión",
         "type": "float",
-        "default": 1.0,
-        "group": "General",
+        "default": 1,
+        "group": "Materiales",
         "min": 0.0,
         "step": 0.05
       },
@@ -1469,7 +1469,7 @@
       },
       {
         "key": "width",
-        "label": "Width",
+        "label": "Ancho (m)",
         "type": "float",
         "default": 0.9,
         "group": "Dimensiones",
@@ -1478,7 +1478,7 @@
       },
       {
         "key": "height",
-        "label": "Height",
+        "label": "Alto (m)",
         "type": "float",
         "default": 1.8,
         "group": "Dimensiones",
@@ -1487,7 +1487,7 @@
       },
       {
         "key": "depth",
-        "label": "Depth",
+        "label": "Profundidad (m)",
         "type": "float",
         "default": 0.45,
         "group": "Dimensiones",
@@ -1540,7 +1540,7 @@
           "pivot_rule": "floor_center",
           "export_subcomponents": false,
           "palette_name": "industrial_hazard",
-          "emission_scale": 1.0,
+          "emission_scale": 1,
           "cabinet_type": "tall_two_door",
           "width": 0.9,
           "height": 1.8,
@@ -1569,7 +1569,7 @@
     "family": "crash_cart",
     "name": "Carro de Paro / Emergencia Médica",
     "version": "1.0.0",
-    "description": "Carro de reanimación hospitalario industrial con cajones extensibles escalonados, monitor desfibrilador CRT superior abombado, ruedas pivotantes y bastidor para cilindros de oxígeno.",
+    "description": "Carro hospitalario rodante de reanimación con cajones modulares y monitor superior. Podés configurar la cantidad de gavetas y paleta de color para descargar en formato GLB.",
     "category": "medical",
     "tags": [
       "medical",
@@ -1711,7 +1711,7 @@
       },
       {
         "key": "body_color_preset",
-        "label": "Pintura de Chasis",
+        "label": "Paleta de Color",
         "type": "enum",
         "default": "red_emergency",
         "group": "Materiales",
@@ -1733,7 +1733,7 @@
       },
       {
         "key": "palette_name",
-        "label": "Paleta de Sector",
+        "label": "Paleta de Color",
         "type": "enum",
         "default": "medbay_clean",
         "group": "Materiales",
@@ -1763,7 +1763,7 @@
       },
       {
         "key": "wear_level",
-        "label": "Nivel de Desgaste (0 a 1)",
+        "label": "Nivel de Desgaste",
         "type": "float",
         "default": 0.65,
         "group": "Materiales",
@@ -1777,7 +1777,7 @@
         "label": "Semilla Aleatoria",
         "type": "seed",
         "default": 1337,
-        "group": "Aleatoriedad",
+        "group": "Rendimiento",
         "description": "Semilla generadora determinista"
       }
     ],
@@ -1828,9 +1828,9 @@
   {
     "id": "below_nominal.infrastructure.crate",
     "family": "crate",
-    "name": "Crate",
+    "name": "Contenedor de Carga Modular",
     "version": "1.0.0",
-    "description": "Generador procedural paramétrico de crate para Below Nominal.",
+    "description": "Caja de almacenamiento y carga presurizada con esquinas reforzadas. Podés personalizar las medidas de ancho, largo y alto, nivel de desgaste y paleta para descargar en formato GLB.",
     "category": "infrastructure",
     "tags": [
       "infrastructure",
@@ -1852,7 +1852,7 @@
     "parameters": [
       {
         "key": "seed",
-        "label": "Seed",
+        "label": "Semilla Aleatoria",
         "type": "seed",
         "default": 42,
         "group": "Rendimiento",
@@ -1862,7 +1862,7 @@
       },
       {
         "key": "target_tri_budget",
-        "label": "Target Tri Budget",
+        "label": "Presupuesto de Triángulos",
         "type": "int",
         "default": 340,
         "group": "Rendimiento",
@@ -1871,14 +1871,14 @@
       },
       {
         "key": "name",
-        "label": "Name",
+        "label": "Nombre de Instancia",
         "type": "string",
         "default": "crate",
         "group": "General"
       },
       {
         "key": "wear_level",
-        "label": "Wear Level",
+        "label": "Nivel de Desgaste",
         "type": "float",
         "default": 0.5,
         "group": "Materiales",
@@ -1888,42 +1888,42 @@
       },
       {
         "key": "add_collision_mesh",
-        "label": "Add Collision Mesh",
+        "label": "Generar Colisión",
         "type": "boolean",
         "default": false,
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "collision_type",
-        "label": "Collision Type",
+        "label": "Tipo de Colisión",
         "type": "string",
         "default": "box",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "collision_suffix",
-        "label": "Collision Suffix",
+        "label": "Sufijo de Colisión",
         "type": "string",
         "default": "-convcolonly",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "pivot_rule",
-        "label": "Pivot Rule",
+        "label": "Regla de Pivote",
         "type": "string",
         "default": "floor_center",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "export_subcomponents",
-        "label": "Export Subcomponents",
+        "label": "Exportar Subcomponentes",
         "type": "boolean",
         "default": false,
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "palette_name",
-        "label": "Palette Name",
+        "label": "Paleta de Color",
         "type": "enum",
         "default": "industrial_hazard",
         "group": "Materiales",
@@ -1952,10 +1952,10 @@
       },
       {
         "key": "emission_scale",
-        "label": "Emission Scale",
+        "label": "Intensidad de Emisión",
         "type": "float",
-        "default": 1.0,
-        "group": "General",
+        "default": 1,
+        "group": "Materiales",
         "min": 0.0,
         "step": 0.05
       },
@@ -1982,7 +1982,7 @@
       },
       {
         "key": "width",
-        "label": "Width",
+        "label": "Ancho (m)",
         "type": "float",
         "default": 0.8,
         "group": "Dimensiones",
@@ -1991,7 +1991,7 @@
       },
       {
         "key": "height",
-        "label": "Height",
+        "label": "Alto (m)",
         "type": "float",
         "default": 0.65,
         "group": "Dimensiones",
@@ -2000,7 +2000,7 @@
       },
       {
         "key": "depth",
-        "label": "Depth",
+        "label": "Profundidad (m)",
         "type": "float",
         "default": 0.6,
         "group": "Dimensiones",
@@ -2051,7 +2051,7 @@
           "pivot_rule": "floor_center",
           "export_subcomponents": false,
           "palette_name": "industrial_hazard",
-          "emission_scale": 1.0,
+          "emission_scale": 1,
           "crate_type": "cargo_chest",
           "lid_state": "closed",
           "width": 0.8,
@@ -2079,9 +2079,9 @@
   {
     "id": "below_nominal.furniture.crew_bed",
     "family": "crew_bed",
-    "name": "Crew Bed",
+    "name": "Cama Individual de Tripulación",
     "version": "1.0.0",
-    "description": "Generador procedural paramétrico de crew bed para Below Nominal.",
+    "description": "Cama individual compacta con cajonera inferior para camarotes y dormitorios. Podés regular las medidas, nivel de uso y paleta para descargar en formato GLB.",
     "category": "furniture",
     "tags": [
       "furniture",
@@ -2103,7 +2103,7 @@
     "parameters": [
       {
         "key": "seed",
-        "label": "Seed",
+        "label": "Semilla Aleatoria",
         "type": "seed",
         "default": 42,
         "group": "Rendimiento",
@@ -2113,7 +2113,7 @@
       },
       {
         "key": "target_tri_budget",
-        "label": "Target Tri Budget",
+        "label": "Presupuesto de Triángulos",
         "type": "int",
         "default": 380,
         "group": "Rendimiento",
@@ -2122,14 +2122,14 @@
       },
       {
         "key": "name",
-        "label": "Name",
+        "label": "Nombre de Instancia",
         "type": "string",
         "default": "asset",
         "group": "General"
       },
       {
         "key": "wear_level",
-        "label": "Wear Level",
+        "label": "Nivel de Desgaste",
         "type": "float",
         "default": 0.5,
         "group": "Materiales",
@@ -2139,42 +2139,42 @@
       },
       {
         "key": "add_collision_mesh",
-        "label": "Add Collision Mesh",
+        "label": "Generar Colisión",
         "type": "boolean",
         "default": false,
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "collision_type",
-        "label": "Collision Type",
+        "label": "Tipo de Colisión",
         "type": "string",
         "default": "box",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "collision_suffix",
-        "label": "Collision Suffix",
+        "label": "Sufijo de Colisión",
         "type": "string",
         "default": "-convcolonly",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "pivot_rule",
-        "label": "Pivot Rule",
+        "label": "Regla de Pivote",
         "type": "string",
         "default": "floor_center",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "export_subcomponents",
-        "label": "Export Subcomponents",
+        "label": "Exportar Subcomponentes",
         "type": "boolean",
         "default": false,
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "palette_name",
-        "label": "Palette Name",
+        "label": "Paleta de Color",
         "type": "enum",
         "default": "industrial_hazard",
         "group": "Materiales",
@@ -2203,10 +2203,10 @@
       },
       {
         "key": "emission_scale",
-        "label": "Emission Scale",
+        "label": "Intensidad de Emisión",
         "type": "float",
-        "default": 1.0,
-        "group": "General",
+        "default": 1,
+        "group": "Materiales",
         "min": 0.0,
         "step": 0.05
       },
@@ -2226,16 +2226,16 @@
       },
       {
         "key": "width",
-        "label": "Width",
+        "label": "Ancho (m)",
         "type": "float",
-        "default": 1.0,
+        "default": 1,
         "group": "Dimensiones",
         "min": 0.0,
         "step": 0.05
       },
       {
         "key": "length",
-        "label": "Length",
+        "label": "Largo (m)",
         "type": "float",
         "default": 2.05,
         "group": "Dimensiones",
@@ -2244,7 +2244,7 @@
       },
       {
         "key": "height",
-        "label": "Height",
+        "label": "Alto (m)",
         "type": "float",
         "default": 0.65,
         "group": "Dimensiones",
@@ -2283,7 +2283,7 @@
         "key": "headrest_incline",
         "label": "Headrest Incline",
         "type": "float",
-        "default": 0.0,
+        "default": 0,
         "group": "General",
         "min": 0.0,
         "step": 0.05
@@ -2311,16 +2311,16 @@
           "pivot_rule": "floor_center",
           "export_subcomponents": false,
           "palette_name": "industrial_hazard",
-          "emission_scale": 1.0,
+          "emission_scale": 1,
           "bed_type": "crew_cot",
-          "width": 1.0,
+          "width": 1,
           "length": 2.05,
           "height": 0.65,
           "mattress_state": "made_clean",
           "has_pillow": true,
           "has_under_drawers": true,
           "has_guardrails": false,
-          "headrest_incline": 0.0,
+          "headrest_incline": 0,
           "blanket_color": "station_gray"
         },
         "description": "Configuración base del generador"
@@ -2340,9 +2340,9 @@
   {
     "id": "below_nominal.architecture.door",
     "family": "door",
-    "name": "Door",
+    "name": "Puerta Corrediza Industrial",
     "version": "1.0.0",
-    "description": "Generador procedural paramétrico de door para Below Nominal.",
+    "description": "Puerta corrediza automatizada para mamparas y accesos entre sectores. Podés ajustar el ancho, alto, franjas de peligro y luces de estado para descargar en formato GLB.",
     "category": "architecture",
     "tags": [
       "architecture",
@@ -2364,7 +2364,7 @@
     "parameters": [
       {
         "key": "seed",
-        "label": "Seed",
+        "label": "Semilla Aleatoria",
         "type": "seed",
         "default": 42,
         "group": "Rendimiento",
@@ -2374,7 +2374,7 @@
       },
       {
         "key": "target_tri_budget",
-        "label": "Target Tri Budget",
+        "label": "Presupuesto de Triángulos",
         "type": "int",
         "default": 480,
         "group": "Rendimiento",
@@ -2383,14 +2383,14 @@
       },
       {
         "key": "name",
-        "label": "Name",
+        "label": "Nombre de Instancia",
         "type": "string",
         "default": "station_door",
         "group": "General"
       },
       {
         "key": "wear_level",
-        "label": "Wear Level",
+        "label": "Nivel de Desgaste",
         "type": "float",
         "default": 0.5,
         "group": "Materiales",
@@ -2400,42 +2400,42 @@
       },
       {
         "key": "add_collision_mesh",
-        "label": "Add Collision Mesh",
+        "label": "Generar Colisión",
         "type": "boolean",
         "default": false,
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "collision_type",
-        "label": "Collision Type",
+        "label": "Tipo de Colisión",
         "type": "string",
         "default": "box",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "collision_suffix",
-        "label": "Collision Suffix",
+        "label": "Sufijo de Colisión",
         "type": "string",
         "default": "-convcolonly",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "pivot_rule",
-        "label": "Pivot Rule",
+        "label": "Regla de Pivote",
         "type": "string",
         "default": "floor_center",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "export_subcomponents",
-        "label": "Export Subcomponents",
+        "label": "Exportar Subcomponentes",
         "type": "boolean",
         "default": false,
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "palette_name",
-        "label": "Palette Name",
+        "label": "Paleta de Color",
         "type": "enum",
         "default": "industrial_hazard",
         "group": "Materiales",
@@ -2464,10 +2464,10 @@
       },
       {
         "key": "emission_scale",
-        "label": "Emission Scale",
+        "label": "Intensidad de Emisión",
         "type": "float",
-        "default": 1.0,
-        "group": "General",
+        "default": 1,
+        "group": "Materiales",
         "min": 0.0,
         "step": 0.05
       },
@@ -2487,16 +2487,16 @@
       },
       {
         "key": "width",
-        "label": "Width",
+        "label": "Ancho (m)",
         "type": "float",
-        "default": 2.0,
+        "default": 2,
         "group": "Dimensiones",
         "min": 0.0,
         "step": 0.05
       },
       {
         "key": "height",
-        "label": "Height",
+        "label": "Alto (m)",
         "type": "float",
         "default": 2.4,
         "group": "Dimensiones",
@@ -2525,7 +2525,7 @@
         "key": "open_ratio",
         "label": "Open Ratio",
         "type": "float",
-        "default": 0.0,
+        "default": 0,
         "group": "General",
         "min": 0.0,
         "step": 0.05
@@ -2581,13 +2581,13 @@
           "pivot_rule": "floor_center",
           "export_subcomponents": false,
           "palette_name": "industrial_hazard",
-          "emission_scale": 1.0,
+          "emission_scale": 1,
           "door_type": "standard_sliding",
-          "width": 2.0,
+          "width": 2,
           "height": 2.4,
           "frame_depth": 0.35,
           "frame_thickness": 0.18,
-          "open_ratio": 0.0,
+          "open_ratio": 0,
           "access_interface": "card_reader",
           "has_reinforced_window": true,
           "has_hazard_stripes": true,
@@ -2611,9 +2611,9 @@
   {
     "id": "below_nominal.infrastructure.electrical_panel",
     "family": "electrical_panel",
-    "name": "Electrical Panel",
+    "name": "Panel Eléctrico y Distribución",
     "version": "1.0.0",
-    "description": "Generador procedural paramétrico de electrical panel para Below Nominal.",
+    "description": "Caja de disyuntores e interruptores de alta tensión para muros técnicos. Podés modificar el tamaño de la caja, paleta y luces indicadoras para descargar en formato GLB.",
     "category": "infrastructure",
     "tags": [
       "infrastructure",
@@ -2635,7 +2635,7 @@
     "parameters": [
       {
         "key": "seed",
-        "label": "Seed",
+        "label": "Semilla Aleatoria",
         "type": "seed",
         "default": 42,
         "group": "Rendimiento",
@@ -2645,7 +2645,7 @@
       },
       {
         "key": "target_tri_budget",
-        "label": "Target Tri Budget",
+        "label": "Presupuesto de Triángulos",
         "type": "int",
         "default": 450,
         "group": "Rendimiento",
@@ -2654,14 +2654,14 @@
       },
       {
         "key": "name",
-        "label": "Name",
+        "label": "Nombre de Instancia",
         "type": "string",
         "default": "electrical_panel",
         "group": "General"
       },
       {
         "key": "wear_level",
-        "label": "Wear Level",
+        "label": "Nivel de Desgaste",
         "type": "float",
         "default": 0.5,
         "group": "Materiales",
@@ -2671,42 +2671,42 @@
       },
       {
         "key": "add_collision_mesh",
-        "label": "Add Collision Mesh",
+        "label": "Generar Colisión",
         "type": "boolean",
         "default": false,
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "collision_type",
-        "label": "Collision Type",
+        "label": "Tipo de Colisión",
         "type": "string",
         "default": "box",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "collision_suffix",
-        "label": "Collision Suffix",
+        "label": "Sufijo de Colisión",
         "type": "string",
         "default": "-convcolonly",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "pivot_rule",
-        "label": "Pivot Rule",
+        "label": "Regla de Pivote",
         "type": "string",
         "default": "floor_center",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "export_subcomponents",
-        "label": "Export Subcomponents",
+        "label": "Exportar Subcomponentes",
         "type": "boolean",
         "default": false,
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "palette_name",
-        "label": "Palette Name",
+        "label": "Paleta de Color",
         "type": "enum",
         "default": "industrial_hazard",
         "group": "Materiales",
@@ -2735,10 +2735,10 @@
       },
       {
         "key": "emission_scale",
-        "label": "Emission Scale",
+        "label": "Intensidad de Emisión",
         "type": "float",
-        "default": 1.0,
-        "group": "General",
+        "default": 1,
+        "group": "Materiales",
         "min": 0.0,
         "step": 0.05
       },
@@ -2751,7 +2751,7 @@
       },
       {
         "key": "width",
-        "label": "Width",
+        "label": "Ancho (m)",
         "type": "float",
         "default": 0.7,
         "group": "Dimensiones",
@@ -2760,7 +2760,7 @@
       },
       {
         "key": "height",
-        "label": "Height",
+        "label": "Alto (m)",
         "type": "float",
         "default": 0.9,
         "group": "Dimensiones",
@@ -2769,7 +2769,7 @@
       },
       {
         "key": "depth",
-        "label": "Depth",
+        "label": "Profundidad (m)",
         "type": "float",
         "default": 0.22,
         "group": "Dimensiones",
@@ -2880,7 +2880,7 @@
         "key": "door_open_angle",
         "label": "Door Open Angle",
         "type": "float",
-        "default": 35.0,
+        "default": 35,
         "group": "General",
         "min": 0.0,
         "step": 0.05
@@ -2908,10 +2908,10 @@
       },
       {
         "key": "style_palette",
-        "label": "Style Palette",
+        "label": "Paleta de Color",
         "type": "string",
         "default": "industrial_hazard",
-        "group": "General"
+        "group": "Materiales"
       }
     ],
     "presets": [
@@ -2929,7 +2929,7 @@
           "pivot_rule": "floor_center",
           "export_subcomponents": false,
           "palette_name": "industrial_hazard",
-          "emission_scale": 1.0,
+          "emission_scale": 1,
           "width": 0.7,
           "height": 0.9,
           "depth": 0.22,
@@ -2945,7 +2945,7 @@
           "cable_count": 2,
           "has_knife_switch": false,
           "door_ajar": false,
-          "door_open_angle": 35.0,
+          "door_open_angle": 35,
           "has_digital_readout": true,
           "has_side_vents": true,
           "has_mounting_flanges": true,
@@ -2968,9 +2968,9 @@
   {
     "id": "below_nominal.furniture.file_cabinet",
     "family": "file_cabinet",
-    "name": "File Cabinet",
+    "name": "Archivador Metálico de Oficina",
     "version": "1.0.0",
-    "description": "Generador procedural paramétrico de file cabinet para Below Nominal.",
+    "description": "Mueble vertical de gavetas para documentos y carpetas. Podés personalizar el número de cajones y nivel de desgaste para descargar en formato GLB.",
     "category": "furniture",
     "tags": [
       "furniture",
@@ -2992,7 +2992,7 @@
     "parameters": [
       {
         "key": "seed",
-        "label": "Seed",
+        "label": "Semilla Aleatoria",
         "type": "seed",
         "default": 42,
         "group": "Rendimiento",
@@ -3002,7 +3002,7 @@
       },
       {
         "key": "target_tri_budget",
-        "label": "Target Tri Budget",
+        "label": "Presupuesto de Triángulos",
         "type": "int",
         "default": 260,
         "group": "Rendimiento",
@@ -3011,14 +3011,14 @@
       },
       {
         "key": "name",
-        "label": "Name",
+        "label": "Nombre de Instancia",
         "type": "string",
         "default": "asset",
         "group": "General"
       },
       {
         "key": "wear_level",
-        "label": "Wear Level",
+        "label": "Nivel de Desgaste",
         "type": "float",
         "default": 0.5,
         "group": "Materiales",
@@ -3028,42 +3028,42 @@
       },
       {
         "key": "add_collision_mesh",
-        "label": "Add Collision Mesh",
+        "label": "Generar Colisión",
         "type": "boolean",
         "default": false,
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "collision_type",
-        "label": "Collision Type",
+        "label": "Tipo de Colisión",
         "type": "string",
         "default": "box",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "collision_suffix",
-        "label": "Collision Suffix",
+        "label": "Sufijo de Colisión",
         "type": "string",
         "default": "-convcolonly",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "pivot_rule",
-        "label": "Pivot Rule",
+        "label": "Regla de Pivote",
         "type": "string",
         "default": "floor_center",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "export_subcomponents",
-        "label": "Export Subcomponents",
+        "label": "Exportar Subcomponentes",
         "type": "boolean",
         "default": false,
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "palette_name",
-        "label": "Palette Name",
+        "label": "Paleta de Color",
         "type": "enum",
         "default": "industrial_hazard",
         "group": "Materiales",
@@ -3092,10 +3092,10 @@
       },
       {
         "key": "emission_scale",
-        "label": "Emission Scale",
+        "label": "Intensidad de Emisión",
         "type": "float",
-        "default": 1.0,
-        "group": "General",
+        "default": 1,
+        "group": "Materiales",
         "min": 0.0,
         "step": 0.05
       },
@@ -3124,7 +3124,7 @@
       },
       {
         "key": "width",
-        "label": "Width",
+        "label": "Ancho (m)",
         "type": "float",
         "default": 0.5,
         "group": "Dimensiones",
@@ -3133,7 +3133,7 @@
       },
       {
         "key": "depth",
-        "label": "Depth",
+        "label": "Profundidad (m)",
         "type": "float",
         "default": 0.62,
         "group": "Dimensiones",
@@ -3142,7 +3142,7 @@
       },
       {
         "key": "height",
-        "label": "Height",
+        "label": "Alto (m)",
         "type": "float",
         "default": 1.35,
         "group": "Dimensiones",
@@ -3179,7 +3179,7 @@
           "pivot_rule": "floor_center",
           "export_subcomponents": false,
           "palette_name": "industrial_hazard",
-          "emission_scale": 1.0,
+          "emission_scale": 1,
           "cabinet_style": "vertical_4_drawer",
           "drawer_count": 4,
           "width": 0.5,
@@ -3205,9 +3205,9 @@
   {
     "id": "below_nominal.fixtures.fire_extinguisher",
     "family": "fire_extinguisher",
-    "name": "Fire Extinguisher",
+    "name": "Extintor de Emergencia y Soporte",
     "version": "1.0.0",
-    "description": "Generador procedural paramétrico de fire extinguisher para Below Nominal.",
+    "description": "Cilindro de extinción de incendios presurizado con manómetro y soporte de pared. Podés ajustar la escala y paleta de seguridad para descargar en formato GLB.",
     "category": "fixtures",
     "tags": [
       "fixtures",
@@ -3229,7 +3229,7 @@
     "parameters": [
       {
         "key": "seed",
-        "label": "Seed",
+        "label": "Semilla Aleatoria",
         "type": "seed",
         "default": 42,
         "group": "Rendimiento",
@@ -3239,7 +3239,7 @@
       },
       {
         "key": "target_tri_budget",
-        "label": "Target Tri Budget",
+        "label": "Presupuesto de Triángulos",
         "type": "int",
         "default": 340,
         "group": "Rendimiento",
@@ -3248,14 +3248,14 @@
       },
       {
         "key": "name",
-        "label": "Name",
+        "label": "Nombre de Instancia",
         "type": "string",
         "default": "fire_extinguisher",
         "group": "General"
       },
       {
         "key": "wear_level",
-        "label": "Wear Level",
+        "label": "Nivel de Desgaste",
         "type": "float",
         "default": 0.6,
         "group": "Materiales",
@@ -3265,42 +3265,42 @@
       },
       {
         "key": "add_collision_mesh",
-        "label": "Add Collision Mesh",
+        "label": "Generar Colisión",
         "type": "boolean",
         "default": false,
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "collision_type",
-        "label": "Collision Type",
+        "label": "Tipo de Colisión",
         "type": "string",
         "default": "box",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "collision_suffix",
-        "label": "Collision Suffix",
+        "label": "Sufijo de Colisión",
         "type": "string",
         "default": "-convcolonly",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "pivot_rule",
-        "label": "Pivot Rule",
+        "label": "Regla de Pivote",
         "type": "string",
         "default": "floor_center",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "export_subcomponents",
-        "label": "Export Subcomponents",
+        "label": "Exportar Subcomponentes",
         "type": "boolean",
         "default": false,
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "palette_name",
-        "label": "Palette Name",
+        "label": "Paleta de Color",
         "type": "enum",
         "default": "industrial_hazard",
         "group": "Materiales",
@@ -3329,10 +3329,10 @@
       },
       {
         "key": "emission_scale",
-        "label": "Emission Scale",
+        "label": "Intensidad de Emisión",
         "type": "float",
-        "default": 1.0,
-        "group": "General",
+        "default": 1,
+        "group": "Materiales",
         "min": 0.0,
         "step": 0.05
       },
@@ -3439,7 +3439,7 @@
           "pivot_rule": "floor_center",
           "export_subcomponents": false,
           "palette_name": "industrial_hazard",
-          "emission_scale": 1.0,
+          "emission_scale": 1,
           "tank_radius": 0.08,
           "tank_height": 0.45,
           "mount_style": "wall_bracket",
@@ -3468,9 +3468,9 @@
   {
     "id": "below_nominal.furniture.heavy_shelving",
     "family": "heavy_shelving",
-    "name": "Heavy Shelving",
+    "name": "Estantería Pesada Industrial",
     "version": "1.0.0",
-    "description": "Generador procedural paramétrico de heavy shelving para Below Nominal.",
+    "description": "Estructura metálica de repisas abiertas para almacenamiento de carga pesada. Podés regular el número de estantes y altura total para descargar en formato GLB.",
     "category": "furniture",
     "tags": [
       "furniture",
@@ -3492,7 +3492,7 @@
     "parameters": [
       {
         "key": "seed",
-        "label": "Seed",
+        "label": "Semilla Aleatoria",
         "type": "seed",
         "default": 42,
         "group": "Rendimiento",
@@ -3502,7 +3502,7 @@
       },
       {
         "key": "target_tri_budget",
-        "label": "Target Tri Budget",
+        "label": "Presupuesto de Triángulos",
         "type": "int",
         "default": 420,
         "group": "Rendimiento",
@@ -3511,14 +3511,14 @@
       },
       {
         "key": "name",
-        "label": "Name",
+        "label": "Nombre de Instancia",
         "type": "string",
         "default": "asset",
         "group": "General"
       },
       {
         "key": "wear_level",
-        "label": "Wear Level",
+        "label": "Nivel de Desgaste",
         "type": "float",
         "default": 0.5,
         "group": "Materiales",
@@ -3528,42 +3528,42 @@
       },
       {
         "key": "add_collision_mesh",
-        "label": "Add Collision Mesh",
+        "label": "Generar Colisión",
         "type": "boolean",
         "default": false,
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "collision_type",
-        "label": "Collision Type",
+        "label": "Tipo de Colisión",
         "type": "string",
         "default": "box",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "collision_suffix",
-        "label": "Collision Suffix",
+        "label": "Sufijo de Colisión",
         "type": "string",
         "default": "-convcolonly",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "pivot_rule",
-        "label": "Pivot Rule",
+        "label": "Regla de Pivote",
         "type": "string",
         "default": "floor_center",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "export_subcomponents",
-        "label": "Export Subcomponents",
+        "label": "Exportar Subcomponentes",
         "type": "boolean",
         "default": false,
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "palette_name",
-        "label": "Palette Name",
+        "label": "Paleta de Color",
         "type": "enum",
         "default": "industrial_hazard",
         "group": "Materiales",
@@ -3592,10 +3592,10 @@
       },
       {
         "key": "emission_scale",
-        "label": "Emission Scale",
+        "label": "Intensidad de Emisión",
         "type": "float",
-        "default": 1.0,
-        "group": "General",
+        "default": 1,
+        "group": "Materiales",
         "min": 0.0,
         "step": 0.05
       },
@@ -3615,7 +3615,7 @@
       },
       {
         "key": "width",
-        "label": "Width",
+        "label": "Ancho (m)",
         "type": "float",
         "default": 1.2,
         "group": "Dimensiones",
@@ -3624,7 +3624,7 @@
       },
       {
         "key": "depth",
-        "label": "Depth",
+        "label": "Profundidad (m)",
         "type": "float",
         "default": 0.55,
         "group": "Dimensiones",
@@ -3633,9 +3633,9 @@
       },
       {
         "key": "height",
-        "label": "Height",
+        "label": "Alto (m)",
         "type": "float",
-        "default": 2.0,
+        "default": 2,
         "group": "Dimensiones",
         "min": 0.0,
         "step": 0.05
@@ -3688,11 +3688,11 @@
           "pivot_rule": "floor_center",
           "export_subcomponents": false,
           "palette_name": "industrial_hazard",
-          "emission_scale": 1.0,
+          "emission_scale": 1,
           "shelf_type": "cargo_storage",
           "width": 1.2,
           "depth": 0.55,
-          "height": 2.0,
+          "height": 2,
           "levels": 4,
           "has_x_bracing": true,
           "has_retaining_bars": true,
@@ -3715,9 +3715,9 @@
   {
     "id": "below_nominal.fixtures.hydroponic_tray_bed",
     "family": "hydroponic_tray_bed",
-    "name": "Hydroponic Tray Bed",
+    "name": "Bandeja de Cultivo Hidropónico",
     "version": "1.0.0",
-    "description": "Generador procedural paramétrico de hydroponic tray bed para Below Nominal.",
+    "description": "Módulo de cultivo botánico con canal de sustrato y lámparas de crecimiento. Podés ajustar la longitud y sistemas de soporte para descargar en formato GLB.",
     "category": "fixtures",
     "tags": [
       "fixtures",
@@ -3739,7 +3739,7 @@
     "parameters": [
       {
         "key": "seed",
-        "label": "Seed",
+        "label": "Semilla Aleatoria",
         "type": "seed",
         "default": 42,
         "group": "Rendimiento",
@@ -3749,7 +3749,7 @@
       },
       {
         "key": "target_tri_budget",
-        "label": "Target Tri Budget",
+        "label": "Presupuesto de Triángulos",
         "type": "int",
         "default": 480,
         "group": "Rendimiento",
@@ -3758,14 +3758,14 @@
       },
       {
         "key": "name",
-        "label": "Name",
+        "label": "Nombre de Instancia",
         "type": "string",
         "default": "asset",
         "group": "General"
       },
       {
         "key": "wear_level",
-        "label": "Wear Level",
+        "label": "Nivel de Desgaste",
         "type": "float",
         "default": 0.5,
         "group": "Materiales",
@@ -3775,42 +3775,42 @@
       },
       {
         "key": "add_collision_mesh",
-        "label": "Add Collision Mesh",
+        "label": "Generar Colisión",
         "type": "boolean",
         "default": false,
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "collision_type",
-        "label": "Collision Type",
+        "label": "Tipo de Colisión",
         "type": "string",
         "default": "box",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "collision_suffix",
-        "label": "Collision Suffix",
+        "label": "Sufijo de Colisión",
         "type": "string",
         "default": "-convcolonly",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "pivot_rule",
-        "label": "Pivot Rule",
+        "label": "Regla de Pivote",
         "type": "string",
         "default": "floor_center",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "export_subcomponents",
-        "label": "Export Subcomponents",
+        "label": "Exportar Subcomponentes",
         "type": "boolean",
         "default": false,
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "palette_name",
-        "label": "Palette Name",
+        "label": "Paleta de Color",
         "type": "enum",
         "default": "industrial_hazard",
         "group": "Materiales",
@@ -3839,10 +3839,10 @@
       },
       {
         "key": "emission_scale",
-        "label": "Emission Scale",
+        "label": "Intensidad de Emisión",
         "type": "float",
-        "default": 1.0,
-        "group": "General",
+        "default": 1,
+        "group": "Materiales",
         "min": 0.0,
         "step": 0.05
       },
@@ -3862,7 +3862,7 @@
       },
       {
         "key": "width",
-        "label": "Width",
+        "label": "Ancho (m)",
         "type": "float",
         "default": 1.4,
         "group": "Dimensiones",
@@ -3871,7 +3871,7 @@
       },
       {
         "key": "depth",
-        "label": "Depth",
+        "label": "Profundidad (m)",
         "type": "float",
         "default": 0.8,
         "group": "Dimensiones",
@@ -3880,7 +3880,7 @@
       },
       {
         "key": "height",
-        "label": "Height",
+        "label": "Alto (m)",
         "type": "float",
         "default": 1.2,
         "group": "Dimensiones",
@@ -3924,7 +3924,7 @@
           "pivot_rule": "floor_center",
           "export_subcomponents": false,
           "palette_name": "industrial_hazard",
-          "emission_scale": 1.0,
+          "emission_scale": 1,
           "bed_type": "single_tier",
           "width": 1.4,
           "depth": 0.8,
@@ -3950,9 +3950,9 @@
   {
     "id": "below_nominal.fixtures.light_fixture",
     "family": "light_fixture",
-    "name": "Light Fixture",
+    "name": "Lámpara de Techo / Luminaria",
     "version": "1.0.0",
-    "description": "Generador procedural paramétrico de light fixture para Below Nominal.",
+    "description": "Dispositivo de iluminación para techos y pasillos transitables. Podés configurar la longitud, rejilla y escala de emisión para descargar en formato GLB.",
     "category": "fixtures",
     "tags": [
       "fixtures",
@@ -3974,7 +3974,7 @@
     "parameters": [
       {
         "key": "seed",
-        "label": "Seed",
+        "label": "Semilla Aleatoria",
         "type": "seed",
         "default": 42,
         "group": "Rendimiento",
@@ -3984,7 +3984,7 @@
       },
       {
         "key": "target_tri_budget",
-        "label": "Target Tri Budget",
+        "label": "Presupuesto de Triángulos",
         "type": "int",
         "default": 340,
         "group": "Rendimiento",
@@ -3993,14 +3993,14 @@
       },
       {
         "key": "name",
-        "label": "Name",
+        "label": "Nombre de Instancia",
         "type": "string",
         "default": "light_fixture",
         "group": "General"
       },
       {
         "key": "wear_level",
-        "label": "Wear Level",
+        "label": "Nivel de Desgaste",
         "type": "float",
         "default": 0.65,
         "group": "Materiales",
@@ -4010,42 +4010,42 @@
       },
       {
         "key": "add_collision_mesh",
-        "label": "Add Collision Mesh",
+        "label": "Generar Colisión",
         "type": "boolean",
         "default": false,
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "collision_type",
-        "label": "Collision Type",
+        "label": "Tipo de Colisión",
         "type": "string",
         "default": "box",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "collision_suffix",
-        "label": "Collision Suffix",
+        "label": "Sufijo de Colisión",
         "type": "string",
         "default": "-convcolonly",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "pivot_rule",
-        "label": "Pivot Rule",
+        "label": "Regla de Pivote",
         "type": "string",
         "default": "floor_center",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "export_subcomponents",
-        "label": "Export Subcomponents",
+        "label": "Exportar Subcomponentes",
         "type": "boolean",
         "default": false,
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "palette_name",
-        "label": "Palette Name",
+        "label": "Paleta de Color",
         "type": "enum",
         "default": "industrial_hazard",
         "group": "Materiales",
@@ -4074,10 +4074,10 @@
       },
       {
         "key": "emission_scale",
-        "label": "Emission Scale",
+        "label": "Intensidad de Emisión",
         "type": "float",
-        "default": 1.0,
-        "group": "General",
+        "default": 1,
+        "group": "Materiales",
         "min": 0.0,
         "step": 0.05
       },
@@ -4097,7 +4097,7 @@
       },
       {
         "key": "length",
-        "label": "Length",
+        "label": "Largo (m)",
         "type": "float",
         "default": 1.2,
         "group": "Dimensiones",
@@ -4106,7 +4106,7 @@
       },
       {
         "key": "width",
-        "label": "Width",
+        "label": "Ancho (m)",
         "type": "float",
         "default": 0.28,
         "group": "Dimensiones",
@@ -4115,7 +4115,7 @@
       },
       {
         "key": "depth",
-        "label": "Depth",
+        "label": "Profundidad (m)",
         "type": "float",
         "default": 0.1,
         "group": "Dimensiones",
@@ -4175,7 +4175,7 @@
           "pivot_rule": "floor_center",
           "export_subcomponents": false,
           "palette_name": "industrial_hazard",
-          "emission_scale": 1.0,
+          "emission_scale": 1,
           "fixture_type": "fluorescent_troffer",
           "length": 1.2,
           "width": 0.28,
@@ -4203,9 +4203,9 @@
   {
     "id": "below_nominal.infrastructure.locker",
     "family": "locker",
-    "name": "Locker",
+    "name": "Casillero Personal / Taquilla",
     "version": "1.0.0",
-    "description": "Generador procedural paramétrico de locker para Below Nominal.",
+    "description": "Módulo de casilleros de acero con rendijas de ventilación y cerradura. Podés configurar el número de compartimentos y paleta para descargar en formato GLB.",
     "category": "infrastructure",
     "tags": [
       "infrastructure",
@@ -4227,7 +4227,7 @@
     "parameters": [
       {
         "key": "seed",
-        "label": "Seed",
+        "label": "Semilla Aleatoria",
         "type": "seed",
         "default": 42,
         "group": "Rendimiento",
@@ -4237,7 +4237,7 @@
       },
       {
         "key": "target_tri_budget",
-        "label": "Target Tri Budget",
+        "label": "Presupuesto de Triángulos",
         "type": "int",
         "default": 400,
         "group": "Rendimiento",
@@ -4246,14 +4246,14 @@
       },
       {
         "key": "name",
-        "label": "Name",
+        "label": "Nombre de Instancia",
         "type": "string",
         "default": "crew_lockers",
         "group": "General"
       },
       {
         "key": "wear_level",
-        "label": "Wear Level",
+        "label": "Nivel de Desgaste",
         "type": "float",
         "default": 0.5,
         "group": "Materiales",
@@ -4263,42 +4263,42 @@
       },
       {
         "key": "add_collision_mesh",
-        "label": "Add Collision Mesh",
+        "label": "Generar Colisión",
         "type": "boolean",
         "default": false,
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "collision_type",
-        "label": "Collision Type",
+        "label": "Tipo de Colisión",
         "type": "string",
         "default": "box",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "collision_suffix",
-        "label": "Collision Suffix",
+        "label": "Sufijo de Colisión",
         "type": "string",
         "default": "-convcolonly",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "pivot_rule",
-        "label": "Pivot Rule",
+        "label": "Regla de Pivote",
         "type": "string",
         "default": "floor_center",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "export_subcomponents",
-        "label": "Export Subcomponents",
+        "label": "Exportar Subcomponentes",
         "type": "boolean",
         "default": false,
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "palette_name",
-        "label": "Palette Name",
+        "label": "Paleta de Color",
         "type": "enum",
         "default": "industrial_hazard",
         "group": "Materiales",
@@ -4327,10 +4327,10 @@
       },
       {
         "key": "emission_scale",
-        "label": "Emission Scale",
+        "label": "Intensidad de Emisión",
         "type": "float",
-        "default": 1.0,
-        "group": "General",
+        "default": 1,
+        "group": "Materiales",
         "min": 0.0,
         "step": 0.05
       },
@@ -4361,7 +4361,7 @@
       },
       {
         "key": "height",
-        "label": "Height",
+        "label": "Alto (m)",
         "type": "float",
         "default": 1.9,
         "group": "Dimensiones",
@@ -4370,7 +4370,7 @@
       },
       {
         "key": "depth",
-        "label": "Depth",
+        "label": "Profundidad (m)",
         "type": "float",
         "default": 0.5,
         "group": "Dimensiones",
@@ -4428,7 +4428,7 @@
           "pivot_rule": "floor_center",
           "export_subcomponents": false,
           "palette_name": "industrial_hazard",
-          "emission_scale": 1.0,
+          "emission_scale": 1,
           "columns": 2,
           "column_width": 0.42,
           "height": 1.9,
@@ -4456,9 +4456,9 @@
   {
     "id": "below_nominal.furniture.locker_bench",
     "family": "locker_bench",
-    "name": "Locker Bench",
+    "name": "Banco de Vestuario y Pasillo",
     "version": "1.0.0",
-    "description": "Generador procedural paramétrico de locker bench para Below Nominal.",
+    "description": "Banco alargado de madera o metal para vestuarios y zonas de cambio de ropa. Podés ajustar el largo y estructura de soporte para descargar en formato GLB.",
     "category": "furniture",
     "tags": [
       "furniture",
@@ -4480,7 +4480,7 @@
     "parameters": [
       {
         "key": "seed",
-        "label": "Seed",
+        "label": "Semilla Aleatoria",
         "type": "seed",
         "default": 42,
         "group": "Rendimiento",
@@ -4490,7 +4490,7 @@
       },
       {
         "key": "target_tri_budget",
-        "label": "Target Tri Budget",
+        "label": "Presupuesto de Triángulos",
         "type": "int",
         "default": 300,
         "group": "Rendimiento",
@@ -4499,14 +4499,14 @@
       },
       {
         "key": "name",
-        "label": "Name",
+        "label": "Nombre de Instancia",
         "type": "string",
         "default": "asset",
         "group": "General"
       },
       {
         "key": "wear_level",
-        "label": "Wear Level",
+        "label": "Nivel de Desgaste",
         "type": "float",
         "default": 0.5,
         "group": "Materiales",
@@ -4516,42 +4516,42 @@
       },
       {
         "key": "add_collision_mesh",
-        "label": "Add Collision Mesh",
+        "label": "Generar Colisión",
         "type": "boolean",
         "default": false,
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "collision_type",
-        "label": "Collision Type",
+        "label": "Tipo de Colisión",
         "type": "string",
         "default": "box",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "collision_suffix",
-        "label": "Collision Suffix",
+        "label": "Sufijo de Colisión",
         "type": "string",
         "default": "-convcolonly",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "pivot_rule",
-        "label": "Pivot Rule",
+        "label": "Regla de Pivote",
         "type": "string",
         "default": "floor_center",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "export_subcomponents",
-        "label": "Export Subcomponents",
+        "label": "Exportar Subcomponentes",
         "type": "boolean",
         "default": false,
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "palette_name",
-        "label": "Palette Name",
+        "label": "Paleta de Color",
         "type": "enum",
         "default": "industrial_hazard",
         "group": "Materiales",
@@ -4580,10 +4580,10 @@
       },
       {
         "key": "emission_scale",
-        "label": "Emission Scale",
+        "label": "Intensidad de Emisión",
         "type": "float",
-        "default": 1.0,
-        "group": "General",
+        "default": 1,
+        "group": "Materiales",
         "min": 0.0,
         "step": 0.05
       },
@@ -4603,7 +4603,7 @@
       },
       {
         "key": "length",
-        "label": "Length",
+        "label": "Largo (m)",
         "type": "float",
         "default": 1.6,
         "group": "Dimensiones",
@@ -4612,7 +4612,7 @@
       },
       {
         "key": "width",
-        "label": "Width",
+        "label": "Ancho (m)",
         "type": "float",
         "default": 0.45,
         "group": "Dimensiones",
@@ -4621,7 +4621,7 @@
       },
       {
         "key": "height",
-        "label": "Height",
+        "label": "Alto (m)",
         "type": "float",
         "default": 0.48,
         "group": "Dimensiones",
@@ -4665,7 +4665,7 @@
           "pivot_rule": "floor_center",
           "export_subcomponents": false,
           "palette_name": "industrial_hazard",
-          "emission_scale": 1.0,
+          "emission_scale": 1,
           "bench_type": "perforated_metal",
           "length": 1.6,
           "width": 0.45,
@@ -4691,9 +4691,9 @@
   {
     "id": "below_nominal.medical.medical_screen",
     "family": "medical_screen",
-    "name": "Medical Screen",
+    "name": "Biombo Médico Plegable",
     "version": "1.0.0",
-    "description": "Generador procedural paramétrico de medical screen para Below Nominal.",
+    "description": "Mampara divisoria articulada de privacidad para consultorios y enfermerías. Podés ajustar la cantidad de paneles y altura para descargar en formato GLB.",
     "category": "medical",
     "tags": [
       "medical",
@@ -4715,7 +4715,7 @@
     "parameters": [
       {
         "key": "seed",
-        "label": "Seed",
+        "label": "Semilla Aleatoria",
         "type": "seed",
         "default": 42,
         "group": "Rendimiento",
@@ -4725,7 +4725,7 @@
       },
       {
         "key": "target_tri_budget",
-        "label": "Target Tri Budget",
+        "label": "Presupuesto de Triángulos",
         "type": "int",
         "default": 260,
         "group": "Rendimiento",
@@ -4734,14 +4734,14 @@
       },
       {
         "key": "name",
-        "label": "Name",
+        "label": "Nombre de Instancia",
         "type": "string",
         "default": "asset",
         "group": "General"
       },
       {
         "key": "wear_level",
-        "label": "Wear Level",
+        "label": "Nivel de Desgaste",
         "type": "float",
         "default": 0.5,
         "group": "Materiales",
@@ -4751,42 +4751,42 @@
       },
       {
         "key": "add_collision_mesh",
-        "label": "Add Collision Mesh",
+        "label": "Generar Colisión",
         "type": "boolean",
         "default": false,
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "collision_type",
-        "label": "Collision Type",
+        "label": "Tipo de Colisión",
         "type": "string",
         "default": "box",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "collision_suffix",
-        "label": "Collision Suffix",
+        "label": "Sufijo de Colisión",
         "type": "string",
         "default": "-convcolonly",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "pivot_rule",
-        "label": "Pivot Rule",
+        "label": "Regla de Pivote",
         "type": "string",
         "default": "floor_center",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "export_subcomponents",
-        "label": "Export Subcomponents",
+        "label": "Exportar Subcomponentes",
         "type": "boolean",
         "default": false,
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "palette_name",
-        "label": "Palette Name",
+        "label": "Paleta de Color",
         "type": "enum",
         "default": "industrial_hazard",
         "group": "Materiales",
@@ -4815,10 +4815,10 @@
       },
       {
         "key": "emission_scale",
-        "label": "Emission Scale",
+        "label": "Intensidad de Emisión",
         "type": "float",
-        "default": 1.0,
-        "group": "General",
+        "default": 1,
+        "group": "Materiales",
         "min": 0.0,
         "step": 0.05
       },
@@ -4849,7 +4849,7 @@
         "key": "fold_angle_deg",
         "label": "Fold Angle Deg",
         "type": "float",
-        "default": 30.0,
+        "default": 30,
         "group": "General",
         "min": 0.0,
         "step": 0.05
@@ -4902,10 +4902,10 @@
           "pivot_rule": "floor_center",
           "export_subcomponents": false,
           "palette_name": "industrial_hazard",
-          "emission_scale": 1.0,
+          "emission_scale": 1,
           "screen_type": "three_panel",
           "panel_count": 3,
-          "fold_angle_deg": 30.0,
+          "fold_angle_deg": 30,
           "panel_width": 0.6,
           "panel_height": 1.75,
           "caster_wheels": true,
@@ -4928,9 +4928,9 @@
   {
     "id": "below_nominal.furniture.mess_table",
     "family": "mess_table",
-    "name": "Mess Table",
+    "name": "Mesa de Comedor con Bancos",
     "version": "1.0.0",
-    "description": "Generador procedural paramétrico de mess table para Below Nominal.",
+    "description": "Mesa comunitaria con bancos integrados para áreas sociales y comedores. Podés modificar el largo y capacidad de asientos para descargar en formato GLB.",
     "category": "furniture",
     "tags": [
       "furniture",
@@ -4952,7 +4952,7 @@
     "parameters": [
       {
         "key": "seed",
-        "label": "Seed",
+        "label": "Semilla Aleatoria",
         "type": "seed",
         "default": 42,
         "group": "Rendimiento",
@@ -4962,7 +4962,7 @@
       },
       {
         "key": "target_tri_budget",
-        "label": "Target Tri Budget",
+        "label": "Presupuesto de Triángulos",
         "type": "int",
         "default": 450,
         "group": "Rendimiento",
@@ -4971,14 +4971,14 @@
       },
       {
         "key": "name",
-        "label": "Name",
+        "label": "Nombre de Instancia",
         "type": "string",
         "default": "asset",
         "group": "General"
       },
       {
         "key": "wear_level",
-        "label": "Wear Level",
+        "label": "Nivel de Desgaste",
         "type": "float",
         "default": 0.5,
         "group": "Materiales",
@@ -4988,42 +4988,42 @@
       },
       {
         "key": "add_collision_mesh",
-        "label": "Add Collision Mesh",
+        "label": "Generar Colisión",
         "type": "boolean",
         "default": false,
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "collision_type",
-        "label": "Collision Type",
+        "label": "Tipo de Colisión",
         "type": "string",
         "default": "box",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "collision_suffix",
-        "label": "Collision Suffix",
+        "label": "Sufijo de Colisión",
         "type": "string",
         "default": "-convcolonly",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "pivot_rule",
-        "label": "Pivot Rule",
+        "label": "Regla de Pivote",
         "type": "string",
         "default": "floor_center",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "export_subcomponents",
-        "label": "Export Subcomponents",
+        "label": "Exportar Subcomponentes",
         "type": "boolean",
         "default": false,
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "palette_name",
-        "label": "Palette Name",
+        "label": "Paleta de Color",
         "type": "enum",
         "default": "industrial_hazard",
         "group": "Materiales",
@@ -5052,10 +5052,10 @@
       },
       {
         "key": "emission_scale",
-        "label": "Emission Scale",
+        "label": "Intensidad de Emisión",
         "type": "float",
-        "default": 1.0,
-        "group": "General",
+        "default": 1,
+        "group": "Materiales",
         "min": 0.0,
         "step": 0.05
       },
@@ -5146,7 +5146,7 @@
           "pivot_rule": "floor_center",
           "export_subcomponents": false,
           "palette_name": "industrial_hazard",
-          "emission_scale": 1.0,
+          "emission_scale": 1,
           "table_type": "bolted_stools_4",
           "stool_count": 4,
           "table_width": 0.9,
@@ -5173,9 +5173,9 @@
   {
     "id": "below_nominal.medical.morgue_gurney",
     "family": "morgue_gurney",
-    "name": "Morgue Gurney",
+    "name": "Camilla de Traslado / Morgue",
     "version": "1.0.0",
-    "description": "Generador procedural paramétrico de morgue gurney para Below Nominal.",
+    "description": "Camilla rodante de acero inoxidable para transporte de pacientes o cuerpos. Podés ajustar altura y freno de ruedas para descargar en formato GLB.",
     "category": "medical",
     "tags": [
       "medical",
@@ -5197,7 +5197,7 @@
     "parameters": [
       {
         "key": "seed",
-        "label": "Seed",
+        "label": "Semilla Aleatoria",
         "type": "seed",
         "default": 42,
         "group": "Rendimiento",
@@ -5207,7 +5207,7 @@
       },
       {
         "key": "target_tri_budget",
-        "label": "Target Tri Budget",
+        "label": "Presupuesto de Triángulos",
         "type": "int",
         "default": 480,
         "group": "Rendimiento",
@@ -5216,14 +5216,14 @@
       },
       {
         "key": "name",
-        "label": "Name",
+        "label": "Nombre de Instancia",
         "type": "string",
         "default": "asset",
         "group": "General"
       },
       {
         "key": "wear_level",
-        "label": "Wear Level",
+        "label": "Nivel de Desgaste",
         "type": "float",
         "default": 0.5,
         "group": "Materiales",
@@ -5233,42 +5233,42 @@
       },
       {
         "key": "add_collision_mesh",
-        "label": "Add Collision Mesh",
+        "label": "Generar Colisión",
         "type": "boolean",
         "default": false,
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "collision_type",
-        "label": "Collision Type",
+        "label": "Tipo de Colisión",
         "type": "string",
         "default": "box",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "collision_suffix",
-        "label": "Collision Suffix",
+        "label": "Sufijo de Colisión",
         "type": "string",
         "default": "-convcolonly",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "pivot_rule",
-        "label": "Pivot Rule",
+        "label": "Regla de Pivote",
         "type": "string",
         "default": "floor_center",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "export_subcomponents",
-        "label": "Export Subcomponents",
+        "label": "Exportar Subcomponentes",
         "type": "boolean",
         "default": false,
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "palette_name",
-        "label": "Palette Name",
+        "label": "Paleta de Color",
         "type": "enum",
         "default": "industrial_hazard",
         "group": "Materiales",
@@ -5297,10 +5297,10 @@
       },
       {
         "key": "emission_scale",
-        "label": "Emission Scale",
+        "label": "Intensidad de Emisión",
         "type": "float",
-        "default": 1.0,
-        "group": "General",
+        "default": 1,
+        "group": "Materiales",
         "min": 0.0,
         "step": 0.05
       },
@@ -5320,7 +5320,7 @@
       },
       {
         "key": "width",
-        "label": "Width",
+        "label": "Ancho (m)",
         "type": "float",
         "default": 0.75,
         "group": "Dimensiones",
@@ -5329,7 +5329,7 @@
       },
       {
         "key": "length",
-        "label": "Length",
+        "label": "Largo (m)",
         "type": "float",
         "default": 2.05,
         "group": "Dimensiones",
@@ -5338,7 +5338,7 @@
       },
       {
         "key": "height",
-        "label": "Height",
+        "label": "Alto (m)",
         "type": "float",
         "default": 0.8,
         "group": "Dimensiones",
@@ -5391,7 +5391,7 @@
           "pivot_rule": "floor_center",
           "export_subcomponents": false,
           "palette_name": "industrial_hazard",
-          "emission_scale": 1.0,
+          "emission_scale": 1,
           "gurney_type": "tray_open",
           "width": 0.75,
           "length": 2.05,
@@ -5418,9 +5418,9 @@
   {
     "id": "below_nominal.furniture.nightstand",
     "family": "nightstand",
-    "name": "Nightstand",
+    "name": "Mesa de Noche Compacta",
     "version": "1.0.0",
-    "description": "Generador procedural paramétrico de nightstand para Below Nominal.",
+    "description": "Mueble auxiliar de cabecera con gaveta superior y repisa inferior. Podés ajustar las proporciones y paleta de materiales para descargar en formato GLB.",
     "category": "furniture",
     "tags": [
       "furniture",
@@ -5442,7 +5442,7 @@
     "parameters": [
       {
         "key": "seed",
-        "label": "Seed",
+        "label": "Semilla Aleatoria",
         "type": "seed",
         "default": 42,
         "group": "Rendimiento",
@@ -5452,7 +5452,7 @@
       },
       {
         "key": "target_tri_budget",
-        "label": "Target Tri Budget",
+        "label": "Presupuesto de Triángulos",
         "type": "int",
         "default": 340,
         "group": "Rendimiento",
@@ -5461,14 +5461,14 @@
       },
       {
         "key": "name",
-        "label": "Name",
+        "label": "Nombre de Instancia",
         "type": "string",
         "default": "asset",
         "group": "General"
       },
       {
         "key": "wear_level",
-        "label": "Wear Level",
+        "label": "Nivel de Desgaste",
         "type": "float",
         "default": 0.5,
         "group": "Materiales",
@@ -5478,42 +5478,42 @@
       },
       {
         "key": "add_collision_mesh",
-        "label": "Add Collision Mesh",
+        "label": "Generar Colisión",
         "type": "boolean",
         "default": false,
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "collision_type",
-        "label": "Collision Type",
+        "label": "Tipo de Colisión",
         "type": "string",
         "default": "box",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "collision_suffix",
-        "label": "Collision Suffix",
+        "label": "Sufijo de Colisión",
         "type": "string",
         "default": "-convcolonly",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "pivot_rule",
-        "label": "Pivot Rule",
+        "label": "Regla de Pivote",
         "type": "string",
         "default": "floor_center",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "export_subcomponents",
-        "label": "Export Subcomponents",
+        "label": "Exportar Subcomponentes",
         "type": "boolean",
         "default": false,
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "palette_name",
-        "label": "Palette Name",
+        "label": "Paleta de Color",
         "type": "enum",
         "default": "industrial_hazard",
         "group": "Materiales",
@@ -5542,10 +5542,10 @@
       },
       {
         "key": "emission_scale",
-        "label": "Emission Scale",
+        "label": "Intensidad de Emisión",
         "type": "float",
-        "default": 1.0,
-        "group": "General",
+        "default": 1,
+        "group": "Materiales",
         "min": 0.0,
         "step": 0.05
       },
@@ -5565,7 +5565,7 @@
       },
       {
         "key": "width",
-        "label": "Width",
+        "label": "Ancho (m)",
         "type": "float",
         "default": 0.48,
         "group": "Dimensiones",
@@ -5574,7 +5574,7 @@
       },
       {
         "key": "depth",
-        "label": "Depth",
+        "label": "Profundidad (m)",
         "type": "float",
         "default": 0.44,
         "group": "Dimensiones",
@@ -5583,7 +5583,7 @@
       },
       {
         "key": "height",
-        "label": "Height",
+        "label": "Alto (m)",
         "type": "float",
         "default": 0.68,
         "group": "Dimensiones",
@@ -5603,7 +5603,7 @@
         "key": "drawer_open_ratio",
         "label": "Drawer Open Ratio",
         "type": "float",
-        "default": 0.0,
+        "default": 0,
         "group": "General",
         "min": 0.0,
         "step": 0.05
@@ -5652,13 +5652,13 @@
           "pivot_rule": "floor_center",
           "export_subcomponents": false,
           "palette_name": "industrial_hazard",
-          "emission_scale": 1.0,
+          "emission_scale": 1,
           "stand_type": "crew_locker_cubby",
           "width": 0.48,
           "depth": 0.44,
           "height": 0.68,
           "drawer_count": 2,
-          "drawer_open_ratio": 0.0,
+          "drawer_open_ratio": 0,
           "has_raised_rim": true,
           "has_bedside_lamp": true,
           "lamp_state": "on",
@@ -5681,9 +5681,9 @@
   {
     "id": "below_nominal.furniture.office_chair",
     "family": "office_chair",
-    "name": "Office Chair",
+    "name": "Silla Ergonómica de Oficina",
     "version": "1.0.0",
-    "description": "Generador procedural paramétrico de office chair para Below Nominal.",
+    "description": "Silla giratoria de escritorio con respaldo alto y apoyabrazos. Podés regular la altura, inclinación y estilo de tapicería para descargar en formato GLB.",
     "category": "furniture",
     "tags": [
       "furniture",
@@ -5705,7 +5705,7 @@
     "parameters": [
       {
         "key": "seed",
-        "label": "Seed",
+        "label": "Semilla Aleatoria",
         "type": "seed",
         "default": 42,
         "group": "Rendimiento",
@@ -5715,7 +5715,7 @@
       },
       {
         "key": "target_tri_budget",
-        "label": "Target Tri Budget",
+        "label": "Presupuesto de Triángulos",
         "type": "int",
         "default": 380,
         "group": "Rendimiento",
@@ -5724,14 +5724,14 @@
       },
       {
         "key": "name",
-        "label": "Name",
+        "label": "Nombre de Instancia",
         "type": "string",
         "default": "office_chair",
         "group": "General"
       },
       {
         "key": "wear_level",
-        "label": "Wear Level",
+        "label": "Nivel de Desgaste",
         "type": "float",
         "default": 0.65,
         "group": "Materiales",
@@ -5741,42 +5741,42 @@
       },
       {
         "key": "add_collision_mesh",
-        "label": "Add Collision Mesh",
+        "label": "Generar Colisión",
         "type": "boolean",
         "default": false,
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "collision_type",
-        "label": "Collision Type",
+        "label": "Tipo de Colisión",
         "type": "string",
         "default": "box",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "collision_suffix",
-        "label": "Collision Suffix",
+        "label": "Sufijo de Colisión",
         "type": "string",
         "default": "-convcolonly",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "pivot_rule",
-        "label": "Pivot Rule",
+        "label": "Regla de Pivote",
         "type": "string",
         "default": "floor_center",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "export_subcomponents",
-        "label": "Export Subcomponents",
+        "label": "Exportar Subcomponentes",
         "type": "boolean",
         "default": false,
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "palette_name",
-        "label": "Palette Name",
+        "label": "Paleta de Color",
         "type": "enum",
         "default": "industrial_hazard",
         "group": "Materiales",
@@ -5805,10 +5805,10 @@
       },
       {
         "key": "emission_scale",
-        "label": "Emission Scale",
+        "label": "Intensidad de Emisión",
         "type": "float",
-        "default": 1.0,
-        "group": "General",
+        "default": 1,
+        "group": "Materiales",
         "min": 0.0,
         "step": 0.05
       },
@@ -5875,7 +5875,7 @@
         "key": "backrest_tilt",
         "label": "Backrest Tilt",
         "type": "float",
-        "default": 8.0,
+        "default": 8,
         "group": "General",
         "min": 0.0,
         "step": 0.05
@@ -5944,14 +5944,14 @@
           "pivot_rule": "floor_center",
           "export_subcomponents": false,
           "palette_name": "industrial_hazard",
-          "emission_scale": 1.0,
+          "emission_scale": 1,
           "seat_width": 0.52,
           "seat_depth": 0.5,
           "seat_height": 0.48,
           "cushion_thickness": 0.08,
           "backrest_style": "mid_back",
           "backrest_height": 0.45,
-          "backrest_tilt": 8.0,
+          "backrest_tilt": 8,
           "base_style": "five_star_casters",
           "spoke_count": 5,
           "base_radius": 0.32,
@@ -5976,9 +5976,9 @@
   {
     "id": "below_nominal.furniture.office_desk",
     "family": "office_desk",
-    "name": "Office Desk",
+    "name": "Escritorio Administrativo",
     "version": "1.0.0",
-    "description": "Generador procedural paramétrico de office desk para Below Nominal.",
+    "description": "Escritorio de trabajo con cajonera lateral y pasacables. Podés personalizar el ancho de la mesa y distribución de gavetas para descargar en formato GLB.",
     "category": "furniture",
     "tags": [
       "furniture",
@@ -6000,7 +6000,7 @@
     "parameters": [
       {
         "key": "seed",
-        "label": "Seed",
+        "label": "Semilla Aleatoria",
         "type": "seed",
         "default": 42,
         "group": "Rendimiento",
@@ -6010,7 +6010,7 @@
       },
       {
         "key": "target_tri_budget",
-        "label": "Target Tri Budget",
+        "label": "Presupuesto de Triángulos",
         "type": "int",
         "default": 420,
         "group": "Rendimiento",
@@ -6019,14 +6019,14 @@
       },
       {
         "key": "name",
-        "label": "Name",
+        "label": "Nombre de Instancia",
         "type": "string",
         "default": "office_desk",
         "group": "General"
       },
       {
         "key": "wear_level",
-        "label": "Wear Level",
+        "label": "Nivel de Desgaste",
         "type": "float",
         "default": 0.6,
         "group": "Materiales",
@@ -6036,42 +6036,42 @@
       },
       {
         "key": "add_collision_mesh",
-        "label": "Add Collision Mesh",
+        "label": "Generar Colisión",
         "type": "boolean",
         "default": false,
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "collision_type",
-        "label": "Collision Type",
+        "label": "Tipo de Colisión",
         "type": "string",
         "default": "box",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "collision_suffix",
-        "label": "Collision Suffix",
+        "label": "Sufijo de Colisión",
         "type": "string",
         "default": "-convcolonly",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "pivot_rule",
-        "label": "Pivot Rule",
+        "label": "Regla de Pivote",
         "type": "string",
         "default": "floor_center",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "export_subcomponents",
-        "label": "Export Subcomponents",
+        "label": "Exportar Subcomponentes",
         "type": "boolean",
         "default": false,
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "palette_name",
-        "label": "Palette Name",
+        "label": "Paleta de Color",
         "type": "enum",
         "default": "industrial_hazard",
         "group": "Materiales",
@@ -6100,10 +6100,10 @@
       },
       {
         "key": "emission_scale",
-        "label": "Emission Scale",
+        "label": "Intensidad de Emisión",
         "type": "float",
-        "default": 1.0,
-        "group": "General",
+        "default": 1,
+        "group": "Materiales",
         "min": 0.0,
         "step": 0.05
       },
@@ -6116,7 +6116,7 @@
       },
       {
         "key": "width",
-        "label": "Width",
+        "label": "Ancho (m)",
         "type": "float",
         "default": 1.4,
         "group": "Dimensiones",
@@ -6125,7 +6125,7 @@
       },
       {
         "key": "height",
-        "label": "Height",
+        "label": "Alto (m)",
         "type": "float",
         "default": 0.76,
         "group": "Dimensiones",
@@ -6134,7 +6134,7 @@
       },
       {
         "key": "depth",
-        "label": "Depth",
+        "label": "Profundidad (m)",
         "type": "float",
         "default": 0.75,
         "group": "Dimensiones",
@@ -6258,7 +6258,7 @@
           "pivot_rule": "floor_center",
           "export_subcomponents": false,
           "palette_name": "industrial_hazard",
-          "emission_scale": 1.0,
+          "emission_scale": 1,
           "width": 1.4,
           "height": 0.76,
           "depth": 0.75,
@@ -6293,9 +6293,9 @@
   {
     "id": "below_nominal.architecture.office_door",
     "family": "office_door",
-    "name": "Office Door",
+    "name": "Puerta Batiente de Oficina",
     "version": "1.0.0",
-    "description": "Generador procedural paramétrico de office door para Below Nominal.",
+    "description": "Puerta interior con manija o picaporte para salas y despachos. Podés ajustar las medidas de la hoja y el marco para descargar en formato GLB.",
     "category": "architecture",
     "tags": [
       "architecture",
@@ -6317,7 +6317,7 @@
     "parameters": [
       {
         "key": "seed",
-        "label": "Seed",
+        "label": "Semilla Aleatoria",
         "type": "seed",
         "default": 42,
         "group": "Rendimiento",
@@ -6327,7 +6327,7 @@
       },
       {
         "key": "target_tri_budget",
-        "label": "Target Tri Budget",
+        "label": "Presupuesto de Triángulos",
         "type": "int",
         "default": 420,
         "group": "Rendimiento",
@@ -6336,14 +6336,14 @@
       },
       {
         "key": "name",
-        "label": "Name",
+        "label": "Nombre de Instancia",
         "type": "string",
         "default": "asset",
         "group": "General"
       },
       {
         "key": "wear_level",
-        "label": "Wear Level",
+        "label": "Nivel de Desgaste",
         "type": "float",
         "default": 0.5,
         "group": "Materiales",
@@ -6353,42 +6353,42 @@
       },
       {
         "key": "add_collision_mesh",
-        "label": "Add Collision Mesh",
+        "label": "Generar Colisión",
         "type": "boolean",
         "default": false,
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "collision_type",
-        "label": "Collision Type",
+        "label": "Tipo de Colisión",
         "type": "string",
         "default": "box",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "collision_suffix",
-        "label": "Collision Suffix",
+        "label": "Sufijo de Colisión",
         "type": "string",
         "default": "-convcolonly",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "pivot_rule",
-        "label": "Pivot Rule",
+        "label": "Regla de Pivote",
         "type": "string",
         "default": "floor_center",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "export_subcomponents",
-        "label": "Export Subcomponents",
+        "label": "Exportar Subcomponentes",
         "type": "boolean",
         "default": false,
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "palette_name",
-        "label": "Palette Name",
+        "label": "Paleta de Color",
         "type": "enum",
         "default": "industrial_hazard",
         "group": "Materiales",
@@ -6417,10 +6417,10 @@
       },
       {
         "key": "emission_scale",
-        "label": "Emission Scale",
+        "label": "Intensidad de Emisión",
         "type": "float",
-        "default": 1.0,
-        "group": "General",
+        "default": 1,
+        "group": "Materiales",
         "min": 0.0,
         "step": 0.05
       },
@@ -6447,7 +6447,7 @@
       },
       {
         "key": "width",
-        "label": "Width",
+        "label": "Ancho (m)",
         "type": "float",
         "default": 1.2,
         "group": "Dimensiones",
@@ -6456,7 +6456,7 @@
       },
       {
         "key": "height",
-        "label": "Height",
+        "label": "Alto (m)",
         "type": "float",
         "default": 2.4,
         "group": "Dimensiones",
@@ -6476,7 +6476,7 @@
         "key": "open_angle_deg",
         "label": "Open Angle Deg",
         "type": "float",
-        "default": 0.0,
+        "default": 0,
         "group": "General",
         "min": 0.0,
         "step": 0.05
@@ -6525,13 +6525,13 @@
           "pivot_rule": "floor_center",
           "export_subcomponents": false,
           "palette_name": "industrial_hazard",
-          "emission_scale": 1.0,
+          "emission_scale": 1,
           "door_style": "single_swing",
           "glass_type": "wired_safety_glass",
           "width": 1.2,
           "height": 2.4,
           "frame_depth": 0.22,
-          "open_angle_deg": 0.0,
+          "open_angle_deg": 0,
           "glass_damage": "intact",
           "handle_type": "horizontal_push_bar",
           "has_kickplate": true,
@@ -6554,9 +6554,9 @@
   {
     "id": "below_nominal.medical.oxypod",
     "family": "oxypod",
-    "name": "Oxypod",
+    "name": "Cápsula de Oxígeno / Soporte Vital",
     "version": "1.0.0",
-    "description": "Generador procedural paramétrico de oxypod para Below Nominal.",
+    "description": "Cámara cilíndrica de regeneración atmosférica y soporte vital con ventanilla circular. Podés personalizar el radio y válvulas para descargar en formato GLB.",
     "category": "medical",
     "tags": [
       "medical",
@@ -6578,7 +6578,7 @@
     "parameters": [
       {
         "key": "seed",
-        "label": "Seed",
+        "label": "Semilla Aleatoria",
         "type": "seed",
         "default": 42,
         "group": "Rendimiento",
@@ -6588,7 +6588,7 @@
       },
       {
         "key": "target_tri_budget",
-        "label": "Target Tri Budget",
+        "label": "Presupuesto de Triángulos",
         "type": "int",
         "default": 440,
         "group": "Rendimiento",
@@ -6597,14 +6597,14 @@
       },
       {
         "key": "name",
-        "label": "Name",
+        "label": "Nombre de Instancia",
         "type": "string",
         "default": "oxypod",
         "group": "General"
       },
       {
         "key": "wear_level",
-        "label": "Wear Level",
+        "label": "Nivel de Desgaste",
         "type": "float",
         "default": 0.5,
         "group": "Materiales",
@@ -6614,42 +6614,42 @@
       },
       {
         "key": "add_collision_mesh",
-        "label": "Add Collision Mesh",
+        "label": "Generar Colisión",
         "type": "boolean",
         "default": false,
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "collision_type",
-        "label": "Collision Type",
+        "label": "Tipo de Colisión",
         "type": "string",
         "default": "box",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "collision_suffix",
-        "label": "Collision Suffix",
+        "label": "Sufijo de Colisión",
         "type": "string",
         "default": "-convcolonly",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "pivot_rule",
-        "label": "Pivot Rule",
+        "label": "Regla de Pivote",
         "type": "string",
         "default": "floor_center",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "export_subcomponents",
-        "label": "Export Subcomponents",
+        "label": "Exportar Subcomponentes",
         "type": "boolean",
         "default": false,
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "palette_name",
-        "label": "Palette Name",
+        "label": "Paleta de Color",
         "type": "enum",
         "default": "industrial_hazard",
         "group": "Materiales",
@@ -6678,10 +6678,10 @@
       },
       {
         "key": "emission_scale",
-        "label": "Emission Scale",
+        "label": "Intensidad de Emisión",
         "type": "float",
-        "default": 1.0,
-        "group": "General",
+        "default": 1,
+        "group": "Materiales",
         "min": 0.0,
         "step": 0.05
       },
@@ -6784,7 +6784,7 @@
           "pivot_rule": "floor_center",
           "export_subcomponents": false,
           "palette_name": "industrial_hazard",
-          "emission_scale": 1.0,
+          "emission_scale": 1,
           "station_type": "wall_station",
           "tank_height": 0.95,
           "tank_radius": 0.18,
@@ -6813,9 +6813,9 @@
   {
     "id": "below_nominal.infrastructure.pipes",
     "family": "pipes",
-    "name": "Pipes",
+    "name": "Sistema de Tuberías Industriales",
     "version": "1.0.0",
-    "description": "Generador procedural paramétrico de pipes para Below Nominal.",
+    "description": "Conjunto de cañerías modulares con bridas, codos y válvulas de paso. Podés ajustar el diámetro y recorrido de la tubería para descargar en formato GLB.",
     "category": "infrastructure",
     "tags": [
       "infrastructure",
@@ -6837,7 +6837,7 @@
     "parameters": [
       {
         "key": "seed",
-        "label": "Seed",
+        "label": "Semilla Aleatoria",
         "type": "seed",
         "default": 42,
         "group": "Rendimiento",
@@ -6847,7 +6847,7 @@
       },
       {
         "key": "target_tri_budget",
-        "label": "Target Tri Budget",
+        "label": "Presupuesto de Triángulos",
         "type": "int",
         "default": 400,
         "group": "Rendimiento",
@@ -6856,14 +6856,14 @@
       },
       {
         "key": "name",
-        "label": "Name",
+        "label": "Nombre de Instancia",
         "type": "string",
         "default": "pipe_assembly",
         "group": "General"
       },
       {
         "key": "wear_level",
-        "label": "Wear Level",
+        "label": "Nivel de Desgaste",
         "type": "float",
         "default": 0.5,
         "group": "Materiales",
@@ -6873,42 +6873,42 @@
       },
       {
         "key": "add_collision_mesh",
-        "label": "Add Collision Mesh",
+        "label": "Generar Colisión",
         "type": "boolean",
         "default": false,
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "collision_type",
-        "label": "Collision Type",
+        "label": "Tipo de Colisión",
         "type": "string",
         "default": "box",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "collision_suffix",
-        "label": "Collision Suffix",
+        "label": "Sufijo de Colisión",
         "type": "string",
         "default": "-convcolonly",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "pivot_rule",
-        "label": "Pivot Rule",
+        "label": "Regla de Pivote",
         "type": "string",
         "default": "floor_center",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "export_subcomponents",
-        "label": "Export Subcomponents",
+        "label": "Exportar Subcomponentes",
         "type": "boolean",
         "default": false,
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "palette_name",
-        "label": "Palette Name",
+        "label": "Paleta de Color",
         "type": "enum",
         "default": "industrial_hazard",
         "group": "Materiales",
@@ -6937,10 +6937,10 @@
       },
       {
         "key": "emission_scale",
-        "label": "Emission Scale",
+        "label": "Intensidad de Emisión",
         "type": "float",
-        "default": 1.0,
-        "group": "General",
+        "default": 1,
+        "group": "Materiales",
         "min": 0.0,
         "step": 0.05
       },
@@ -6960,7 +6960,7 @@
       },
       {
         "key": "radius",
-        "label": "Radius",
+        "label": "Radio (m)",
         "type": "float",
         "default": 0.09,
         "group": "Dimensiones",
@@ -6969,7 +6969,7 @@
       },
       {
         "key": "length",
-        "label": "Length",
+        "label": "Largo (m)",
         "type": "float",
         "default": 1.8,
         "group": "Dimensiones",
@@ -7020,7 +7020,7 @@
           "pivot_rule": "floor_center",
           "export_subcomponents": false,
           "palette_name": "industrial_hazard",
-          "emission_scale": 1.0,
+          "emission_scale": 1,
           "pipe_type": "valve_assembly",
           "radius": 0.09,
           "length": 1.8,
@@ -7046,9 +7046,9 @@
   {
     "id": "below_nominal.furniture.radiator_heater",
     "family": "radiator_heater",
-    "name": "Radiator Heater",
+    "name": "Radiador / Calefactor de Pared",
     "version": "1.0.0",
-    "description": "Generador procedural paramétrico de radiator heater para Below Nominal.",
+    "description": "Unidad de calefacción térmica con aletas de disipación y termostato. Podés configurar la cantidad de celdas radiantes para descargar en formato GLB.",
     "category": "furniture",
     "tags": [
       "furniture",
@@ -7070,7 +7070,7 @@
     "parameters": [
       {
         "key": "seed",
-        "label": "Seed",
+        "label": "Semilla Aleatoria",
         "type": "seed",
         "default": 42,
         "group": "Rendimiento",
@@ -7080,7 +7080,7 @@
       },
       {
         "key": "target_tri_budget",
-        "label": "Target Tri Budget",
+        "label": "Presupuesto de Triángulos",
         "type": "int",
         "default": 380,
         "group": "Rendimiento",
@@ -7089,14 +7089,14 @@
       },
       {
         "key": "name",
-        "label": "Name",
+        "label": "Nombre de Instancia",
         "type": "string",
         "default": "asset",
         "group": "General"
       },
       {
         "key": "wear_level",
-        "label": "Wear Level",
+        "label": "Nivel de Desgaste",
         "type": "float",
         "default": 0.5,
         "group": "Materiales",
@@ -7106,42 +7106,42 @@
       },
       {
         "key": "add_collision_mesh",
-        "label": "Add Collision Mesh",
+        "label": "Generar Colisión",
         "type": "boolean",
         "default": false,
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "collision_type",
-        "label": "Collision Type",
+        "label": "Tipo de Colisión",
         "type": "string",
         "default": "box",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "collision_suffix",
-        "label": "Collision Suffix",
+        "label": "Sufijo de Colisión",
         "type": "string",
         "default": "-convcolonly",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "pivot_rule",
-        "label": "Pivot Rule",
+        "label": "Regla de Pivote",
         "type": "string",
         "default": "floor_center",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "export_subcomponents",
-        "label": "Export Subcomponents",
+        "label": "Exportar Subcomponentes",
         "type": "boolean",
         "default": false,
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "palette_name",
-        "label": "Palette Name",
+        "label": "Paleta de Color",
         "type": "enum",
         "default": "industrial_hazard",
         "group": "Materiales",
@@ -7170,10 +7170,10 @@
       },
       {
         "key": "emission_scale",
-        "label": "Emission Scale",
+        "label": "Intensidad de Emisión",
         "type": "float",
-        "default": 1.0,
-        "group": "General",
+        "default": 1,
+        "group": "Materiales",
         "min": 0.0,
         "step": 0.05
       },
@@ -7193,7 +7193,7 @@
       },
       {
         "key": "width",
-        "label": "Width",
+        "label": "Ancho (m)",
         "type": "float",
         "default": 0.85,
         "group": "Dimensiones",
@@ -7202,7 +7202,7 @@
       },
       {
         "key": "height",
-        "label": "Height",
+        "label": "Alto (m)",
         "type": "float",
         "default": 0.7,
         "group": "Dimensiones",
@@ -7211,7 +7211,7 @@
       },
       {
         "key": "depth",
-        "label": "Depth",
+        "label": "Profundidad (m)",
         "type": "float",
         "default": 0.22,
         "group": "Dimensiones",
@@ -7271,7 +7271,7 @@
           "pivot_rule": "floor_center",
           "export_subcomponents": false,
           "palette_name": "industrial_hazard",
-          "emission_scale": 1.0,
+          "emission_scale": 1,
           "heater_type": "wall_radiator_fins",
           "width": 0.85,
           "height": 0.7,
@@ -7299,9 +7299,9 @@
   {
     "id": "below_nominal.fixtures.ration_automat",
     "family": "ration_automat",
-    "name": "Ration Automat",
+    "name": "Máquina Expendedora de Raciones",
     "version": "1.0.0",
-    "description": "Generador procedural paramétrico de ration automat para Below Nominal.",
+    "description": "Autómata de suministros y alimentos con teclado numérico y vitrina de dispensado. Podés personalizar la altura y paleta para descargar en formato GLB.",
     "category": "fixtures",
     "tags": [
       "fixtures",
@@ -7323,7 +7323,7 @@
     "parameters": [
       {
         "key": "seed",
-        "label": "Seed",
+        "label": "Semilla Aleatoria",
         "type": "seed",
         "default": 42,
         "group": "Rendimiento",
@@ -7333,7 +7333,7 @@
       },
       {
         "key": "target_tri_budget",
-        "label": "Target Tri Budget",
+        "label": "Presupuesto de Triángulos",
         "type": "int",
         "default": 380,
         "group": "Rendimiento",
@@ -7342,14 +7342,14 @@
       },
       {
         "key": "name",
-        "label": "Name",
+        "label": "Nombre de Instancia",
         "type": "string",
         "default": "asset",
         "group": "General"
       },
       {
         "key": "wear_level",
-        "label": "Wear Level",
+        "label": "Nivel de Desgaste",
         "type": "float",
         "default": 0.5,
         "group": "Materiales",
@@ -7359,42 +7359,42 @@
       },
       {
         "key": "add_collision_mesh",
-        "label": "Add Collision Mesh",
+        "label": "Generar Colisión",
         "type": "boolean",
         "default": false,
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "collision_type",
-        "label": "Collision Type",
+        "label": "Tipo de Colisión",
         "type": "string",
         "default": "box",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "collision_suffix",
-        "label": "Collision Suffix",
+        "label": "Sufijo de Colisión",
         "type": "string",
         "default": "-convcolonly",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "pivot_rule",
-        "label": "Pivot Rule",
+        "label": "Regla de Pivote",
         "type": "string",
         "default": "floor_center",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "export_subcomponents",
-        "label": "Export Subcomponents",
+        "label": "Exportar Subcomponentes",
         "type": "boolean",
         "default": false,
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "palette_name",
-        "label": "Palette Name",
+        "label": "Paleta de Color",
         "type": "enum",
         "default": "industrial_hazard",
         "group": "Materiales",
@@ -7423,10 +7423,10 @@
       },
       {
         "key": "emission_scale",
-        "label": "Emission Scale",
+        "label": "Intensidad de Emisión",
         "type": "float",
-        "default": 1.0,
-        "group": "General",
+        "default": 1,
+        "group": "Materiales",
         "min": 0.0,
         "step": 0.05
       },
@@ -7446,7 +7446,7 @@
       },
       {
         "key": "width",
-        "label": "Width",
+        "label": "Ancho (m)",
         "type": "float",
         "default": 0.85,
         "group": "Dimensiones",
@@ -7455,7 +7455,7 @@
       },
       {
         "key": "height",
-        "label": "Height",
+        "label": "Alto (m)",
         "type": "float",
         "default": 1.95,
         "group": "Dimensiones",
@@ -7464,7 +7464,7 @@
       },
       {
         "key": "depth",
-        "label": "Depth",
+        "label": "Profundidad (m)",
         "type": "float",
         "default": 0.65,
         "group": "Dimensiones",
@@ -7515,7 +7515,7 @@
           "pivot_rule": "floor_center",
           "export_subcomponents": false,
           "palette_name": "industrial_hazard",
-          "emission_scale": 1.0,
+          "emission_scale": 1,
           "machine_type": "nutrient_paste",
           "width": 0.85,
           "height": 1.95,
@@ -7542,9 +7542,9 @@
   {
     "id": "below_nominal.medical.restraint_chair",
     "family": "restraint_chair",
-    "name": "Restraint Chair",
+    "name": "Silla de Contención y Sujeción",
     "version": "1.0.0",
-    "description": "Generador procedural paramétrico de restraint chair para Below Nominal.",
+    "description": "Asiento reforzado con correas y soportes de seguridad para áreas médicas o de confinamiento. Podés ajustar el respaldo y anclajes para descargar en formato GLB.",
     "category": "medical",
     "tags": [
       "medical",
@@ -7566,7 +7566,7 @@
     "parameters": [
       {
         "key": "seed",
-        "label": "Seed",
+        "label": "Semilla Aleatoria",
         "type": "seed",
         "default": 42,
         "group": "Rendimiento",
@@ -7576,7 +7576,7 @@
       },
       {
         "key": "target_tri_budget",
-        "label": "Target Tri Budget",
+        "label": "Presupuesto de Triángulos",
         "type": "int",
         "default": 380,
         "group": "Rendimiento",
@@ -7585,14 +7585,14 @@
       },
       {
         "key": "name",
-        "label": "Name",
+        "label": "Nombre de Instancia",
         "type": "string",
         "default": "asset",
         "group": "General"
       },
       {
         "key": "wear_level",
-        "label": "Wear Level",
+        "label": "Nivel de Desgaste",
         "type": "float",
         "default": 0.5,
         "group": "Materiales",
@@ -7602,42 +7602,42 @@
       },
       {
         "key": "add_collision_mesh",
-        "label": "Add Collision Mesh",
+        "label": "Generar Colisión",
         "type": "boolean",
         "default": false,
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "collision_type",
-        "label": "Collision Type",
+        "label": "Tipo de Colisión",
         "type": "string",
         "default": "box",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "collision_suffix",
-        "label": "Collision Suffix",
+        "label": "Sufijo de Colisión",
         "type": "string",
         "default": "-convcolonly",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "pivot_rule",
-        "label": "Pivot Rule",
+        "label": "Regla de Pivote",
         "type": "string",
         "default": "floor_center",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "export_subcomponents",
-        "label": "Export Subcomponents",
+        "label": "Exportar Subcomponentes",
         "type": "boolean",
         "default": false,
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "palette_name",
-        "label": "Palette Name",
+        "label": "Paleta de Color",
         "type": "enum",
         "default": "industrial_hazard",
         "group": "Materiales",
@@ -7666,10 +7666,10 @@
       },
       {
         "key": "emission_scale",
-        "label": "Emission Scale",
+        "label": "Intensidad de Emisión",
         "type": "float",
-        "default": 1.0,
-        "group": "General",
+        "default": 1,
+        "group": "Materiales",
         "min": 0.0,
         "step": 0.05
       },
@@ -7689,7 +7689,7 @@
       },
       {
         "key": "width",
-        "label": "Width",
+        "label": "Ancho (m)",
         "type": "float",
         "default": 0.7,
         "group": "Dimensiones",
@@ -7698,7 +7698,7 @@
       },
       {
         "key": "depth",
-        "label": "Depth",
+        "label": "Profundidad (m)",
         "type": "float",
         "default": 0.75,
         "group": "Dimensiones",
@@ -7707,7 +7707,7 @@
       },
       {
         "key": "height",
-        "label": "Height",
+        "label": "Alto (m)",
         "type": "float",
         "default": 1.1,
         "group": "Dimensiones",
@@ -7765,7 +7765,7 @@
           "pivot_rule": "floor_center",
           "export_subcomponents": false,
           "palette_name": "industrial_hazard",
-          "emission_scale": 1.0,
+          "emission_scale": 1,
           "chair_type": "bolted_steel_chair",
           "width": 0.7,
           "depth": 0.75,
@@ -7793,9 +7793,9 @@
   {
     "id": "below_nominal.fixtures.safety_shower",
     "family": "safety_shower",
-    "name": "Safety Shower",
+    "name": "Ducha de Seguridad y Lavaojos",
     "version": "1.0.0",
-    "description": "Generador procedural paramétrico de safety shower para Below Nominal.",
+    "description": "Estación de descontaminación de emergencia con tirador de ducha y cubeta lavaojos. Podés modificar la altura del surtidor para descargar en formato GLB.",
     "category": "fixtures",
     "tags": [
       "fixtures",
@@ -7817,7 +7817,7 @@
     "parameters": [
       {
         "key": "seed",
-        "label": "Seed",
+        "label": "Semilla Aleatoria",
         "type": "seed",
         "default": 42,
         "group": "Rendimiento",
@@ -7827,7 +7827,7 @@
       },
       {
         "key": "target_tri_budget",
-        "label": "Target Tri Budget",
+        "label": "Presupuesto de Triángulos",
         "type": "int",
         "default": 280,
         "group": "Rendimiento",
@@ -7836,14 +7836,14 @@
       },
       {
         "key": "name",
-        "label": "Name",
+        "label": "Nombre de Instancia",
         "type": "string",
         "default": "asset",
         "group": "General"
       },
       {
         "key": "wear_level",
-        "label": "Wear Level",
+        "label": "Nivel de Desgaste",
         "type": "float",
         "default": 0.5,
         "group": "Materiales",
@@ -7853,42 +7853,42 @@
       },
       {
         "key": "add_collision_mesh",
-        "label": "Add Collision Mesh",
+        "label": "Generar Colisión",
         "type": "boolean",
         "default": false,
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "collision_type",
-        "label": "Collision Type",
+        "label": "Tipo de Colisión",
         "type": "string",
         "default": "box",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "collision_suffix",
-        "label": "Collision Suffix",
+        "label": "Sufijo de Colisión",
         "type": "string",
         "default": "-convcolonly",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "pivot_rule",
-        "label": "Pivot Rule",
+        "label": "Regla de Pivote",
         "type": "string",
         "default": "floor_center",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "export_subcomponents",
-        "label": "Export Subcomponents",
+        "label": "Exportar Subcomponentes",
         "type": "boolean",
         "default": false,
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "palette_name",
-        "label": "Palette Name",
+        "label": "Paleta de Color",
         "type": "enum",
         "default": "industrial_hazard",
         "group": "Materiales",
@@ -7917,10 +7917,10 @@
       },
       {
         "key": "emission_scale",
-        "label": "Emission Scale",
+        "label": "Intensidad de Emisión",
         "type": "float",
-        "default": 1.0,
-        "group": "General",
+        "default": 1,
+        "group": "Materiales",
         "min": 0.0,
         "step": 0.05
       },
@@ -7940,7 +7940,7 @@
       },
       {
         "key": "width",
-        "label": "Width",
+        "label": "Ancho (m)",
         "type": "float",
         "default": 0.75,
         "group": "Dimensiones",
@@ -7949,7 +7949,7 @@
       },
       {
         "key": "depth",
-        "label": "Depth",
+        "label": "Profundidad (m)",
         "type": "float",
         "default": 0.85,
         "group": "Dimensiones",
@@ -7958,7 +7958,7 @@
       },
       {
         "key": "height",
-        "label": "Height",
+        "label": "Alto (m)",
         "type": "float",
         "default": 2.25,
         "group": "Dimensiones",
@@ -8009,7 +8009,7 @@
           "pivot_rule": "floor_center",
           "export_subcomponents": false,
           "palette_name": "industrial_hazard",
-          "emission_scale": 1.0,
+          "emission_scale": 1,
           "shower_type": "combined_shower_eyewash",
           "width": 0.75,
           "depth": 0.85,
@@ -8036,9 +8036,9 @@
   {
     "id": "below_nominal.medical.scrub_sink",
     "family": "scrub_sink",
-    "name": "Scrub Sink",
+    "name": "Lavamanos Quirúrgico",
     "version": "1.0.0",
-    "description": "Generador procedural paramétrico de scrub sink para Below Nominal.",
+    "description": "Pila profunda de acero inoxidable con pedal o sensor de accionamiento para esterilización médica. Podés ajustar el ancho y grifería para descargar en formato GLB.",
     "category": "medical",
     "tags": [
       "medical",
@@ -8060,7 +8060,7 @@
     "parameters": [
       {
         "key": "seed",
-        "label": "Seed",
+        "label": "Semilla Aleatoria",
         "type": "seed",
         "default": 42,
         "group": "Rendimiento",
@@ -8070,7 +8070,7 @@
       },
       {
         "key": "target_tri_budget",
-        "label": "Target Tri Budget",
+        "label": "Presupuesto de Triángulos",
         "type": "int",
         "default": 260,
         "group": "Rendimiento",
@@ -8079,14 +8079,14 @@
       },
       {
         "key": "name",
-        "label": "Name",
+        "label": "Nombre de Instancia",
         "type": "string",
         "default": "asset",
         "group": "General"
       },
       {
         "key": "wear_level",
-        "label": "Wear Level",
+        "label": "Nivel de Desgaste",
         "type": "float",
         "default": 0.5,
         "group": "Materiales",
@@ -8096,42 +8096,42 @@
       },
       {
         "key": "add_collision_mesh",
-        "label": "Add Collision Mesh",
+        "label": "Generar Colisión",
         "type": "boolean",
         "default": false,
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "collision_type",
-        "label": "Collision Type",
+        "label": "Tipo de Colisión",
         "type": "string",
         "default": "box",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "collision_suffix",
-        "label": "Collision Suffix",
+        "label": "Sufijo de Colisión",
         "type": "string",
         "default": "-convcolonly",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "pivot_rule",
-        "label": "Pivot Rule",
+        "label": "Regla de Pivote",
         "type": "string",
         "default": "floor_center",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "export_subcomponents",
-        "label": "Export Subcomponents",
+        "label": "Exportar Subcomponentes",
         "type": "boolean",
         "default": false,
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "palette_name",
-        "label": "Palette Name",
+        "label": "Paleta de Color",
         "type": "enum",
         "default": "industrial_hazard",
         "group": "Materiales",
@@ -8160,10 +8160,10 @@
       },
       {
         "key": "emission_scale",
-        "label": "Emission Scale",
+        "label": "Intensidad de Emisión",
         "type": "float",
-        "default": 1.0,
-        "group": "General",
+        "default": 1,
+        "group": "Materiales",
         "min": 0.0,
         "step": 0.05
       },
@@ -8183,7 +8183,7 @@
       },
       {
         "key": "width",
-        "label": "Width",
+        "label": "Ancho (m)",
         "type": "float",
         "default": 0.7,
         "group": "Dimensiones",
@@ -8192,7 +8192,7 @@
       },
       {
         "key": "depth",
-        "label": "Depth",
+        "label": "Profundidad (m)",
         "type": "float",
         "default": 0.55,
         "group": "Dimensiones",
@@ -8201,7 +8201,7 @@
       },
       {
         "key": "height",
-        "label": "Height",
+        "label": "Alto (m)",
         "type": "float",
         "default": 1.15,
         "group": "Dimensiones",
@@ -8252,7 +8252,7 @@
           "pivot_rule": "floor_center",
           "export_subcomponents": false,
           "palette_name": "industrial_hazard",
-          "emission_scale": 1.0,
+          "emission_scale": 1,
           "sink_type": "surgical_single",
           "width": 0.7,
           "depth": 0.55,
@@ -8279,9 +8279,9 @@
   {
     "id": "below_nominal.furniture.security_desk",
     "family": "security_desk",
-    "name": "Security Desk",
+    "name": "Puesto de Guardia / Seguridad",
     "version": "1.0.0",
-    "description": "Generador procedural paramétrico de security desk para Below Nominal.",
+    "description": "Mostrador elevado con ventanilla blindada y panel de control para control de acceso. Podés personalizar el frente y mampara para descargar en formato GLB.",
     "category": "furniture",
     "tags": [
       "furniture",
@@ -8303,7 +8303,7 @@
     "parameters": [
       {
         "key": "seed",
-        "label": "Seed",
+        "label": "Semilla Aleatoria",
         "type": "seed",
         "default": 42,
         "group": "Rendimiento",
@@ -8313,7 +8313,7 @@
       },
       {
         "key": "target_tri_budget",
-        "label": "Target Tri Budget",
+        "label": "Presupuesto de Triángulos",
         "type": "int",
         "default": 340,
         "group": "Rendimiento",
@@ -8322,14 +8322,14 @@
       },
       {
         "key": "name",
-        "label": "Name",
+        "label": "Nombre de Instancia",
         "type": "string",
         "default": "asset",
         "group": "General"
       },
       {
         "key": "wear_level",
-        "label": "Wear Level",
+        "label": "Nivel de Desgaste",
         "type": "float",
         "default": 0.5,
         "group": "Materiales",
@@ -8339,42 +8339,42 @@
       },
       {
         "key": "add_collision_mesh",
-        "label": "Add Collision Mesh",
+        "label": "Generar Colisión",
         "type": "boolean",
         "default": false,
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "collision_type",
-        "label": "Collision Type",
+        "label": "Tipo de Colisión",
         "type": "string",
         "default": "box",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "collision_suffix",
-        "label": "Collision Suffix",
+        "label": "Sufijo de Colisión",
         "type": "string",
         "default": "-convcolonly",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "pivot_rule",
-        "label": "Pivot Rule",
+        "label": "Regla de Pivote",
         "type": "string",
         "default": "floor_center",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "export_subcomponents",
-        "label": "Export Subcomponents",
+        "label": "Exportar Subcomponentes",
         "type": "boolean",
         "default": false,
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "palette_name",
-        "label": "Palette Name",
+        "label": "Paleta de Color",
         "type": "enum",
         "default": "industrial_hazard",
         "group": "Materiales",
@@ -8403,10 +8403,10 @@
       },
       {
         "key": "emission_scale",
-        "label": "Emission Scale",
+        "label": "Intensidad de Emisión",
         "type": "float",
-        "default": 1.0,
-        "group": "General",
+        "default": 1,
+        "group": "Materiales",
         "min": 0.0,
         "step": 0.05
       },
@@ -8426,7 +8426,7 @@
       },
       {
         "key": "width",
-        "label": "Width",
+        "label": "Ancho (m)",
         "type": "float",
         "default": 1.8,
         "group": "Dimensiones",
@@ -8435,7 +8435,7 @@
       },
       {
         "key": "depth",
-        "label": "Depth",
+        "label": "Profundidad (m)",
         "type": "float",
         "default": 0.9,
         "group": "Dimensiones",
@@ -8444,7 +8444,7 @@
       },
       {
         "key": "height",
-        "label": "Height",
+        "label": "Alto (m)",
         "type": "float",
         "default": 1.15,
         "group": "Dimensiones",
@@ -8502,7 +8502,7 @@
           "pivot_rule": "floor_center",
           "export_subcomponents": false,
           "palette_name": "industrial_hazard",
-          "emission_scale": 1.0,
+          "emission_scale": 1,
           "desk_style": "corner_checkpoint",
           "width": 1.8,
           "depth": 0.9,
@@ -8530,9 +8530,9 @@
   {
     "id": "below_nominal.infrastructure.server_rack",
     "family": "server_rack",
-    "name": "Server Rack",
+    "name": "Armario de Servidores / Rack",
     "version": "1.0.0",
-    "description": "Generador procedural paramétrico de server rack para Below Nominal.",
+    "description": "Gabinete vertical para unidades de cómputo con bahías ventiladas y luces LED. Podés configurar la cantidad de módulos para descargar en formato GLB.",
     "category": "infrastructure",
     "tags": [
       "infrastructure",
@@ -8554,7 +8554,7 @@
     "parameters": [
       {
         "key": "seed",
-        "label": "Seed",
+        "label": "Semilla Aleatoria",
         "type": "seed",
         "default": 42,
         "group": "Rendimiento",
@@ -8564,7 +8564,7 @@
       },
       {
         "key": "target_tri_budget",
-        "label": "Target Tri Budget",
+        "label": "Presupuesto de Triángulos",
         "type": "int",
         "default": 500,
         "group": "Rendimiento",
@@ -8573,14 +8573,14 @@
       },
       {
         "key": "name",
-        "label": "Name",
+        "label": "Nombre de Instancia",
         "type": "string",
         "default": "consciousness_server_rack",
         "group": "General"
       },
       {
         "key": "wear_level",
-        "label": "Wear Level",
+        "label": "Nivel de Desgaste",
         "type": "float",
         "default": 0.5,
         "group": "Materiales",
@@ -8590,42 +8590,42 @@
       },
       {
         "key": "add_collision_mesh",
-        "label": "Add Collision Mesh",
+        "label": "Generar Colisión",
         "type": "boolean",
         "default": false,
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "collision_type",
-        "label": "Collision Type",
+        "label": "Tipo de Colisión",
         "type": "string",
         "default": "box",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "collision_suffix",
-        "label": "Collision Suffix",
+        "label": "Sufijo de Colisión",
         "type": "string",
         "default": "-convcolonly",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "pivot_rule",
-        "label": "Pivot Rule",
+        "label": "Regla de Pivote",
         "type": "string",
         "default": "floor_center",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "export_subcomponents",
-        "label": "Export Subcomponents",
+        "label": "Exportar Subcomponentes",
         "type": "boolean",
         "default": false,
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "palette_name",
-        "label": "Palette Name",
+        "label": "Paleta de Color",
         "type": "enum",
         "default": "industrial_hazard",
         "group": "Materiales",
@@ -8654,10 +8654,10 @@
       },
       {
         "key": "emission_scale",
-        "label": "Emission Scale",
+        "label": "Intensidad de Emisión",
         "type": "float",
-        "default": 1.0,
-        "group": "General",
+        "default": 1,
+        "group": "Materiales",
         "min": 0.0,
         "step": 0.05
       },
@@ -8677,7 +8677,7 @@
       },
       {
         "key": "width",
-        "label": "Width",
+        "label": "Ancho (m)",
         "type": "float",
         "default": 0.8,
         "group": "Dimensiones",
@@ -8686,16 +8686,16 @@
       },
       {
         "key": "height",
-        "label": "Height",
+        "label": "Alto (m)",
         "type": "float",
-        "default": 2.0,
+        "default": 2,
         "group": "Dimensiones",
         "min": 0.0,
         "step": 0.05
       },
       {
         "key": "depth",
-        "label": "Depth",
+        "label": "Profundidad (m)",
         "type": "float",
         "default": 0.85,
         "group": "Dimensiones",
@@ -8764,10 +8764,10 @@
           "pivot_rule": "floor_center",
           "export_subcomponents": false,
           "palette_name": "industrial_hazard",
-          "emission_scale": 1.0,
+          "emission_scale": 1,
           "rack_type": "consciousness_bank",
           "width": 0.8,
-          "height": 2.0,
+          "height": 2,
           "depth": 0.85,
           "blade_units": 6,
           "cartridge_occupancy": 0.8,
@@ -8793,9 +8793,9 @@
   {
     "id": "below_nominal.infrastructure.sign_placard",
     "family": "sign_placard",
-    "name": "Sign Placard",
+    "name": "Cartel de Señalización de Pared",
     "version": "1.0.0",
-    "description": "Generador procedural paramétrico de sign placard para Below Nominal.",
+    "description": "Placa de aviso y señalética modular para pasillos y compuertas. Podés elegir las dimensiones y colores de advertencia para descargar en formato GLB.",
     "category": "infrastructure",
     "tags": [
       "infrastructure",
@@ -8817,7 +8817,7 @@
     "parameters": [
       {
         "key": "seed",
-        "label": "Seed",
+        "label": "Semilla Aleatoria",
         "type": "seed",
         "default": 42,
         "group": "Rendimiento",
@@ -8827,7 +8827,7 @@
       },
       {
         "key": "target_tri_budget",
-        "label": "Target Tri Budget",
+        "label": "Presupuesto de Triángulos",
         "type": "int",
         "default": 240,
         "group": "Rendimiento",
@@ -8836,14 +8836,14 @@
       },
       {
         "key": "name",
-        "label": "Name",
+        "label": "Nombre de Instancia",
         "type": "string",
         "default": "sign_placard",
         "group": "General"
       },
       {
         "key": "wear_level",
-        "label": "Wear Level",
+        "label": "Nivel de Desgaste",
         "type": "float",
         "default": 0.65,
         "group": "Materiales",
@@ -8853,42 +8853,42 @@
       },
       {
         "key": "add_collision_mesh",
-        "label": "Add Collision Mesh",
+        "label": "Generar Colisión",
         "type": "boolean",
         "default": false,
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "collision_type",
-        "label": "Collision Type",
+        "label": "Tipo de Colisión",
         "type": "string",
         "default": "box",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "collision_suffix",
-        "label": "Collision Suffix",
+        "label": "Sufijo de Colisión",
         "type": "string",
         "default": "-convcolonly",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "pivot_rule",
-        "label": "Pivot Rule",
+        "label": "Regla de Pivote",
         "type": "string",
         "default": "floor_center",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "export_subcomponents",
-        "label": "Export Subcomponents",
+        "label": "Exportar Subcomponentes",
         "type": "boolean",
         "default": false,
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "palette_name",
-        "label": "Palette Name",
+        "label": "Paleta de Color",
         "type": "enum",
         "default": "industrial_hazard",
         "group": "Materiales",
@@ -8917,10 +8917,10 @@
       },
       {
         "key": "emission_scale",
-        "label": "Emission Scale",
+        "label": "Intensidad de Emisión",
         "type": "float",
-        "default": 1.0,
-        "group": "General",
+        "default": 1,
+        "group": "Materiales",
         "min": 0.0,
         "step": 0.05
       },
@@ -8933,7 +8933,7 @@
       },
       {
         "key": "width",
-        "label": "Width",
+        "label": "Ancho (m)",
         "type": "float",
         "default": 0.8,
         "group": "Dimensiones",
@@ -8942,7 +8942,7 @@
       },
       {
         "key": "height",
-        "label": "Height",
+        "label": "Alto (m)",
         "type": "float",
         "default": 0.35,
         "group": "Dimensiones",
@@ -8951,7 +8951,7 @@
       },
       {
         "key": "depth",
-        "label": "Depth",
+        "label": "Profundidad (m)",
         "type": "float",
         "default": 0.04,
         "group": "Dimensiones",
@@ -9018,7 +9018,7 @@
           "pivot_rule": "floor_center",
           "export_subcomponents": false,
           "palette_name": "industrial_hazard",
-          "emission_scale": 1.0,
+          "emission_scale": 1,
           "width": 0.8,
           "height": 0.35,
           "depth": 0.04,
@@ -9046,9 +9046,9 @@
   {
     "id": "below_nominal.fixtures.space_toilet",
     "family": "space_toilet",
-    "name": "Space Toilet",
+    "name": "Inodoro Sanitario Compacto",
     "version": "1.0.0",
-    "description": "Generador procedural paramétrico de space toilet para Below Nominal.",
+    "description": "Unidad sanitaria compacta de succión al vacío con asideros y pedales de fijación. Podés personalizar la altura y accesorios para descargar en formato GLB.",
     "category": "fixtures",
     "tags": [
       "fixtures",
@@ -9070,7 +9070,7 @@
     "parameters": [
       {
         "key": "seed",
-        "label": "Seed",
+        "label": "Semilla Aleatoria",
         "type": "seed",
         "default": 42,
         "group": "Rendimiento",
@@ -9080,7 +9080,7 @@
       },
       {
         "key": "target_tri_budget",
-        "label": "Target Tri Budget",
+        "label": "Presupuesto de Triángulos",
         "type": "int",
         "default": 240,
         "group": "Rendimiento",
@@ -9089,14 +9089,14 @@
       },
       {
         "key": "name",
-        "label": "Name",
+        "label": "Nombre de Instancia",
         "type": "string",
         "default": "asset",
         "group": "General"
       },
       {
         "key": "wear_level",
-        "label": "Wear Level",
+        "label": "Nivel de Desgaste",
         "type": "float",
         "default": 0.5,
         "group": "Materiales",
@@ -9106,42 +9106,42 @@
       },
       {
         "key": "add_collision_mesh",
-        "label": "Add Collision Mesh",
+        "label": "Generar Colisión",
         "type": "boolean",
         "default": false,
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "collision_type",
-        "label": "Collision Type",
+        "label": "Tipo de Colisión",
         "type": "string",
         "default": "box",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "collision_suffix",
-        "label": "Collision Suffix",
+        "label": "Sufijo de Colisión",
         "type": "string",
         "default": "-convcolonly",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "pivot_rule",
-        "label": "Pivot Rule",
+        "label": "Regla de Pivote",
         "type": "string",
         "default": "floor_center",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "export_subcomponents",
-        "label": "Export Subcomponents",
+        "label": "Exportar Subcomponentes",
         "type": "boolean",
         "default": false,
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "palette_name",
-        "label": "Palette Name",
+        "label": "Paleta de Color",
         "type": "enum",
         "default": "industrial_hazard",
         "group": "Materiales",
@@ -9170,10 +9170,10 @@
       },
       {
         "key": "emission_scale",
-        "label": "Emission Scale",
+        "label": "Intensidad de Emisión",
         "type": "float",
-        "default": 1.0,
-        "group": "General",
+        "default": 1,
+        "group": "Materiales",
         "min": 0.0,
         "step": 0.05
       },
@@ -9193,7 +9193,7 @@
       },
       {
         "key": "width",
-        "label": "Width",
+        "label": "Ancho (m)",
         "type": "float",
         "default": 0.5,
         "group": "Dimensiones",
@@ -9202,7 +9202,7 @@
       },
       {
         "key": "depth",
-        "label": "Depth",
+        "label": "Profundidad (m)",
         "type": "float",
         "default": 0.65,
         "group": "Dimensiones",
@@ -9211,7 +9211,7 @@
       },
       {
         "key": "height",
-        "label": "Height",
+        "label": "Alto (m)",
         "type": "float",
         "default": 0.85,
         "group": "Dimensiones",
@@ -9262,7 +9262,7 @@
           "pivot_rule": "floor_center",
           "export_subcomponents": false,
           "palette_name": "industrial_hazard",
-          "emission_scale": 1.0,
+          "emission_scale": 1,
           "toilet_type": "bulkhead_vacuum",
           "width": 0.5,
           "depth": 0.65,
@@ -9289,9 +9289,9 @@
   {
     "id": "below_nominal.architecture.station_corridor",
     "family": "station_corridor",
-    "name": "Station Corridor",
+    "name": "Sección de Pasillo Modular",
     "version": "1.0.0",
-    "description": "Generador procedural paramétrico de station corridor para Below Nominal.",
+    "description": "Módulo de túnel o corredor transitable con mamparas y nervaduras de refuerzo. Podés ajustar el largo, ancho y altura para descargar en formato GLB.",
     "category": "architecture",
     "tags": [
       "architecture",
@@ -9313,7 +9313,7 @@
     "parameters": [
       {
         "key": "seed",
-        "label": "Seed",
+        "label": "Semilla Aleatoria",
         "type": "seed",
         "default": 42,
         "group": "Rendimiento",
@@ -9323,7 +9323,7 @@
       },
       {
         "key": "target_tri_budget",
-        "label": "Target Tri Budget",
+        "label": "Presupuesto de Triángulos",
         "type": "int",
         "default": 550,
         "group": "Rendimiento",
@@ -9332,14 +9332,14 @@
       },
       {
         "key": "name",
-        "label": "Name",
+        "label": "Nombre de Instancia",
         "type": "string",
         "default": "asset",
         "group": "General"
       },
       {
         "key": "wear_level",
-        "label": "Wear Level",
+        "label": "Nivel de Desgaste",
         "type": "float",
         "default": 0.5,
         "group": "Materiales",
@@ -9349,42 +9349,42 @@
       },
       {
         "key": "add_collision_mesh",
-        "label": "Add Collision Mesh",
+        "label": "Generar Colisión",
         "type": "boolean",
         "default": false,
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "collision_type",
-        "label": "Collision Type",
+        "label": "Tipo de Colisión",
         "type": "string",
         "default": "box",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "collision_suffix",
-        "label": "Collision Suffix",
+        "label": "Sufijo de Colisión",
         "type": "string",
         "default": "-convcolonly",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "pivot_rule",
-        "label": "Pivot Rule",
+        "label": "Regla de Pivote",
         "type": "string",
         "default": "floor_center",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "export_subcomponents",
-        "label": "Export Subcomponents",
+        "label": "Exportar Subcomponentes",
         "type": "boolean",
         "default": false,
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "palette_name",
-        "label": "Palette Name",
+        "label": "Paleta de Color",
         "type": "enum",
         "default": "industrial_hazard",
         "group": "Materiales",
@@ -9413,10 +9413,10 @@
       },
       {
         "key": "emission_scale",
-        "label": "Emission Scale",
+        "label": "Intensidad de Emisión",
         "type": "float",
-        "default": 1.0,
-        "group": "General",
+        "default": 1,
+        "group": "Materiales",
         "min": 0.0,
         "step": 0.05
       },
@@ -9436,27 +9436,27 @@
       },
       {
         "key": "width",
-        "label": "Width",
+        "label": "Ancho (m)",
         "type": "float",
-        "default": 3.0,
+        "default": 3,
         "group": "Dimensiones",
         "min": 0.0,
         "step": 0.05
       },
       {
         "key": "length",
-        "label": "Length",
+        "label": "Largo (m)",
         "type": "float",
-        "default": 4.0,
+        "default": 4,
         "group": "Dimensiones",
         "min": 0.0,
         "step": 0.05
       },
       {
         "key": "height",
-        "label": "Height",
+        "label": "Alto (m)",
         "type": "float",
-        "default": 3.0,
+        "default": 3,
         "group": "Dimensiones",
         "min": 0.0,
         "step": 0.05
@@ -9528,7 +9528,7 @@
         "key": "doorway_width",
         "label": "Doorway Width",
         "type": "float",
-        "default": 2.0,
+        "default": 2,
         "group": "General",
         "min": 0.0,
         "step": 0.05
@@ -9565,11 +9565,11 @@
           "pivot_rule": "floor_center",
           "export_subcomponents": false,
           "palette_name": "industrial_hazard",
-          "emission_scale": 1.0,
+          "emission_scale": 1,
           "corridor_type": "straight",
-          "width": 3.0,
-          "length": 4.0,
-          "height": 3.0,
+          "width": 3,
+          "length": 4,
+          "height": 3,
           "floor_style": "tread_plate",
           "wall_style": "structural_ribs",
           "ceiling_style": "exposed_beams",
@@ -9579,7 +9579,7 @@
           "has_wall_alcove": true,
           "has_hazard_stripes": true,
           "damage_state": "pristine",
-          "doorway_width": 2.0,
+          "doorway_width": 2,
           "doorway_height": 2.4
         },
         "description": "Configuración base del generador"
@@ -9599,9 +9599,9 @@
   {
     "id": "below_nominal.architecture.station_room",
     "family": "station_room",
-    "name": "Station Room",
+    "name": "Sala Modular Prefabricada",
     "version": "1.0.0",
-    "description": "Generador procedural paramétrico de station room para Below Nominal.",
+    "description": "Habitación cúbica prefabricada para recintos habitacionales o laboratorios. Podés regular las dimensiones de suelo a techo para descargar en formato GLB.",
     "category": "architecture",
     "tags": [
       "architecture",
@@ -9623,7 +9623,7 @@
     "parameters": [
       {
         "key": "seed",
-        "label": "Seed",
+        "label": "Semilla Aleatoria",
         "type": "seed",
         "default": 42,
         "group": "Rendimiento",
@@ -9633,7 +9633,7 @@
       },
       {
         "key": "target_tri_budget",
-        "label": "Target Tri Budget",
+        "label": "Presupuesto de Triángulos",
         "type": "int",
         "default": 750,
         "group": "Rendimiento",
@@ -9642,14 +9642,14 @@
       },
       {
         "key": "name",
-        "label": "Name",
+        "label": "Nombre de Instancia",
         "type": "string",
         "default": "asset",
         "group": "General"
       },
       {
         "key": "wear_level",
-        "label": "Wear Level",
+        "label": "Nivel de Desgaste",
         "type": "float",
         "default": 0.5,
         "group": "Materiales",
@@ -9659,42 +9659,42 @@
       },
       {
         "key": "add_collision_mesh",
-        "label": "Add Collision Mesh",
+        "label": "Generar Colisión",
         "type": "boolean",
         "default": false,
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "collision_type",
-        "label": "Collision Type",
+        "label": "Tipo de Colisión",
         "type": "string",
         "default": "box",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "collision_suffix",
-        "label": "Collision Suffix",
+        "label": "Sufijo de Colisión",
         "type": "string",
         "default": "-convcolonly",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "pivot_rule",
-        "label": "Pivot Rule",
+        "label": "Regla de Pivote",
         "type": "string",
         "default": "floor_center",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "export_subcomponents",
-        "label": "Export Subcomponents",
+        "label": "Exportar Subcomponentes",
         "type": "boolean",
         "default": false,
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "palette_name",
-        "label": "Palette Name",
+        "label": "Paleta de Color",
         "type": "enum",
         "default": "industrial_hazard",
         "group": "Materiales",
@@ -9723,10 +9723,10 @@
       },
       {
         "key": "emission_scale",
-        "label": "Emission Scale",
+        "label": "Intensidad de Emisión",
         "type": "float",
-        "default": 1.0,
-        "group": "General",
+        "default": 1,
+        "group": "Materiales",
         "min": 0.0,
         "step": 0.05
       },
@@ -9746,25 +9746,25 @@
       },
       {
         "key": "width",
-        "label": "Width",
+        "label": "Ancho (m)",
         "type": "float",
-        "default": 6.0,
+        "default": 6,
         "group": "Dimensiones",
         "min": 0.0,
         "step": 0.05
       },
       {
         "key": "depth",
-        "label": "Depth",
+        "label": "Profundidad (m)",
         "type": "float",
-        "default": 8.0,
+        "default": 8,
         "group": "Dimensiones",
         "min": 0.0,
         "step": 0.05
       },
       {
         "key": "height",
-        "label": "Height",
+        "label": "Alto (m)",
         "type": "float",
         "default": 3.4,
         "group": "Dimensiones",
@@ -9803,7 +9803,7 @@
         "key": "doorway_width",
         "label": "Doorway Width",
         "type": "float",
-        "default": 2.0,
+        "default": 2,
         "group": "General",
         "min": 0.0,
         "step": 0.05
@@ -9882,16 +9882,16 @@
           "pivot_rule": "floor_center",
           "export_subcomponents": false,
           "palette_name": "industrial_hazard",
-          "emission_scale": 1.0,
+          "emission_scale": 1,
           "room_archetype": "medbay_lab",
-          "width": 6.0,
-          "depth": 8.0,
+          "width": 6,
+          "depth": 8,
           "height": 3.4,
           "door_north": true,
           "door_south": true,
           "door_east": false,
           "door_west": false,
-          "doorway_width": 2.0,
+          "doorway_width": 2,
           "doorway_height": 2.4,
           "pillar_layout": "perimeter_buttresses",
           "floor_elevation": "flat",
@@ -9917,9 +9917,9 @@
   {
     "id": "below_nominal.infrastructure.terminal",
     "family": "terminal",
-    "name": "Terminal",
+    "name": "Terminal Informático de Pie",
     "version": "1.0.0",
-    "description": "Generador procedural paramétrico de terminal para Below Nominal.",
+    "description": "Consola vertical con monitor CRT inclinado y teclado robusto. Podés modificar la inclinación de pantalla y altura de consola para descargar en formato GLB.",
     "category": "infrastructure",
     "tags": [
       "infrastructure",
@@ -9941,7 +9941,7 @@
     "parameters": [
       {
         "key": "seed",
-        "label": "Seed",
+        "label": "Semilla Aleatoria",
         "type": "seed",
         "default": 42,
         "group": "Rendimiento",
@@ -9951,7 +9951,7 @@
       },
       {
         "key": "target_tri_budget",
-        "label": "Target Tri Budget",
+        "label": "Presupuesto de Triángulos",
         "type": "int",
         "default": 450,
         "group": "Rendimiento",
@@ -9960,14 +9960,14 @@
       },
       {
         "key": "name",
-        "label": "Name",
+        "label": "Nombre de Instancia",
         "type": "string",
         "default": "terminal",
         "group": "General"
       },
       {
         "key": "wear_level",
-        "label": "Wear Level",
+        "label": "Nivel de Desgaste",
         "type": "float",
         "default": 0.5,
         "group": "Materiales",
@@ -9977,42 +9977,42 @@
       },
       {
         "key": "add_collision_mesh",
-        "label": "Add Collision Mesh",
+        "label": "Generar Colisión",
         "type": "boolean",
         "default": false,
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "collision_type",
-        "label": "Collision Type",
+        "label": "Tipo de Colisión",
         "type": "string",
         "default": "box",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "collision_suffix",
-        "label": "Collision Suffix",
+        "label": "Sufijo de Colisión",
         "type": "string",
         "default": "-convcolonly",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "pivot_rule",
-        "label": "Pivot Rule",
+        "label": "Regla de Pivote",
         "type": "string",
         "default": "floor_center",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "export_subcomponents",
-        "label": "Export Subcomponents",
+        "label": "Exportar Subcomponentes",
         "type": "boolean",
         "default": false,
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "palette_name",
-        "label": "Palette Name",
+        "label": "Paleta de Color",
         "type": "enum",
         "default": "industrial_hazard",
         "group": "Materiales",
@@ -10041,10 +10041,10 @@
       },
       {
         "key": "emission_scale",
-        "label": "Emission Scale",
+        "label": "Intensidad de Emisión",
         "type": "float",
-        "default": 1.0,
-        "group": "General",
+        "default": 1,
+        "group": "Materiales",
         "min": 0.0,
         "step": 0.05
       },
@@ -10071,7 +10071,7 @@
       },
       {
         "key": "width",
-        "label": "Width",
+        "label": "Ancho (m)",
         "type": "float",
         "default": 0.55,
         "group": "Dimensiones",
@@ -10080,7 +10080,7 @@
       },
       {
         "key": "height",
-        "label": "Height",
+        "label": "Alto (m)",
         "type": "float",
         "default": 0.65,
         "group": "Dimensiones",
@@ -10089,7 +10089,7 @@
       },
       {
         "key": "depth",
-        "label": "Depth",
+        "label": "Profundidad (m)",
         "type": "float",
         "default": 0.35,
         "group": "Dimensiones",
@@ -10197,7 +10197,7 @@
           "pivot_rule": "floor_center",
           "export_subcomponents": false,
           "palette_name": "industrial_hazard",
-          "emission_scale": 1.0,
+          "emission_scale": 1,
           "terminal_type": "wall",
           "state": "active",
           "width": 0.55,
@@ -10232,9 +10232,9 @@
   {
     "id": "below_nominal.fixtures.tool_chest_cart",
     "family": "tool_chest_cart",
-    "name": "Tool Chest Cart",
+    "name": "Carro Portaherramientas de Taller",
     "version": "1.0.0",
-    "description": "Generador procedural paramétrico de tool chest cart para Below Nominal.",
+    "description": "Caja de herramientas rodante de varios cajones con superficie de trabajo superior. Podés ajustar el número de bandejas para descargar en formato GLB.",
     "category": "fixtures",
     "tags": [
       "fixtures",
@@ -10256,7 +10256,7 @@
     "parameters": [
       {
         "key": "seed",
-        "label": "Seed",
+        "label": "Semilla Aleatoria",
         "type": "seed",
         "default": 42,
         "group": "Rendimiento",
@@ -10266,7 +10266,7 @@
       },
       {
         "key": "target_tri_budget",
-        "label": "Target Tri Budget",
+        "label": "Presupuesto de Triángulos",
         "type": "int",
         "default": 380,
         "group": "Rendimiento",
@@ -10275,14 +10275,14 @@
       },
       {
         "key": "name",
-        "label": "Name",
+        "label": "Nombre de Instancia",
         "type": "string",
         "default": "asset",
         "group": "General"
       },
       {
         "key": "wear_level",
-        "label": "Wear Level",
+        "label": "Nivel de Desgaste",
         "type": "float",
         "default": 0.5,
         "group": "Materiales",
@@ -10292,42 +10292,42 @@
       },
       {
         "key": "add_collision_mesh",
-        "label": "Add Collision Mesh",
+        "label": "Generar Colisión",
         "type": "boolean",
         "default": false,
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "collision_type",
-        "label": "Collision Type",
+        "label": "Tipo de Colisión",
         "type": "string",
         "default": "box",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "collision_suffix",
-        "label": "Collision Suffix",
+        "label": "Sufijo de Colisión",
         "type": "string",
         "default": "-convcolonly",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "pivot_rule",
-        "label": "Pivot Rule",
+        "label": "Regla de Pivote",
         "type": "string",
         "default": "floor_center",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "export_subcomponents",
-        "label": "Export Subcomponents",
+        "label": "Exportar Subcomponentes",
         "type": "boolean",
         "default": false,
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "palette_name",
-        "label": "Palette Name",
+        "label": "Paleta de Color",
         "type": "enum",
         "default": "industrial_hazard",
         "group": "Materiales",
@@ -10356,10 +10356,10 @@
       },
       {
         "key": "emission_scale",
-        "label": "Emission Scale",
+        "label": "Intensidad de Emisión",
         "type": "float",
-        "default": 1.0,
-        "group": "General",
+        "default": 1,
+        "group": "Materiales",
         "min": 0.0,
         "step": 0.05
       },
@@ -10379,7 +10379,7 @@
       },
       {
         "key": "width",
-        "label": "Width",
+        "label": "Ancho (m)",
         "type": "float",
         "default": 0.7,
         "group": "Dimensiones",
@@ -10388,7 +10388,7 @@
       },
       {
         "key": "depth",
-        "label": "Depth",
+        "label": "Profundidad (m)",
         "type": "float",
         "default": 0.5,
         "group": "Dimensiones",
@@ -10397,7 +10397,7 @@
       },
       {
         "key": "height",
-        "label": "Height",
+        "label": "Alto (m)",
         "type": "float",
         "default": 0.95,
         "group": "Dimensiones",
@@ -10450,7 +10450,7 @@
           "pivot_rule": "floor_center",
           "export_subcomponents": false,
           "palette_name": "industrial_hazard",
-          "emission_scale": 1.0,
+          "emission_scale": 1,
           "cart_style": "mobile_mechanic_cart",
           "width": 0.7,
           "depth": 0.5,
@@ -10477,9 +10477,9 @@
   {
     "id": "below_nominal.fixtures.trash_bin",
     "family": "trash_bin",
-    "name": "Trash Bin",
+    "name": "Contenedor de Residuos",
     "version": "1.0.0",
-    "description": "Generador procedural paramétrico de trash bin para Below Nominal.",
+    "description": "Bote o depósito cilíndrico de basura con pedal de apertura. Podés configurar el volumen y acabado del contenedor para descargar en formato GLB.",
     "category": "fixtures",
     "tags": [
       "fixtures",
@@ -10501,7 +10501,7 @@
     "parameters": [
       {
         "key": "seed",
-        "label": "Seed",
+        "label": "Semilla Aleatoria",
         "type": "seed",
         "default": 42,
         "group": "Rendimiento",
@@ -10511,7 +10511,7 @@
       },
       {
         "key": "target_tri_budget",
-        "label": "Target Tri Budget",
+        "label": "Presupuesto de Triángulos",
         "type": "int",
         "default": 320,
         "group": "Rendimiento",
@@ -10520,14 +10520,14 @@
       },
       {
         "key": "name",
-        "label": "Name",
+        "label": "Nombre de Instancia",
         "type": "string",
         "default": "trash_bin",
         "group": "General"
       },
       {
         "key": "wear_level",
-        "label": "Wear Level",
+        "label": "Nivel de Desgaste",
         "type": "float",
         "default": 0.7,
         "group": "Materiales",
@@ -10537,42 +10537,42 @@
       },
       {
         "key": "add_collision_mesh",
-        "label": "Add Collision Mesh",
+        "label": "Generar Colisión",
         "type": "boolean",
         "default": false,
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "collision_type",
-        "label": "Collision Type",
+        "label": "Tipo de Colisión",
         "type": "string",
         "default": "box",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "collision_suffix",
-        "label": "Collision Suffix",
+        "label": "Sufijo de Colisión",
         "type": "string",
         "default": "-convcolonly",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "pivot_rule",
-        "label": "Pivot Rule",
+        "label": "Regla de Pivote",
         "type": "string",
         "default": "floor_center",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "export_subcomponents",
-        "label": "Export Subcomponents",
+        "label": "Exportar Subcomponentes",
         "type": "boolean",
         "default": false,
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "palette_name",
-        "label": "Palette Name",
+        "label": "Paleta de Color",
         "type": "enum",
         "default": "industrial_hazard",
         "group": "Materiales",
@@ -10601,10 +10601,10 @@
       },
       {
         "key": "emission_scale",
-        "label": "Emission Scale",
+        "label": "Intensidad de Emisión",
         "type": "float",
-        "default": 1.0,
-        "group": "General",
+        "default": 1,
+        "group": "Materiales",
         "min": 0.0,
         "step": 0.05
       },
@@ -10624,7 +10624,7 @@
       },
       {
         "key": "height",
-        "label": "Height",
+        "label": "Alto (m)",
         "type": "float",
         "default": 0.65,
         "group": "Dimensiones",
@@ -10633,7 +10633,7 @@
       },
       {
         "key": "radius",
-        "label": "Radius",
+        "label": "Radio (m)",
         "type": "float",
         "default": 0.2,
         "group": "Dimensiones",
@@ -10649,7 +10649,7 @@
       },
       {
         "key": "width",
-        "label": "Width",
+        "label": "Ancho (m)",
         "type": "float",
         "default": 0.38,
         "group": "Dimensiones",
@@ -10658,7 +10658,7 @@
       },
       {
         "key": "depth",
-        "label": "Depth",
+        "label": "Profundidad (m)",
         "type": "float",
         "default": 0.38,
         "group": "Dimensiones",
@@ -10676,7 +10676,7 @@
         "key": "lid_open_angle",
         "label": "Lid Open Angle",
         "type": "float",
-        "default": 25.0,
+        "default": 25,
         "group": "General",
         "min": 0.0,
         "step": 0.05
@@ -10718,7 +10718,7 @@
           "pivot_rule": "floor_center",
           "export_subcomponents": false,
           "palette_name": "industrial_hazard",
-          "emission_scale": 1.0,
+          "emission_scale": 1,
           "bin_type": "pedal_can",
           "height": 0.65,
           "radius": 0.2,
@@ -10726,7 +10726,7 @@
           "width": 0.38,
           "depth": 0.38,
           "lid_state": "ajar",
-          "lid_open_angle": 25.0,
+          "lid_open_angle": 25,
           "has_foot_pedal": true,
           "has_overflowing_trash": true,
           "has_hazard_symbol": true
@@ -10748,9 +10748,9 @@
   {
     "id": "below_nominal.fixtures.vent_grate",
     "family": "vent_grate",
-    "name": "Vent Grate",
+    "name": "Rejilla de Ventilación",
     "version": "1.0.0",
-    "description": "Generador procedural paramétrico de vent grate para Below Nominal.",
+    "description": "Enrejado metálico de lamas para conductos de aire y filtrado. Podés personalizar el ancho, alto y ángulo de las ranuras para descargar en formato GLB.",
     "category": "fixtures",
     "tags": [
       "fixtures",
@@ -10772,7 +10772,7 @@
     "parameters": [
       {
         "key": "seed",
-        "label": "Seed",
+        "label": "Semilla Aleatoria",
         "type": "seed",
         "default": 42,
         "group": "Rendimiento",
@@ -10782,7 +10782,7 @@
       },
       {
         "key": "target_tri_budget",
-        "label": "Target Tri Budget",
+        "label": "Presupuesto de Triángulos",
         "type": "int",
         "default": 280,
         "group": "Rendimiento",
@@ -10791,14 +10791,14 @@
       },
       {
         "key": "name",
-        "label": "Name",
+        "label": "Nombre de Instancia",
         "type": "string",
         "default": "vent_grate",
         "group": "General"
       },
       {
         "key": "wear_level",
-        "label": "Wear Level",
+        "label": "Nivel de Desgaste",
         "type": "float",
         "default": 0.7,
         "group": "Materiales",
@@ -10808,42 +10808,42 @@
       },
       {
         "key": "add_collision_mesh",
-        "label": "Add Collision Mesh",
+        "label": "Generar Colisión",
         "type": "boolean",
         "default": false,
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "collision_type",
-        "label": "Collision Type",
+        "label": "Tipo de Colisión",
         "type": "string",
         "default": "box",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "collision_suffix",
-        "label": "Collision Suffix",
+        "label": "Sufijo de Colisión",
         "type": "string",
         "default": "-convcolonly",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "pivot_rule",
-        "label": "Pivot Rule",
+        "label": "Regla de Pivote",
         "type": "string",
         "default": "floor_center",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "export_subcomponents",
-        "label": "Export Subcomponents",
+        "label": "Exportar Subcomponentes",
         "type": "boolean",
         "default": false,
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "palette_name",
-        "label": "Palette Name",
+        "label": "Paleta de Color",
         "type": "enum",
         "default": "industrial_hazard",
         "group": "Materiales",
@@ -10872,10 +10872,10 @@
       },
       {
         "key": "emission_scale",
-        "label": "Emission Scale",
+        "label": "Intensidad de Emisión",
         "type": "float",
-        "default": 1.0,
-        "group": "General",
+        "default": 1,
+        "group": "Materiales",
         "min": 0.0,
         "step": 0.05
       },
@@ -10888,7 +10888,7 @@
       },
       {
         "key": "width",
-        "label": "Width",
+        "label": "Ancho (m)",
         "type": "float",
         "default": 0.6,
         "group": "Dimensiones",
@@ -10897,7 +10897,7 @@
       },
       {
         "key": "height",
-        "label": "Height",
+        "label": "Alto (m)",
         "type": "float",
         "default": 0.6,
         "group": "Dimensiones",
@@ -10940,7 +10940,7 @@
         "key": "hanging_angle",
         "label": "Hanging Angle",
         "type": "float",
-        "default": 28.0,
+        "default": 28,
         "group": "General",
         "min": 0.0,
         "step": 0.05
@@ -10965,7 +10965,7 @@
         "key": "fan_rotation_deg",
         "label": "Fan Rotation Deg",
         "type": "float",
-        "default": 15.0,
+        "default": 15,
         "group": "General",
         "min": 0.0,
         "step": 0.05
@@ -10986,17 +10986,17 @@
           "pivot_rule": "floor_center",
           "export_subcomponents": false,
           "palette_name": "industrial_hazard",
-          "emission_scale": 1.0,
+          "emission_scale": 1,
           "width": 0.6,
           "height": 0.6,
           "frame_depth": 0.05,
           "duct_depth": 0.25,
           "grate_type": "wall_louver",
           "grate_state": "bolted_intact",
-          "hanging_angle": 28.0,
+          "hanging_angle": 28,
           "has_fan_blades": true,
           "fan_blade_count": 4,
-          "fan_rotation_deg": 15.0
+          "fan_rotation_deg": 15
         },
         "description": "Configuración base del generador"
       }
@@ -11015,9 +11015,9 @@
   {
     "id": "below_nominal.infrastructure.weapons_rack",
     "family": "weapons_rack",
-    "name": "Weapons Rack",
+    "name": "Armero / Soporte de Armas",
     "version": "1.0.0",
-    "description": "Generador procedural paramétrico de weapons rack para Below Nominal.",
+    "description": "Mueble vertical con ranuras de seguridad para almacenamiento y custodia de equipo. Podés regular la capacidad y pestillos para descargar en formato GLB.",
     "category": "infrastructure",
     "tags": [
       "infrastructure",
@@ -11039,7 +11039,7 @@
     "parameters": [
       {
         "key": "seed",
-        "label": "Seed",
+        "label": "Semilla Aleatoria",
         "type": "seed",
         "default": 42,
         "group": "Rendimiento",
@@ -11049,7 +11049,7 @@
       },
       {
         "key": "target_tri_budget",
-        "label": "Target Tri Budget",
+        "label": "Presupuesto de Triángulos",
         "type": "int",
         "default": 360,
         "group": "Rendimiento",
@@ -11058,14 +11058,14 @@
       },
       {
         "key": "name",
-        "label": "Name",
+        "label": "Nombre de Instancia",
         "type": "string",
         "default": "asset",
         "group": "General"
       },
       {
         "key": "wear_level",
-        "label": "Wear Level",
+        "label": "Nivel de Desgaste",
         "type": "float",
         "default": 0.5,
         "group": "Materiales",
@@ -11075,42 +11075,42 @@
       },
       {
         "key": "add_collision_mesh",
-        "label": "Add Collision Mesh",
+        "label": "Generar Colisión",
         "type": "boolean",
         "default": false,
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "collision_type",
-        "label": "Collision Type",
+        "label": "Tipo de Colisión",
         "type": "string",
         "default": "box",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "collision_suffix",
-        "label": "Collision Suffix",
+        "label": "Sufijo de Colisión",
         "type": "string",
         "default": "-convcolonly",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "pivot_rule",
-        "label": "Pivot Rule",
+        "label": "Regla de Pivote",
         "type": "string",
         "default": "floor_center",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "export_subcomponents",
-        "label": "Export Subcomponents",
+        "label": "Exportar Subcomponentes",
         "type": "boolean",
         "default": false,
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "palette_name",
-        "label": "Palette Name",
+        "label": "Paleta de Color",
         "type": "enum",
         "default": "industrial_hazard",
         "group": "Materiales",
@@ -11139,10 +11139,10 @@
       },
       {
         "key": "emission_scale",
-        "label": "Emission Scale",
+        "label": "Intensidad de Emisión",
         "type": "float",
-        "default": 1.0,
-        "group": "General",
+        "default": 1,
+        "group": "Materiales",
         "min": 0.0,
         "step": 0.05
       },
@@ -11162,7 +11162,7 @@
       },
       {
         "key": "width",
-        "label": "Width",
+        "label": "Ancho (m)",
         "type": "float",
         "default": 0.9,
         "group": "Dimensiones",
@@ -11171,7 +11171,7 @@
       },
       {
         "key": "depth",
-        "label": "Depth",
+        "label": "Profundidad (m)",
         "type": "float",
         "default": 0.4,
         "group": "Dimensiones",
@@ -11180,7 +11180,7 @@
       },
       {
         "key": "height",
-        "label": "Height",
+        "label": "Alto (m)",
         "type": "float",
         "default": 1.65,
         "group": "Dimensiones",
@@ -11235,7 +11235,7 @@
           "pivot_rule": "floor_center",
           "export_subcomponents": false,
           "palette_name": "industrial_hazard",
-          "emission_scale": 1.0,
+          "emission_scale": 1,
           "rack_type": "long_guns_vertical",
           "width": 0.9,
           "depth": 0.4,
@@ -11262,9 +11262,9 @@
   {
     "id": "below_nominal.furniture.work_bench",
     "family": "work_bench",
-    "name": "Work Bench",
+    "name": "Banco de Trabajo de Taller",
     "version": "1.0.0",
-    "description": "Generador procedural paramétrico de work bench para Below Nominal.",
+    "description": "Mesa robusta de mantenimiento con panel perforado trasero y tornillo de banco. Podés ajustar la superficie y herramientas para descargar en formato GLB.",
     "category": "furniture",
     "tags": [
       "furniture",
@@ -11286,7 +11286,7 @@
     "parameters": [
       {
         "key": "seed",
-        "label": "Seed",
+        "label": "Semilla Aleatoria",
         "type": "seed",
         "default": 42,
         "group": "Rendimiento",
@@ -11296,7 +11296,7 @@
       },
       {
         "key": "target_tri_budget",
-        "label": "Target Tri Budget",
+        "label": "Presupuesto de Triángulos",
         "type": "int",
         "default": 340,
         "group": "Rendimiento",
@@ -11305,14 +11305,14 @@
       },
       {
         "key": "name",
-        "label": "Name",
+        "label": "Nombre de Instancia",
         "type": "string",
         "default": "asset",
         "group": "General"
       },
       {
         "key": "wear_level",
-        "label": "Wear Level",
+        "label": "Nivel de Desgaste",
         "type": "float",
         "default": 0.5,
         "group": "Materiales",
@@ -11322,42 +11322,42 @@
       },
       {
         "key": "add_collision_mesh",
-        "label": "Add Collision Mesh",
+        "label": "Generar Colisión",
         "type": "boolean",
         "default": false,
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "collision_type",
-        "label": "Collision Type",
+        "label": "Tipo de Colisión",
         "type": "string",
         "default": "box",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "collision_suffix",
-        "label": "Collision Suffix",
+        "label": "Sufijo de Colisión",
         "type": "string",
         "default": "-convcolonly",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "pivot_rule",
-        "label": "Pivot Rule",
+        "label": "Regla de Pivote",
         "type": "string",
         "default": "floor_center",
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "export_subcomponents",
-        "label": "Export Subcomponents",
+        "label": "Exportar Subcomponentes",
         "type": "boolean",
         "default": false,
-        "group": "General"
+        "group": "Opciones de Exportación"
       },
       {
         "key": "palette_name",
-        "label": "Palette Name",
+        "label": "Paleta de Color",
         "type": "enum",
         "default": "industrial_hazard",
         "group": "Materiales",
@@ -11386,10 +11386,10 @@
       },
       {
         "key": "emission_scale",
-        "label": "Emission Scale",
+        "label": "Intensidad de Emisión",
         "type": "float",
-        "default": 1.0,
-        "group": "General",
+        "default": 1,
+        "group": "Materiales",
         "min": 0.0,
         "step": 0.05
       },
@@ -11409,7 +11409,7 @@
       },
       {
         "key": "width",
-        "label": "Width",
+        "label": "Ancho (m)",
         "type": "float",
         "default": 1.8,
         "group": "Dimensiones",
@@ -11418,7 +11418,7 @@
       },
       {
         "key": "depth",
-        "label": "Depth",
+        "label": "Profundidad (m)",
         "type": "float",
         "default": 0.85,
         "group": "Dimensiones",
@@ -11427,7 +11427,7 @@
       },
       {
         "key": "height",
-        "label": "Height",
+        "label": "Alto (m)",
         "type": "float",
         "default": 0.9,
         "group": "Dimensiones",
@@ -11478,7 +11478,7 @@
           "pivot_rule": "floor_center",
           "export_subcomponents": false,
           "palette_name": "industrial_hazard",
-          "emission_scale": 1.0,
+          "emission_scale": 1,
           "bench_type": "standard_workbench",
           "width": 1.8,
           "depth": 0.85,

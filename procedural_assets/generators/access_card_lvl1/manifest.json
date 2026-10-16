@@ -2,7 +2,7 @@
   "id": "below_nominal.fixtures.access_card_lvl1",
   "name": "Tarjeta de Acceso Nivel 1",
   "version": "1.0.0",
-  "description": "Tarjeta de identificación de seguridad nivel 1 con estética PSX.",
+  "description": "Tarjeta de identificación y pase de seguridad con chip de contacto y banda magnética. Podés personalizar sus medidas de ancho, alto y grosor para descargar en formato GLB.",
   "author": {
     "name": "FrancisCuarto",
     "github": "FrancisCuarto"
@@ -18,7 +18,7 @@
   "parameters": [
     {
       "key": "width",
-      "label": "Ancho",
+      "label": "Ancho (m)",
       "type": "float",
       "default": 0.085,
       "min": 0.05,
@@ -28,7 +28,7 @@
     },
     {
       "key": "height",
-      "label": "Alto",
+      "label": "Alto (m)",
       "type": "float",
       "default": 0.055,
       "min": 0.04,
@@ -38,7 +38,7 @@
     },
     {
       "key": "thickness",
-      "label": "Grosor",
+      "label": "Grosor (m)",
       "type": "float",
       "default": 0.004,
       "min": 0.001,

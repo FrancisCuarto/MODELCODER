@@ -2,8 +2,8 @@
   "$schema": "https://raw.githubusercontent.com/usuario/modelcoder-community/main/schemas/generator-v1.json",
   "id": "below_nominal.infrastructure.electrical_panel",
   "version": "1.0.0",
-  "name": "Electrical Panel",
-  "description": "Generador procedural paramétrico de electrical panel para Below Nominal.",
+  "name": "Panel Eléctrico y Distribución",
+  "description": "Caja de disyuntores e interruptores de alta tensión para muros técnicos. Podés modificar el tamaño de la caja, paleta y luces indicadoras para descargar en formato GLB.",
   "author": {
     "name": "Below Nominal Team",
     "github": "below-nominal",
@@ -25,7 +25,7 @@
   "parameters": [
     {
       "key": "seed",
-      "label": "Seed",
+      "label": "Semilla Aleatoria",
       "type": "seed",
       "default": 42,
       "group": "Rendimiento",
@@ -35,7 +35,7 @@
     },
     {
       "key": "target_tri_budget",
-      "label": "Target Tri Budget",
+      "label": "Presupuesto de Triángulos",
       "type": "int",
       "default": 450,
       "group": "Rendimiento",
@@ -44,59 +44,59 @@
     },
     {
       "key": "name",
-      "label": "Name",
+      "label": "Nombre de Instancia",
       "type": "string",
       "default": "electrical_panel",
       "group": "General"
     },
     {
       "key": "wear_level",
-      "label": "Wear Level",
+      "label": "Nivel de Desgaste",
       "type": "float",
       "default": 0.5,
       "group": "Materiales",
-      "min": 0.0,
-      "max": 1.0,
+      "min": 0,
+      "max": 1,
       "step": 0.05
     },
     {
       "key": "add_collision_mesh",
-      "label": "Add Collision Mesh",
+      "label": "Generar Colisión",
       "type": "boolean",
       "default": false,
-      "group": "General"
+      "group": "Opciones de Exportación"
     },
     {
       "key": "collision_type",
-      "label": "Collision Type",
+      "label": "Tipo de Colisión",
       "type": "string",
       "default": "box",
-      "group": "General"
+      "group": "Opciones de Exportación"
     },
     {
       "key": "collision_suffix",
-      "label": "Collision Suffix",
+      "label": "Sufijo de Colisión",
       "type": "string",
       "default": "-convcolonly",
-      "group": "General"
+      "group": "Opciones de Exportación"
     },
     {
       "key": "pivot_rule",
-      "label": "Pivot Rule",
+      "label": "Regla de Pivote",
       "type": "string",
       "default": "floor_center",
-      "group": "General"
+      "group": "Opciones de Exportación"
     },
     {
       "key": "export_subcomponents",
-      "label": "Export Subcomponents",
+      "label": "Exportar Subcomponentes",
       "type": "boolean",
       "default": false,
-      "group": "General"
+      "group": "Opciones de Exportación"
     },
     {
       "key": "palette_name",
-      "label": "Palette Name",
+      "label": "Paleta de Color",
       "type": "enum",
       "default": "industrial_hazard",
       "group": "Materiales",
@@ -125,11 +125,11 @@
     },
     {
       "key": "emission_scale",
-      "label": "Emission Scale",
+      "label": "Intensidad de Emisión",
       "type": "float",
-      "default": 1.0,
-      "group": "General",
-      "min": 0.0,
+      "default": 1,
+      "group": "Materiales",
+      "min": 0,
       "step": 0.05
     },
     {
@@ -141,29 +141,29 @@
     },
     {
       "key": "width",
-      "label": "Width",
+      "label": "Ancho (m)",
       "type": "float",
       "default": 0.7,
       "group": "Dimensiones",
-      "min": 0.0,
+      "min": 0,
       "step": 0.05
     },
     {
       "key": "height",
-      "label": "Height",
+      "label": "Alto (m)",
       "type": "float",
       "default": 0.9,
       "group": "Dimensiones",
-      "min": 0.0,
+      "min": 0,
       "step": 0.05
     },
     {
       "key": "depth",
-      "label": "Depth",
+      "label": "Profundidad (m)",
       "type": "float",
       "default": 0.22,
       "group": "Dimensiones",
-      "min": 0.0,
+      "min": 0,
       "step": 0.05
     },
     {
@@ -172,7 +172,7 @@
       "type": "float",
       "default": 0.035,
       "group": "General",
-      "min": 0.0,
+      "min": 0,
       "step": 0.05
     },
     {
@@ -188,7 +188,7 @@
       "type": "float",
       "default": 0.38,
       "group": "General",
-      "min": 0.0,
+      "min": 0,
       "step": 0.05
     },
     {
@@ -204,7 +204,7 @@
       "type": "float",
       "default": 0.025,
       "group": "General",
-      "min": 0.0,
+      "min": 0,
       "step": 0.05
     },
     {
@@ -270,9 +270,9 @@
       "key": "door_open_angle",
       "label": "Door Open Angle",
       "type": "float",
-      "default": 35.0,
+      "default": 35,
       "group": "General",
-      "min": 0.0,
+      "min": 0,
       "step": 0.05
     },
     {
@@ -298,10 +298,10 @@
     },
     {
       "key": "style_palette",
-      "label": "Style Palette",
+      "label": "Paleta de Color",
       "type": "string",
       "default": "industrial_hazard",
-      "group": "General"
+      "group": "Materiales"
     }
   ],
   "presets": [
@@ -320,7 +320,7 @@
         "pivot_rule": "floor_center",
         "export_subcomponents": false,
         "palette_name": "industrial_hazard",
-        "emission_scale": 1.0,
+        "emission_scale": 1,
         "width": 0.7,
         "height": 0.9,
         "depth": 0.22,
@@ -336,7 +336,7 @@
         "cable_count": 2,
         "has_knife_switch": false,
         "door_ajar": false,
-        "door_open_angle": 35.0,
+        "door_open_angle": 35,
         "has_digital_readout": true,
         "has_side_vents": true,
         "has_mounting_flanges": true,
