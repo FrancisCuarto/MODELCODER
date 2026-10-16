@@ -104,7 +104,6 @@ Return ONLY valid JSON matching this schema:
   ]
 }`;
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
     const payload = {
       contents: [{
         role: 'user',
@@ -118,29 +117,50 @@ Return ONLY valid JSON matching this schema:
       }
     };
 
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
+    // Google API requires gemini-3.0-flash for new keys, with fallback to 3.8-flash and 2.5-flash
+    const candidateModels = ['gemini-3.0-flash', 'gemini-3.8-flash', 'gemini-2.5-flash'];
+    let lastError: Error | null = null;
 
-    if (!res.ok) {
-      const errText = await res.text();
-      throw new Error(`Gemini API error (${res.status}): ${errText}`);
+    for (const modelName of candidateModels) {
+      try {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) {
+          const errText = await res.text();
+          if (res.status === 404 || errText.includes('NOT_FOUND') || errText.includes('no longer available')) {
+            lastError = new Error(`Gemini API error (${res.status}): ${errText}`);
+            continue;
+          }
+          throw new Error(`Gemini API error (${res.status}): ${errText}`);
+        }
+
+        const data = await res.json();
+        const candidateText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (!candidateText) {
+          throw new Error(`Gemini (${modelName}) no devolvió texto en la respuesta.`);
+        }
+
+        const parsed = JSON.parse(candidateText) as ModelSpec;
+        if (!parsed.components || parsed.components.length === 0) {
+          throw new Error('La respuesta de Gemini no incluye componentes geométricos.');
+        }
+
+        return { spec: parsed, rawResponse: candidateText };
+      } catch (err: any) {
+        lastError = err;
+        if (err.message && (err.message.includes('404') || err.message.includes('NOT_FOUND') || err.message.includes('no longer available'))) {
+          continue;
+        }
+        throw err;
+      }
     }
 
-    const data = await res.json();
-    const candidateText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!candidateText) {
-      throw new Error('Gemini no devolvió texto en la respuesta.');
-    }
-
-    const parsed = JSON.parse(candidateText) as ModelSpec;
-    if (!parsed.components || parsed.components.length === 0) {
-      throw new Error('La respuesta de Gemini no incluye componentes geométricos.');
-    }
-
-    return { spec: parsed, rawResponse: candidateText };
+    throw lastError || new Error('No se pudo conectar con ningún modelo de Gemini disponible.');
   }
 
   /**
