@@ -24,8 +24,9 @@ FORBIDDEN_CALLS = {
 
 ALLOWED_ROOT_PACKAGES = {
     "bpy", "bmesh", "math", "mathutils", "random", "dataclasses", "typing",
-    "enum", "procedural_assets", "json"
+    "enum", "procedural_assets", "json", "itertools", "collections", "copy", "functools"
 }
+
 
 class SecurityASTVisitor(ast.NodeVisitor):
     def __init__(self, filename: str):

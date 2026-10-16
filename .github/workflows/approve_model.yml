@@ -1,0 +1,115 @@
+name: Approve Community Model
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: read
+
+jobs:
+  approve_and_integrate:
+    name: Validate and Merge Community Model
+    if: |
+      github.event.issue.pull_request == null &&
+      (
+        startsWith(github.event.comment.body, '/aprobar') ||
+        startsWith(github.event.comment.body, '/approve') ||
+        contains(github.event.comment.body, '/aprobar') ||
+        contains(github.event.comment.body, '/approve')
+      ) &&
+      (
+        github.event.comment.author_association == 'OWNER' ||
+        github.event.comment.author_association == 'COLLABORATOR' ||
+        github.event.comment.author_association == 'MEMBER' ||
+        github.event.comment.user.login == github.repository_owner
+      )
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Acknowledge Approval with Reaction
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.reactions.createForIssueComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: context.payload.comment.id,
+              content: 'rocket'
+            });
+
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Extract, Validate and Install Model
+        id: accept_model
+        run: |
+          python tools/accept_community_model.py --event-path "$GITHUB_EVENT_PATH"
+
+      - name: Report Failure on Quality or Security Audit
+        if: failure() && steps.accept_model.outcome == 'failure'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issueNumber = context.payload.issue.number;
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issueNumber,
+              body: `❌ **No se pudo incorporar el modelo**\n\nEl análisis de seguridad estática (AST) o la validación del esquema \`manifest.json\` no pasaron las reglas de calidad de ModelCoder.\n\nPor favor verifica:\n1. Que los tres bloques de código (\`manifest.json\`, \`generator.py\`, \`config.py\`) estén presentes en la descripción del Issue.\n2. Que el código Python no importe módulos de sistema restringidos (\`subprocess\`, \`socket\`, etc.).\n3. Que el archivo \`manifest.json\` contenga los campos requeridos (\`id\`, \`name\`, \`parameters\`, \`license\`).`
+            });
+
+      - name: Commit and Push Changes to Main
+        run: |
+          git config --global user.name "modelcoder-bot[bot]"
+          git config --global user.email "modelcoder-bot[bot]@users.noreply.github.com"
+          git pull --rebase origin main
+          git add procedural_assets/generators/ web/src/data/catalog.json
+          git commit -m "feat(community): incorporar generador '${{ steps.accept_model.outputs.name }}' (${{ steps.accept_model.outputs.family }})" || echo "No changes to commit"
+          git push origin main
+
+      - name: Close Issue and Notify Community Member
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const family = '${{ steps.accept_model.outputs.family }}';
+            const name = '${{ steps.accept_model.outputs.name }}';
+            const issueNumber = context.payload.issue.number;
+            const author = context.payload.issue.user.login;
+
+            // Add labels
+            try {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issueNumber,
+                labels: ['incorporado', 'comunidad']
+              });
+            } catch (e) {
+              console.log('Label error:', e);
+            }
+
+            // Post success comment
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issueNumber,
+              body: `🎉 **¡Modelo Aprobado e Incorporado al Catálogo Oficial!**\n\nEl generador **${name}** (\`${family}\`) ha sido auditado con éxito por AST y añadido a la rama principal de ModelCoder.\n\n✨ **Autor**: @${author}\n🚀 **Despliegue**: Vercel actualizará la plataforma automáticamente en breves minutos.\n\n¡Muchas gracias por tu contribución a la comunidad de ModelCoder!`
+            });
+
+            // Close the issue
+            await github.rest.issues.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issueNumber,
+              state: 'closed'
+            });

@@ -15,7 +15,7 @@ current_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if current_dir not in sys.path:
     sys.path.insert(0, current_dir)
 
-from procedural_assets.core import discover_all_manifests, GeneratorManifest
+from procedural_assets.core.manifest import discover_all_manifests, GeneratorManifest
 from procedural_assets.export.destination import FAMILY_CATEGORIES
 
 WEB_DIR = os.path.join(current_dir, "web")
