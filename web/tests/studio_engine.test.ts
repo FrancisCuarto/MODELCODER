@@ -988,9 +988,13 @@ test('Expanded Texture Library 3: Variaciones paramétricas (wear, uvRotation, n
   assert.ok(variantMat.map !== null, 'Curated parametric variant must resolve and attach texture');
 
   // Verify UV rotation mutated UVs on weatheredMesh compared to cleanMesh
-  const uvClean = (cleanMesh.geometry.getAttribute('uv').array as Float32Array)[0];
-  const uvRot = (weatheredMesh.geometry.getAttribute('uv').array as Float32Array)[0];
-  assert.notEqual(uvClean, uvRot, 'UV rotation (90 deg) must rotate vertex UV coordinates');
+  const uvsClean = cleanMesh.geometry.getAttribute('uv').array as Float32Array;
+  const uvsRot = weatheredMesh.geometry.getAttribute('uv').array as Float32Array;
+  assert.notEqual(
+    `${uvsClean[0].toFixed(3)},${uvsClean[1].toFixed(3)}`,
+    `${uvsRot[0].toFixed(3)},${uvsRot[1].toFixed(3)}`,
+    'UV rotation (90 deg) must rotate vertex UV coordinates'
+  );
 
   // Verify disposeHierarchy preserves normalMap as well as map
   const savedNorm = cleanMat.normalMap!;
