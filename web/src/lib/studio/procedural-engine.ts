@@ -152,10 +152,15 @@ export class ProceduralEngine {
       });
     }
 
-    // Material transparency, opacity, and wireframe customization
-    if (comp.transparent || (comp.opacity !== undefined && comp.opacity < 1.0)) {
+    // Material transparency, opacity, depth writing, and double-sided glass rendering
+    const isTransp = Boolean(mat.transparent || comp.transparent || (comp.opacity !== undefined && comp.opacity < 1.0));
+    if (isTransp) {
       mat.transparent = true;
-      mat.opacity = comp.opacity !== undefined ? Math.max(0.0, Math.min(1.0, comp.opacity)) : 0.8;
+      mat.opacity = comp.opacity !== undefined ? Math.max(0.0, Math.min(1.0, comp.opacity)) : (mat.opacity < 1.0 ? mat.opacity : 0.8);
+      if (mat.opacity < 0.9) {
+        mat.depthWrite = false;
+        mat.side = THREE.DoubleSide;
+      }
     }
     if (comp.wireframe !== undefined) {
       mat.wireframe = Boolean(comp.wireframe);

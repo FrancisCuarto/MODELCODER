@@ -788,6 +788,77 @@ test('Editor Redesign 5: Exportación GLB preserva transformaciones, nuevas prim
   ProceduralEngine.disposeHierarchy(group);
 });
 
+test('Transparency & Glass Textures: Soporte de texturas con opacidad y presets de vidrio', async () => {
+  const spec = {
+    id: 'test.glass_dome',
+    name: 'Cúpula de Vidrio Polarizado',
+    category: 'architecture',
+    description: 'Estructura con vidrio y metal texturizado',
+    units: 'meters' as const,
+    dimensions: { width: 1.0, depth: 1.0, height: 1.0 },
+    palette: 'industrial_hazard',
+    components: [
+      {
+        name: 'base_metal',
+        shape: 'cylinder' as const,
+        size: [0.5, 0.5, 0.2, 12],
+        position: [0, 0.1, 0] as [number, number, number],
+        texturePreset: 'worn_metal',
+        color: '#4a5568'
+      },
+      {
+        name: 'vidrio_cupula',
+        shape: 'sphere' as const,
+        size: [0.45, 12, 8],
+        position: [0, 0.45, 0] as [number, number, number],
+        texturePreset: 'tinted_glass',
+        transparent: true,
+        opacity: 0.45
+      },
+      {
+        name: 'panel_blindado',
+        shape: 'box' as const,
+        size: [0.6, 0.4, 0.05],
+        position: [0, 0.5, 0.4] as [number, number, number],
+        texturePreset: 'reinforced_glass'
+      }
+    ]
+  };
+
+  const { group } = ProceduralEngine.buildModelFromSpec(spec);
+  assert.equal(group.children.length, 3);
+
+  // Check base metal: opaque
+  const baseMesh = group.children[0] as THREE.Mesh;
+  const baseMat = baseMesh.material as THREE.MeshStandardMaterial;
+  assert.equal(baseMat.transparent, false);
+  assert.equal(baseMat.opacity, 1.0);
+
+  // Check tinted glass: transparent with texture and opacity 0.45
+  const glassMesh = group.children[1] as THREE.Mesh;
+  const glassMat = glassMesh.material as THREE.MeshStandardMaterial;
+  assert.equal(glassMat.transparent, true);
+  assert.equal(glassMat.opacity, 0.45);
+  assert.ok(glassMat.map !== null, 'Glass must have procedural surface texture');
+  assert.equal(glassMat.depthWrite, false, 'Translucent glass should not occlude depth buffer');
+  assert.equal(glassMat.side, THREE.DoubleSide, 'Glass should render both front and back faces');
+
+  // Check reinforced glass: transparent by preset profile
+  const wireGlassMesh = group.children[2] as THREE.Mesh;
+  const wireGlassMat = wireGlassMesh.material as THREE.MeshStandardMaterial;
+  assert.equal(wireGlassMat.transparent, true);
+  assert.ok(wireGlassMat.opacity < 1.0);
+  assert.ok(wireGlassMat.map !== null);
+
+  // Check GLB export with glass materials
+  const glbBuffer = await GLBExporterService.exportToArrayBuffer(group);
+  assert.ok(glbBuffer.byteLength > 2000);
+  const verification = await GLBExporterService.verifyGLBBuffer(glbBuffer);
+  assert.equal(verification.verified, true);
+
+  ProceduralEngine.disposeHierarchy(group);
+});
+
 // Teardown: ensure Node exits cleanly after tests
 test('Teardown: Exit cleanly', () => {
   setTimeout(() => process.exit(0), 100);

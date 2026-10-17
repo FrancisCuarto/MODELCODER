@@ -26,7 +26,11 @@ export type TexturePreset =
   | 'crt_screen_amber'
   | 'crt_screen_off'
   | 'caution_label'
-  | 'red_paint_worn';
+  | 'red_paint_worn'
+  | 'tinted_glass'
+  | 'reinforced_glass'
+  | 'clean_glass'
+  | 'hologram_cyan';
 
 export type MaterialCategoryType =
   | 'painted_metal'

@@ -15,7 +15,11 @@ export type TexturePresetName =
   | 'crt_screen_amber'
   | 'crt_screen_off'
   | 'caution_label'
-  | 'red_paint_worn';
+  | 'red_paint_worn'
+  | 'tinted_glass'
+  | 'reinforced_glass'
+  | 'clean_glass'
+  | 'hologram_cyan';
 
 export interface TexturePresetProfile {
   name: TexturePresetName;
@@ -26,6 +30,8 @@ export interface TexturePresetProfile {
   emissive?: string;
   emissiveIntensity?: number;
   isDecal?: boolean; // If true, UVs use 0..1 clamp rather than aspect ratio tiling
+  transparent?: boolean;
+  opacity?: number;
 }
 
 export class TextureLibrary {
@@ -141,6 +147,44 @@ export class TextureLibrary {
       roughness: 0.65,
       metalness: 0.12,
       tintColor: '#ffffff'
+    },
+    tinted_glass: {
+      name: 'tinted_glass',
+      label: 'Vidrio Polarizado / Visor',
+      roughness: 0.12,
+      metalness: 0.15,
+      tintColor: '#4a7c92',
+      transparent: true,
+      opacity: 0.50
+    },
+    reinforced_glass: {
+      name: 'reinforced_glass',
+      label: 'Vidrio Blindado con Malla',
+      roughness: 0.20,
+      metalness: 0.35,
+      tintColor: '#718096',
+      transparent: true,
+      opacity: 0.65
+    },
+    clean_glass: {
+      name: 'clean_glass',
+      label: 'Vidrio Transparente',
+      roughness: 0.05,
+      metalness: 0.05,
+      tintColor: '#a0c4e2',
+      transparent: true,
+      opacity: 0.35
+    },
+    hologram_cyan: {
+      name: 'hologram_cyan',
+      label: 'Holograma / HUD Sci-Fi',
+      roughness: 0.20,
+      metalness: 0.0,
+      tintColor: '#00f0ff',
+      emissive: '#00f0ff',
+      emissiveIntensity: 2.0,
+      transparent: true,
+      opacity: 0.60
     }
   };
 
@@ -170,7 +214,19 @@ export class TextureLibrary {
     screen: 'crt_screen_green',
     hazard: 'hazard_stripes',
     rust: 'rust_heavy',
-    plastic: 'beige_plastic_worn'
+    plastic: 'beige_plastic_worn',
+    glass: 'clean_glass',
+    cristal: 'clean_glass',
+    vidrio: 'clean_glass',
+    ventana: 'clean_glass',
+    window: 'clean_glass',
+    cockpit_glass: 'tinted_glass',
+    visor: 'tinted_glass',
+    glass_wire: 'reinforced_glass',
+    reinforced: 'reinforced_glass',
+    hologram: 'hologram_cyan',
+    holograma: 'hologram_cyan',
+    hud: 'hologram_cyan'
   };
 
   /**
@@ -248,6 +304,11 @@ export class TextureLibrary {
       matColor = new THREE.Color(profile.tintColor);
     }
 
+    const isTransp = Boolean(comp.transparent || profile.transparent || (comp.opacity !== undefined && comp.opacity < 1.0));
+    const targetOpacity = comp.opacity !== undefined 
+      ? Math.max(0.0, Math.min(1.0, comp.opacity)) 
+      : (profile.opacity ?? 1.0);
+
     const mat = new THREE.MeshStandardMaterial({
       map: texture,
       color: matColor,
@@ -255,7 +316,11 @@ export class TextureLibrary {
       metalness: comp.metalness ?? profile.metalness,
       flatShading: true,
       vertexColors: false, // Pure crisp texture rendering
-      wireframe: Boolean(comp.wireframe)
+      wireframe: Boolean(comp.wireframe),
+      transparent: isTransp,
+      opacity: targetOpacity,
+      depthWrite: isTransp && targetOpacity < 0.9 ? false : true,
+      side: isTransp ? THREE.DoubleSide : THREE.FrontSide
     });
 
     // Emissive setup for CRTs and lit indicators
@@ -487,6 +552,65 @@ export class TextureLibrary {
             // Chipped rust specks
             if (rng() < 0.08) {
               r = 75; g = 38; b = 22;
+            }
+            break;
+          }
+
+          case 'tinted_glass': {
+            // Polarized dark sci-fi glass with subtle diagonal reflection streak
+            const glare = Math.exp(-Math.pow((x - y * 0.9) / 12, 2)) * 55;
+            const noise = (rng() - 0.5) * 8;
+            r = Math.min(255, 45 + glare * 0.8 + noise);
+            g = Math.min(255, 75 + glare * 0.9 + noise);
+            b = Math.min(255, 110 + glare * 1.1 + noise);
+            a = Math.min(255, Math.max(30, Math.round(90 + glare * 2.2)));
+            break;
+          }
+
+          case 'reinforced_glass': {
+            // Safety glass embedded with steel wire mesh
+            const isWire = (x % 8 === 0) || (y % 8 === 0);
+            if (isWire) {
+              const wireGrit = 70 + (rng() - 0.5) * 14;
+              r = wireGrit;
+              g = wireGrit * 1.02;
+              b = wireGrit * 1.05;
+              a = 255; // Opaque structural wire
+            } else {
+              const glare = Math.exp(-Math.pow((x - y) / 14, 2)) * 40;
+              r = Math.min(255, 60 + glare);
+              g = Math.min(255, 95 + glare * 1.1);
+              b = Math.min(255, 90 + glare * 1.05);
+              a = 120; // Semi-transparent glass panes
+            }
+            break;
+          }
+
+          case 'clean_glass': {
+            // High-clarity glass with subtle corner bevel reflections
+            const edgeDist = Math.min(x, w - 1 - x, y, h - 1 - y);
+            const edgeSheen = edgeDist < 3 ? (3 - edgeDist) * 35 : 0;
+            const noise = (rng() - 0.5) * 4;
+            r = Math.min(255, 140 + edgeSheen + noise);
+            g = Math.min(255, 190 + edgeSheen + noise);
+            b = Math.min(255, 230 + edgeSheen + noise);
+            a = Math.min(255, Math.max(20, Math.round(45 + edgeSheen * 1.5)));
+            break;
+          }
+
+          case 'hologram_cyan': {
+            // Glowing sci-fi hologram raster lines
+            const isScan = y % 3 === 0;
+            if (isScan) {
+              r = 30;
+              g = 245;
+              b = 255;
+              a = 210;
+            } else {
+              r = 10;
+              g = 110;
+              b = 160;
+              a = 65;
             }
             break;
           }

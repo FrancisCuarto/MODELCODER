@@ -1517,6 +1517,10 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
             <option value="crt_screen_amber" ${comp.texturePreset === 'crt_screen_amber' ? 'selected' : ''}>🟠 Monitor CRT Ámbar (crt_screen_amber)</option>
             <option value="caution_label" ${comp.texturePreset === 'caution_label' ? 'selected' : ''}>🏷️ Etiqueta Precaución (caution_label)</option>
             <option value="red_paint_worn" ${comp.texturePreset === 'red_paint_worn' ? 'selected' : ''}>🔴 Pintura Roja Desgastada (red_paint_worn)</option>
+            <option value="tinted_glass" ${comp.texturePreset === 'tinted_glass' ? 'selected' : ''}>🪟 Vidrio Polarizado / Visor (tinted_glass)</option>
+            <option value="reinforced_glass" ${comp.texturePreset === 'reinforced_glass' ? 'selected' : ''}>🛡️ Vidrio Blindado con Malla (reinforced_glass)</option>
+            <option value="clean_glass" ${comp.texturePreset === 'clean_glass' ? 'selected' : ''}>🧊 Vidrio Transparente (clean_glass)</option>
+            <option value="hologram_cyan" ${comp.texturePreset === 'hologram_cyan' ? 'selected' : ''}>🌐 Holograma / HUD Sci-Fi (hologram_cyan)</option>
           </select>
         </div>
 
@@ -1982,15 +1986,31 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     const dispOpacity = document.getElementById('disp-opacity');
 
     chkTransparent?.addEventListener('change', (e) => {
-      comp.transparent = (e.target as HTMLInputElement).checked;
+      const isChecked = (e.target as HTMLInputElement).checked;
+      comp.transparent = isChecked;
+      if (isChecked && (comp.opacity === undefined || comp.opacity >= 1.0)) {
+        comp.opacity = 0.55;
+        if (inpOpacity) inpOpacity.value = '0.55';
+        if (dispOpacity) dispOpacity.textContent = '0.55';
+      } else if (!isChecked) {
+        comp.opacity = 1.0;
+        if (inpOpacity) inpOpacity.value = '1.0';
+        if (dispOpacity) dispOpacity.textContent = '1.00';
+      }
       renderCurrentSpec('visual');
     });
 
     inpOpacity?.addEventListener('input', (e) => {
       const val = parseFloat((e.target as HTMLInputElement).value);
       comp.opacity = val;
-      if (val < 1.0) comp.transparent = true;
-      if (dispOpacity) dispOpacity.textContent = `${val}`;
+      if (val < 1.0) {
+        comp.transparent = true;
+        if (chkTransparent) chkTransparent.checked = true;
+      } else {
+        comp.transparent = false;
+        if (chkTransparent) chkTransparent.checked = false;
+      }
+      if (dispOpacity) dispOpacity.textContent = val.toFixed(2);
       renderCurrentSpec('visual');
     });
 
@@ -1999,6 +2019,17 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
       const val = (e.target as HTMLSelectElement).value;
       if (val) {
         comp.texturePreset = val;
+        // Auto-configure transparency for glass / hologram presets
+        const profile = TextureLibrary.PROFILES[val as any];
+        if (profile?.transparent) {
+          comp.transparent = true;
+          if (comp.opacity === undefined || comp.opacity >= 1.0) {
+            comp.opacity = profile.opacity ?? 0.55;
+          }
+          if (chkTransparent) chkTransparent.checked = true;
+          if (inpOpacity && comp.opacity !== undefined) inpOpacity.value = String(comp.opacity);
+          if (dispOpacity && comp.opacity !== undefined) dispOpacity.textContent = comp.opacity.toFixed(2);
+        }
       } else {
         delete comp.texturePreset;
       }
