@@ -29,8 +29,22 @@ if (typeof (globalThis as any).document === 'undefined') {
             translate: () => {},
             scale: () => {},
             putImageData: () => {},
-            drawImage: () => {}
+            drawImage: () => {},
+            beginPath: () => {},
+            moveTo: () => {},
+            lineTo: () => {},
+            quadraticCurveTo: () => {},
+            closePath: () => {},
+            fill: () => {},
+            stroke: () => {},
+            fillRect: () => {},
+            clearRect: () => {},
+            fillText: () => {},
+            measureText: (text: string) => ({ width: (text || '').length * 10 }),
+            createLinearGradient: () => ({ addColorStop: () => {} }),
+            createRadialGradient: () => ({ addColorStop: () => {} })
           }),
+          toDataURL: (type: string) => 'data:image/png;base64,mock',
           toBlob: (cb: any, type: string) => {
             const png1x1 = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'base64');
             cb(new Blob([png1x1], { type: type || 'image/png' }));
@@ -1073,6 +1087,69 @@ test('Expanded Texture Library 5: Adaptación UV automática ante escala no unif
   assert.ok(Math.abs(vMaxFrontFace - 1.88) < 0.01, `Expected +Z face V span ~1.88, got ${vMaxFrontFace}`);
 
   ProceduralEngine.disposeHierarchy(group);
+});
+
+test('Instagram Story Exporter: Genera lienzo 1080x1920 con marca de agua, ficha técnica y temas', async () => {
+  const {
+    drawStoryCard,
+    STORY_THEMES,
+    STORY_CANVAS_WIDTH,
+    STORY_CANVAS_HEIGHT,
+    wrapAndDrawText,
+    exportStoryToBlob
+  } = await import('../src/lib/studio/story-generator.ts');
+
+  // Verify dimensions
+  assert.equal(STORY_CANVAS_WIDTH, 1080);
+  assert.equal(STORY_CANVAS_HEIGHT, 1920);
+
+  // Verify 5 themes defined
+  const themeKeys = Object.keys(STORY_THEMES);
+  assert.ok(themeKeys.includes('cyber_dark'));
+  assert.ok(themeKeys.includes('carbon_minimal'));
+  assert.ok(themeKeys.includes('neon_synth'));
+  assert.ok(themeKeys.includes('gold_luxury'));
+  assert.ok(themeKeys.includes('transparent_sticker'));
+
+  // Test text wrapping helper
+  const mockCtx = {
+    fillText: () => {},
+    measureText: (str: string) => ({ width: str.length * 10 })
+  } as any;
+  const longDesc = 'Este es un contenedor de carga hermético presurizado para almacenamiento en estaciones orbitales con blindaje reforzado y paneles modulares.';
+  const lines = wrapAndDrawText(mockCtx, longDesc, 0, 0, 200, 30, 3);
+  assert.ok(lines > 0 && lines <= 3, `Expected 1-3 lines, got ${lines}`);
+
+  // Test story canvas generation with mock model canvas
+  const mockModelCanvas = document.createElement('canvas') as HTMLCanvasElement;
+  mockModelCanvas.width = 1080;
+  mockModelCanvas.height = 1080;
+
+  const storyCanvas = drawStoryCard(mockModelCanvas, {
+    title: 'Crate Hull Alpha',
+    description: longDesc,
+    author: 'FrancisCoder',
+    theme: 'cyber_dark',
+    showWatermark: true,
+    showDescription: true,
+    showStats: true,
+    showTechFrame: true,
+    stats: {
+      triangles: 50,
+      vertices: 100,
+      componentCount: 4,
+      materialsSummary: 'METAL WORN · GLASS',
+      generationId: 'GEN-TEST-01'
+    }
+  });
+
+  assert.equal(storyCanvas.width, 1080);
+  assert.equal(storyCanvas.height, 1920);
+
+  // Test export to blob
+  const blob = await exportStoryToBlob(storyCanvas);
+  assert.ok(blob instanceof Blob);
+  assert.equal(blob.type, 'image/png');
 });
 
 // Teardown: ensure Node exits cleanly after tests

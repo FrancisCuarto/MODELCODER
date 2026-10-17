@@ -81,16 +81,18 @@ export class StudioViewport {
       this.renderer = new THREE.WebGLRenderer({
         antialias: true,
         powerPreference: 'high-performance',
-        preserveDrawingBuffer: true
+        preserveDrawingBuffer: true,
+        alpha: true
       });
     } catch {
       try {
         this.renderer = new THREE.WebGLRenderer({
           antialias: false,
-          preserveDrawingBuffer: true
+          preserveDrawingBuffer: true,
+          alpha: true
         });
       } catch {
-        this.renderer = new THREE.WebGLRenderer();
+        this.renderer = new THREE.WebGLRenderer({ alpha: true });
       }
     }
     this.renderer.setSize(initialWidth, initialHeight);
@@ -765,6 +767,109 @@ export class StudioViewport {
       if (prevGizmoHelper) prevGizmoHelper.visible = wasGizmoVisible;
       this.selectionBox.visible = wasSelectionVisible;
     }
+  }
+
+  /**
+   * Captures an offscreen high-definition render of the 3D model for Instagram Stories (9:16)
+   * or social sharing. Hides gizmos, grid, and axes, restores original PBR materials,
+   * and renders with a clean transparent background.
+   */
+  public async captureStoryRender(options: {
+    width?: number;
+    height?: number;
+    autoFrame?: boolean;
+  } = {}): Promise<HTMLCanvasElement> {
+    const targetWidth = options.width || 1080;
+    const targetHeight = options.height || 1080;
+    const autoFrame = Boolean(options.autoFrame);
+
+    if (!this.currentMesh) {
+      const emptyCanvas = document.createElement('canvas');
+      emptyCanvas.width = targetWidth;
+      emptyCanvas.height = targetHeight;
+      return emptyCanvas;
+    }
+
+    return await this.executeWithOriginalMaterials(async () => {
+      const prevGizmoHelper = typeof this.transformControls.getHelper === 'function'
+        ? this.transformControls.getHelper()
+        : (this.transformControls as any);
+      const wasGizmoVisible = prevGizmoHelper ? prevGizmoHelper.visible : false;
+      const wasSelectionVisible = this.selectionBox.visible;
+      const wasAxesVisible = this.axesHelper.visible;
+      const wasGridVisible = this.gridHelper.visible;
+
+      const prevBackground = this.scene.background;
+      const prevClearColor = new THREE.Color();
+      this.renderer.getClearColor(prevClearColor);
+      const prevClearAlpha = this.renderer.getClearAlpha();
+      const prevCamPos = this.camera.position.clone();
+      const prevTarget = this.controls.target.clone();
+      const prevAspect = this.camera.aspect;
+      const prevPixelRatio = this.renderer.getPixelRatio();
+
+      try {
+        if (prevGizmoHelper) prevGizmoHelper.visible = false;
+        this.selectionBox.visible = false;
+        this.axesHelper.visible = false;
+        this.gridHelper.visible = false;
+
+        this.scene.background = null;
+        this.renderer.setClearColor(0x000000, 0);
+
+        if (autoFrame && this.currentMesh) {
+          const box = new THREE.Box3().setFromObject(this.currentMesh);
+          if (!box.isEmpty()) {
+            const center = new THREE.Vector3();
+            const size = new THREE.Vector3();
+            box.getCenter(center);
+            box.getSize(size);
+            const maxDim = Math.max(size.x, size.y, size.z, 0.5);
+            const fov = this.camera.fov * (Math.PI / 180);
+            const cameraDistance = (maxDim / 2) / Math.tan(fov / 2) * 1.45;
+            this.camera.position.set(
+              center.x + cameraDistance * 0.85,
+              center.y + cameraDistance * 0.65,
+              center.z + cameraDistance * 1.15
+            );
+            this.controls.target.copy(center);
+            this.controls.update();
+          }
+        }
+
+        this.renderer.setPixelRatio(1);
+        this.renderer.setSize(targetWidth, targetHeight, false);
+        this.camera.aspect = targetWidth / targetHeight;
+        this.camera.updateProjectionMatrix();
+
+        this.renderer.render(this.scene, this.camera);
+
+        const outCanvas = document.createElement('canvas');
+        outCanvas.width = targetWidth;
+        outCanvas.height = targetHeight;
+        const ctx = outCanvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(this.renderer.domElement, 0, 0);
+        }
+        return outCanvas;
+      } finally {
+        if (prevGizmoHelper) prevGizmoHelper.visible = wasGizmoVisible;
+        this.selectionBox.visible = wasSelectionVisible;
+        this.axesHelper.visible = wasAxesVisible;
+        this.gridHelper.visible = wasGridVisible;
+
+        this.scene.background = prevBackground;
+        this.renderer.setClearColor(prevClearColor, prevClearAlpha);
+        this.camera.position.copy(prevCamPos);
+        this.controls.target.copy(prevTarget);
+        this.controls.update();
+        this.camera.aspect = prevAspect;
+        this.camera.updateProjectionMatrix();
+        this.renderer.setPixelRatio(prevPixelRatio);
+        this.handleResize();
+        this.renderer.render(this.scene, this.camera);
+      }
+    });
   }
 
   public setOnComponentSelected(cb: (index: number | null) => void): void {
