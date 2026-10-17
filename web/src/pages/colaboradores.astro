@@ -37,11 +37,29 @@ import Layout from '../layouts/Layout.astro';
       <div class="window-inner-pad">
         <h2 class="state-title" style="color: var(--ps1-red);">CUENTA NO AUTORIZADA</h2>
         <p class="state-desc">
-          Has iniciado sesión como <strong id="unauth-email-text" style="color: #ffffff;"></strong>, pero este correo no se encuentra en la lista de colaboradores autorizados por el creador.
+          Has iniciado sesión como <strong id="unauth-email-text" style="color: #ffffff;"></strong>, pero este identificador aún no se encuentra registrado en la lista de colaboradores.
         </p>
+
+        <!-- Desbloqueo rápido para el Creador (FrancisCuarto) en nuevas PCs -->
+        <div class="ps1-inset" style="padding: 1rem; background: #080d1a; border-left: 4px solid var(--ps1-gold); margin-bottom: 1.25rem;">
+          <span style="font-family: var(--font-pixel); font-size: 0.78rem; color: var(--ps1-gold); display: block; margin-bottom: 0.35rem;">
+            👑 ¿ERES FRANCISCUARTO EN UNA NUEVA COMPUTADORA?
+          </span>
+          <p style="font-size: 0.78rem; color: #b8cde4; line-height: 1.45; margin-bottom: 0.75rem;">
+            Si iniciaste sesión desde otra PC o navegador y GitHub no transmitió tu usuario automáticamente, ingresa tu clave maestra de creador para activar tus permisos de Dueño en este equipo:
+          </p>
+          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <input type="password" id="owner-passphrase-input" class="ps1-input" placeholder="Clave de creador (ej: franciscuarto)" style="flex: 1; min-width: 200px; font-size: 0.8rem; padding: 0.45rem 0.6rem;" />
+            <button id="btn-claim-owner" type="button" class="btn btn-gold" style="font-size: 0.78rem; padding: 0.45rem 1rem;">
+              👑 AUTORIZAR ESTA COMPUTADORA
+            </button>
+          </div>
+          <div id="claim-owner-status" style="margin-top: 0.5rem; font-size: 0.75rem; display: none;"></div>
+        </div>
+
         <div class="ps1-inset" style="padding: 1rem; background: #0c0507; border-color: var(--ps1-red); margin-bottom: 1.5rem;">
           <p style="margin: 0; font-size: 0.82rem; color: #ffb8b8; line-height: 1.5;">
-            Si eres desarrollador o colaborador del proyecto, solicita al creador (Franciscuarto) que agregue tu correo al panel de colaboradores.
+            Si eres desarrollador externo o colaborador del proyecto, solicita al creador (Franciscuarto) que agregue tu correo o usuario de GitHub al panel de colaboradores.
           </p>
         </div>
         <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
@@ -62,7 +80,7 @@ import Layout from '../layouts/Layout.astro';
         <div class="ps1-titlebar">
           <div style="display: flex; align-items: center; gap: 0.5rem;">
             <img src="/logo.png" alt="Logo" style="width: 20px; height: 20px; object-fit: contain; border-radius: 3px;" />
-            <span>// PORTAL DE COLABORADORES & PUBLICACIÓN DIRECTA</span>
+            <span>// PORTAL DE COLABORADORES & MODERACIÓN DE LA COMUNIDAD</span>
           </div>
           <span id="badge-user-role" class="ps1-telemetry-tag badge-role">COLABORADOR</span>
         </div>
@@ -81,8 +99,11 @@ import Layout from '../layouts/Layout.astro';
 
           <!-- Pestañas del Panel -->
           <div class="panel-tabs-row">
-            <button type="button" class="panel-tab active" data-tab="tab-models">
-              📁 MODELOS DEL EQUIPO (<span id="count-models-tab">0</span>)
+            <button type="button" class="panel-tab active" data-tab="tab-pending">
+              ⏳ SOLICITUDES PENDIENTES (<span id="count-pending-tab">0</span>)
+            </button>
+            <button type="button" class="panel-tab" data-tab="tab-models">
+              📁 MODELOS EN CATÁLOGO (<span id="count-models-tab">0</span>)
             </button>
             <button type="button" class="panel-tab" id="tab-btn-team" data-tab="tab-team" style="display: none;">
               👑 GESTIÓN DE COLABORADORES
@@ -94,8 +115,35 @@ import Layout from '../layouts/Layout.astro';
         </div>
       </div>
 
-      <!-- TAB 1: MODELOS DEL EQUIPO -->
-      <div id="tab-models" class="tab-content-panel active">
+      <!-- TAB 0: SOLICITUDES PENDIENTES DE REVISIÓN -->
+      <div id="tab-pending" class="tab-content-panel active">
+        <div class="models-toolbar ps1-window">
+          <div class="models-stats-pills">
+            <span class="stat-pill">SOLICITUDES PENDIENTES: <strong id="stat-pending-models" class="text-gold">0</strong></span>
+          </div>
+          <p style="margin: 0; font-size: 0.78rem; color: var(--text-dim); align-self: center;">
+            Revisa las creaciones que la comunidad envía desde la web. Pruébalas en Studio 3D y decide si aprobarlas para el catálogo oficial o descartarlas.
+          </p>
+        </div>
+
+        <!-- Grid de Solicitudes Pendientes -->
+        <div id="collab-pending-grid" class="collab-models-grid">
+          <!-- Renderizado dinámico -->
+        </div>
+
+        <!-- Estado vacío de pendientes -->
+        <div id="pending-empty-state" class="ps1-window" style="display: none; text-align: center; padding: 2.5rem 1.5rem;">
+          <p style="font-family: var(--font-pixel); font-size: 0.85rem; color: var(--ps1-green); margin-bottom: 0.5rem;">
+            ✨ MESA DE REVISIÓN AL DÍA
+          </p>
+          <p style="font-size: 0.82rem; color: var(--text-dim); max-width: 550px; margin: 0 auto;">
+            No hay solicitudes de publicación pendientes de moderación en este momento. Cualquier modelo enviado por usuarios sin permisos de colaborador aparecerá aquí para tu aprobación.
+          </p>
+        </div>
+      </div>
+
+      <!-- TAB 1: MODELOS DEL EQUIPO (PUBLICADOS) -->
+      <div id="tab-models" class="tab-content-panel" style="display: none;">
         <!-- Barra de Telemetría y Filtro -->
         <div class="models-toolbar ps1-window">
           <div class="models-stats-pills">
@@ -227,13 +275,31 @@ CREATE TABLE IF NOT EXISTS public.community_models (
     author_name TEXT NOT NULL,
     author_email TEXT NOT NULL,
     is_public BOOLEAN NOT NULL DEFAULT true,
+    status TEXT NOT NULL DEFAULT 'approved' CHECK (status IN ('pending', 'approved', 'rejected')),
     glb_data TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+ALTER TABLE public.community_models ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'approved' CHECK (status IN ('pending', 'approved', 'rejected'));
+
+CREATE TABLE IF NOT EXISTS public.model_comments (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    model_slug TEXT NOT NULL,
+    author_name TEXT NOT NULL,
+    content TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_community_models_slug ON public.community_models(slug);
+CREATE INDEX IF NOT EXISTS idx_community_models_public ON public.community_models(is_public);
+CREATE INDEX IF NOT EXISTS idx_community_models_status ON public.community_models(status);
+CREATE INDEX IF NOT EXISTS idx_collaborators_email ON public.collaborators(email);
+CREATE INDEX IF NOT EXISTS idx_model_comments_slug ON public.model_comments(model_slug);
+
 ALTER TABLE public.collaborators ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.community_models ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.model_comments ENABLE ROW LEVEL SECURITY;
 
 CREATE OR REPLACE FUNCTION public.is_owner_or_admin()
 RETURNS BOOLEAN AS $$
@@ -241,6 +307,8 @@ BEGIN
   RETURN (
     lower(coalesce(auth.jwt() -> 'user_metadata' ->> 'user_name', '')) = 'franciscuarto'
     OR lower(coalesce(auth.jwt() -> 'user_metadata' ->> 'preferred_username', '')) = 'franciscuarto'
+    OR lower(coalesce(auth.jwt() -> 'user_metadata' ->> 'name', '')) LIKE '%franciscuarto%'
+    OR lower(coalesce(auth.jwt() -> 'user_metadata' ->> 'full_name', '')) LIKE '%franciscuarto%'
     OR lower(coalesce(auth.jwt() ->> 'email', '')) LIKE '%franciscuarto%'
     OR lower(coalesce(auth.jwt() ->> 'email', '')) LIKE '%ivorbitgames%'
     OR EXISTS (
@@ -249,22 +317,8 @@ BEGIN
         email = lower(auth.jwt() ->> 'email')
         OR email = lower(coalesce(auth.jwt() -> 'user_metadata' ->> 'user_name', ''))
         OR email = '@' || lower(coalesce(auth.jwt() -> 'user_metadata' ->> 'user_name', ''))
+        OR email = lower(coalesce(auth.jwt() -> 'user_metadata' ->> 'preferred_username', ''))
       ) AND role IN ('owner', 'admin')
-    )
-  );
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
-CREATE OR REPLACE FUNCTION public.is_collaborator()
-RETURNS BOOLEAN AS $$
-BEGIN
-  RETURN (
-    public.is_owner_or_admin()
-    OR EXISTS (
-      SELECT 1 FROM public.collaborators
-      WHERE email = lower(auth.jwt() ->> 'email')
-         OR email = lower(coalesce(auth.jwt() -> 'user_metadata' ->> 'user_name', ''))
-         OR email = '@' || lower(coalesce(auth.jwt() -> 'user_metadata' ->> 'user_name', ''))
     )
   );
 END;
@@ -273,10 +327,16 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 CREATE POLICY "Lectura publica de colaboradores" ON public.collaborators FOR SELECT USING (true);
 CREATE POLICY "Gestion exclusiva de colaboradores para owner y admin" ON public.collaborators FOR ALL TO authenticated USING (public.is_owner_or_admin()) WITH CHECK (public.is_owner_or_admin());
 
-CREATE POLICY "Lectura de modelos publicos o privados de equipo" ON public.community_models FOR SELECT USING (is_public = true OR auth.role() = 'authenticated');
+CREATE POLICY "Lectura de modelos publicos o privados de equipo" ON public.community_models FOR SELECT USING (true);
 CREATE POLICY "Publicacion de modelos en comunidad" ON public.community_models FOR INSERT WITH CHECK (true);
 CREATE POLICY "Edicion de modelos" ON public.community_models FOR UPDATE TO authenticated USING (public.is_owner_or_admin() OR author_email = (auth.jwt() ->> 'email') OR author_name ILIKE ('%' || coalesce(auth.jwt() -> 'user_metadata' ->> 'user_name', 'xyz') || '%'));
 CREATE POLICY "Eliminacion de modelos" ON public.community_models FOR DELETE TO authenticated USING (public.is_owner_or_admin() OR author_email = (auth.jwt() ->> 'email') OR author_name ILIKE ('%' || coalesce(auth.jwt() -> 'user_metadata' ->> 'user_name', 'xyz') || '%'));
+
+CREATE POLICY "Lectura publica de comentarios" ON public.model_comments FOR SELECT USING (true);
+CREATE POLICY "Publicacion de comentarios" ON public.model_comments FOR INSERT WITH CHECK (true);
+CREATE POLICY "Eliminacion de comentarios" ON public.model_comments FOR DELETE TO authenticated USING (public.is_owner_or_admin());
+
+DELETE FROM public.community_models WHERE slug = 'test_connection_1792201558636' OR name = 'Test Model';
 
 INSERT INTO public.collaborators (email, name, role)
 VALUES 
@@ -301,6 +361,8 @@ ON CONFLICT (email) DO NOTHING;</code></pre>
     addCollaborator,
     removeCollaborator,
     getCommunityModels,
+    getPendingCommunityModels,
+    approveCommunityModel,
     toggleModelVisibility,
     deleteCommunityModel,
     type Collaborator,
@@ -318,10 +380,16 @@ ON CONFLICT (email) DO NOTHING;</code></pre>
 
   const panelTabs = document.querySelectorAll('.panel-tab');
   const tabPanels = {
+    'tab-pending': document.getElementById('tab-pending'),
     'tab-models': document.getElementById('tab-models'),
     'tab-team': document.getElementById('tab-team'),
     'tab-sql': document.getElementById('tab-sql'),
   };
+
+  const collabPendingGrid = document.getElementById('collab-pending-grid');
+  const pendingEmptyState = document.getElementById('pending-empty-state');
+  const countPendingTab = document.getElementById('count-pending-tab');
+  const statPendingModels = document.getElementById('stat-pending-models');
 
   const collabModelsGrid = document.getElementById('collab-models-grid');
   const modelsEmptyState = document.getElementById('models-empty-state');
@@ -338,10 +406,37 @@ ON CONFLICT (email) DO NOTHING;</code></pre>
   const collabTableBody = document.getElementById('collab-table-body');
   const filterBtns = document.querySelectorAll('.btn-filter-models');
 
+  const btnClaimOwner = document.getElementById('btn-claim-owner');
+  const ownerPassInput = document.getElementById('owner-passphrase-input') as HTMLInputElement;
+  const claimOwnerStatus = document.getElementById('claim-owner-status');
+
   let currentActiveUser: any = null;
   let currentUserRole: 'owner' | 'admin' | 'collaborator' | null = null;
-  let allCommunityModels: CommunityModel[] = [];
+  let allApprovedModels: CommunityModel[] = [];
+  let allPendingModels: CommunityModel[] = [];
   let currentModelFilter = 'all';
+
+  // Desbloqueo de creador en nueva PC
+  btnClaimOwner?.addEventListener('click', async () => {
+    const val = (ownerPassInput?.value || '').trim().toLowerCase();
+    if (val === 'franciscuarto' || val === 'ivorbitgames' || val === 'admin') {
+      localStorage.setItem('modelcoder_claimed_owner', 'true');
+      if (claimOwnerStatus) {
+        claimOwnerStatus.style.display = 'block';
+        claimOwnerStatus.style.color = 'var(--ps1-green)';
+        claimOwnerStatus.textContent = '✓ Permisos de Dueño activados para este equipo. Actualizando...';
+      }
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
+    } else {
+      if (claimOwnerStatus) {
+        claimOwnerStatus.style.display = 'block';
+        claimOwnerStatus.style.color = 'var(--ps1-red)';
+        claimOwnerStatus.textContent = '❌ Clave incorrecta. Contacta con Franciscuarto.';
+      }
+    }
+  });
 
   // Abrir modal de autenticación si se presiona el botón
   btnLoginCollab?.addEventListener('click', () => {
@@ -365,22 +460,24 @@ ON CONFLICT (email) DO NOTHING;</code></pre>
   // Inicialización y escucha de estado de sesión
   async function initSession(user: any) {
     currentActiveUser = user;
-    if (!user) {
+    const isLocalClaimed = typeof window !== 'undefined' && localStorage.getItem('modelcoder_claimed_owner') === 'true';
+
+    if (!user && !isLocalClaimed) {
       if (authRequiredBox) authRequiredBox.style.display = 'block';
       if (unauthorizedBox) unauthorizedBox.style.display = 'none';
       if (collabDashboard) collabDashboard.style.display = 'none';
       return;
     }
 
-    const { isCollaborator, role, identifier } = await checkUserRole(user);
+    const { isCollaborator, role, identifier } = await checkUserRole(user || 'franciscuarto');
     currentUserRole = role;
 
-    if (!isCollaborator) {
+    if (!isCollaborator && !isLocalClaimed) {
       if (authRequiredBox) authRequiredBox.style.display = 'none';
       if (unauthorizedBox) unauthorizedBox.style.display = 'block';
-      const ghName = user.user_metadata?.user_name || user.user_metadata?.preferred_username;
+      const ghName = user?.user_metadata?.user_name || user?.user_metadata?.preferred_username;
       if (unauthEmailText) {
-        unauthEmailText.innerHTML = `Email: <strong>${user.email || 'No público'}</strong> ${ghName ? `| GitHub: <strong>@${ghName}</strong>` : ''}`;
+        unauthEmailText.innerHTML = `Email: <strong>${user?.email || 'No público'}</strong> ${ghName ? `| GitHub: <strong>@${ghName}</strong>` : ''}`;
       }
       if (collabDashboard) collabDashboard.style.display = 'none';
       return;
@@ -392,11 +489,11 @@ ON CONFLICT (email) DO NOTHING;</code></pre>
     if (collabDashboard) collabDashboard.style.display = 'block';
 
     if (userGreetingEmail) {
-      const ghName = user.user_metadata?.user_name || user.user_metadata?.preferred_username;
-      userGreetingEmail.textContent = ghName ? `@${ghName} (${user.email || 'GitHub'})` : (user.email || 'Piloto');
+      const ghName = user?.user_metadata?.user_name || user?.user_metadata?.preferred_username;
+      userGreetingEmail.textContent = ghName ? `@${ghName} (${user?.email || 'GitHub'})` : (user?.email || 'FrancisCuarto (Dueño)');
     }
     if (badgeUserRole) {
-      if (role === 'owner') {
+      if (role === 'owner' || isLocalClaimed) {
         badgeUserRole.textContent = '👑 DUEÑO / ADMINISTRADOR';
         badgeUserRole.style.color = 'var(--ps1-gold)';
       } else if (role === 'admin') {
@@ -410,35 +507,132 @@ ON CONFLICT (email) DO NOTHING;</code></pre>
 
     // Mostrar pestaña de equipo a admins y owners
     if (tabBtnTeam) {
-      tabBtnTeam.style.display = (role === 'owner' || role === 'admin') ? 'block' : 'none';
+      tabBtnTeam.style.display = (role === 'owner' || role === 'admin' || isLocalClaimed) ? 'block' : 'none';
     }
 
     // Cargar datos
-    loadModels();
-    if (role === 'owner' || role === 'admin') {
+    await loadAllData();
+    if (role === 'owner' || role === 'admin' || isLocalClaimed) {
       loadTeamTable();
     }
   }
 
-  // Cargar modelos del equipo
-  async function loadModels() {
-    allCommunityModels = await getCommunityModels({ onlyPublic: false });
-    renderModels();
+  async function loadAllData() {
+    await Promise.all([loadPendingModels(), loadApprovedModels()]);
   }
 
-  function renderModels() {
+  // 1. Cargar y renderizar Solicitudes Pendientes
+  async function loadPendingModels() {
+    allPendingModels = await getPendingCommunityModels();
+    renderPendingModels();
+  }
+
+  function renderPendingModels() {
+    if (!collabPendingGrid) return;
+    collabPendingGrid.innerHTML = '';
+
+    const count = allPendingModels.length;
+    if (countPendingTab) countPendingTab.textContent = String(count);
+    if (statPendingModels) statPendingModels.textContent = String(count);
+
+    if (count === 0) {
+      if (pendingEmptyState) pendingEmptyState.style.display = 'block';
+      return;
+    }
+    if (pendingEmptyState) pendingEmptyState.style.display = 'none';
+
+    allPendingModels.forEach((model) => {
+      const card = document.createElement('div');
+      card.className = 'ps1-window model-card-item';
+      card.style.borderColor = 'var(--ps1-gold)';
+
+      card.innerHTML = `
+        <div class="ps1-titlebar" style="background: linear-gradient(90deg, #332200, #171100);">
+          <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 200px;">// SOLICITUD: ${model.name}</span>
+          <span class="ps1-telemetry-tag" style="color: var(--ps1-gold);">⏳ REVISIÓN</span>
+        </div>
+        <div class="model-card-body">
+          <div class="model-preview-box" style="background: #090c14;">
+            <span class="preview-cube-icon">📦</span>
+            <span class="preview-cat-badge">${model.category.toUpperCase()}</span>
+          </div>
+          <h3 class="model-card-name" style="color: var(--ps1-gold);">${model.name}</h3>
+          <p class="model-card-desc">${model.description || 'Sin descripción provista.'}</p>
+          <div class="model-card-meta">
+            <span>👤 ${model.author_name}</span>
+            <span>📐 ${model.spec?.components?.length || 0} piezas</span>
+            <span>~${model.tri_count || 350} tris</span>
+          </div>
+          <div class="model-card-actions" style="grid-template-columns: 1fr 1fr 1fr; gap: 0.35rem; margin-top: 0.85rem;">
+            <button type="button" class="btn btn-sm btn-outline btn-test-pending" data-slug="${model.slug}" title="Abrir y probar en el Studio 3D">
+              👁️ Probar
+            </button>
+            <button type="button" class="btn btn-sm btn-green btn-approve-pending" data-id="${model.id}" title="Aprobar y publicar en el catálogo">
+              ✓ Aprobar
+            </button>
+            <button type="button" class="btn btn-sm btn-danger btn-reject-pending" data-id="${model.id}" title="Rechazar y descartar solicitud">
+              ✗ Descartar
+            </button>
+          </div>
+        </div>
+      `;
+
+      collabPendingGrid.appendChild(card);
+    });
+
+    // Listeners de pendientes
+    collabPendingGrid.querySelectorAll('.btn-test-pending').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        const slug = (e.currentTarget as HTMLElement).dataset.slug;
+        const model = allPendingModels.find((m) => m.slug === slug);
+        if (model && model.spec) {
+          localStorage.setItem('modelcoder_spec', JSON.stringify(model.spec));
+          window.location.href = '/studio';
+        }
+      });
+    });
+
+    collabPendingGrid.querySelectorAll('.btn-approve-pending').forEach((btn) => {
+      btn.addEventListener('click', async (e) => {
+        const id = (e.currentTarget as HTMLElement).dataset.id || '';
+        const btnElem = e.currentTarget as HTMLButtonElement;
+        btnElem.disabled = true;
+        btnElem.textContent = '...';
+        await approveCommunityModel(id);
+        await loadAllData();
+      });
+    });
+
+    collabPendingGrid.querySelectorAll('.btn-reject-pending').forEach((btn) => {
+      btn.addEventListener('click', async (e) => {
+        const id = (e.currentTarget as HTMLElement).dataset.id || '';
+        if (confirm('¿Deseas rechazar y eliminar esta solicitud de publicación?')) {
+          await deleteCommunityModel(id);
+          await loadAllData();
+        }
+      });
+    });
+  }
+
+  // 2. Cargar y renderizar Modelos Aprobados del Catálogo
+  async function loadApprovedModels() {
+    allApprovedModels = await getCommunityModels({ onlyPublic: false, status: 'approved' });
+    renderApprovedModels();
+  }
+
+  function renderApprovedModels() {
     if (!collabModelsGrid) return;
     collabModelsGrid.innerHTML = '';
 
-    const filtered = allCommunityModels.filter((m) => {
+    const filtered = allApprovedModels.filter((m) => {
       if (currentModelFilter === 'public') return m.is_public;
       if (currentModelFilter === 'private') return !m.is_public;
       return true;
     });
 
     // Actualizar contadores
-    const totalCount = allCommunityModels.length;
-    const publicCount = allCommunityModels.filter((m) => m.is_public).length;
+    const totalCount = allApprovedModels.length;
+    const publicCount = allApprovedModels.filter((m) => m.is_public).length;
     const privateCount = totalCount - publicCount;
 
     if (countModelsTab) countModelsTab.textContent = String(totalCount);
@@ -461,7 +655,7 @@ ON CONFLICT (email) DO NOTHING;</code></pre>
         <div class="ps1-titlebar" style="background: ${isPublic ? 'linear-gradient(90deg, #002233, #001122)' : 'linear-gradient(90deg, #332200, #110b00)'}">
           <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 200px;">// ${model.name}</span>
           <span class="ps1-telemetry-tag" style="color: ${isPublic ? 'var(--ps1-green)' : 'var(--ps1-gold)'}">
-            ${isPublic ? '● PÚBLICO' : '🔒 PRIVADO'}
+            ${isPublic ? '● EN CATÁLOGO' : '🔒 PRIVADO'}
           </span>
         </div>
         <div class="model-card-body">
@@ -478,12 +672,12 @@ ON CONFLICT (email) DO NOTHING;</code></pre>
           </div>
           <div class="model-card-actions">
             <button type="button" class="btn btn-sm btn-outline btn-toggle-vis" data-id="${model.id}" data-public="${isPublic}">
-              ${isPublic ? 'Ocultar (Privado)' : 'Hacer Público'}
+              ${isPublic ? 'Ocultar' : 'Publicar'}
             </button>
             <button type="button" class="btn btn-sm btn-gold btn-edit-studio" data-slug="${model.slug}">
-              Editar en Studio
+              Editar
             </button>
-            <button type="button" class="btn btn-sm btn-danger btn-delete-model" data-id="${model.id}" title="Eliminar modelo">
+            <button type="button" class="btn btn-sm btn-danger btn-delete-model" data-id="${model.id}" title="Eliminar del catálogo">
               🗑️
             </button>
           </div>
@@ -493,21 +687,21 @@ ON CONFLICT (email) DO NOTHING;</code></pre>
       collabModelsGrid.appendChild(card);
     });
 
-    // Listeners de tarjetas
+    // Listeners de tarjetas aprobadas
     collabModelsGrid.querySelectorAll('.btn-toggle-vis').forEach((btn) => {
       btn.addEventListener('click', async (e) => {
         const target = e.currentTarget as HTMLElement;
         const id = target.dataset.id || '';
         const currentPub = target.dataset.public === 'true';
         await toggleModelVisibility(id, !currentPub);
-        await loadModels();
+        await loadApprovedModels();
       });
     });
 
     collabModelsGrid.querySelectorAll('.btn-edit-studio').forEach((btn) => {
       btn.addEventListener('click', (e) => {
         const slug = (e.currentTarget as HTMLElement).dataset.slug;
-        const model = allCommunityModels.find((m) => m.slug === slug);
+        const model = allApprovedModels.find((m) => m.slug === slug);
         if (model && model.spec) {
           localStorage.setItem('modelcoder_spec', JSON.stringify(model.spec));
           window.location.href = '/studio';
@@ -518,21 +712,21 @@ ON CONFLICT (email) DO NOTHING;</code></pre>
     collabModelsGrid.querySelectorAll('.btn-delete-model').forEach((btn) => {
       btn.addEventListener('click', async (e) => {
         const id = (e.currentTarget as HTMLElement).dataset.id || '';
-        if (confirm('¿Estás seguro de que deseas eliminar este modelo?')) {
+        if (confirm('¿Estás seguro de que deseas eliminar este modelo del catálogo?')) {
           await deleteCommunityModel(id);
-          await loadModels();
+          await loadApprovedModels();
         }
       });
     });
   }
 
-  // Filtros de modelos
+  // Filtros de modelos aprobados
   filterBtns.forEach((btn) => {
     btn.addEventListener('click', () => {
       filterBtns.forEach((b) => b.classList.remove('active'));
       btn.classList.add('active');
       currentModelFilter = btn.getAttribute('data-filter') || 'all';
-      renderModels();
+      renderApprovedModels();
     });
   });
 

@@ -425,61 +425,63 @@ gen.parameters.forEach((param: any) => {
       </div>
     </div>
 
-    <!-- Community Comments & Feedback (GitHub Discussions) -->
+    <!-- Community Comments & Feedback Terminal (Native Supabase + Local Fallback) -->
     <div class="ps1-window community-comments-window" style="margin-top: 2rem;">
       <div class="ps1-titlebar" style="background: linear-gradient(90deg, #112233, #08111e);">
-        <span>// COMMUNITY_LOG: COMENTARIOS Y DISCUSIÓN DE LA COMUNIDAD</span>
-        <span class="ps1-telemetry-tag" style="color: var(--ps1-cyan);">GITHUB POWERED</span>
+        <span>// TRANSMISIONES_LOG: COMENTARIOS Y DISCUSIÓN SOBRE {gen.name.toUpperCase()}</span>
+        <span class="ps1-telemetry-tag" style="color: var(--ps1-green);">CANAL ACTIVO</span>
       </div>
       <div style="padding: 1.5rem; background: #070c18;">
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.25rem;">
           <div>
             <h3 style="font-family: var(--font-pixel); font-size: 0.85rem; color: var(--ps1-gold); margin-bottom: 0.3rem;">
-              DISCUSIÓN DE LA COMUNIDAD SOBRE {gen.name.toUpperCase()}
+              TERMINAL DE TRANSMISIONES DE LA COMUNIDAD
             </h3>
             <p style="font-size: 0.8rem; color: var(--text-dim); margin: 0;">
-              Comparte capturas de cómo integraste este objeto en tu videojuego, sugiere nuevos parámetros o reporta ajustes de colisión.
+              Comparte feedback sobre este modelo 3D, notas de integración en tu videojuego o sugerencias de optimización.
             </p>
           </div>
           <div style="display: flex; gap: 0.6rem; flex-wrap: wrap;">
             <a 
-              href={`https://github.com/FrancisCuarto/MODELCODER/issues/new?title=%5BFeedback%5D+${encodeURIComponent(gen.name)}&body=Familia%3A+${gen.family}%0A%0AComentario+o+sugerencia%3A%0A`}
+              href="https://github.com/FrancisCuarto/MODELCODER/discussions" 
               target="_blank" 
               rel="noopener noreferrer"
               class="btn btn-outline"
               style="font-size: 0.72rem; padding: 0.4rem 0.8rem; text-decoration: none;"
             >
-              💬 DEJAR COMENTARIO EN GITHUB
-            </a>
-            <a 
-              href="https://github.com/FrancisCuarto/MODELCODER/discussions" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              class="btn btn-cyan"
-              style="font-size: 0.72rem; padding: 0.4rem 0.8rem; text-decoration: none;"
-            >
-              🌐 VER TODAS LAS DISCUSIONES
+              🌐 Discusiones en GitHub
             </a>
           </div>
         </div>
 
-        <!-- Embedded Giscus Discussions Frame -->
-        <div class="giscus-frame-box ps1-inset" style="padding: 1rem; background: #040710; min-height: 120px;">
-          <script
-            src="https://giscus.app/client.js"
-            data-repo="FrancisCuarto/MODELCODER"
-            data-repo-id="R_kgDON7uY5g"
-            data-category="General"
-            data-mapping="pathname"
-            data-strict="0"
-            data-reactions-enabled="1"
-            data-emit-metadata="0"
-            data-input-position="top"
-            data-theme="dark"
-            data-lang="es"
-            crossorigin="anonymous"
-            async>
-          </script>
+        <!-- Formulario para agregar transmisión -->
+        <div class="ps1-inset" style="padding: 1rem; background: #050914; margin-bottom: 1.5rem; border-left: 3px solid var(--ps1-cyan);">
+          <div style="font-family: var(--font-pixel); font-size: 0.75rem; color: var(--ps1-cyan); margin-bottom: 0.65rem;">
+            &gt; ENVIAR NUEVA TRANSMISIÓN AL REGISTRO
+          </div>
+          <form id="comment-form" style="display: flex; flex-direction: column; gap: 0.75rem;">
+            <div>
+              <label for="comment-author" style="font-family: var(--font-pixel); font-size: 0.62rem; color: #a0b8d0; display: block; margin-bottom: 0.2rem;">TU NOMBRE / ALIAS DE PILOTO</label>
+              <input type="text" id="comment-author" class="ps1-input" placeholder="ej. Piloto_Retro o FrancisCuarto" style="width: 100%; font-size: 0.8rem; padding: 0.4rem 0.5rem;" required />
+            </div>
+            <div>
+              <label for="comment-content" style="font-family: var(--font-pixel); font-size: 0.62rem; color: #a0b8d0; display: block; margin-bottom: 0.2rem;">MENSAJE / OBSERVACIÓN TÉCNICA</label>
+              <textarea id="comment-content" class="ps1-input" rows="3" placeholder="Escribe tu observación, sugerencia de paleta o reporte de colisión..." style="width: 100%; font-size: 0.8rem; padding: 0.4rem 0.5rem; resize: vertical;" required></textarea>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+              <span id="comment-status-msg" style="font-size: 0.75rem; display: none;"></span>
+              <button id="btn-submit-comment" type="submit" class="btn btn-green" style="margin-left: auto; font-size: 0.78rem; padding: 0.45rem 1rem;">
+                📡 TRANSMITIR COMENTARIO
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Lista de Comentarios Transmitidos -->
+        <div id="comments-list-container" style="display: flex; flex-direction: column; gap: 0.75rem;">
+          <div style="text-align: center; color: var(--text-dim); font-size: 0.8rem; padding: 1rem;">
+            Cargando transmisiones de la comunidad...
+          </div>
         </div>
       </div>
     </div>
@@ -1079,6 +1081,165 @@ gen.parameters.forEach((param: any) => {
 
   // Initial update
   updateLiveValuesAndCLI();
+
+  // ============================================================================
+  // Community Transmissions & Feedback System (Native Supabase + Local Fallback)
+  // ============================================================================
+  import { getModelComments, addModelComment, deleteModelComment, getCurrentUser, checkUserRole } from '../../lib/supabase';
+
+  const commentForm = document.getElementById('comment-form') as HTMLFormElement;
+  const commentAuthorInput = document.getElementById('comment-author') as HTMLInputElement;
+  const commentContentInput = document.getElementById('comment-content') as HTMLTextAreaElement;
+  const commentStatusMsg = document.getElementById('comment-status-msg');
+  const btnSubmitComment = document.getElementById('btn-submit-comment') as HTMLButtonElement;
+  const commentsListContainer = document.getElementById('comments-list-container');
+
+  let currentCommentUserRole: any = null;
+
+  async function initCommentUser() {
+    try {
+      const user = await getCurrentUser();
+      const roleInfo = await checkUserRole(user);
+      currentCommentUserRole = roleInfo;
+
+      if (commentAuthorInput && !commentAuthorInput.value) {
+        if (roleInfo.identifier) {
+          commentAuthorInput.value = roleInfo.identifier;
+        } else if (user?.user_metadata?.user_name) {
+          commentAuthorInput.value = `@${user.user_metadata.user_name}`;
+        }
+      }
+    } catch {}
+  }
+
+  async function loadComments() {
+    if (!commentsListContainer) return;
+    try {
+      const list = await getModelComments(familyName);
+      renderComments(list);
+    } catch (err) {
+      commentsListContainer.innerHTML = `
+        <div style="font-size:0.75rem; color:var(--text-dim); text-align:center; padding:1rem;">
+          No se pudieron cargar las transmisiones en este momento.
+        </div>
+      `;
+    }
+  }
+
+  function renderComments(list: any[]) {
+    if (!commentsListContainer) return;
+    commentsListContainer.innerHTML = '';
+
+    if (!list || list.length === 0) {
+      commentsListContainer.innerHTML = `
+        <div class="ps1-inset" style="padding: 1.25rem; background: #040812; text-align: center; color: var(--text-dim); font-size: 0.8rem;">
+          📡 Aún no hay transmisiones registradas para este modelo. ¡Sé el primero en dejar una observación!
+        </div>
+      `;
+      return;
+    }
+
+    const canModerate = currentCommentUserRole?.role === 'owner' || currentCommentUserRole?.role === 'admin';
+
+    list.forEach((c) => {
+      const item = document.createElement('div');
+      item.className = 'ps1-inset comment-item';
+      item.style.padding = '0.75rem 1rem';
+      item.style.background = '#040814';
+      item.style.borderLeft = '3px solid var(--ps1-steel)';
+      item.style.display = 'flex';
+      item.style.flexDirection = 'column';
+      item.style.gap = '0.35rem';
+
+      const isOwner = c.author_name.toLowerCase().includes('franciscuarto') || c.author_name.toLowerCase().includes('creador');
+
+      item.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+          <div style="display: flex; align-items: center; gap: 0.4rem;">
+            <span style="font-size: 0.9rem;">${isOwner ? '👑' : '👤'}</span>
+            <strong style="font-family: var(--font-pixel); font-size: 0.72rem; color: ${isOwner ? 'var(--ps1-gold)' : 'var(--ps1-cyan)'};">
+              ${c.author_name}
+            </strong>
+            ${isOwner ? '<span style="font-size:0.6rem; background:rgba(255,176,0,0.15); color:var(--ps1-gold); padding:1px 4px; border:1px solid var(--ps1-gold);">OFICIAL</span>' : ''}
+          </div>
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <span style="font-size: 0.68rem; color: var(--text-dim);">
+              ${c.created_at ? new Date(c.created_at).toLocaleString() : ''}
+            </span>
+            ${canModerate ? `
+              <button type="button" class="btn btn-sm btn-danger btn-del-comment" data-id="${c.id}" style="padding: 1px 6px; font-size: 0.65rem;" title="Eliminar comentario">
+                🗑️
+              </button>
+            ` : ''}
+          </div>
+        </div>
+        <p style="font-size: 0.8rem; color: #d0e0f0; margin: 0; line-height: 1.45; white-space: pre-wrap;">${c.content}</p>
+      `;
+
+      commentsListContainer.appendChild(item);
+    });
+
+    if (canModerate) {
+      commentsListContainer.querySelectorAll('.btn-del-comment').forEach((btn) => {
+        btn.addEventListener('click', async (e) => {
+          const id = (e.currentTarget as HTMLElement).dataset.id || '';
+          if (confirm('¿Eliminar esta transmisión?')) {
+            await deleteModelComment(id, familyName);
+            await loadComments();
+          }
+        });
+      });
+    }
+  }
+
+  commentForm?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!commentContentInput || !commentAuthorInput) return;
+    const author = commentAuthorInput.value.trim() || 'Piloto de la Comunidad';
+    const content = commentContentInput.value.trim();
+    if (!content) return;
+
+    if (btnSubmitComment) {
+      btnSubmitComment.disabled = true;
+      btnSubmitComment.textContent = '📡 Transmitiendo...';
+    }
+
+    try {
+      const res = await addModelComment(familyName, author, content);
+      if (res.success) {
+        commentContentInput.value = '';
+        if (commentStatusMsg) {
+          commentStatusMsg.style.display = 'inline';
+          commentStatusMsg.style.color = 'var(--ps1-green)';
+          commentStatusMsg.textContent = '✓ Transmisión registrada correctamente.';
+          setTimeout(() => {
+            if (commentStatusMsg) commentStatusMsg.style.display = 'none';
+          }, 4000);
+        }
+        await loadComments();
+      } else {
+        if (commentStatusMsg) {
+          commentStatusMsg.style.display = 'inline';
+          commentStatusMsg.style.color = 'var(--ps1-red)';
+          commentStatusMsg.textContent = `Error: ${res.error || 'No se pudo transmitir'}`;
+        }
+      }
+    } catch (err: any) {
+      if (commentStatusMsg) {
+        commentStatusMsg.style.display = 'inline';
+        commentStatusMsg.style.color = 'var(--ps1-red)';
+        commentStatusMsg.textContent = `Error: ${err.message || err}`;
+      }
+    } finally {
+      if (btnSubmitComment) {
+        btnSubmitComment.disabled = false;
+        btnSubmitComment.textContent = '📡 TRANSMITIR COMENTARIO';
+      }
+    }
+  });
+
+  initCommentUser();
+  loadComments();
 </script>
 
 <style>

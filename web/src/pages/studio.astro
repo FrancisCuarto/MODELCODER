@@ -535,91 +535,77 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     </div>
   </dialog>
 
-  <!-- GitHub Contribution Modal -->
-  <dialog id="github-modal" class="ps1-window gh-modal">
+  <!-- Modal de Publicación en la Comunidad & Moderación -->
+  <dialog id="github-modal" class="ps1-window gh-modal" style="max-width: 580px; width: 92%;">
     <div class="ps1-titlebar">
-      <span>// PUBLICAR MODELO EN LA COMUNIDAD</span>
+      <span>// TRANSMISIÓN & PUBLICACIÓN EN EL CATÁLOGO</span>
       <button id="close-modal-btn" class="ps1-ctrl-btn">X</button>
     </div>
     <div class="modal-body" style="padding: 1.25rem;">
-      <h3 style="color: var(--ps1-gold); font-family: var(--font-pixel); font-size: 0.95rem; margin-bottom: 0.4rem;">
-        PUBLICACIÓN & APORTE DE MODELOS
-      </h3>
-      <p style="font-size: 0.82rem; color: #b0c0d4; margin-bottom: 1.25rem; line-height: 1.5;">
-        Elige el método de publicación para tu modelo 3D:
-      </p>
-
-      <!-- SECCIÓN EXCLUSIVA: SUBIDA DIRECTA PARA COLABORADORES -->
-      <div id="collab-direct-publish-card" class="ps1-inset" style="padding: 1rem; margin-bottom: 1.25rem; background: #07101e; border-left: 4px solid var(--ps1-gold);">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.4rem;">
-          <span style="font-family: var(--font-pixel); font-size: 0.82rem; color: var(--ps1-gold); display: flex; align-items: center; gap: 0.4rem;">
-            👑 SUBIDA DIRECTA AL CATÁLOGO (SIN GITHUB)
+      <div id="publish-role-banner" class="ps1-inset" style="padding: 0.75rem 1rem; margin-bottom: 1.25rem; background: #07101e; border-left: 4px solid var(--ps1-gold);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem; flex-wrap: wrap; gap: 0.4rem;">
+          <span id="publish-mode-title" style="font-family: var(--font-pixel); font-size: 0.82rem; color: var(--ps1-gold); display: flex; align-items: center; gap: 0.4rem;">
+            👑 MODO COLABORADOR // SUBIDA DIRECTA
           </span>
-          <span id="collab-badge-indicator" class="ps1-telemetry-tag" style="color: var(--ps1-gold);">COLABORADOR VERIFICADO</span>
+          <span id="collab-badge-indicator" class="ps1-telemetry-tag" style="color: var(--ps1-gold);">AUTORIZADO</span>
         </div>
-        <p style="font-size: 0.78rem; color: #c0d0e0; margin-bottom: 0.85rem; line-height: 1.45;">
-          Como colaborador o creador autorizado, puedes subir este modelo directamente a la nube. Quedará disponible de inmediato en la web sin requerir aprobación ni Pull Requests.
+        <p id="publish-mode-desc" style="font-size: 0.78rem; color: #c0d0e0; margin: 0; line-height: 1.45;">
+          Como colaborador o creador oficial, tu modelo se subirá de inmediato al catálogo público sin requerir aprobación.
         </p>
+      </div>
 
-        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 0.75rem; margin-bottom: 0.75rem;">
+      <div style="display: flex; flex-direction: column; gap: 0.85rem; margin-bottom: 1.25rem;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
           <div>
-            <label style="font-family: var(--font-pixel); font-size: 0.6rem; color: var(--ps1-cyan); display: block; margin-bottom: 0.2rem;">NOMBRE DEL MODELO:</label>
-            <input type="text" id="direct-upload-name" class="ps1-input" style="width: 100%; font-size: 0.8rem; padding: 0.4rem 0.5rem;" />
+            <label style="font-family: var(--font-pixel); font-size: 0.62rem; color: var(--ps1-cyan); display: block; margin-bottom: 0.25rem;">NOMBRE DEL MODELO *</label>
+            <input type="text" id="direct-upload-name" class="ps1-input" style="width: 100%; font-size: 0.8rem; padding: 0.45rem 0.5rem;" required />
           </div>
           <div>
-            <label style="font-family: var(--font-pixel); font-size: 0.6rem; color: var(--ps1-cyan); display: block; margin-bottom: 0.2rem;">VISIBILIDAD:</label>
-            <select id="direct-upload-vis" class="ps1-input" style="width: 100%; font-size: 0.8rem; padding: 0.4rem 0.5rem;">
-              <option value="public">Público (En Catálogo)</option>
+            <label style="font-family: var(--font-pixel); font-size: 0.62rem; color: var(--ps1-cyan); display: block; margin-bottom: 0.25rem;">CATEGORÍA *</label>
+            <select id="direct-upload-cat" class="ps1-input" style="width: 100%; font-size: 0.8rem; padding: 0.45rem 0.5rem;">
+              <option value="furniture">Mobiliario (furniture)</option>
+              <option value="fixtures">Luces & Dispositivos (fixtures)</option>
+              <option value="security">Seguridad (security)</option>
+              <option value="infrastructure">Infraestructura (infrastructure)</option>
+              <option value="medical">Médico & Lab (medical)</option>
+              <option value="architecture">Arquitectura (architecture)</option>
+              <option value="props">Objetos & Props (props)</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+          <div>
+            <label style="font-family: var(--font-pixel); font-size: 0.62rem; color: var(--ps1-cyan); display: block; margin-bottom: 0.25rem;">TU NOMBRE / ALIAS</label>
+            <input type="text" id="direct-upload-author" class="ps1-input" placeholder="ej. Piloto_03 o FrancisCuarto" style="width: 100%; font-size: 0.8rem; padding: 0.45rem 0.5rem;" />
+          </div>
+          <div id="vis-field-container">
+            <label style="font-family: var(--font-pixel); font-size: 0.62rem; color: var(--ps1-cyan); display: block; margin-bottom: 0.25rem;">DESTINO / VISIBILIDAD</label>
+            <select id="direct-upload-vis" class="ps1-input" style="width: 100%; font-size: 0.8rem; padding: 0.45rem 0.5rem;">
+              <option value="public">Público (Catálogo General)</option>
               <option value="private">Privado (Solo Equipo)</option>
             </select>
           </div>
         </div>
 
         <div>
-          <label style="font-family: var(--font-pixel); font-size: 0.6rem; color: var(--ps1-cyan); display: block; margin-bottom: 0.2rem;">CATEGORÍA:</label>
-          <select id="direct-upload-cat" class="ps1-input" style="width: 100%; font-size: 0.8rem; padding: 0.4rem 0.5rem; margin-bottom: 0.75rem;">
-            <option value="furniture">Mobiliario (furniture)</option>
-            <option value="fixtures">Luces & Dispositivos (fixtures)</option>
-            <option value="infrastructure">Infraestructura (infrastructure)</option>
-            <option value="medical">Médico & Laboratorio (medical)</option>
-            <option value="architecture">Arquitectura (architecture)</option>
-          </select>
+          <label style="font-family: var(--font-pixel); font-size: 0.62rem; color: var(--ps1-cyan); display: block; margin-bottom: 0.25rem;">DESCRIPCIÓN DEL OBJETO</label>
+          <textarea id="direct-upload-desc" class="ps1-input" rows="2" placeholder="Describe brevemente este modelo procedural..." style="width: 100%; font-size: 0.8rem; padding: 0.45rem 0.5rem; resize: vertical;"></textarea>
         </div>
-
-        <button id="btn-submit-direct-publish" type="button" class="btn btn-gold" style="width: 100%; font-size: 0.85rem; padding: 0.65rem;">
-          ⚡ SUBIR AL CATÁLOGO DIRECTO AHORA
-        </button>
-        <div id="direct-upload-status" class="status-msg hidden" style="margin-top: 0.6rem; font-size: 0.78rem;"></div>
       </div>
 
-      <!-- AVISO PARA QUIENES NO HAN INICIADO SESIÓN -->
-      <div id="collab-unauth-notice" class="ps1-inset" style="padding: 0.75rem 1rem; margin-bottom: 1rem; background: #080d18; border-left: 3px solid var(--ps1-steel); display: none;">
-        <span style="font-size: 0.76rem; color: #a0b6d0; line-height: 1.45; display: block;">
-          💡 <strong>¿Eres colaborador oficial o el creador?</strong> <a href="/colaboradores" style="color: var(--ps1-gold); text-decoration: underline;">Inicia sesión aquí</a> para desbloquear la subida directa sin pasar por GitHub.
-        </span>
-      </div>
+      <button id="btn-submit-direct-publish" type="button" class="btn btn-gold" style="width: 100%; font-size: 0.85rem; padding: 0.75rem;">
+        ⚡ SUBIR AL CATÁLOGO DIRECTO AHORA
+      </button>
 
-      <div class="ps1-inset" style="padding: 1rem; margin-bottom: 1rem; background: #080e1c; border-left: 3px solid var(--ps1-green);">
-        <span style="font-family: var(--font-pixel); font-size: 0.8rem; color: var(--ps1-green); display: block; margin-bottom: 0.35rem;">
-          ⭐ PROPUESTA EN GITHUB (1-CLIC)
-        </span>
-        <p style="font-size: 0.8rem; color: var(--text-dim); margin-bottom: 0.85rem; line-height: 1.45;">
-          Abre automáticamente un Issue en GitHub con la especificación y código de tu modelo para su revisión e integración en el catálogo.
-        </p>
-        <button id="btn-quick-github-proposal" type="button" class="btn btn-green" style="width: 100%; font-size: 0.8rem; padding: 0.65rem;">
-          🚀 ENVIAR PROPUESTA A GITHUB (1-CLIC)
-        </button>
-      </div>
+      <div id="direct-upload-status" class="status-msg hidden" style="margin-top: 0.85rem; font-size: 0.8rem; line-height: 1.45;"></div>
 
-      <div class="ps1-inset" style="padding: 1rem; background: #080e1c; border-left: 3px solid var(--ps1-cyan);">
-        <span style="font-family: var(--font-pixel); font-size: 0.8rem; color: var(--ps1-cyan); display: block; margin-bottom: 0.35rem;">
-          📦 DESCARGAR PAQUETE (.ZIP)
+      <div style="margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid #162440; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+        <span style="font-size: 0.72rem; color: var(--text-dim);">
+          💾 ¿Prefieres una copia local?
         </span>
-        <p style="font-size: 0.8rem; color: var(--text-dim); margin-bottom: 0.85rem; line-height: 1.45;">
-          Descarga el paquete completo con generator.py, config.py y manifest.json para abrir un Pull Request manual.
-        </p>
-        <button id="btn-modal-download-zip" type="button" class="btn btn-cyan" style="width: 100%; font-size: 0.8rem; padding: 0.65rem;">
-          💾 DESCARGAR PAQUETE (.ZIP)
+        <button id="btn-modal-download-zip" type="button" class="btn btn-outline" style="font-size: 0.72rem; padding: 0.35rem 0.7rem;">
+          📦 Descargar .ZIP (Offline)
         </button>
       </div>
     </div>
@@ -2458,23 +2444,73 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     });
   });
 
+  let activeRoleInfo: any = { isCollaborator: false, role: null };
+  let activeCurrentUser: any = null;
+
   githubPrBtn?.addEventListener('click', async () => {
     try {
-      const user = await getCurrentUser();
-      const roleInfo = await checkUserRole(user);
-      const collabCard = document.getElementById('collab-direct-publish-card');
-      const collabNotice = document.getElementById('collab-unauth-notice');
+      activeCurrentUser = await getCurrentUser();
+      activeRoleInfo = await checkUserRole(activeCurrentUser);
+      
+      const publishModeTitle = document.getElementById('publish-mode-title');
+      const publishModeDesc = document.getElementById('publish-mode-desc');
+      const collabBadgeIndicator = document.getElementById('collab-badge-indicator');
+      const visFieldContainer = document.getElementById('vis-field-container');
       const directUploadName = document.getElementById('direct-upload-name') as HTMLInputElement;
       const directUploadCat = document.getElementById('direct-upload-cat') as HTMLSelectElement;
+      const directUploadAuthor = document.getElementById('direct-upload-author') as HTMLInputElement;
+      const directUploadDesc = document.getElementById('direct-upload-desc') as HTMLTextAreaElement;
+      const btnSubmit = document.getElementById('btn-submit-direct-publish') as HTMLButtonElement;
 
-      if (roleInfo.isCollaborator) {
-        if (collabCard) collabCard.style.display = 'block';
-        if (collabNotice) collabNotice.style.display = 'none';
-        if (directUploadName) directUploadName.value = currentSpec.name;
-        if (directUploadCat) directUploadCat.value = currentSpec.category || 'furniture';
+      if (directUploadName) directUploadName.value = currentSpec.name;
+      if (directUploadCat) directUploadCat.value = currentSpec.category || 'furniture';
+      if (directUploadDesc) directUploadDesc.value = currentSpec.description || '';
+
+      const authorDefault = 
+        activeRoleInfo.identifier || 
+        activeCurrentUser?.user_metadata?.user_name || 
+        activeCurrentUser?.user_metadata?.preferred_username || 
+        activeCurrentUser?.email?.split('@')[0] || 
+        '';
+
+      if (directUploadAuthor) {
+        directUploadAuthor.value = authorDefault;
+      }
+
+      if (activeRoleInfo.isCollaborator) {
+        if (publishModeTitle) {
+          publishModeTitle.innerHTML = '👑 MODO COLABORADOR // SUBIDA DIRECTA';
+          publishModeTitle.style.color = 'var(--ps1-gold)';
+        }
+        if (collabBadgeIndicator) {
+          collabBadgeIndicator.textContent = activeRoleInfo.role === 'owner' ? 'CREADOR / DUEÑO' : 'COLABORADOR VERIFICADO';
+          collabBadgeIndicator.style.color = 'var(--ps1-gold)';
+        }
+        if (publishModeDesc) {
+          publishModeDesc.textContent = 'Como colaborador o creador autorizado, tu modelo se subirá de inmediato al catálogo público sin requerir aprobación.';
+        }
+        if (visFieldContainer) visFieldContainer.style.display = 'block';
+        if (btnSubmit) {
+          btnSubmit.textContent = '👑 SUBIR AL CATÁLOGO DIRECTO AHORA';
+          btnSubmit.className = 'btn btn-gold';
+        }
       } else {
-        if (collabCard) collabCard.style.display = 'none';
-        if (collabNotice) collabNotice.style.display = 'block';
+        if (publishModeTitle) {
+          publishModeTitle.innerHTML = '🚀 COMUNIDAD // SOLICITUD DE PUBLICACIÓN';
+          publishModeTitle.style.color = 'var(--ps1-cyan)';
+        }
+        if (collabBadgeIndicator) {
+          collabBadgeIndicator.textContent = 'PILOTO DE LA COMUNIDAD';
+          collabBadgeIndicator.style.color = 'var(--ps1-cyan)';
+        }
+        if (publishModeDesc) {
+          publishModeDesc.textContent = 'Envía tu modelo directamente desde la web. Quedará en la mesa de revisión para que los colaboradores y FrancisCuarto lo aprueben y publiquen en el catálogo oficial.';
+        }
+        if (visFieldContainer) visFieldContainer.style.display = 'none';
+        if (btnSubmit) {
+          btnSubmit.textContent = '🚀 ENVIAR SOLICITUD DE PUBLICACIÓN';
+          btnSubmit.className = 'btn btn-primary';
+        }
       }
     } catch (e) {
       console.warn('[ModelCoder] Error checking collaborator permissions:', e);
@@ -2485,6 +2521,8 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
   const btnSubmitDirect = document.getElementById('btn-submit-direct-publish') as HTMLButtonElement;
   const directUploadStatus = document.getElementById('direct-upload-status');
   const directUploadName = document.getElementById('direct-upload-name') as HTMLInputElement;
+  const directUploadAuthor = document.getElementById('direct-upload-author') as HTMLInputElement;
+  const directUploadDesc = document.getElementById('direct-upload-desc') as HTMLTextAreaElement;
   const directUploadVis = document.getElementById('direct-upload-vis') as HTMLSelectElement;
   const directUploadCat = document.getElementById('direct-upload-cat') as HTMLSelectElement;
 
@@ -2492,6 +2530,8 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     const modelName = directUploadName?.value.trim() || currentSpec.name;
     const modelVis = directUploadVis?.value || 'public';
     const modelCat = directUploadCat?.value || currentSpec.category || 'furniture';
+    const authorName = directUploadAuthor?.value.trim() || 'Piloto de la Comunidad';
+    const description = directUploadDesc?.value.trim() || currentSpec.description || `Modelo procedural ${modelName}`;
 
     if (!modelName) {
       alert('Por favor ingresa un nombre para el modelo.');
@@ -2502,7 +2542,7 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
       directUploadStatus.classList.remove('hidden');
       directUploadStatus.style.display = 'block';
       directUploadStatus.style.color = 'var(--ps1-gold)';
-      directUploadStatus.innerHTML = '⏳ <strong>Generando binario GLB y empaquetando texturas...</strong>';
+      directUploadStatus.innerHTML = '⏳ <strong>Empaquetando modelo procedural y generando geometría 3D...</strong>';
     }
     btnSubmitDirect.disabled = true;
 
@@ -2517,32 +2557,32 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
       reader.onloadend = async () => {
         try {
           const glbDataUrl = reader.result as string;
-          const user = await getCurrentUser();
-          const authorEmail = user?.email || 'colaborador@modelcoder.internal';
-          const authorName = (user?.user_metadata as any)?.user_name || user?.email?.split('@')[0] || 'Colaborador';
+          const user = activeCurrentUser || await getCurrentUser();
+          const authorEmail = user?.email || `${authorName.toLowerCase().replace(/[^a-z0-9]/g, '')}@modelcoder.community`;
 
           const res = await publishCommunityModel({
             name: modelName,
             category: modelCat,
-            description: currentSpec.description || `Modelo procedural ${modelName}`,
+            description,
             spec: currentSpec,
             tri_count: lastGeometricStats?.triangles || 350,
             author_name: authorName,
             author_email: authorEmail,
             is_public: modelVis === 'public',
-            glb_data: glbDataUrl
+            glb_data: glbDataUrl,
+            isCollaborator: activeRoleInfo?.isCollaborator
           });
 
           btnSubmitDirect.disabled = false;
-          if (res.success && !(res as any).isLocalFallback) {
+          if (res.success) {
             if (directUploadStatus) {
-              directUploadStatus.style.color = 'var(--ps1-green)';
-              directUploadStatus.innerHTML = `✅ <strong>¡Publicado en la nube con éxito!</strong> El modelo ya está sincronizado en Supabase y visible en todas las computadoras.<br><a href="/colaboradores" style="color:var(--ps1-gold);text-decoration:underline;display:inline-block;margin-top:6px;">Ver en Portal de Colaboradores &rarr;</a>`;
-            }
-          } else if ((res as any).isLocalFallback) {
-            if (directUploadStatus) {
-              directUploadStatus.style.color = 'var(--ps1-gold)';
-              directUploadStatus.innerHTML = `⚠️ <strong>Guardado temporalmente en este navegador (Caché local)</strong><br><span style="font-size:0.75rem;color:#c0d0e8;">El modelo se guardó en esta PC, pero <strong>no en la nube</strong> porque las tablas de Supabase aún no fueron creadas en el Dashboard.<br>Ejecuta <code>supabase_setup.sql</code> en tu panel de Supabase para que se sincronice en todas las PCs.</span><br><a href="/colaboradores" style="color:var(--ps1-gold);text-decoration:underline;display:inline-block;margin-top:6px;">Ver en Portal de Colaboradores &rarr;</a>`;
+              if (res.isPendingReview) {
+                directUploadStatus.style.color = 'var(--ps1-cyan)';
+                directUploadStatus.innerHTML = `✅ <strong>¡SOLICITUD ENVIADA CON ÉXITO!</strong><br><span style="font-size:0.75rem; color:#c0d8f0;">Tu modelo <strong>"${modelName}"</strong> ha sido transmitido a la mesa de revisión.<br>En cuanto un colaborador o FrancisCuarto lo apruebe desde el portal, aparecerá automáticamente en el catálogo oficial de todos los pilotos.</span>`;
+              } else {
+                directUploadStatus.style.color = 'var(--ps1-green)';
+                directUploadStatus.innerHTML = `👑 <strong>¡PUBLICADO EN EL CATÁLOGO CON ÉXITO!</strong><br><span style="font-size:0.75rem; color:#c0f0d0;">El modelo ya está disponible en la nube y visible en todas las computadoras.</span><br><a href="/" style="color:var(--ps1-gold);text-decoration:underline;display:inline-block;margin-top:6px;">Ver en Catálogo Principal &rarr;</a>`;
+              }
             }
           } else {
             if (directUploadStatus) {
@@ -2570,18 +2610,6 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
 
   closeModalBtn?.addEventListener('click', () => {
     if (githubModal) githubModal.close();
-  });
-
-  document.getElementById('btn-quick-github-proposal')?.addEventListener('click', () => {
-    const title = encodeURIComponent(`[Nuevo Modelo]: ${currentSpec.name}`);
-    const body = encodeURIComponent(
-      `## Propuesta de Modelo Procedural 3D\n\n` +
-      `- **Nombre**: ${currentSpec.name}\n` +
-      `- **Categoría**: ${currentSpec.category}\n` +
-      `- **Componentes**: ${currentSpec.components.length}\n\n` +
-      `### Especificación JSON:\n\`\`\`json\n${JSON.stringify(currentSpec, null, 2)}\n\`\`\`\n`
-    );
-    window.open(`https://github.com/FrancisCuarto/MODELCODER/issues/new?title=${title}&body=${body}`, '_blank');
   });
 
   document.getElementById('btn-modal-download-zip')?.addEventListener('click', () => {
