@@ -44,7 +44,7 @@ import '../styles/global.css';
 
         <div class="system-status-indicator" title="Modelos 3D disponibles para personalizar y descargar">
           <span class="status-dot"></span>
-          <span class="status-text">{catalog.length} MODELOS DISPONIBLES</span>
+          <span id="header-models-count" class="status-text">{catalog.length} MODELOS DISPONIBLES</span>
         </div>
 
         <nav class="nav-links">
@@ -261,7 +261,20 @@ import '../styles/global.css';
 
     <!-- Script de Inicialización de Autenticación de Supabase -->
     <script>
-      import { getSupabase, signInWithGitHub, signInWithEmail, signUpWithEmail, signOut, onAuthStateChange, checkUserRole } from '../lib/supabase';
+      import { getSupabase, signInWithGitHub, signInWithEmail, signUpWithEmail, signOut, onAuthStateChange, checkUserRole, getCommunityModels } from '../lib/supabase';
+
+      // Sincronizar contador global de modelos en el encabezado
+      async function syncHeaderModelCount() {
+        try {
+          const commModels = await getCommunityModels({ onlyPublic: true });
+          const totalCount = 101 + (commModels ? commModels.length : 0);
+          const el = document.getElementById('header-models-count');
+          if (el) {
+            el.textContent = `${totalCount} MODELOS DISPONIBLES`;
+          }
+        } catch {}
+      }
+      syncHeaderModelCount();
 
       const btnOpenAuth = document.getElementById('btn-open-auth');
       const authModal = document.getElementById('ps1-auth-modal');

@@ -59,7 +59,7 @@ const categories = [
             Elegí un objeto del catálogo, ajustá sus dimensiones o colores con controles visuales y descargá tu archivo <strong>.GLB</strong> listo para tu motor o escena. No necesitás conocimientos técnicos.
           </p>
           <a href="#catalog-controls" class="btn btn-primary journey-btn">
-            [ EXPLORAR EL CATÁLOGO ({catalog.length}) ↓ ]
+            <span id="hero-explore-btn-text">[ EXPLORAR EL CATÁLOGO ({catalog.length}) ↓ ]</span>
           </a>
         </div>
 
@@ -87,7 +87,7 @@ const categories = [
         <div class="step-card ps1-inset">
           <div class="step-badge">PASO 01</div>
           <h3 class="step-title">Elegí un objeto</h3>
-          <p class="step-desc">Explorá los {catalog.length} modelos low-poly organizados por categorías según lo que necesite tu escena.</p>
+          <p class="step-desc">Explorá los <span id="step-models-count">{catalog.length}</span> modelos low-poly organizados por categorías según lo que necesite tu escena.</p>
         </div>
         <div class="step-card ps1-inset">
           <div class="step-badge">PASO 02</div>
@@ -105,7 +105,7 @@ const categories = [
       <div class="metrics-grid">
         <div class="ps1-inset metric-card">
           <span class="metric-lbl">TOTAL MODELOS</span>
-          <span class="metric-val text-gold">{catalog.length}</span>
+          <span id="metric-total-models" class="metric-val text-gold">{catalog.length}</span>
         </div>
         <div class="ps1-inset metric-card">
           <span class="metric-lbl">PALETAS RETRO</span>
@@ -479,6 +479,24 @@ const categories = [
           }
         });
       });
+
+      // Actualizar contadores globales y métricas dinámicas
+      const totalCount = 101 + communityModelsList.length;
+
+      const headerCountEl = document.getElementById('header-models-count');
+      if (headerCountEl) headerCountEl.textContent = `${totalCount} MODELOS DISPONIBLES`;
+
+      const heroExploreText = document.getElementById('hero-explore-btn-text');
+      if (heroExploreText) heroExploreText.textContent = `[ EXPLORAR EL CATÁLOGO (${totalCount}) ↓ ]`;
+
+      const stepModelsEl = document.getElementById('step-models-count');
+      if (stepModelsEl) stepModelsEl.textContent = `${totalCount}`;
+
+      const metricTotalEl = document.getElementById('metric-total-models');
+      if (metricTotalEl) metricTotalEl.textContent = `${totalCount}`;
+
+      const allBtn = document.querySelector('.filter-btn[data-category="all"]');
+      if (allBtn) allBtn.textContent = `[TODOS: ${totalCount}]`;
 
       applyFilters();
     } catch (err) {

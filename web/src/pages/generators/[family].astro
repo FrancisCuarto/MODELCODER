@@ -1,6 +1,8 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import catalog from '../../data/catalog.json';
+import fs from 'node:fs';
+import path from 'node:path';
 
 export async function getStaticPaths() {
   return catalog.map((gen) => ({
@@ -10,6 +12,21 @@ export async function getStaticPaths() {
 }
 
 const { gen } = Astro.props;
+
+// Detectar qué archivos de paletas realmente existen en el disco
+const modelsDir = fs.existsSync(path.resolve('public/models'))
+  ? path.resolve('public/models')
+  : path.resolve('web/public/models');
+
+let availablePalettes: string[] = [];
+try {
+  const allFiles = fs.readdirSync(modelsDir);
+  availablePalettes = allFiles
+    .filter((f) => f.startsWith(`${gen.family}_`) && f.endsWith('.glb'))
+    .map((f) => f.replace(`${gen.family}_`, '').replace('.glb', ''));
+} catch (e) {
+  availablePalettes = [];
+}
 
 // Group parameters by parameter.group
 const groupedParams: Record<string, any[]> = {};
@@ -45,6 +62,8 @@ gen.parameters.forEach((param: any) => {
             <model-viewer
               id="main-viewer"
               src={gen.model_url}
+              data-base-src={gen.model_url}
+              data-available-palettes={JSON.stringify(availablePalettes)}
               alt={gen.name}
               camera-controls
               auto-rotate
@@ -664,12 +683,30 @@ gen.parameters.forEach((param: any) => {
         selectedPalette = palInput.value;
       }
 
-      const targetPaletteGlb = `/models/${familyName}_${selectedPalette}.glb`;
-      if (!viewer.src || !viewer.src.endsWith(targetPaletteGlb)) {
-        viewer.src = targetPaletteGlb;
-        if (downloadGlbBtn) {
-          downloadGlbBtn.href = targetPaletteGlb;
-          downloadGlbBtn.download = `${familyName}_${selectedPalette}.glb`;
+      let availablePalettes: string[] = [];
+      try {
+        availablePalettes = JSON.parse(viewer.dataset.availablePalettes || '[]');
+      } catch {}
+
+      const baseModelUrl = viewer.dataset.baseSrc || `/models/${familyName}.glb`;
+
+      if (availablePalettes.includes(selectedPalette)) {
+        const targetPaletteGlb = `/models/${familyName}_${selectedPalette}.glb`;
+        if (!viewer.src || !viewer.src.endsWith(targetPaletteGlb)) {
+          viewer.src = targetPaletteGlb;
+          if (downloadGlbBtn) {
+            downloadGlbBtn.href = targetPaletteGlb;
+            downloadGlbBtn.download = `${familyName}_${selectedPalette}.glb`;
+          }
+        }
+      } else {
+        // Fallback al modelo base predeterminado si no existe el GLB pre-renderizado de esa paleta
+        if (!viewer.src || viewer.src.includes(`_${selectedPalette}.glb`)) {
+          viewer.src = baseModelUrl;
+          if (downloadGlbBtn) {
+            downloadGlbBtn.href = baseModelUrl;
+            downloadGlbBtn.download = `${familyName}.glb`;
+          }
         }
       }
     }
@@ -680,6 +717,18 @@ gen.parameters.forEach((param: any) => {
 
   form?.addEventListener('input', updateLiveValuesAndCLI);
   form?.addEventListener('change', updateLiveValuesAndCLI);
+
+  viewer?.addEventListener('error', (err: any) => {
+    console.warn('[ModelCoder] Fallo al cargar modelo GLB en visor, restaurando modelo base:', err);
+    const baseModelUrl = viewer.dataset.baseSrc || `/models/${familyName}.glb`;
+    if (viewer.src && !viewer.src.endsWith(baseModelUrl)) {
+      viewer.src = baseModelUrl;
+      if (downloadGlbBtn) {
+        downloadGlbBtn.href = baseModelUrl;
+        downloadGlbBtn.download = `${familyName}.glb`;
+      }
+    }
+  });
 
   viewer?.addEventListener('load', () => {
     // Re-apply scale on new palette model load
