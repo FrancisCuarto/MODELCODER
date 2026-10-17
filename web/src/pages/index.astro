@@ -218,14 +218,14 @@ const categories = [
         </div>
 
         <div class="card-footer">
-          <a href={`/generators/${gen.family}`} class="btn btn-primary" style="flex: 1;">
-            PERSONALIZAR & 3D &gt;&gt;
+          <a href={`/generators/${gen.family}`} class="btn btn-primary" title="Abrir generador para personalizar en 3D">
+            PERSONALIZAR 3D
           </a>
           {gen.has_model && (
             <a 
               href={gen.model_url} 
               download={`${gen.family}.glb`}
-              class="btn btn-outline" 
+              class="btn btn-outline btn-download" 
               title="Descargar archivo GLB directamente"
             >
               BAJAR .GLB
@@ -458,10 +458,10 @@ const categories = [
           </div>
 
           <div class="card-footer">
-            <button type="button" class="btn btn-primary btn-open-comm-studio" data-slug="${m.slug}" style="flex: 1;">
-              ABRIR EN STUDIO 3D &gt;&gt;
+            <button type="button" class="btn btn-primary btn-open-comm-studio" data-slug="${m.slug}" title="Abrir en Studio 3D para editar">
+              ABRIR EN STUDIO
             </button>
-            ${m.glb_data ? `<a href="${m.glb_data}" download="${m.slug}.glb" class="btn btn-outline" title="Descargar archivo GLB directamente">BAJAR .GLB</a>` : ''}
+            ${m.glb_data ? `<a href="${m.glb_data}" download="${m.slug}.glb" class="btn btn-outline btn-download" title="Descargar archivo GLB directamente">BAJAR .GLB</a>` : ''}
           </div>
         `;
 

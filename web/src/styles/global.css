@@ -559,17 +559,57 @@ main.site-content {
 }
 
 .card-footer {
-  padding: 0.75rem 1rem;
+  padding: 0.65rem 0.85rem;
   background: #0a0e18;
   border-top: 2px solid var(--ps1-steel);
   display: flex;
   flex-direction: row;
-  align-items: center;
+  align-items: stretch;
   gap: 0.5rem;
+  box-sizing: border-box;
 }
 
 .card-footer .btn {
+  font-family: var(--font-pixel);
+  font-size: 0.65rem;
+  padding: 0.5rem 0.65rem;
   white-space: nowrap;
+  letter-spacing: 0.02em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+.card-footer .btn-primary {
+  flex: 1 1 auto;
+  min-width: 0;
+  text-align: center;
+}
+
+.card-footer .btn-download {
+  flex: 0 0 auto;
+  flex-shrink: 0;
+  background: #0d1527;
+  border: 2px outset var(--ps1-steel-light);
+  color: var(--ps1-cyan);
+  text-decoration: none;
+}
+
+.card-footer .btn-download:hover {
+  background: #172442;
+  border-color: var(--ps1-cyan);
+  color: #ffffff;
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.4);
+}
+
+@media (max-width: 360px) {
+  .card-footer {
+    flex-direction: column;
+  }
+  .card-footer .btn {
+    width: 100%;
+  }
 }
 
 .card-category-badge {
