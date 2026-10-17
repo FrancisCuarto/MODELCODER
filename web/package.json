@@ -8,7 +8,7 @@
     "start": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "test": "node --experimental-strip-types tests/studio_engine.test.ts"
+    "test": "node --experimental-strip-types tests/studio_engine.test.ts && node --experimental-strip-types tests/user_inventory.test.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.118.0",

@@ -97,6 +97,17 @@ gen.parameters.forEach((param: any) => {
             <button id="fullscreen-viewer-btn" class="ps1-ctrl-btn" title="Pantalla Completa (F11 / ESC)">
               ⛶ PANTALLA COMPLETA
             </button>
+            <button 
+              id="btn-family-fav" 
+              class="ps1-ctrl-btn" 
+              data-family={gen.family}
+              data-name={gen.name}
+              data-category={gen.category}
+              data-url={gen.model_url}
+              title="Guardar este generador en favoritos"
+            >
+              <span id="family-fav-star">☆</span> <span id="family-fav-text">FAVORITO</span>
+            </button>
           </div>
 
           <!-- Preset Quick Pills Bar -->
@@ -492,6 +503,8 @@ gen.parameters.forEach((param: any) => {
 </Layout>
 
 <script>
+  import { toggleFavorite, isFavorite } from '../../lib/user-inventory';
+
   // Interactive parameter, WebGL material sync, and CLI generation script
   const form = document.getElementById('generator-form') as HTMLFormElement;
   const cliOutput = document.getElementById('cli-command-output');
@@ -514,6 +527,42 @@ gen.parameters.forEach((param: any) => {
   const toggleImportGuideBtn = document.getElementById('toggle-import-guide-btn');
   const importGuidePanel = document.getElementById('import-guide-panel');
   const viewerStatusText = document.getElementById('viewer-status-text');
+
+  // Favorites handler for this generator
+  const btnFamilyFav = document.getElementById('btn-family-fav');
+  const familyFavStar = document.getElementById('family-fav-star');
+  const familyFavText = document.getElementById('family-fav-text');
+
+  function updateFamilyFavUI() {
+    if (!btnFamilyFav) return;
+    const fam = btnFamilyFav.dataset.family;
+    if (!fam) return;
+    const isFav = isFavorite(fam);
+    if (familyFavStar) familyFavStar.textContent = isFav ? '⭐' : '☆';
+    if (familyFavText) familyFavText.textContent = isFav ? 'FAVORITO (GUARDADO)' : 'FAVORITO';
+    btnFamilyFav.style.color = isFav ? 'var(--ps1-gold)' : '';
+    btnFamilyFav.style.borderColor = isFav ? 'var(--ps1-gold)' : '';
+  }
+
+  btnFamilyFav?.addEventListener('click', () => {
+    const fam = btnFamilyFav.dataset.family;
+    const name = btnFamilyFav.dataset.name || fam || '';
+    const cat = btnFamilyFav.dataset.category || 'furniture';
+    const url = btnFamilyFav.dataset.url;
+    if (!fam) return;
+
+    toggleFavorite({
+      id: fam,
+      name,
+      category: cat,
+      type: 'catalog',
+      model_url: url,
+    });
+    updateFamilyFavUI();
+  });
+
+  updateFamilyFavUI();
+  window.addEventListener('modelcoder:inventory_updated', updateFamilyFavUI);
 
   toggleImportGuideBtn?.addEventListener('click', () => {
     if (importGuidePanel) {

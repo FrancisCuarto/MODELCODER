@@ -154,6 +154,14 @@ const categories = [
               [{cat.label}: {cat.count}]
             </button>
           ))}
+          <button 
+            class="filter-btn filter-btn-fav"
+            id="btn-filter-favorites"
+            data-category="favorites"
+            title="Mostrar solo modelos guardados en favoritos"
+          >
+            [ ⭐ FAVORITOS: <span id="fav-count-badge">0</span> ]
+          </button>
         </div>
       </div>
     </div>
@@ -171,7 +179,22 @@ const categories = [
         data-desc={gen.description.toLowerCase()}
       >
         <div class="ps1-titlebar card-titlebar">
-          <span class="card-category-badge">[{gen.category.toUpperCase()}]</span>
+          <div style="display: flex; align-items: center; gap: 0.4rem;">
+            <button 
+              type="button"
+              class="btn-card-fav"
+              data-id={gen.family}
+              data-name={gen.name}
+              data-category={gen.category}
+              data-type="catalog"
+              data-url={gen.model_url}
+              title="Guardar en favoritos"
+              aria-label="Guardar en favoritos"
+            >
+              <span class="fav-star">☆</span>
+            </button>
+            <span class="card-category-badge">[{gen.category.toUpperCase()}]</span>
+          </div>
           <span class="card-license-tag">{gen.license}</span>
         </div>
 
@@ -241,7 +264,7 @@ const categories = [
       <span>// NO_MATCH_FOUND</span>
     </div>
     <div style="padding: 2rem; text-align: center;">
-      <p style="color: var(--ps1-gold); font-family: var(--font-pixel); margin-bottom: 1rem;">
+      <p id="no-results-msg" style="color: var(--ps1-gold); font-family: var(--font-pixel); margin-bottom: 1rem;">
         NO SE ENCONTRARON GENERADORES QUE COINCIDAN CON LOS FILTROS.
       </p>
       <button id="reset-filters-btn" class="btn btn-primary">
@@ -337,6 +360,7 @@ const categories = [
 
 <script>
   import { getCommunityModels } from '../lib/supabase';
+  import { toggleFavorite, isFavorite, getFavorites } from '../lib/user-inventory';
 
   // Client-side filtering logic
   const searchInput = document.getElementById('search-input') as HTMLInputElement;
@@ -345,6 +369,7 @@ const categories = [
   const resultsCount = document.getElementById('results-count');
   const noResults = document.getElementById('no-results');
   const resetBtn = document.getElementById('reset-filters-btn');
+  const favCountBadge = document.getElementById('fav-count-badge');
 
   let activeCategory = 'all';
   let searchQuery = '';
@@ -352,6 +377,53 @@ const categories = [
 
   function getCards(): HTMLElement[] {
     return Array.from(document.querySelectorAll('.generator-card')) as HTMLElement[];
+  }
+
+  function updateFavoritesUI(): void {
+    const favs = getFavorites();
+    if (favCountBadge) favCountBadge.textContent = `${favs.length}`;
+
+    document.querySelectorAll('.btn-card-fav').forEach((btn) => {
+      const id = (btn as HTMLElement).dataset.id;
+      if (!id) return;
+      const star = btn.querySelector('.fav-star');
+      const isFav = isFavorite(id);
+      if (star) {
+        star.textContent = isFav ? '⭐' : '☆';
+        star.classList.toggle('active', isFav);
+      }
+      btn.setAttribute('title', isFav ? 'Quitar de favoritos' : 'Guardar en favoritos');
+    });
+  }
+
+  function wireFavoriteButtons(): void {
+    document.querySelectorAll('.btn-card-fav').forEach((btn) => {
+      (btn as HTMLElement).onclick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const el = e.currentTarget as HTMLElement;
+        const id = el.dataset.id;
+        const name = el.dataset.name || id || '';
+        const cat = el.dataset.category || 'furniture';
+        const type = (el.dataset.type as any) || 'catalog';
+        const url = el.dataset.url;
+        if (!id) return;
+
+        toggleFavorite({
+          id,
+          name,
+          category: cat,
+          type,
+          model_url: url,
+        });
+
+        updateFavoritesUI();
+        if (activeCategory === 'favorites') {
+          applyFilters();
+        }
+      };
+    });
+    updateFavoritesUI();
   }
 
   function applyFilters() {
@@ -365,7 +437,15 @@ const categories = [
       const family = card.dataset.family || '';
       const tags = card.dataset.tags || '';
 
-      const matchesCat = activeCategory === 'all' || category === activeCategory;
+      let matchesCat = false;
+      if (activeCategory === 'all') {
+        matchesCat = true;
+      } else if (activeCategory === 'favorites') {
+        matchesCat = isFavorite(family);
+      } else {
+        matchesCat = category === activeCategory;
+      }
+
       const q = searchQuery.toLowerCase().trim();
       const matchesSearch = !q || 
         name.includes(q) || 
@@ -387,7 +467,19 @@ const categories = [
     }
 
     if (noResults) {
-      noResults.style.display = visible === 0 ? 'block' : 'none';
+      if (visible === 0) {
+        noResults.style.display = 'block';
+        const msgEl = document.getElementById('no-results-msg');
+        if (msgEl) {
+          if (activeCategory === 'favorites') {
+            msgEl.textContent = 'NO TIENES MODELOS GUARDADOS COMO FAVORITOS AÚN. HAZ CLIC EN LA ESTRELLA ⭐ DE CUALQUIER MODELO PARA GUARDARLO.';
+          } else {
+            msgEl.textContent = 'NO SE ENCONTRARON GENERADORES QUE COINCIDAN CON LOS FILTROS.';
+          }
+        }
+      } else {
+        noResults.style.display = 'none';
+      }
     }
   }
 
@@ -395,7 +487,10 @@ const categories = [
   async function loadCommunityModels() {
     try {
       communityModelsList = await getCommunityModels({ onlyPublic: true });
-      if (!generatorsContainer || communityModelsList.length === 0) return;
+      if (!generatorsContainer || communityModelsList.length === 0) {
+        wireFavoriteButtons();
+        return;
+      }
 
       communityModelsList.forEach((m) => {
         const article = document.createElement('article');
@@ -428,7 +523,22 @@ const categories = [
 
         article.innerHTML = `
           <div class="ps1-titlebar card-titlebar" style="background: linear-gradient(90deg, #172433, #0a131e); border-bottom: 1px solid var(--ps1-gold);">
-            <span class="card-category-badge" style="color: var(--ps1-gold);">[${(m.category || 'furniture').toUpperCase()}]</span>
+            <div style="display: flex; align-items: center; gap: 0.4rem;">
+              <button 
+                type="button"
+                class="btn-card-fav"
+                data-id="${m.slug}"
+                data-name="${m.name}"
+                data-category="${m.category || 'furniture'}"
+                data-type="community"
+                data-url="${m.glb_data || ''}"
+                title="Guardar en favoritos"
+                aria-label="Guardar en favoritos"
+              >
+                <span class="fav-star">☆</span>
+              </button>
+              <span class="card-category-badge" style="color: var(--ps1-gold);">[${(m.category || 'furniture').toUpperCase()}]</span>
+            </div>
             <span class="card-license-tag" style="color: var(--ps1-green); font-weight: bold;">👑 COMUNIDAD</span>
           </div>
 
@@ -498,9 +608,11 @@ const categories = [
       const allBtn = document.querySelector('.filter-btn[data-category="all"]');
       if (allBtn) allBtn.textContent = `[TODOS: ${totalCount}]`;
 
+      wireFavoriteButtons();
       applyFilters();
     } catch (err) {
       console.warn('[ModelCoder] Could not load community models on homepage:', err);
+      wireFavoriteButtons();
     }
   }
 
@@ -529,10 +641,46 @@ const categories = [
     applyFilters();
   });
 
+  window.addEventListener('modelcoder:inventory_updated', () => {
+    updateFavoritesUI();
+    if (activeCategory === 'favorites') {
+      applyFilters();
+    }
+  });
+
   loadCommunityModels();
+  wireFavoriteButtons();
 </script>
 
 <style>
+  /* Favorite Toggle and Filter Buttons */
+  .btn-card-fav {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    line-height: 1;
+    padding: 0 0.2rem;
+    color: var(--text-dim);
+    transition: transform 0.15s ease, color 0.15s ease;
+  }
+  .btn-card-fav:hover {
+    transform: scale(1.25);
+    color: var(--ps1-gold);
+  }
+  .btn-card-fav .fav-star.active {
+    color: var(--ps1-gold);
+    text-shadow: 0 0 6px rgba(255, 176, 0, 0.6);
+  }
+  .filter-btn-fav {
+    border-color: var(--ps1-gold) !important;
+    color: var(--ps1-gold) !important;
+  }
+  .filter-btn-fav.active {
+    background: var(--ps1-gold) !important;
+    color: #000 !important;
+  }
+
   /* Hero Briefing Window */
   .hero-window {
     margin-bottom: 2rem;

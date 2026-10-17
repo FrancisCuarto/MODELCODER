@@ -657,6 +657,28 @@ export class StudioViewport {
     document.body.removeChild(a);
   }
 
+  /**
+   * Captures a clean PNG thumbnail data URL for project drafts and inventory.
+   */
+  public getThumbnailDataURL(): string {
+    const prevGizmoHelper = typeof this.transformControls.getHelper === 'function'
+      ? this.transformControls.getHelper()
+      : (this.transformControls as any);
+    const wasGizmoVisible = prevGizmoHelper ? prevGizmoHelper.visible : false;
+    const wasSelectionVisible = this.selectionBox.visible;
+
+    if (prevGizmoHelper) prevGizmoHelper.visible = false;
+    this.selectionBox.visible = false;
+
+    this.renderer.render(this.scene, this.camera);
+    const dataUrl = this.renderer.domElement.toDataURL('image/png');
+
+    if (prevGizmoHelper) prevGizmoHelper.visible = wasGizmoVisible;
+    this.selectionBox.visible = wasSelectionVisible;
+
+    return dataUrl;
+  }
+
   public setOnComponentSelected(cb: (index: number | null) => void): void {
     this.onComponentSelected = cb;
   }

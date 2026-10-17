@@ -50,6 +50,9 @@ import '../styles/global.css';
         <nav class="nav-links">
           <a href="/" class="nav-link">&gt; Catálogo</a>
           <a href="/studio" class="nav-link nav-link-studio" style="color: var(--ps1-gold); border-color: var(--ps1-gold);">&gt; Studio 3D (Crear)</a>
+          <button id="btn-open-global-inventory" class="nav-link nav-link-inventory" type="button" title="Mi Inventario: Borradores, Favoritos y Colecciones">
+            🎒 Inventario (<span id="global-inv-count">0</span>)
+          </button>
           <a href="/contribute" class="nav-link">&gt; Cómo funciona</a>
           <a href="/colaboradores" id="nav-collab-link" class="nav-link nav-link-collab" style="display: none; color: var(--ps1-gold); border-color: var(--ps1-gold);" title="Portal privado de colaboradores">
             👑 Colaboradores
@@ -79,6 +82,7 @@ import '../styles/global.css';
                   <span class="ps1-badge-gold">SESIÓN SUPABASE</span>
                   <span id="user-email-text" class="user-email-text"></span>
                 </div>
+                <button id="dropdown-open-inventory" class="dropdown-item" type="button" style="text-align: left; width: 100%; background: transparent; border: none; font-family: inherit; font-size: inherit; cursor: pointer; color: var(--ps1-cyan);">&gt; MI INVENTARIO 🎒</button>
                 <a href="/studio" class="dropdown-item">&gt; STUDIO WORKSPACE</a>
                 <a href="/colaboradores" class="dropdown-item" style="color: var(--ps1-gold); font-weight: bold;">&gt; PANEL COLABORADORES 👑</a>
                 <button id="btn-logout" class="dropdown-item dropdown-item-danger" type="button">&gt; CERRAR SESIÓN</button>
@@ -160,6 +164,94 @@ import '../styles/global.css';
 
           <!-- Mensaje de estado dinámico -->
           <div id="auth-status-msg" class="auth-status-box hidden"></div>
+        </div>
+    </div>
+
+    <!-- Modal Retro PS1 de Mi Inventario, Favoritos y Colecciones -->
+    <div id="ps1-inventory-modal" class="ps1-modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="inv-modal-title">
+      <div class="ps1-window inv-modal-window" style="max-width: 840px; width: 95%;">
+        <div class="ps1-titlebar">
+          <div class="titlebar-title" id="inv-modal-title">
+            <span class="title-glyph">▲</span>
+            <span>BASE DE DATOS // MI INVENTARIO & COLECCIONES</span>
+          </div>
+          <button type="button" class="ps1-window-btn" id="btn-close-inventory-modal" aria-label="Cerrar">✕</button>
+        </div>
+
+        <div class="inv-modal-body" style="padding: 1.25rem;">
+          <!-- Tabs -->
+          <div class="inv-tabs" style="display: flex; gap: 0.5rem; margin-bottom: 1rem; border-bottom: 2px solid var(--ps1-steel); padding-bottom: 0.5rem; flex-wrap: wrap;">
+            <button type="button" class="inv-tab-btn active" data-tab="drafts">
+              📁 BORRADORES EN CURSO (<span id="inv-tab-drafts-count">0</span>)
+            </button>
+            <button type="button" class="inv-tab-btn" data-tab="favorites">
+              ⭐ MODELOS FAVORITOS (<span id="inv-tab-favs-count">0</span>)
+            </button>
+            <button type="button" class="inv-tab-btn" data-tab="collections">
+              🗂️ COLECCIONES (<span id="inv-tab-colls-count">0</span>)
+            </button>
+          </div>
+
+          <!-- TAB 1: DRAFTS -->
+          <div class="inv-tab-panel" id="inv-panel-drafts">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
+              <span style="font-size: 0.75rem; color: var(--text-dim);">
+                Modelos que estás construyendo en el Studio. Puedes retomarlos en cualquier momento sin perder tu trabajo.
+              </span>
+              <a href="/studio" class="btn-mini btn-gold" style="text-decoration: none;">
+                ➕ NUEVO MODELO EN STUDIO
+              </a>
+            </div>
+            <div id="inv-drafts-list" style="max-height: 440px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.65rem;">
+              <!-- Dynamic list of drafts -->
+            </div>
+          </div>
+
+          <!-- TAB 2: FAVORITES -->
+          <div class="inv-tab-panel hidden" id="inv-panel-favorites">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
+              <span style="font-size: 0.75rem; color: var(--text-dim);">
+                Generadores y modelos guardados con estrella ⭐ en el catálogo para acceso rápido.
+              </span>
+              <a href="/#catalog-controls" class="btn-mini btn-outline" style="text-decoration: none;">
+                🔍 EXPLORAR CATÁLOGO
+              </a>
+            </div>
+            <div id="inv-favorites-list" style="max-height: 440px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.65rem;">
+              <!-- Dynamic list of favorites -->
+            </div>
+          </div>
+
+          <!-- TAB 3: COLLECTIONS -->
+          <div class="inv-tab-panel hidden" id="inv-panel-collections">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+              <span style="font-size: 0.75rem; color: var(--text-dim);">
+                Agrupa tus modelos y piezas procedurales en conjuntos temáticos para tus escenas de Below Nominal.
+              </span>
+              <button id="btn-create-collection" class="btn-mini btn-cyan" type="button">
+                ➕ NUEVA COLECCIÓN
+              </button>
+            </div>
+            <div id="inv-create-coll-form" class="ps1-inset hidden" style="padding: 0.75rem; margin-bottom: 1rem; background: #07101e;">
+              <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: flex-end;">
+                <div style="flex-grow: 1; min-width: 200px;">
+                  <label for="new-coll-name" style="display: block; font-family: var(--font-pixel); font-size: 0.7rem; color: var(--ps1-gold); margin-bottom: 0.25rem;">NOMBRE DE LA COLECCIÓN</label>
+                  <input type="text" id="new-coll-name" class="ps1-input" placeholder="Ej: Laboratorio Subterráneo" style="width: 100%; font-size: 0.8rem;" />
+                </div>
+                <div style="flex-grow: 1; min-width: 200px;">
+                  <label for="new-coll-desc" style="display: block; font-family: var(--font-pixel); font-size: 0.7rem; color: var(--ps1-cyan); margin-bottom: 0.25rem;">DESCRIPCIÓN (OPCIONAL)</label>
+                  <input type="text" id="new-coll-desc" class="ps1-input" placeholder="Props para el sector médico..." style="width: 100%; font-size: 0.8rem;" />
+                </div>
+                <div style="display: flex; gap: 0.4rem;">
+                  <button id="btn-submit-new-coll" class="btn-mini btn-gold" type="button">CREAR</button>
+                  <button id="btn-cancel-new-coll" class="btn-mini btn-outline" type="button">CANCELAR</button>
+                </div>
+              </div>
+            </div>
+            <div id="inv-collections-list" style="max-height: 440px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.75rem;">
+              <!-- Dynamic list of collections -->
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -262,6 +354,15 @@ import '../styles/global.css';
     <!-- Script de Inicialización de Autenticación de Supabase -->
     <script>
       import { getSupabase, signInWithGitHub, signInWithEmail, signUpWithEmail, signOut, onAuthStateChange, checkUserRole, getCommunityModels } from '../lib/supabase';
+      import {
+        getProjectDrafts,
+        getFavorites,
+        getCollections,
+        deleteProjectDraft,
+        deleteCollection,
+        toggleFavorite,
+        saveCollection
+      } from '../lib/user-inventory';
 
       // Sincronizar contador global de modelos en el encabezado
       async function syncHeaderModelCount() {
@@ -427,6 +528,342 @@ import '../styles/global.css';
       }
 
       // Check current session
+      // ==========================================
+      // GESTOR DE INVENTARIO, FAVORITOS Y COLECCIONES
+      // ==========================================
+      const btnOpenInventory = document.getElementById('btn-open-global-inventory');
+      const dropdownOpenInventory = document.getElementById('dropdown-open-inventory');
+      const invModal = document.getElementById('ps1-inventory-modal');
+      const btnCloseInvModal = document.getElementById('btn-close-inventory-modal');
+      const globalInvCountEl = document.getElementById('global-inv-count');
+
+      const invTabDraftsCount = document.getElementById('inv-tab-drafts-count');
+      const invTabFavsCount = document.getElementById('inv-tab-favs-count');
+      const invTabCollsCount = document.getElementById('inv-tab-colls-count');
+
+      const invDraftsList = document.getElementById('inv-drafts-list');
+      const invFavoritesList = document.getElementById('inv-favorites-list');
+      const invCollectionsList = document.getElementById('inv-collections-list');
+
+      const invTabBtns = document.querySelectorAll('.inv-tab-btn');
+      const invPanels: Record<string, HTMLElement | null> = {
+        drafts: document.getElementById('inv-panel-drafts'),
+        favorites: document.getElementById('inv-panel-favorites'),
+        collections: document.getElementById('inv-panel-collections')
+      };
+
+      function updateInventoryBadgeCounts(): void {
+        const drafts = getProjectDrafts();
+        const favs = getFavorites();
+        const colls = getCollections();
+
+        const total = drafts.length + favs.length;
+        if (globalInvCountEl) globalInvCountEl.textContent = `${total}`;
+        if (invTabDraftsCount) invTabDraftsCount.textContent = `${drafts.length}`;
+        if (invTabFavsCount) invTabFavsCount.textContent = `${favs.length}`;
+        if (invTabCollsCount) invTabCollsCount.textContent = `${colls.length}`;
+      }
+
+      function renderInvDrafts(): void {
+        if (!invDraftsList) return;
+        const drafts = getProjectDrafts();
+        if (drafts.length === 0) {
+          invDraftsList.innerHTML = `
+            <div class="ps1-inset" style="padding: 2rem 1rem; text-align: center; color: var(--text-dim); background: #070d18;">
+              <div style="font-size: 2.2rem; margin-bottom: 0.4rem;">📁</div>
+              <p style="font-family: var(--font-pixel); font-size: 0.78rem; color: var(--ps1-gold); margin-bottom: 0.35rem;">
+                NO TIENES BORRADORES NI PROYECTOS GUARDADOS
+              </p>
+              <span style="font-size: 0.75rem;">
+                Entra a <a href="/studio" style="color: var(--ps1-cyan); text-decoration: underline;">Studio 3D</a> y guarda tu avance con 💾 GUARDAR para retomarlo cuando quieras.
+              </span>
+            </div>
+          `;
+          return;
+        }
+
+        invDraftsList.innerHTML = '';
+        drafts.forEach(draft => {
+          const item = document.createElement('div');
+          item.className = 'ps1-inset';
+          item.style.padding = '0.75rem';
+          item.style.background = '#090e1c';
+          item.style.border = '1px solid var(--ps1-steel)';
+          const dStr = new Date(draft.updated_at).toLocaleString();
+
+          item.innerHTML = `
+            <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+              <div style="width: 64px; height: 64px; background: #060911; border: 1px solid var(--ps1-steel); display: flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden;">
+                ${draft.thumbnail
+                  ? `<img src="${draft.thumbnail}" alt="${draft.name}" style="width: 100%; height: 100%; object-fit: contain;" />`
+                  : `<span style="font-size: 1.5rem;">📦</span>`
+                }
+              </div>
+              <div style="flex-grow: 1; min-width: 180px;">
+                <div style="display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.2rem; flex-wrap: wrap;">
+                  <strong style="font-family: var(--font-pixel); font-size: 0.78rem; color: var(--ps1-gold);">${draft.name}</strong>
+                  <span class="category-badge category-${draft.category}" style="font-size: 0.65rem;">${draft.category}</span>
+                </div>
+                <p style="font-size: 0.72rem; color: var(--text-dim); margin: 0 0 0.3rem 0;">
+                  ${draft.description || 'Sin notas.'}
+                </p>
+                <div style="font-size: 0.68rem; color: var(--ps1-cyan); display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                  <span>📐 ${draft.components_count} piezas</span>
+                  <span>&bull;</span>
+                  <span>🔺 ~${draft.tri_count} tris</span>
+                  <span>&bull;</span>
+                  <span style="color: var(--text-dim);">🕒 ${dStr}</span>
+                </div>
+              </div>
+              <div style="display: flex; gap: 0.35rem; align-items: center;">
+                <a href="/studio?draft=${draft.id}" class="btn-mini btn-gold" style="text-decoration: none;">
+                  ⚡ RETOMAR EN STUDIO
+                </a>
+                <button type="button" class="btn-mini btn-danger btn-del-inv-draft" data-id="${draft.id}" title="Eliminar borrador">
+                  🗑️
+                </button>
+              </div>
+            </div>
+          `;
+          invDraftsList.appendChild(item);
+        });
+
+        invDraftsList.querySelectorAll('.btn-del-inv-draft').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            const id = (e.currentTarget as HTMLElement).dataset.id;
+            if (!id) return;
+            if (confirm('¿Eliminar este borrador?')) {
+              deleteProjectDraft(id);
+              updateInventoryBadgeCounts();
+              renderInvDrafts();
+            }
+          });
+        });
+      }
+
+      function renderInvFavorites(): void {
+        if (!invFavoritesList) return;
+        const favs = getFavorites();
+        if (favs.length === 0) {
+          invFavoritesList.innerHTML = `
+            <div class="ps1-inset" style="padding: 2rem 1rem; text-align: center; color: var(--text-dim); background: #070d18;">
+              <div style="font-size: 2.2rem; margin-bottom: 0.4rem;">⭐</div>
+              <p style="font-family: var(--font-pixel); font-size: 0.78rem; color: var(--ps1-gold); margin-bottom: 0.35rem;">
+                NO TIENES MODELOS EN FAVORITOS
+              </p>
+              <span style="font-size: 0.75rem;">
+                Explora el catálogo y marca con estrella ⭐ los modelos que quieras guardar en tu inventario.
+              </span>
+            </div>
+          `;
+          return;
+        }
+
+        invFavoritesList.innerHTML = '';
+        favs.forEach(fav => {
+          const item = document.createElement('div');
+          item.className = 'ps1-inset';
+          item.style.padding = '0.75rem';
+          item.style.background = '#090e1c';
+          item.style.border = '1px solid var(--ps1-steel)';
+          const dStr = new Date(fav.added_at).toLocaleDateString();
+
+          item.innerHTML = `
+            <div style="display: flex; gap: 0.75rem; align-items: center; justify-content: space-between; flex-wrap: wrap;">
+              <div>
+                <div style="display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.2rem; flex-wrap: wrap;">
+                  <span style="color: var(--ps1-gold);">⭐</span>
+                  <strong style="font-family: var(--font-pixel); font-size: 0.8rem; color: var(--ps1-gold);">${fav.name}</strong>
+                  <span class="category-badge category-${fav.category}" style="font-size: 0.65rem;">${fav.category}</span>
+                  <span class="ps1-telemetry-tag" style="font-size: 0.65rem;">${fav.type.toUpperCase()}</span>
+                </div>
+                <span style="font-size: 0.7rem; color: var(--text-dim);">Agregado: ${dStr}</span>
+              </div>
+              <div style="display: flex; gap: 0.4rem; align-items: center;">
+                <a href="${fav.type === 'catalog' ? `/generators/${fav.id}` : '/studio'}" class="btn-mini btn-cyan" style="text-decoration: none;">
+                  👁️ VER EN 3D
+                </a>
+                <button type="button" class="btn-mini btn-outline btn-del-inv-fav" data-id="${fav.id}" title="Quitar de favoritos">
+                  ✕ QUITAR
+                </button>
+              </div>
+            </div>
+          `;
+          invFavoritesList.appendChild(item);
+        });
+
+        invFavoritesList.querySelectorAll('.btn-del-inv-fav').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            const id = (e.currentTarget as HTMLElement).dataset.id;
+            if (!id) return;
+            const item = favs.find(f => f.id === id);
+            if (item) {
+              toggleFavorite(item);
+              updateInventoryBadgeCounts();
+              renderInvFavorites();
+            }
+          });
+        });
+      }
+
+      function renderInvCollections(): void {
+        if (!invCollectionsList) return;
+        const colls = getCollections();
+        if (colls.length === 0) {
+          invCollectionsList.innerHTML = `
+            <div class="ps1-inset" style="padding: 2rem 1rem; text-align: center; color: var(--text-dim); background: #070d18;">
+              <div style="font-size: 2.2rem; margin-bottom: 0.4rem;">🗂️</div>
+              <p style="font-family: var(--font-pixel); font-size: 0.78rem; color: var(--ps1-gold); margin-bottom: 0.35rem;">
+                NO HAS CREADO COLECCIONES AÚN
+              </p>
+              <span style="font-size: 0.75rem;">
+                Crea una colección como "Estación Subterránea" o "Módulo Médico" para organizar tus sets de assets.
+              </span>
+            </div>
+          `;
+          return;
+        }
+
+        invCollectionsList.innerHTML = '';
+        colls.forEach(coll => {
+          const item = document.createElement('div');
+          item.className = 'ps1-inset';
+          item.style.padding = '0.75rem';
+          item.style.background = '#090e1c';
+          item.style.border = '1px solid var(--ps1-steel)';
+
+          item.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem; flex-wrap: wrap; gap: 0.4rem;">
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <span style="font-size: 1.1rem;">🗂️</span>
+                <strong style="font-family: var(--font-pixel); font-size: 0.82rem; color: var(--ps1-cyan);">${coll.name}</strong>
+                <span class="ps1-telemetry-tag" style="font-size: 0.65rem;">${coll.models.length} MODELOS</span>
+              </div>
+              <button type="button" class="btn-mini btn-danger btn-del-coll" data-id="${coll.id}" title="Eliminar colección">
+                🗑️ ELIMINAR
+              </button>
+            </div>
+            <p style="font-size: 0.74rem; color: var(--text-dim); margin: 0 0 0.5rem 0;">
+              ${coll.description || 'Colección personalizada de modelos procedurales.'}
+            </p>
+            ${coll.models.length > 0 ? `
+              <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+                ${coll.models.map(m => `<span class="ps1-telemetry-tag" style="font-size: 0.68rem; background: #060911;">${m.name}</span>`).join('')}
+              </div>
+            ` : `<span style="font-size: 0.7rem; color: var(--text-dim); font-style: italic;">Colección vacía.</span>`}
+          `;
+          invCollectionsList.appendChild(item);
+        });
+
+        invCollectionsList.querySelectorAll('.btn-del-coll').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            const id = (e.currentTarget as HTMLElement).dataset.id;
+            if (!id) return;
+            if (confirm('¿Eliminar esta colección?')) {
+              deleteCollection(id);
+              updateInventoryBadgeCounts();
+              renderInvCollections();
+            }
+          });
+        });
+      }
+
+      function openInventoryModal(defaultTab = 'drafts'): void {
+        if (!invModal) return;
+        updateInventoryBadgeCounts();
+        invTabBtns.forEach(btn => {
+          if (btn.getAttribute('data-tab') === defaultTab) {
+            btn.classList.add('active');
+          } else {
+            btn.classList.remove('active');
+          }
+        });
+        Object.entries(invPanels).forEach(([key, panel]) => {
+          if (panel) {
+            panel.classList.toggle('hidden', key !== defaultTab);
+          }
+        });
+        if (defaultTab === 'drafts') renderInvDrafts();
+        else if (defaultTab === 'favorites') renderInvFavorites();
+        else if (defaultTab === 'collections') renderInvCollections();
+
+        invModal.classList.remove('hidden');
+      }
+
+      function closeInventoryModal(): void {
+        if (!invModal) return;
+        invModal.classList.add('hidden');
+      }
+
+      btnOpenInventory?.addEventListener('click', () => openInventoryModal('drafts'));
+      dropdownOpenInventory?.addEventListener('click', () => {
+        userDropdownMenu?.classList.add('hidden');
+        openInventoryModal('drafts');
+      });
+      btnCloseInvModal?.addEventListener('click', closeInventoryModal);
+      invModal?.addEventListener('click', (e) => {
+        if (e.target === invModal) closeInventoryModal();
+      });
+
+      invTabBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          invTabBtns.forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          const tabKey = btn.getAttribute('data-tab') || 'drafts';
+          Object.entries(invPanels).forEach(([key, panel]) => {
+            if (panel) panel.classList.toggle('hidden', key !== tabKey);
+          });
+          if (tabKey === 'drafts') renderInvDrafts();
+          else if (tabKey === 'favorites') renderInvFavorites();
+          else if (tabKey === 'collections') renderInvCollections();
+        });
+      });
+
+      // Collections creation form
+      const btnCreateCollection = document.getElementById('btn-create-collection');
+      const invCreateCollForm = document.getElementById('inv-create-coll-form');
+      const btnSubmitNewColl = document.getElementById('btn-submit-new-coll');
+      const btnCancelNewColl = document.getElementById('btn-cancel-new-coll');
+      const inputNewCollName = document.getElementById('new-coll-name') as HTMLInputElement | null;
+      const inputNewCollDesc = document.getElementById('new-coll-desc') as HTMLInputElement | null;
+
+      btnCreateCollection?.addEventListener('click', () => {
+        if (invCreateCollForm) invCreateCollForm.classList.remove('hidden');
+        if (inputNewCollName) inputNewCollName.focus();
+      });
+
+      btnCancelNewColl?.addEventListener('click', () => {
+        if (invCreateCollForm) invCreateCollForm.classList.add('hidden');
+      });
+
+      btnSubmitNewColl?.addEventListener('click', () => {
+        const name = inputNewCollName?.value?.trim();
+        const desc = inputNewCollDesc?.value?.trim() || '';
+        if (!name) {
+          alert('Por favor introduce un nombre para la colección.');
+          return;
+        }
+        saveCollection({ name, description: desc });
+        if (inputNewCollName) inputNewCollName.value = '';
+        if (inputNewCollDesc) inputNewCollDesc.value = '';
+        if (invCreateCollForm) invCreateCollForm.classList.add('hidden');
+        updateInventoryBadgeCounts();
+        renderInvCollections();
+      });
+
+      updateInventoryBadgeCounts();
+      window.addEventListener('modelcoder:inventory_updated', () => {
+        updateInventoryBadgeCounts();
+        if (invModal && !invModal.classList.contains('hidden')) {
+          const activeTabBtn = document.querySelector('.inv-tab-btn.active');
+          const activeTab = activeTabBtn?.getAttribute('data-tab') || 'drafts';
+          if (activeTab === 'drafts') renderInvDrafts();
+          else if (activeTab === 'favorites') renderInvFavorites();
+          else if (activeTab === 'collections') renderInvCollections();
+        }
+      });
+
+      // Check current session
       const supabase = getSupabase();
       if (supabase) {
         supabase.auth.getUser().then(({ data }) => {
@@ -439,6 +876,43 @@ import '../styles/global.css';
     </script>
 
     <style>
+      .nav-link-inventory {
+        background: transparent;
+        border: 1px solid var(--ps1-steel);
+        color: var(--ps1-cyan);
+        font-family: inherit;
+        font-size: inherit;
+        cursor: pointer;
+        padding: 0.25rem 0.5rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+      }
+      .nav-link-inventory:hover {
+        border-color: var(--ps1-cyan);
+        background: rgba(0, 240, 255, 0.08);
+      }
+      .inv-tab-btn {
+        background: #090e1c;
+        border: 1px solid var(--ps1-steel);
+        color: var(--text-dim);
+        font-family: var(--font-pixel);
+        font-size: 0.72rem;
+        padding: 0.4rem 0.75rem;
+        cursor: pointer;
+        transition: all 0.15s ease;
+      }
+      .inv-tab-btn:hover {
+        color: var(--text-bright);
+        border-color: var(--ps1-cyan);
+      }
+      .inv-tab-btn.active {
+        background: var(--ps1-gold);
+        color: #000;
+        border-color: var(--ps1-gold);
+        font-weight: bold;
+      }
+
       .user-auth-container {
         position: relative;
         display: inline-flex;
