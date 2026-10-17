@@ -19,7 +19,7 @@ export class StudioViewport {
   private ambientLight: THREE.AmbientLight;
 
   private currentMesh: THREE.Object3D | null = null;
-  private lastValidMesh: THREE.Object3D | null = null;
+  private lastValidStats: GeometricStats | null = null;
   private activeShadingMode: ShadingMode = 'shaded';
   private currentShadingMaterialsBackup: Map<THREE.Mesh, THREE.Material | THREE.Material[]> = new Map();
 
@@ -256,15 +256,16 @@ export class StudioViewport {
     this.transformControls.detach();
     this.selectionBox.visible = false;
 
-    // Dispose old active mesh
+    // Dispose old active mesh (after restoring original PBR materials so textures are not leaked)
     if (this.currentMesh) {
+      this.restoreOriginalMaterialsOnCurrentMesh();
       this.scene.remove(this.currentMesh);
       ProceduralEngine.disposeHierarchy(this.currentMesh);
       this.currentMesh = null;
     }
 
     this.currentMesh = obj;
-    this.lastValidMesh = obj.clone(); // Keep backup for safe error fallback
+    this.lastValidStats = stats; // Cache validated stats for safe error fallback without dangling BufferGeometry refs
     this.scene.add(obj);
 
     // Backup original materials for shading toggles
@@ -304,7 +305,7 @@ export class StudioViewport {
     this.currentState = 'error';
 
     // If we have a previous valid mesh, retain it but clearly notify HUD that it's previous
-    const previousStats = this.lastValidMesh ? ProceduralEngine.computeGroupStats(this.lastValidMesh) : null;
+    const previousStats = this.lastValidStats;
 
     if (this.onStatsUpdate) {
       this.onStatsUpdate(previousStats, {
@@ -315,7 +316,7 @@ export class StudioViewport {
         mode,
         error: errorMsg,
         stats: previousStats || undefined,
-        isPreviousResultFallback: Boolean(this.lastValidMesh)
+        isPreviousResultFallback: Boolean(this.currentMesh && previousStats)
       });
     }
   }
@@ -497,8 +498,35 @@ export class StudioViewport {
     this.applyShadingMode(mode);
   }
 
+  /**
+   * Restores the original PBR materials onto currentMesh and disposes any temporary debug shading materials.
+   */
+  private restoreOriginalMaterialsOnCurrentMesh(): void {
+    if (!this.currentMesh) return;
+    this.currentMesh.traverse((child) => {
+      if ((child as THREE.Mesh).isMesh) {
+        const mesh = child as THREE.Mesh;
+        const originalMat = this.currentShadingMaterialsBackup.get(mesh);
+        if (originalMat && mesh.material !== originalMat) {
+          const tempMat = mesh.material;
+          mesh.material = originalMat;
+          if (Array.isArray(tempMat)) {
+            tempMat.forEach((m) => m.dispose());
+          } else if (tempMat) {
+            tempMat.dispose();
+          }
+        }
+      }
+    });
+  }
+
   private applyShadingMode(mode: ShadingMode): void {
     if (!this.currentMesh) return;
+
+    // First restore original materials and dispose any previous temporary shading materials
+    this.restoreOriginalMaterialsOnCurrentMesh();
+
+    if (mode === 'shaded') return;
 
     this.currentMesh.traverse((child) => {
       if ((child as THREE.Mesh).isMesh) {
@@ -532,13 +560,8 @@ export class StudioViewport {
             });
             break;
           }
-          case 'shaded':
-          default: {
-            if (originalMat) {
-              mesh.material = originalMat;
-            }
+          default:
             break;
-          }
         }
       }
     });
@@ -581,6 +604,27 @@ export class StudioViewport {
    */
   public getVisibleObject(): THREE.Object3D | null {
     return this.currentMesh;
+  }
+
+  /**
+   * Temporarily restores original PBR materials on the active mesh while running an export callback,
+   * then re-applies the active inspection shading mode (e.g., wireframe, normals) afterward.
+   */
+  public async executeWithOriginalMaterials<T>(fn: (root: THREE.Object3D) => Promise<T>): Promise<T> {
+    if (!this.currentMesh) {
+      throw new Error('No hay ningún objeto 3D activo en el visor.');
+    }
+    const modeBeforeExport = this.activeShadingMode;
+    try {
+      if (modeBeforeExport !== 'shaded') {
+        this.restoreOriginalMaterialsOnCurrentMesh();
+      }
+      return await fn(this.currentMesh);
+    } finally {
+      if (modeBeforeExport !== 'shaded') {
+        this.applyShadingMode(modeBeforeExport);
+      }
+    }
   }
 
   public getActiveRequestId(): string {
@@ -711,11 +755,11 @@ export class StudioViewport {
     this.transformControls.dispose();
     this.selectionBox.dispose();
     if (this.currentMesh) {
+      this.restoreOriginalMaterialsOnCurrentMesh();
       ProceduralEngine.disposeHierarchy(this.currentMesh);
+      this.currentMesh = null;
     }
-    if (this.lastValidMesh) {
-      ProceduralEngine.disposeHierarchy(this.lastValidMesh);
-    }
+    this.currentShadingMaterialsBackup.clear();
     this.renderer.dispose();
   }
 }

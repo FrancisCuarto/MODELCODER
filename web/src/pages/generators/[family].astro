@@ -108,6 +108,32 @@ gen.parameters.forEach((param: any) => {
             >
               <span id="family-fav-star">☆</span> <span id="family-fav-text">FAVORITO</span>
             </button>
+            <div style="position: relative; display: inline-block;">
+              <button
+                id="btn-family-coll"
+                type="button"
+                class="ps1-ctrl-btn"
+                data-family={gen.family}
+                title="Añadir o quitar este modelo de tus colecciones"
+              >
+                🗂️ <span id="family-coll-text">COLECCIÓN</span>
+              </button>
+              <div
+                id="family-coll-popover"
+                class="ps1-window hidden"
+                style="position: absolute; bottom: calc(100% + 8px); right: 0; width: 260px; z-index: 250; background: #080d1a; border: 2px solid var(--ps1-cyan); padding: 0.65rem; box-shadow: 0 8px 24px rgba(0,0,0,0.85);"
+              >
+                <div style="font-family: var(--font-pixel); font-size: 0.68rem; color: var(--ps1-gold); margin-bottom: 0.45rem; display: flex; justify-content: space-between; align-items: center;">
+                  <span>🗂️ GUARDAR EN COLECCIÓN</span>
+                  <button type="button" id="btn-close-coll-popover" style="background:none; border:none; color:var(--text-dim); cursor:pointer; font-size:0.75rem;">✕</button>
+                </div>
+                <div id="family-coll-list" style="display: flex; flex-direction: column; gap: 0.35rem; max-height: 150px; overflow-y: auto; margin-bottom: 0.5rem;"></div>
+                <div style="display: flex; gap: 0.3rem; border-top: 1px solid var(--ps1-steel); padding-top: 0.45rem;">
+                  <input id="family-new-coll-input" type="text" class="ps1-input" placeholder="Nueva colección..." style="font-size: 0.68rem; padding: 0.25rem 0.4rem; flex: 1;" />
+                  <button type="button" id="btn-family-create-coll" class="btn-mini btn-gold" style="font-size: 0.65rem; padding: 0.25rem 0.45rem;">+ CREAR</button>
+                </div>
+              </div>
+            </div>
           </div>
 
           <!-- Preset Quick Pills Bar -->
@@ -503,7 +529,16 @@ gen.parameters.forEach((param: any) => {
 </Layout>
 
 <script>
-  import { toggleFavorite, isFavorite } from '../../lib/user-inventory';
+  import { toggleFavorite, isFavorite, getCollections, toggleModelInCollection, saveCollection } from '../../lib/user-inventory';
+
+  function escapeHtml(str: unknown): string {
+    return String(str ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
 
   // Interactive parameter, WebGL material sync, and CLI generation script
   const form = document.getElementById('generator-form') as HTMLFormElement;
@@ -528,10 +563,17 @@ gen.parameters.forEach((param: any) => {
   const importGuidePanel = document.getElementById('import-guide-panel');
   const viewerStatusText = document.getElementById('viewer-status-text');
 
-  // Favorites handler for this generator
+  // Favorites & Collections handler for this generator
   const btnFamilyFav = document.getElementById('btn-family-fav');
   const familyFavStar = document.getElementById('family-fav-star');
   const familyFavText = document.getElementById('family-fav-text');
+  const btnFamilyColl = document.getElementById('btn-family-coll');
+  const familyCollText = document.getElementById('family-coll-text');
+  const familyCollPopover = document.getElementById('family-coll-popover');
+  const familyCollList = document.getElementById('family-coll-list');
+  const btnCloseCollPopover = document.getElementById('btn-close-coll-popover');
+  const familyNewCollInput = document.getElementById('family-new-coll-input') as HTMLInputElement | null;
+  const btnFamilyCreateColl = document.getElementById('btn-family-create-coll');
 
   function updateFamilyFavUI() {
     if (!btnFamilyFav) return;
@@ -542,6 +584,42 @@ gen.parameters.forEach((param: any) => {
     if (familyFavText) familyFavText.textContent = isFav ? 'FAVORITO (GUARDADO)' : 'FAVORITO';
     btnFamilyFav.style.color = isFav ? 'var(--ps1-gold)' : '';
     btnFamilyFav.style.borderColor = isFav ? 'var(--ps1-gold)' : '';
+  }
+
+  function renderFamilyCollectionsUI() {
+    if (!btnFamilyColl || !familyCollList) return;
+    const fam = btnFamilyColl.dataset.family;
+    if (!fam) return;
+    const colls = getCollections();
+    const inCount = colls.filter(c => Array.isArray(c.model_ids) && c.model_ids.includes(fam)).length;
+    if (familyCollText) {
+      familyCollText.textContent = inCount > 0 ? `COLECCIÓN (${inCount})` : 'COLECCIÓN';
+    }
+    btnFamilyColl.style.color = inCount > 0 ? 'var(--ps1-cyan)' : '';
+    btnFamilyColl.style.borderColor = inCount > 0 ? 'var(--ps1-cyan)' : '';
+
+    if (colls.length === 0) {
+      familyCollList.innerHTML = `<span style="font-size:0.68rem; color:var(--text-dim); font-style:italic;">No tienes colecciones aún. Crea una abajo:</span>`;
+      return;
+    }
+
+    familyCollList.innerHTML = colls.map(c => {
+      const checked = Array.isArray(c.model_ids) && c.model_ids.includes(fam);
+      return `<label style="display:flex; align-items:center; gap:0.45rem; font-size:0.72rem; color:#d0e0f0; cursor:pointer; padding:2px 4px; background:#050912; border:1px solid var(--ps1-steel);">
+        <input type="checkbox" class="chk-family-coll" data-coll-id="${escapeHtml(c.id)}" ${checked ? 'checked' : ''} />
+        <span style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(c.name)}</span>
+        <span style="font-size:0.62rem; color:var(--text-dim);">(${Array.isArray(c.model_ids) ? c.model_ids.length : 0})</span>
+      </label>`;
+    }).join('');
+
+    familyCollList.querySelectorAll('.chk-family-coll').forEach(chk => {
+      chk.addEventListener('change', (e) => {
+        const collId = (e.currentTarget as HTMLElement).dataset.collId;
+        if (!collId) return;
+        toggleModelInCollection(collId, fam);
+        renderFamilyCollectionsUI();
+      });
+    });
   }
 
   btnFamilyFav?.addEventListener('click', () => {
@@ -561,8 +639,42 @@ gen.parameters.forEach((param: any) => {
     updateFamilyFavUI();
   });
 
+  btnFamilyColl?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    renderFamilyCollectionsUI();
+    familyCollPopover?.classList.toggle('hidden');
+  });
+
+  btnCloseCollPopover?.addEventListener('click', () => {
+    familyCollPopover?.classList.add('hidden');
+  });
+
+  familyCollPopover?.addEventListener('click', (e) => {
+    e.stopPropagation();
+  });
+
+  document.addEventListener('click', () => {
+    familyCollPopover?.classList.add('hidden');
+  });
+
+  btnFamilyCreateColl?.addEventListener('click', () => {
+    const fam = btnFamilyColl?.dataset.family;
+    const name = familyNewCollInput?.value?.trim();
+    if (!name || !fam) {
+      familyNewCollInput?.focus();
+      return;
+    }
+    saveCollection({ name, description: '', model_ids: [fam] });
+    if (familyNewCollInput) familyNewCollInput.value = '';
+    renderFamilyCollectionsUI();
+  });
+
   updateFamilyFavUI();
-  window.addEventListener('modelcoder:inventory_updated', updateFamilyFavUI);
+  renderFamilyCollectionsUI();
+  window.addEventListener('modelcoder:inventory_updated', () => {
+    updateFamilyFavUI();
+    renderFamilyCollectionsUI();
+  });
 
   toggleImportGuideBtn?.addEventListener('click', () => {
     if (importGuidePanel) {
@@ -919,6 +1031,8 @@ gen.parameters.forEach((param: any) => {
     }
   });
 
+  let activeWorkerGlbUrl: string | null = null;
+
   // Download Custom GLB directly from browser memory
   downloadCustomGlbBtn?.addEventListener('click', async () => {
     if (!viewer) return;
@@ -934,6 +1048,7 @@ gen.parameters.forEach((param: any) => {
         a.href = blobUrl;
         a.download = `${familyName}_custom.glb`;
         a.click();
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 1500);
       } else {
         // Fallback to base GLB url
         const a = document.createElement('a');
@@ -1039,7 +1154,11 @@ gen.parameters.forEach((param: any) => {
 
       const cacheStatus = res.headers.get('X-Cache') || 'MISS';
       const blob = await res.blob();
+      if (activeWorkerGlbUrl) {
+        URL.revokeObjectURL(activeWorkerGlbUrl);
+      }
       const newGlbUrl = URL.createObjectURL(blob);
+      activeWorkerGlbUrl = newGlbUrl;
 
       if (viewer) {
         viewer.scale = "1 1 1";
@@ -1223,29 +1342,29 @@ gen.parameters.forEach((param: any) => {
       item.style.flexDirection = 'column';
       item.style.gap = '0.35rem';
 
-      const isOwner = c.author_name.toLowerCase().includes('franciscuarto') || c.author_name.toLowerCase().includes('creador');
+      const isOwner = String(c.author_name || '').toLowerCase().includes('franciscuarto') || String(c.author_name || '').toLowerCase().includes('creador');
 
       item.innerHTML = `
         <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
           <div style="display: flex; align-items: center; gap: 0.4rem;">
             <span style="font-size: 0.9rem;">${isOwner ? '👑' : '👤'}</span>
             <strong style="font-family: var(--font-pixel); font-size: 0.72rem; color: ${isOwner ? 'var(--ps1-gold)' : 'var(--ps1-cyan)'};">
-              ${c.author_name}
+              ${escapeHtml(c.author_name)}
             </strong>
             ${isOwner ? '<span style="font-size:0.6rem; background:rgba(255,176,0,0.15); color:var(--ps1-gold); padding:1px 4px; border:1px solid var(--ps1-gold);">OFICIAL</span>' : ''}
           </div>
           <div style="display: flex; align-items: center; gap: 0.5rem;">
             <span style="font-size: 0.68rem; color: var(--text-dim);">
-              ${c.created_at ? new Date(c.created_at).toLocaleString() : ''}
+              ${c.created_at ? escapeHtml(new Date(c.created_at).toLocaleString()) : ''}
             </span>
             ${canModerate ? `
-              <button type="button" class="btn btn-sm btn-danger btn-del-comment" data-id="${c.id}" style="padding: 1px 6px; font-size: 0.65rem;" title="Eliminar comentario">
+              <button type="button" class="btn btn-sm btn-danger btn-del-comment" data-id="${escapeHtml(c.id)}" style="padding: 1px 6px; font-size: 0.65rem;" title="Eliminar comentario">
                 🗑️
               </button>
             ` : ''}
           </div>
         </div>
-        <p style="font-size: 0.8rem; color: #d0e0f0; margin: 0; line-height: 1.45; white-space: pre-wrap;">${c.content}</p>
+        <p style="font-size: 0.8rem; color: #d0e0f0; margin: 0; line-height: 1.45; white-space: pre-wrap;">${escapeHtml(c.content)}</p>
       `;
 
       commentsListContainer.appendChild(item);

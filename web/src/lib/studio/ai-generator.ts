@@ -126,10 +126,14 @@ Return ONLY valid JSON matching this schema:
     for (const modelName of candidateModels) {
       try {
         const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+        const signal = typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function'
+          ? AbortSignal.timeout(30000)
+          : undefined;
         const res = await fetch(url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
+          body: JSON.stringify(payload),
+          signal
         });
 
         if (!res.ok) {
@@ -147,13 +151,22 @@ Return ONLY valid JSON matching this schema:
           throw new Error(`Gemini (${modelName}) no devolvió texto en la respuesta.`);
         }
 
-        const parsed = JSON.parse(candidateText) as ModelSpec;
+        const cleanedJsonText = String(candidateText)
+          .trim()
+          .replace(/^```(?:json)?\s*/i, '')
+          .replace(/\s*```$/i, '')
+          .trim();
+
+        const parsed = JSON.parse(cleanedJsonText) as ModelSpec;
         if (!parsed.components || parsed.components.length === 0) {
           throw new Error('La respuesta de Gemini no incluye componentes geométricos.');
         }
 
-        return { spec: parsed, rawResponse: candidateText };
+        return { spec: parsed, rawResponse: cleanedJsonText };
       } catch (err: any) {
+        if (err?.name === 'TimeoutError' || err?.name === 'AbortError') {
+          throw new Error('Tiempo de espera agotado (30s) al conectar con Gemini API. Verifica tu conexión o usa el Motor Procedural Local.');
+        }
         lastError = err;
         if (err.message && (err.message.includes('404') || err.message.includes('NOT_FOUND') || err.message.includes('no longer available'))) {
           continue;

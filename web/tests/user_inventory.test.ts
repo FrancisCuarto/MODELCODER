@@ -172,3 +172,28 @@ test('JSON Import: Importar un archivo JSON externo restaura el modelo en los bo
   assert.strictEqual(imported.name, 'Crate Test Alpha');
   assert.strictEqual(imported.components_count, 1);
 });
+
+test('Regression: saveProjectDraft soporta firma polimórfica directa desde Studio (ModelSpec, thumbnail, id)', () => {
+  const saved = saveProjectDraft(dummySpec, 'data:image/jpeg;base64,compact', undefined);
+  assert.ok(saved.id.startsWith('proj_'));
+  assert.strictEqual(saved.name, 'Crate Test Alpha');
+  assert.strictEqual(saved.thumbnail, 'data:image/jpeg;base64,compact');
+
+  const updated = saveProjectDraft(
+    { ...dummySpec, name: 'Crate Test Beta' },
+    'data:image/jpeg;base64,compact2',
+    saved.id
+  );
+  assert.strictEqual(updated.id, saved.id);
+  assert.strictEqual(updated.name, 'Crate Test Beta');
+});
+
+test('Regression: saveCollection permite inicializar con model_ids desde el inspector de generadores', () => {
+  const col = saveCollection({
+    name: 'Kit Laboratorio',
+    description: 'Set rápido',
+    model_ids: ['arcade_cabinet', 'crate']
+  });
+  assert.deepStrictEqual(col.model_ids, ['arcade_cabinet', 'crate']);
+});
+

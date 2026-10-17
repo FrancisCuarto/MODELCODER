@@ -1,0 +1,31 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="404 // Sector No Encontrado | ModelCoder 3D">
+  <section class="ps1-window" style="max-width: 680px; margin: 4rem auto; overflow: hidden;">
+    <div class="ps1-titlebar" style="background: linear-gradient(90deg, #331118, #0c1220); border-bottom: 1px solid var(--ps1-red);">
+      <span>// ERROR_404: SECTOR_GEOMETRICO_NO_ENCONTRADO</span>
+      <span class="ps1-telemetry-tag" style="color: var(--ps1-red);">STATUS: OFFLINE</span>
+    </div>
+
+    <div class="ps1-inset" style="padding: 2.5rem 2rem; text-align: center; background: #070b14; margin: 1rem;">
+      <div style="font-size: 3.2rem; margin-bottom: 0.75rem;">📡</div>
+      <h1 style="font-family: var(--font-title); font-size: 1.5rem; color: var(--ps1-gold); margin: 0 0 0.75rem 0; letter-spacing: 0.06em;">
+        [ 404 // COORDENADA INEXISTENTE ]
+      </h1>
+      <p style="font-size: 0.92rem; color: var(--text-dim); max-width: 480px; margin: 0 auto 1.75rem auto; line-height: 1.55;">
+        El recurso o modelo 3D solicitado no se encuentra en esta dirección de memoria. Podés regresar al catálogo principal de 101 generadores o iniciar una nueva malla en Studio 3D.
+      </p>
+
+      <div style="display: flex; justify-content: center; gap: 0.85rem; flex-wrap: wrap;">
+        <a href="/" class="btn btn-primary" style="text-decoration: none; padding: 0.65rem 1.25rem;">
+          📦 IR AL CATÁLOGO 3D
+        </a>
+        <a href="/studio" class="btn btn-cyan" style="text-decoration: none; padding: 0.65rem 1.25rem;">
+          ⚡ ABRIR STUDIO 3D
+        </a>
+      </div>
+    </div>
+  </section>
+</Layout>

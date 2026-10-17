@@ -463,7 +463,7 @@ const categories = [
     });
 
     if (resultsCount) {
-      resultsCount.textContent = `${visible} / ${cards.length} RECORDS`;
+      resultsCount.textContent = `${visible} DE ${cards.length} MODELOS ENCONTRADOS`;
     }
 
     if (noResults) {
@@ -483,12 +483,43 @@ const categories = [
     }
   }
 
+  function escapeHtml(str: unknown): string {
+    return String(str ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  // Pause auto-rotate on off-screen <model-viewer> instances to save GPU/CPU frames
+  const viewerObserver = typeof IntersectionObserver !== 'undefined'
+    ? new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          const mv = entry.target as any;
+          if (entry.isIntersecting) {
+            mv.setAttribute('auto-rotate', '');
+          } else {
+            mv.removeAttribute('auto-rotate');
+          }
+        });
+      }, { rootMargin: '120px' })
+    : null;
+
+  function observeModelViewers() {
+    if (!viewerObserver) return;
+    document.querySelectorAll('model-viewer.model-preview').forEach((mv) => {
+      viewerObserver.observe(mv);
+    });
+  }
+
   // Cargar y mostrar modelos subidos directamente por colaboradores
   async function loadCommunityModels() {
     try {
       communityModelsList = await getCommunityModels({ onlyPublic: true });
       if (!generatorsContainer || communityModelsList.length === 0) {
         wireFavoriteButtons();
+        observeModelViewers();
         return;
       }
 
@@ -498,16 +529,23 @@ const categories = [
         article.style.display = 'flex';
         article.style.flexDirection = 'column';
         article.style.overflow = 'hidden';
+        const safeSlug = escapeHtml(m.slug);
+        const safeName = escapeHtml(m.name);
+        const safeCat = escapeHtml(m.category || 'furniture');
+        const safeDesc = escapeHtml(m.description || 'Modelo procedural creado por el equipo de colaboradores de ModelCoder.');
+        const safeAuthor = escapeHtml(m.author_name || 'Comunidad');
+        const safeGlb = escapeHtml(m.glb_data || '');
+
         article.dataset.family = m.slug;
         article.dataset.category = m.category || 'furniture';
-        article.dataset.tags = `comunidad colaborador ${m.name.toLowerCase()} ${(m.description || '').toLowerCase()}`;
-        article.dataset.name = m.name.toLowerCase();
-        article.dataset.desc = (m.description || '').toLowerCase();
+        article.dataset.tags = `comunidad colaborador ${String(m.name || '').toLowerCase()} ${String(m.description || '').toLowerCase()}`;
+        article.dataset.name = String(m.name || '').toLowerCase();
+        article.dataset.desc = String(m.description || '').toLowerCase();
 
         const previewContent = m.glb_data
           ? `<model-viewer
-              src="${m.glb_data}"
-              alt="${m.name}"
+              src="${safeGlb}"
+              alt="${safeName}"
               auto-rotate
               rotation-per-second="25deg"
               camera-controls
@@ -527,17 +565,17 @@ const categories = [
               <button 
                 type="button"
                 class="btn-card-fav"
-                data-id="${m.slug}"
-                data-name="${m.name}"
-                data-category="${m.category || 'furniture'}"
+                data-id="${safeSlug}"
+                data-name="${safeName}"
+                data-category="${safeCat}"
                 data-type="community"
-                data-url="${m.glb_data || ''}"
+                data-url="${safeGlb}"
                 title="Guardar en favoritos"
                 aria-label="Guardar en favoritos"
               >
                 <span class="fav-star">☆</span>
               </button>
-              <span class="card-category-badge" style="color: var(--ps1-gold);">[${(m.category || 'furniture').toUpperCase()}]</span>
+              <span class="card-category-badge" style="color: var(--ps1-gold);">[${safeCat.toUpperCase()}]</span>
             </div>
             <span class="card-license-tag" style="color: var(--ps1-green); font-weight: bold;">👑 COMUNIDAD</span>
           </div>
@@ -545,8 +583,8 @@ const categories = [
           <div class="ps1-inset card-preview">
             ${previewContent}
             <div class="preview-badges">
-              <span class="category-badge category-${m.category || 'furniture'}">
-                ${m.category || 'furniture'}
+              <span class="category-badge category-${safeCat}">
+                ${safeCat}
               </span>
               <span class="preset-badge" style="background: var(--ps1-gold); color: #000; font-weight: bold;">
                 EQUIPO OFICIAL
@@ -556,22 +594,22 @@ const categories = [
 
           <div class="card-body">
             <h2 class="card-title">
-              <a href="#" class="comm-open-link" data-slug="${m.slug}">${m.name}</a>
+              <a href="#" class="comm-open-link" data-slug="${safeSlug}">${safeName}</a>
             </h2>
-            <p class="card-description">${m.description || 'Modelo procedural creado por el equipo de colaboradores de ModelCoder.'}</p>
+            <p class="card-description">${safeDesc}</p>
 
             <div class="card-meta">
-              <span class="ps1-inset meta-tag">📐 ${m.spec?.components?.length || 0} PIEZAS</span>
-              <span class="ps1-inset meta-tag">~${m.tri_count || 350} TRIS</span>
-              <span class="ps1-inset meta-tag" style="color: var(--ps1-cyan);">👤 ${m.author_name}</span>
+              <span class="ps1-inset meta-tag">📐 ${Number(m.spec?.components?.length) || 0} PIEZAS</span>
+              <span class="ps1-inset meta-tag">~${Number(m.tri_count) || 350} TRIS</span>
+              <span class="ps1-inset meta-tag" style="color: var(--ps1-cyan);">👤 ${safeAuthor}</span>
             </div>
           </div>
 
           <div class="card-footer">
-            <button type="button" class="btn btn-primary btn-open-comm-studio" data-slug="${m.slug}" title="Abrir en Studio 3D para editar">
+            <button type="button" class="btn btn-primary btn-open-comm-studio" data-slug="${safeSlug}" title="Abrir en Studio 3D para editar">
               ABRIR EN STUDIO
             </button>
-            ${m.glb_data ? `<a href="${m.glb_data}" download="${m.slug}.glb" class="btn btn-outline btn-download" title="Descargar archivo GLB directamente">BAJAR .GLB</a>` : ''}
+            ${m.glb_data ? `<a href="${safeGlb}" download="${safeSlug}.glb" class="btn btn-outline btn-download" title="Descargar archivo GLB directamente">BAJAR .GLB</a>` : ''}
           </div>
         `;
 
@@ -609,10 +647,12 @@ const categories = [
       if (allBtn) allBtn.textContent = `[TODOS: ${totalCount}]`;
 
       wireFavoriteButtons();
+      observeModelViewers();
       applyFilters();
     } catch (err) {
       console.warn('[ModelCoder] Could not load community models on homepage:', err);
       wireFavoriteButtons();
+      observeModelViewers();
     }
   }
 
@@ -650,6 +690,7 @@ const categories = [
 
   loadCommunityModels();
   wireFavoriteButtons();
+  observeModelViewers();
 </script>
 
 <style>

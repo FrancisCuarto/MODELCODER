@@ -2527,12 +2527,18 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     });
   });
 
+  let isGeneratingAI = false;
+
   async function triggerAIGeneration(overridePrompt?: string) {
+    if (isGeneratingAI) return;
     const prompt = (overridePrompt || aiPromptInput?.value || '').trim();
     if (!prompt) {
-      alert('Escribe una descripción del modelo que deseas generar.');
+      showStudioToast('⚠️ Escribe una descripción del modelo que deseas generar.', true);
+      aiPromptInput?.focus();
       return;
     }
+
+    isGeneratingAI = true;
 
     if (generateAiBtn) {
       generateAiBtn.disabled = true;
@@ -2575,7 +2581,36 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     } catch (err: any) {
       if (aiLoadingStatus) {
         aiLoadingStatus.className = 'ai-status-indicator status-error';
-        aiLoadingStatus.textContent = `⚠️ Error al generar: ${err.message}`;
+        aiLoadingStatus.innerHTML = '';
+        const msgSpan = document.createElement('div');
+        msgSpan.textContent = `⚠️ Error al generar: ${err.message}`;
+        aiLoadingStatus.appendChild(msgSpan);
+
+        const actionsRow = document.createElement('div');
+        actionsRow.style.cssText = 'display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;';
+
+        const retryBtn = document.createElement('button');
+        retryBtn.type = 'button';
+        retryBtn.className = 'btn-mini';
+        retryBtn.textContent = '🔄 REINTENTAR';
+        retryBtn.addEventListener('click', () => triggerAIGeneration(prompt));
+        actionsRow.appendChild(retryBtn);
+
+        if (currentEngine === 'ai') {
+          const fallbackBtn = document.createElement('button');
+          fallbackBtn.type = 'button';
+          fallbackBtn.className = 'btn-mini';
+          fallbackBtn.style.borderColor = 'var(--ps1-cyan)';
+          fallbackBtn.style.color = 'var(--ps1-cyan)';
+          fallbackBtn.textContent = '🤖 GENERAR CON MOTOR PROCEDURAL LOCAL';
+          fallbackBtn.addEventListener('click', () => {
+            setEngineMode('local');
+            triggerAIGeneration(prompt);
+          });
+          actionsRow.appendChild(fallbackBtn);
+        }
+
+        aiLoadingStatus.appendChild(actionsRow);
       }
       if (err.message && err.message.includes('🔑 CONECTAR GEMINI')) {
         if (geminiKeyDrawer) geminiKeyDrawer.style.display = 'block';
@@ -2585,6 +2620,7 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
         viewport.displayError(err.message, `GEN-ERR`, generationCounter, 'ai');
       }
     } finally {
+      isGeneratingAI = false;
       if (generateAiBtn) {
         generateAiBtn.disabled = false;
         generateAiBtn.textContent = '⚡ GENERAR GEOMETRÍA';
@@ -2609,12 +2645,12 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     if (key) {
       localStorage.setItem('modelcoder_gemini_key', key);
       setEngineMode('ai');
-      alert('¡Clave de Google Gemini guardada exitosamente! El modo [⚡ IA GENERATIVA] está ahora activo.');
+      showStudioToast('🔑 Clave de Google Gemini guardada. Modo [⚡ IA GENERATIVA] activo.');
       if (geminiKeyDrawer) geminiKeyDrawer.style.display = 'none';
     } else {
       localStorage.removeItem('modelcoder_gemini_key');
       setEngineMode('local');
-      alert('Clave eliminada. El estudio ha cambiado al [🤖 MOTOR PROCEDURAL LOCAL].');
+      showStudioToast('🤖 Clave eliminada. Modo [MOTOR PROCEDURAL LOCAL] activo.');
     }
   });
 
@@ -2722,17 +2758,19 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     if (!viewport) return;
     const rootObj = viewport.getVisibleObject();
     if (!rootObj) {
-      alert('No hay ninguna geometría visible para exportar.');
+      showStudioToast('⚠️ No hay ninguna geometría visible para exportar.', true);
       return;
     }
 
     exportGlbBtn.textContent = '⏳ VERIFICANDO GLB...';
     try {
       const filename = currentSpec.name.toLowerCase().replace(/[^a-z0-9]/g, '_') || 'modelcoder_asset';
-      const result = await GLBExporterService.exportAndVerifyGLB(rootObj, filename);
-      alert(`✅ [ EXPORTACIÓN VERIFICADA ]\nArchivo: ${filename}.glb\nTamaño: ${(result.sizeBytes / 1024).toFixed(1)} KB\nTriángulos: ${result.triangleCount}\nVértices: ${result.vertexCount}`);
+      const result = await viewport.executeWithOriginalMaterials((cleanRoot) =>
+        GLBExporterService.exportAndVerifyGLB(cleanRoot, filename)
+      );
+      showStudioToast(`✅ Exportado: ${filename}.glb (${(result.sizeBytes / 1024).toFixed(1)} KB · ${result.triangleCount} tris)`);
     } catch (err: any) {
-      alert(`⚠️ Fallo de exportación: ${err.message}`);
+      showStudioToast(`⚠️ Fallo de exportación: ${err.message}`, true);
     } finally {
       exportGlbBtn.textContent = '💾 EXPORTAR GLB';
     }
@@ -2754,12 +2792,15 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
       folder.file('README.md', `# ${currentSpec.name}\n\nGenerador procedural de ModelCoder Studio.\n`);
 
       const content = await zip.generateAsync({ type: 'blob' });
+      const zipUrl = URL.createObjectURL(content);
       const a = document.createElement('a');
-      a.href = URL.createObjectURL(content);
+      a.href = zipUrl;
       a.download = `${familyName}_generator_package.zip`;
       a.click();
+      setTimeout(() => URL.revokeObjectURL(zipUrl), 1500);
+      showStudioToast(`📦 Paquete descargado: ${familyName}_generator_package.zip`);
     } catch (e: any) {
-      alert(`Error al generar ZIP: ${e.message}`);
+      showStudioToast(`⚠️ Error al generar ZIP: ${e.message}`, true);
     } finally {
       exportZipBtn.textContent = '📦 PAQUETE (.ZIP)';
     }
@@ -2875,7 +2916,8 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     const description = directUploadDesc?.value.trim() || currentSpec.description || `Modelo procedural ${modelName}`;
 
     if (!modelName) {
-      alert('Por favor ingresa un nombre para el modelo.');
+      showStudioToast('⚠️ Por favor ingresa un nombre para el modelo.', true);
+      directUploadName?.focus();
       return;
     }
 
@@ -2889,8 +2931,8 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
 
     try {
       const rootObj = viewport?.getVisibleObject();
-      const glbBuffer = rootObj
-        ? await GLBExporterService.exportToArrayBuffer(rootObj)
+      const glbBuffer = (viewport && rootObj)
+        ? await viewport.executeWithOriginalMaterials((cleanRoot) => GLBExporterService.exportToArrayBuffer(cleanRoot))
         : await GLBExporterService.exportSpec(currentSpec);
       const blob = new Blob([glbBuffer], { type: 'model/gltf-binary' });
       const reader = new FileReader();

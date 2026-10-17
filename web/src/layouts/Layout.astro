@@ -362,8 +362,18 @@ import '../styles/global.css';
         deleteProjectDraft,
         deleteCollection,
         toggleFavorite,
-        saveCollection
+        saveCollection,
+        toggleModelInCollection
       } from '../lib/user-inventory';
+
+      function escapeHtml(str: unknown): string {
+        return String(str ?? '')
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+      }
 
       // Sincronizar contador global de modelos en el encabezado
       async function syncHeaderModelCount() {
@@ -592,35 +602,40 @@ import '../styles/global.css';
           item.style.border = '1px solid var(--ps1-steel)';
           const dStr = new Date(draft.updated_at).toLocaleString();
 
+          const safeName = escapeHtml(draft.name);
+          const safeCat = escapeHtml(draft.category);
+          const safeDesc = escapeHtml(draft.description || 'Sin notas.');
+          const safeId = escapeHtml(draft.id);
+
           item.innerHTML = `
             <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
               <div style="width: 64px; height: 64px; background: #060911; border: 1px solid var(--ps1-steel); display: flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden;">
                 ${draft.thumbnail
-                  ? `<img src="${draft.thumbnail}" alt="${draft.name}" style="width: 100%; height: 100%; object-fit: contain;" />`
+                  ? `<img src="${escapeHtml(draft.thumbnail)}" alt="${safeName}" style="width: 100%; height: 100%; object-fit: contain;" />`
                   : `<span style="font-size: 1.5rem;">📦</span>`
                 }
               </div>
               <div style="flex-grow: 1; min-width: 180px;">
                 <div style="display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.2rem; flex-wrap: wrap;">
-                  <strong style="font-family: var(--font-pixel); font-size: 0.78rem; color: var(--ps1-gold);">${draft.name}</strong>
-                  <span class="category-badge category-${draft.category}" style="font-size: 0.65rem;">${draft.category}</span>
+                  <strong style="font-family: var(--font-pixel); font-size: 0.78rem; color: var(--ps1-gold);">${safeName}</strong>
+                  <span class="category-badge category-${safeCat}" style="font-size: 0.65rem;">${safeCat}</span>
                 </div>
                 <p style="font-size: 0.72rem; color: var(--text-dim); margin: 0 0 0.3rem 0;">
-                  ${draft.description || 'Sin notas.'}
+                  ${safeDesc}
                 </p>
                 <div style="font-size: 0.68rem; color: var(--ps1-cyan); display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                  <span>📐 ${draft.components_count} piezas</span>
+                  <span>📐 ${Number(draft.components_count) || 0} piezas</span>
                   <span>&bull;</span>
-                  <span>🔺 ~${draft.tri_count} tris</span>
+                  <span>🔺 ~${Number(draft.tri_count) || 0} tris</span>
                   <span>&bull;</span>
-                  <span style="color: var(--text-dim);">🕒 ${dStr}</span>
+                  <span style="color: var(--text-dim);">🕒 ${escapeHtml(dStr)}</span>
                 </div>
               </div>
               <div style="display: flex; gap: 0.35rem; align-items: center;">
-                <a href="/studio?draft=${draft.id}" class="btn-mini btn-gold" style="text-decoration: none;">
+                <a href="/studio?draft=${encodeURIComponent(draft.id)}" class="btn-mini btn-gold" style="text-decoration: none;">
                   ⚡ RETOMAR EN STUDIO
                 </a>
-                <button type="button" class="btn-mini btn-danger btn-del-inv-draft" data-id="${draft.id}" title="Eliminar borrador">
+                <button type="button" class="btn-mini btn-danger btn-del-inv-draft" data-id="${safeId}" title="Eliminar borrador">
                   🗑️
                 </button>
               </div>
@@ -668,23 +683,26 @@ import '../styles/global.css';
           item.style.background = '#090e1c';
           item.style.border = '1px solid var(--ps1-steel)';
           const dStr = new Date(fav.added_at).toLocaleDateString();
+          const safeFavName = escapeHtml(fav.name);
+          const safeFavCat = escapeHtml(fav.category);
+          const safeFavId = escapeHtml(fav.id);
 
           item.innerHTML = `
             <div style="display: flex; gap: 0.75rem; align-items: center; justify-content: space-between; flex-wrap: wrap;">
               <div>
                 <div style="display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.2rem; flex-wrap: wrap;">
                   <span style="color: var(--ps1-gold);">⭐</span>
-                  <strong style="font-family: var(--font-pixel); font-size: 0.8rem; color: var(--ps1-gold);">${fav.name}</strong>
-                  <span class="category-badge category-${fav.category}" style="font-size: 0.65rem;">${fav.category}</span>
-                  <span class="ps1-telemetry-tag" style="font-size: 0.65rem;">${fav.type.toUpperCase()}</span>
+                  <strong style="font-family: var(--font-pixel); font-size: 0.8rem; color: var(--ps1-gold);">${safeFavName}</strong>
+                  <span class="category-badge category-${safeFavCat}" style="font-size: 0.65rem;">${safeFavCat}</span>
+                  <span class="ps1-telemetry-tag" style="font-size: 0.65rem;">${escapeHtml(fav.type.toUpperCase())}</span>
                 </div>
-                <span style="font-size: 0.7rem; color: var(--text-dim);">Agregado: ${dStr}</span>
+                <span style="font-size: 0.7rem; color: var(--text-dim);">Agregado: ${escapeHtml(dStr)}</span>
               </div>
               <div style="display: flex; gap: 0.4rem; align-items: center;">
-                <a href="${fav.type === 'catalog' ? `/generators/${fav.id}` : '/studio'}" class="btn-mini btn-cyan" style="text-decoration: none;">
+                <a href="${fav.type === 'catalog' ? `/generators/${encodeURIComponent(fav.id)}` : '/studio'}" class="btn-mini btn-cyan" style="text-decoration: none;">
                   👁️ VER EN 3D
                 </a>
-                <button type="button" class="btn-mini btn-outline btn-del-inv-fav" data-id="${fav.id}" title="Quitar de favoritos">
+                <button type="button" class="btn-mini btn-outline btn-del-inv-fav" data-id="${safeFavId}" title="Quitar de favoritos">
                   ✕ QUITAR
                 </button>
               </div>
@@ -734,25 +752,39 @@ import '../styles/global.css';
           item.style.border = '1px solid var(--ps1-steel)';
 
           const modelIds = Array.isArray(coll.model_ids) ? coll.model_ids : [];
+          const safeCollId = escapeHtml(coll.id);
+          const safeCollName = escapeHtml(coll.name);
+          const safeCollDesc = escapeHtml(coll.description || 'Colección personalizada de modelos procedurales.');
+
           item.innerHTML = `
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem; flex-wrap: wrap; gap: 0.4rem;">
               <div style="display: flex; align-items: center; gap: 0.5rem;">
                 <span style="font-size: 1.1rem;">🗂️</span>
-                <strong style="font-family: var(--font-pixel); font-size: 0.82rem; color: var(--ps1-cyan);">${coll.name}</strong>
+                <strong style="font-family: var(--font-pixel); font-size: 0.82rem; color: var(--ps1-cyan);">${safeCollName}</strong>
                 <span class="ps1-telemetry-tag" style="font-size: 0.65rem;">${modelIds.length} MODELOS</span>
               </div>
-              <button type="button" class="btn-mini btn-danger btn-del-coll" data-id="${coll.id}" title="Eliminar colección">
+              <button type="button" class="btn-mini btn-danger btn-del-coll" data-id="${safeCollId}" title="Eliminar colección">
                 🗑️ ELIMINAR
               </button>
             </div>
             <p style="font-size: 0.74rem; color: var(--text-dim); margin: 0 0 0.5rem 0;">
-              ${coll.description || 'Colección personalizada de modelos procedurales.'}
+              ${safeCollDesc}
             </p>
             ${modelIds.length > 0 ? `
-              <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
-                ${modelIds.map(id => `<span class="ps1-telemetry-tag" style="font-size: 0.68rem; background: #060911;">#${id}</span>`).join('')}
+              <div style="display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 0.5rem;">
+                ${modelIds.map(id => {
+                  const safeMid = escapeHtml(id);
+                  return `<span class="ps1-telemetry-tag" style="font-size: 0.68rem; background: #060911; display: inline-flex; align-items: center; gap: 0.35rem; padding: 2px 6px;">
+                    <a href="/generators/${encodeURIComponent(id)}" style="color: var(--ps1-cyan); text-decoration: none;" title="Abrir modelo #${safeMid}">#${safeMid}</a>
+                    <button type="button" class="btn-remove-coll-model" data-coll-id="${safeCollId}" data-model-id="${safeMid}" title="Quitar #${safeMid} de la colección" style="background:none; border:none; color:var(--ps1-red); cursor:pointer; font-size:0.68rem; padding:0; line-height:1;">✕</button>
+                  </span>`;
+                }).join('')}
               </div>
-            ` : `<span style="font-size: 0.7rem; color: var(--text-dim); font-style: italic;">Colección vacía.</span>`}
+            ` : `<div style="font-size: 0.7rem; color: var(--text-dim); font-style: italic; margin-bottom: 0.5rem;">Colección vacía. Añade modelos desde la vista de cualquier generador o escribe su ID aquí abajo:</div>`}
+            <div style="display: flex; gap: 0.35rem; align-items: center; margin-top: 0.35rem;">
+              <input type="text" class="ps1-input input-add-coll-model" data-coll-id="${safeCollId}" placeholder="Añadir ID de modelo (ej. crate, arcade_cabinet)..." style="font-size: 0.7rem; padding: 0.25rem 0.45rem; flex: 1;" />
+              <button type="button" class="btn-mini btn-cyan btn-add-coll-model" data-coll-id="${safeCollId}">+ AÑADIR</button>
+            </div>
           `;
           invCollectionsList.appendChild(item);
         });
@@ -766,6 +798,36 @@ import '../styles/global.css';
               updateInventoryBadgeCounts();
               renderInvCollections();
             }
+          });
+        });
+
+        invCollectionsList.querySelectorAll('.btn-remove-coll-model').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            const el = e.currentTarget as HTMLElement;
+            const collId = el.dataset.collId;
+            const modelId = el.dataset.modelId;
+            if (!collId || !modelId) return;
+            toggleModelInCollection(collId, modelId);
+            updateInventoryBadgeCounts();
+            renderInvCollections();
+          });
+        });
+
+        invCollectionsList.querySelectorAll('.btn-add-coll-model').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            const el = e.currentTarget as HTMLElement;
+            const collId = el.dataset.collId;
+            if (!collId) return;
+            const input = invCollectionsList.querySelector(`.input-add-coll-model[data-coll-id="${collId}"]`) as HTMLInputElement | null;
+            const rawId = input?.value?.trim().toLowerCase().replace(/^#/, '');
+            if (!rawId) {
+              input?.focus();
+              return;
+            }
+            toggleModelInCollection(collId, rawId);
+            if (input) input.value = '';
+            updateInventoryBadgeCounts();
+            renderInvCollections();
           });
         });
       }
@@ -807,6 +869,18 @@ import '../styles/global.css';
         if (e.target === invModal) closeInventoryModal();
       });
 
+      // Global Escape key listener to close Auth and Inventory modals
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          if (invModal && !invModal.classList.contains('hidden')) {
+            closeInventoryModal();
+          }
+          if (authModal && !authModal.classList.contains('hidden')) {
+            closeModal();
+          }
+        }
+      });
+
       invTabBtns.forEach(btn => {
         btn.addEventListener('click', () => {
           invTabBtns.forEach(b => b.classList.remove('active'));
@@ -842,9 +916,14 @@ import '../styles/global.css';
         const name = inputNewCollName?.value?.trim();
         const desc = inputNewCollDesc?.value?.trim() || '';
         if (!name) {
-          alert('Por favor introduce un nombre para la colección.');
+          if (inputNewCollName) {
+            inputNewCollName.style.borderColor = 'var(--ps1-red)';
+            inputNewCollName.placeholder = '⚠️ Escribe un nombre para la colección...';
+            inputNewCollName.focus();
+          }
           return;
         }
+        if (inputNewCollName) inputNewCollName.style.borderColor = '';
         saveCollection({ name, description: desc });
         if (inputNewCollName) inputNewCollName.value = '';
         if (inputNewCollDesc) inputNewCollDesc.value = '';

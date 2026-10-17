@@ -98,15 +98,27 @@ export function saveProjectDraft(
   };
 
   if (arg1 && 'components' in arg1) {
-    // Positional parameters call: saveProjectDraft(spec, name, category, description, thumbnail, tri_count)
-    draftData = {
-      spec: arg1,
-      name: nameArg || arg1.name || 'Proyecto Sin Nombre',
-      category: categoryArg || arg1.category || 'furniture',
-      description: descriptionArg || arg1.description || 'Modelo procedural en desarrollo.',
-      thumbnail: thumbnailArg,
-      tri_count: triCountArg,
-    };
+    if (typeof nameArg === 'string' && nameArg.startsWith('data:image/')) {
+      // Shorthand positional call: saveProjectDraft(spec, thumbnailDataUrl, existingId)
+      draftData = {
+        id: categoryArg,
+        spec: arg1,
+        name: arg1.name || 'Proyecto Sin Nombre',
+        category: arg1.category || 'furniture',
+        description: arg1.description || 'Modelo procedural en desarrollo.',
+        thumbnail: nameArg,
+      };
+    } else {
+      // Positional parameters call from studio.astro: saveProjectDraft(spec, name, category, description, thumbnail, tri_count)
+      draftData = {
+        spec: arg1,
+        name: nameArg || arg1.name || 'Proyecto Sin Nombre',
+        category: categoryArg || arg1.category || 'furniture',
+        description: descriptionArg || arg1.description || 'Modelo procedural en desarrollo.',
+        thumbnail: thumbnailArg,
+        tri_count: triCountArg,
+      };
+    }
   } else {
     const obj = arg1 as any;
     draftData = {

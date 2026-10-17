@@ -167,7 +167,8 @@ header.site-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
+  flex-wrap: wrap;
+  gap: 0.75rem 1rem;
 }
 
 .brand-logo {
@@ -261,18 +262,20 @@ header.site-header {
 .nav-links {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  flex-wrap: wrap;
+  gap: 0.55rem;
   font-family: var(--font-pixel);
-  font-size: 0.75rem;
+  font-size: 0.73rem;
 }
 
 .nav-link {
   color: #ffffff;
   background: #192030;
   border: 2px outset var(--ps1-steel-light);
-  padding: 0.35rem 0.7rem;
+  padding: 0.32rem 0.62rem;
   text-decoration: none;
   box-shadow: 1px 1px 0px #000;
+  white-space: nowrap;
 }
 
 .nav-link:hover, .nav-link.active {
@@ -282,6 +285,11 @@ header.site-header {
   text-decoration: none;
 }
 
+.nav-link:focus-visible, .btn:focus-visible, button:focus-visible, a:focus-visible {
+  outline: 2px solid var(--ps1-cyan);
+  outline-offset: 2px;
+}
+
 .nav-link:active {
   border-style: inset;
   transform: translate(1px, 1px);
@@ -289,6 +297,26 @@ header.site-header {
 
 .nav-link-gh {
   color: var(--ps1-cyan);
+}
+
+@media (max-width: 1080px) {
+  .system-status-indicator {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .header-container {
+    justify-content: center;
+  }
+  .nav-links {
+    justify-content: center;
+    gap: 0.4rem;
+    font-size: 0.68rem;
+  }
+  .nav-link {
+    padding: 0.28rem 0.5rem;
+  }
 }
 
 /* ==========================================================================
