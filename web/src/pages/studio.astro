@@ -2434,17 +2434,24 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
 
         if (isTransp) {
           comp.transparent = true;
-          if (comp.opacity === undefined || comp.opacity >= 1.0) {
-            comp.opacity = defOpacity;
-          }
+          comp.opacity = defOpacity;
           if (chkTransparent) chkTransparent.checked = true;
-          if (inpOpacity && comp.opacity !== undefined) inpOpacity.value = String(comp.opacity);
-          if (dispOpacity && comp.opacity !== undefined) dispOpacity.textContent = comp.opacity.toFixed(2);
+          if (inpOpacity) inpOpacity.value = String(comp.opacity);
+          if (dispOpacity) dispOpacity.textContent = comp.opacity.toFixed(2);
+        } else {
+          // Reset transparency when switching from glass/hologram to an opaque material
+          comp.transparent = false;
+          comp.opacity = 1.0;
+          if (chkTransparent) chkTransparent.checked = false;
+          if (inpOpacity) inpOpacity.value = '1.0';
+          if (dispOpacity) dispOpacity.textContent = '1.00';
         }
 
-        // Update roughness & metalness sliders to reflect selected material's physics defaults
+        // Update roughness, metalness & normalStrength sliders to reflect selected material's physics defaults
         const targetRoughness = variant?.roughness ?? profile?.roughness;
         const targetMetalness = variant?.metalness ?? profile?.metalness;
+        const targetNormal = profile?.normalStrength ?? 0.55;
+
         if (targetRoughness !== undefined) {
           comp.roughness = targetRoughness;
           const inpR = document.getElementById('inp-roughness') as HTMLInputElement | null;
@@ -2459,15 +2466,25 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
           if (inpM) inpM.value = String(targetMetalness);
           if (dispM) dispM.textContent = String(targetMetalness);
         }
-        if (variant?.wear !== undefined) {
-          comp.wear = variant.wear;
-          const inpW = document.getElementById('inp-mat-wear') as HTMLInputElement | null;
-          const dispW = document.getElementById('disp-mat-wear');
-          if (inpW) inpW.value = String(variant.wear);
-          if (dispW) dispW.textContent = `${Math.round(variant.wear * 100)}%`;
-        }
+        comp.normalStrength = targetNormal;
+        const inpN = document.getElementById('inp-mat-normal') as HTMLInputElement | null;
+        const dispN = document.getElementById('disp-mat-normal');
+        if (inpN) inpN.value = String(targetNormal);
+        if (dispN) dispN.textContent = targetNormal.toFixed(2);
+
+        const targetWear = variant?.wear ?? 0;
+        comp.wear = targetWear;
+        const inpW = document.getElementById('inp-mat-wear') as HTMLInputElement | null;
+        const dispW = document.getElementById('disp-mat-wear');
+        if (inpW) inpW.value = String(targetWear);
+        if (dispW) dispW.textContent = `${Math.round(targetWear * 100)}%`;
       } else {
         delete comp.texturePreset;
+        comp.transparent = false;
+        comp.opacity = 1.0;
+        if (chkTransparent) chkTransparent.checked = false;
+        if (inpOpacity) inpOpacity.value = '1.0';
+        if (dispOpacity) dispOpacity.textContent = '1.00';
       }
 
       if (selTexturePreset && selTexturePreset.value !== val) {
