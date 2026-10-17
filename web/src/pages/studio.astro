@@ -741,7 +741,10 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
         <div style="display: flex; align-items: center; gap: 0.5rem; flex-grow: 1; max-width: 360px;">
           <input type="text" id="filter-projects-input" class="ps1-input" placeholder="🔍 Filtrar proyectos por nombre..." style="width: 100%; font-size: 0.8rem;" />
         </div>
-        <div style="display: flex; gap: 0.5rem;">
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+          <button id="btn-studio-switch-inv" type="button" class="btn btn-cyan" style="font-size: 0.75rem;">
+            🎒 VER INVENTARIO COMPLETO
+          </button>
           <label class="btn btn-outline" style="cursor: pointer; margin: 0; font-size: 0.75rem;">
             📂 IMPORTAR JSON
             <input type="file" id="input-import-project-json" accept=".json" style="display: none;" />
@@ -3267,6 +3270,11 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     }
   });
 
+  document.getElementById('btn-studio-switch-inv')?.addEventListener('click', () => {
+    modalMyProjects?.close();
+    document.getElementById('btn-open-global-inventory')?.click();
+  });
+
   btnAutodraftDiscard?.addEventListener('click', () => {
     clearAutoDraft();
     if (autoDraftBanner) autoDraftBanner.style.display = 'none';
@@ -3278,6 +3286,8 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     const loadedDraft = getProjectDraft(draftIdParam);
     if (loadedDraft && loadedDraft.spec) {
       currentSpec = JSON.parse(JSON.stringify(loadedDraft.spec));
+      pushHistoryState(currentSpec);
+      renderCurrentSpec('visual', false);
       showStudioToast(`⚡ Retomando proyecto: ${loadedDraft.name}`);
     }
   }

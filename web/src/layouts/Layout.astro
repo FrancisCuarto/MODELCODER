@@ -165,6 +165,7 @@ import '../styles/global.css';
           <!-- Mensaje de estado dinámico -->
           <div id="auth-status-msg" class="auth-status-box hidden"></div>
         </div>
+      </div>
     </div>
 
     <!-- Modal Retro PS1 de Mi Inventario, Favoritos y Colecciones -->
@@ -732,12 +733,13 @@ import '../styles/global.css';
           item.style.background = '#090e1c';
           item.style.border = '1px solid var(--ps1-steel)';
 
+          const modelIds = Array.isArray(coll.model_ids) ? coll.model_ids : [];
           item.innerHTML = `
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem; flex-wrap: wrap; gap: 0.4rem;">
               <div style="display: flex; align-items: center; gap: 0.5rem;">
                 <span style="font-size: 1.1rem;">🗂️</span>
                 <strong style="font-family: var(--font-pixel); font-size: 0.82rem; color: var(--ps1-cyan);">${coll.name}</strong>
-                <span class="ps1-telemetry-tag" style="font-size: 0.65rem;">${coll.models.length} MODELOS</span>
+                <span class="ps1-telemetry-tag" style="font-size: 0.65rem;">${modelIds.length} MODELOS</span>
               </div>
               <button type="button" class="btn-mini btn-danger btn-del-coll" data-id="${coll.id}" title="Eliminar colección">
                 🗑️ ELIMINAR
@@ -746,9 +748,9 @@ import '../styles/global.css';
             <p style="font-size: 0.74rem; color: var(--text-dim); margin: 0 0 0.5rem 0;">
               ${coll.description || 'Colección personalizada de modelos procedurales.'}
             </p>
-            ${coll.models.length > 0 ? `
+            ${modelIds.length > 0 ? `
               <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
-                ${coll.models.map(m => `<span class="ps1-telemetry-tag" style="font-size: 0.68rem; background: #060911;">${m.name}</span>`).join('')}
+                ${modelIds.map(id => `<span class="ps1-telemetry-tag" style="font-size: 0.68rem; background: #060911;">#${id}</span>`).join('')}
               </div>
             ` : `<span style="font-size: 0.7rem; color: var(--text-dim); font-style: italic;">Colección vacía.</span>`}
           `;
@@ -1039,7 +1041,7 @@ import '../styles/global.css';
         display: flex;
         align-items: center;
         justify-content: center;
-        z-index: 10000;
+        z-index: 100000;
         padding: 1rem;
       }
 
