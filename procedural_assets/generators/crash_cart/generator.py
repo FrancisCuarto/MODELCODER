@@ -484,10 +484,24 @@ class CrashCartGenerator(BaseAssetGenerator[CrashCartConfig]):
                 )
 
         # -------------------------------------------------------------------------
-        # Finalize BMesh and Validate
+        # Finalize BMesh and Align Orientation (Z-up in Blender)
         # -------------------------------------------------------------------------
+        bmesh.ops.rotate(
+            bm,
+            cent=(0.0, 0.0, 0.0),
+            matrix=mathutils.Matrix.Rotation(math.radians(90.0), 3, 'X'),
+            verts=bm.verts
+        )
+        min_z = min(v.co.z for v in bm.verts)
+        bmesh.ops.translate(
+            bm,
+            vec=(0.0, 0.0, -min_z),
+            verts=bm.verts
+        )
+
         bm.to_mesh(mesh)
         bm.free()
 
         self.last_generated_object = obj
         return obj
+

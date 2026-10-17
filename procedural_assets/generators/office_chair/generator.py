@@ -352,7 +352,21 @@ class OfficeChairGenerator(BaseAssetGenerator[OfficeChairConfig]):
                         uv_rect=vinyl_rect
                     )
 
+        bmesh.ops.rotate(
+            bm,
+            cent=(0.0, 0.0, 0.0),
+            matrix=mathutils.Matrix.Rotation(math.radians(90.0), 3, 'X'),
+            verts=bm.verts
+        )
+        min_z = min(v.co.z for v in bm.verts)
+        bmesh.ops.translate(
+            bm,
+            vec=(0.0, 0.0, -min_z),
+            verts=bm.verts
+        )
+
         bm.to_mesh(mesh)
         bm.free()
         mesh.update()
         return obj
+
