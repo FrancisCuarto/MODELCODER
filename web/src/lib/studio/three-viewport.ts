@@ -39,6 +39,7 @@ export class StudioViewport {
   private onStatsUpdate?: (stats: GeometricStats | null, result: GenerationResult | null) => void;
   private onComponentSelected?: (index: number | null) => void;
   private onComponentTransformChange?: (index: number, pos: [number, number, number], rot: [number, number, number], scale: [number, number, number]) => void;
+  private resizeObserver: ResizeObserver | null = null;
 
   constructor(
     container: HTMLElement,
@@ -56,7 +57,10 @@ export class StudioViewport {
     this.scene.background = new THREE.Color(0x0a0d14);
 
     // 2. Camera setup
-    const aspect = container.clientWidth / (container.clientHeight || 1);
+    const initialParent = container.parentElement || container;
+    const initialWidth = initialParent.clientWidth || container.clientWidth || 800;
+    const initialHeight = initialParent.clientHeight || container.clientHeight || 520;
+    const aspect = initialWidth / (initialHeight || 1);
     this.camera = new THREE.PerspectiveCamera(45, aspect, 0.05, 100);
     this.camera.position.set(2.2, 1.8, 2.8);
 
@@ -66,7 +70,7 @@ export class StudioViewport {
       powerPreference: 'high-performance',
       preserveDrawingBuffer: true
     });
-    this.renderer.setSize(container.clientWidth, container.clientHeight);
+    this.renderer.setSize(initialWidth, initialHeight);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -195,13 +199,24 @@ export class StudioViewport {
 
     // 10. Event listeners & Render loop
     window.addEventListener('resize', this.handleResize);
+
+    // Auto-observe container/parent surface for layout, tab, and fullscreen transitions
+    const targetObserved = this.container.parentElement || this.container;
+    if (typeof ResizeObserver !== 'undefined' && targetObserved) {
+      this.resizeObserver = new ResizeObserver(() => {
+        this.handleResize();
+      });
+      this.resizeObserver.observe(targetObserved);
+    }
+
     this.animate();
   }
 
   private handleResize = (): void => {
     if (!this.container || !this.renderer || !this.camera) return;
-    const width = this.container.clientWidth;
-    const height = this.container.clientHeight;
+    const parentEl = this.container.parentElement;
+    const width = (parentEl && parentEl.clientWidth > 0) ? parentEl.clientWidth : this.container.clientWidth;
+    const height = (parentEl && parentEl.clientHeight > 0) ? parentEl.clientHeight : this.container.clientHeight;
     if (width === 0 || height === 0) return;
 
     this.camera.aspect = width / height;
@@ -652,6 +667,10 @@ export class StudioViewport {
 
   public destroy(): void {
     window.removeEventListener('resize', this.handleResize);
+    if (this.resizeObserver) {
+      this.resizeObserver.disconnect();
+      this.resizeObserver = null;
+    }
     this.transformControls.dispose();
     this.selectionBox.dispose();
     if (this.currentMesh) {

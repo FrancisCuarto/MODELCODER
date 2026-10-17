@@ -1058,7 +1058,6 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
       activeMode = 'visual';
       document.getElementById('outliner-mode-container')?.classList.add('active');
       studioWorkspace?.classList.add('mode-visual-active');
-      if (visualInspectorContainer) visualInspectorContainer.style.display = 'block';
       if (quickAdjustWindow) quickAdjustWindow.style.display = 'none';
       if (viewport) {
         viewport.setGizmoMode('translate');
@@ -1068,7 +1067,6 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
       activeMode = 'visual';
       document.getElementById('outliner-mode-container')?.classList.add('active');
       studioWorkspace?.classList.add('mode-visual-active');
-      if (visualInspectorContainer) visualInspectorContainer.style.display = 'block';
       if (quickAdjustWindow) quickAdjustWindow.style.display = 'none';
       if (viewport) {
         viewport.setGizmoMode('translate');
@@ -1077,7 +1075,6 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     } else if (ws === 'shading') {
       activeMode = 'visual';
       studioWorkspace?.classList.add('mode-visual-active');
-      if (visualInspectorContainer) visualInspectorContainer.style.display = 'block';
       if (quickAdjustWindow) quickAdjustWindow.style.display = 'none';
       if (viewport) {
         viewport.setGizmoMode('none');
@@ -1085,7 +1082,6 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
       }
     } else if (ws === 'render') {
       activeMode = 'visual';
-      if (visualInspectorContainer) visualInspectorContainer.style.display = 'none';
       if (quickAdjustWindow) quickAdjustWindow.style.display = 'none';
       if (viewport) {
         viewport.setGizmoMode('none');
@@ -1094,23 +1090,29 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     } else if (ws === 'code') {
       activeMode = 'code';
       document.getElementById('code-mode-container')?.classList.add('active');
-      if (visualInspectorContainer) visualInspectorContainer.style.display = 'none';
       if (quickAdjustWindow) quickAdjustWindow.style.display = 'none';
       if (viewport) viewport.setGizmoMode('none');
       syncEditorFromSpec();
     } else if (ws === 'ai') {
       activeMode = 'ai';
       document.getElementById('ai-mode-container')?.classList.add('active');
-      if (visualInspectorContainer) visualInspectorContainer.style.display = 'none';
       if (quickAdjustWindow) quickAdjustWindow.style.display = 'block';
       if (viewport) viewport.setGizmoMode('none');
     }
 
-    // Force Three.js viewport resize
-    setTimeout(() => {
+    // Reset inline display style so CSS classes control visibility cleanly
+    if (visualInspectorContainer) {
+      visualInspectorContainer.style.display = '';
+    }
+
+    // Force Three.js viewport resize immediately and on next paint frame
+    requestAnimationFrame(() => {
       window.dispatchEvent(new Event('resize'));
       if (viewport) viewport.resize();
-    }, 60);
+    });
+    setTimeout(() => {
+      if (viewport) viewport.resize();
+    }, 50);
   }
 
   // Backward-compatible alias
@@ -2957,7 +2959,6 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     grid-template-columns: 1fr 1fr;
     gap: 0.75rem;
     min-height: 720px;
-    transition: all 0.2s ease;
   }
 
   /* 3-Column Responsive Grid in Visual 3D Mode */
@@ -2966,12 +2967,23 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
   .studio-workspace.workspace-modeling {
     grid-template-columns: 310px 1fr 350px;
   }
+  .studio-workspace.workspace-layout .creation-column,
+  .studio-workspace.workspace-modeling .creation-column {
+    display: flex !important;
+  }
+  .studio-workspace.workspace-layout .inspector-column,
+  .studio-workspace.workspace-modeling .inspector-column {
+    display: flex !important;
+  }
 
   .studio-workspace.workspace-shading {
     grid-template-columns: 1fr 360px !important;
   }
   .studio-workspace.workspace-shading .creation-column {
     display: none !important;
+  }
+  .studio-workspace.workspace-shading .inspector-column {
+    display: flex !important;
   }
 
   .studio-workspace.workspace-render {
@@ -2985,12 +2997,21 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
   .studio-workspace.workspace-code {
     grid-template-columns: 1fr 1fr !important;
   }
+  .studio-workspace.workspace-code .creation-column {
+    display: flex !important;
+  }
   .studio-workspace.workspace-code .inspector-column {
     display: none !important;
   }
 
   .studio-workspace.workspace-ai {
     grid-template-columns: 1fr 1fr !important;
+  }
+  .studio-workspace.workspace-ai .creation-column {
+    display: flex !important;
+  }
+  .studio-workspace.workspace-ai .inspector-column {
+    display: none !important;
   }
 
   /* Render Studio Floating Controls */
@@ -3106,14 +3127,19 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
   }
 
   @media (max-width: 1300px) {
-    .studio-workspace.mode-visual-active {
+    .studio-workspace.mode-visual-active,
+    .studio-workspace.workspace-layout,
+    .studio-workspace.workspace-modeling {
       grid-template-columns: 280px 1fr 320px;
     }
   }
 
   @media (max-width: 1024px) {
     .studio-workspace,
-    .studio-workspace.mode-visual-active {
+    .studio-workspace.mode-visual-active,
+    .studio-workspace.workspace-layout,
+    .studio-workspace.workspace-modeling,
+    .studio-workspace.workspace-shading {
       grid-template-columns: 1fr;
     }
   }
@@ -3382,9 +3408,20 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
   }
 
   .three-canvas-mount {
-    width: 100%;
-    height: 100%;
+    position: absolute;
+    inset: 0;
+    width: 100% !important;
+    height: 100% !important;
+    overflow: hidden !important;
     display: block;
+  }
+
+  .three-canvas-mount canvas {
+    display: block !important;
+    width: 100% !important;
+    height: 100% !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
   }
 
   .viewport-overlay-controls {
