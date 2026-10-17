@@ -399,7 +399,7 @@ import '../styles/global.css';
           if (userEmailText) userEmailText.textContent = user.email || '';
 
           // Verificar si es colaborador para mostrar el acceso directo
-          const { isCollaborator, role } = await checkUserRole(user.email);
+          const { isCollaborator, role } = await checkUserRole(user);
           if (navCollabLink) {
             navCollabLink.style.display = isCollaborator ? 'inline-flex' : 'none';
             if (role === 'owner') {

@@ -171,40 +171,91 @@ function saveLocalCommunityModels(list: CommunityModel[]) {
 }
 
 /**
- * Comprueba el rol del usuario actual por correo electrónico.
+ * Comprueba el rol del usuario actual por correo electrónico o identificador de GitHub.
  */
-export async function checkUserRole(email?: string): Promise<{ isCollaborator: boolean; role: 'owner' | 'admin' | 'collaborator' | null }> {
-  if (!email) return { isCollaborator: false, role: null };
-  const normalizedEmail = email.trim().toLowerCase();
+export async function checkUserRole(userOrEmail?: string | any): Promise<{ 
+  isCollaborator: boolean; 
+  role: 'owner' | 'admin' | 'collaborator' | null;
+  identifier: string;
+}> {
+  if (!userOrEmail) return { isCollaborator: false, role: null, identifier: '' };
 
-  // Comprobación de Dueño conocida (Franciscuarto / Admin)
-  if (normalizedEmail.includes('franciscuarto') || normalizedEmail.includes('ivorbitgames') || normalizedEmail.startsWith('admin@')) {
-    return { isCollaborator: true, role: 'owner' };
+  let email = '';
+  let githubUser = '';
+  let displayName = '';
+
+  if (typeof userOrEmail === 'string') {
+    email = userOrEmail.trim().toLowerCase();
+    if (email.startsWith('@')) {
+      githubUser = email.slice(1);
+    }
+  } else if (typeof userOrEmail === 'object') {
+    email = (userOrEmail.email || userOrEmail.user_metadata?.email || '').trim().toLowerCase();
+    githubUser = (
+      userOrEmail.user_metadata?.user_name || 
+      userOrEmail.user_metadata?.preferred_username || 
+      userOrEmail.identities?.[0]?.identity_data?.user_name || 
+      ''
+    ).trim().toLowerCase();
+    displayName = (
+      userOrEmail.user_metadata?.name || 
+      userOrEmail.user_metadata?.full_name || 
+      ''
+    ).trim().toLowerCase();
   }
 
+  const primaryIdentifier = githubUser ? `@${githubUser}` : email;
+
+  // 1. Detección automática del Creador / Dueño (Franciscuarto / IV Orbit Games)
+  // Reconoce si el usuario de GitHub es FrancisCuarto o si el email/nombre contiene franciscuarto/ivorbitgames
+  const isOwner = 
+    githubUser === 'franciscuarto' || 
+    githubUser.includes('franciscuarto') ||
+    email.includes('franciscuarto') || 
+    email.includes('ivorbitgames') || 
+    displayName.includes('franciscuarto') ||
+    email.startsWith('admin@');
+
+  if (isOwner) {
+    return { isCollaborator: true, role: 'owner', identifier: primaryIdentifier };
+  }
+
+  // 2. Consulta en base de datos Supabase
   const supabase = getSupabase();
   if (supabase) {
     try {
-      const { data, error } = await supabase
-        .from('collaborators')
-        .select('*')
-        .eq('email', normalizedEmail)
-        .maybeSingle();
+      let query = supabase.from('collaborators').select('*');
+      if (email && githubUser) {
+        query = query.or(`email.eq.${email},email.eq.${githubUser},email.eq.@${githubUser},name.ilike.%${githubUser}%`);
+      } else if (email) {
+        query = query.or(`email.eq.${email},email.eq.@${email}`);
+      } else if (githubUser) {
+        query = query.or(`email.eq.${githubUser},email.eq.@${githubUser},name.ilike.%${githubUser}%`);
+      }
 
+      const { data, error } = await query.maybeSingle();
       if (!error && data) {
-        return { isCollaborator: true, role: data.role as any };
+        return { isCollaborator: true, role: data.role as any, identifier: primaryIdentifier };
       }
     } catch {}
   }
 
-  // Respaldo en almacenamiento local
+  // 3. Respaldo en almacenamiento local
   const localList = getLocalCollaborators();
-  const match = localList.find((c) => c.email.toLowerCase() === normalizedEmail);
+  const match = localList.find((c) => {
+    const cEmail = c.email.toLowerCase();
+    const cName = (c.name || '').toLowerCase();
+    return (
+      (email && (cEmail === email || cEmail.includes(email))) ||
+      (githubUser && (cEmail === githubUser || cEmail === `@${githubUser}` || cName.includes(githubUser)))
+    );
+  });
+
   if (match) {
-    return { isCollaborator: true, role: match.role };
+    return { isCollaborator: true, role: match.role, identifier: primaryIdentifier };
   }
 
-  return { isCollaborator: false, role: null };
+  return { isCollaborator: false, role: null, identifier: primaryIdentifier };
 }
 
 /**

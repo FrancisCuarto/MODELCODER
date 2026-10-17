@@ -212,7 +212,8 @@ CREATE TABLE IF NOT EXISTS public.collaborators (
     email TEXT UNIQUE NOT NULL,
     name TEXT,
     role TEXT NOT NULL DEFAULT 'collaborator' CHECK (role IN ('owner', 'admin', 'collaborator')),
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE TABLE IF NOT EXISTS public.community_models (
@@ -227,19 +228,61 @@ CREATE TABLE IF NOT EXISTS public.community_models (
     author_email TEXT NOT NULL,
     is_public BOOLEAN NOT NULL DEFAULT true,
     glb_data TEXT,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 ALTER TABLE public.collaborators ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.community_models ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Permitir lectura publica de colaboradores" ON public.collaborators FOR SELECT USING (true);
-CREATE POLICY "Permitir gestion de colaboradores" ON public.collaborators FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Lectura de modelos publicos" ON public.community_models FOR SELECT USING (true);
-CREATE POLICY "Gestion de modelos" ON public.community_models FOR ALL USING (true) WITH CHECK (true);
+CREATE OR REPLACE FUNCTION public.is_owner_or_admin()
+RETURNS BOOLEAN AS $$
+BEGIN
+  RETURN (
+    lower(coalesce(auth.jwt() -> 'user_metadata' ->> 'user_name', '')) = 'franciscuarto'
+    OR lower(coalesce(auth.jwt() -> 'user_metadata' ->> 'preferred_username', '')) = 'franciscuarto'
+    OR lower(coalesce(auth.jwt() ->> 'email', '')) LIKE '%franciscuarto%'
+    OR lower(coalesce(auth.jwt() ->> 'email', '')) LIKE '%ivorbitgames%'
+    OR EXISTS (
+      SELECT 1 FROM public.collaborators
+      WHERE (
+        email = lower(auth.jwt() ->> 'email')
+        OR email = lower(coalesce(auth.jwt() -> 'user_metadata' ->> 'user_name', ''))
+        OR email = '@' || lower(coalesce(auth.jwt() -> 'user_metadata' ->> 'user_name', ''))
+      ) AND role IN ('owner', 'admin')
+    )
+  );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE OR REPLACE FUNCTION public.is_collaborator()
+RETURNS BOOLEAN AS $$
+BEGIN
+  RETURN (
+    public.is_owner_or_admin()
+    OR EXISTS (
+      SELECT 1 FROM public.collaborators
+      WHERE email = lower(auth.jwt() ->> 'email')
+         OR email = lower(coalesce(auth.jwt() -> 'user_metadata' ->> 'user_name', ''))
+         OR email = '@' || lower(coalesce(auth.jwt() -> 'user_metadata' ->> 'user_name', ''))
+    )
+  );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE POLICY "Lectura publica de colaboradores" ON public.collaborators FOR SELECT USING (true);
+CREATE POLICY "Gestion exclusiva de colaboradores para owner y admin" ON public.collaborators FOR ALL TO authenticated USING (public.is_owner_or_admin()) WITH CHECK (public.is_owner_or_admin());
+
+CREATE POLICY "Lectura de modelos publicos o privados de equipo" ON public.community_models FOR SELECT USING (is_public = true OR public.is_collaborator());
+CREATE POLICY "Publicacion exclusiva de colaboradores" ON public.community_models FOR INSERT TO authenticated WITH CHECK (public.is_collaborator());
+CREATE POLICY "Edicion de modelos" ON public.community_models FOR UPDATE TO authenticated USING (public.is_owner_or_admin() OR author_email = (auth.jwt() ->> 'email') OR author_name ILIKE ('%' || coalesce(auth.jwt() -> 'user_metadata' ->> 'user_name', 'xyz') || '%'));
+CREATE POLICY "Eliminacion de modelos" ON public.community_models FOR DELETE TO authenticated USING (public.is_owner_or_admin() OR author_email = (auth.jwt() ->> 'email') OR author_name ILIKE ('%' || coalesce(auth.jwt() -> 'user_metadata' ->> 'user_name', 'xyz') || '%'));
 
 INSERT INTO public.collaborators (email, name, role)
-VALUES ('franciscuarto@ivorbitgames.online', 'Franciscuarto (Dueño)', 'owner')
+VALUES 
+    ('franciscuarto@ivorbitgames.online', 'Franciscuarto (Dueño)', 'owner'),
+    ('franciscuarto', 'Franciscuarto (GitHub)', 'owner'),
+    ('@franciscuarto', 'Franciscuarto (GitHub Handle)', 'owner')
 ON CONFLICT (email) DO NOTHING;</code></pre>
             </div>
           </div>
@@ -329,13 +372,16 @@ ON CONFLICT (email) DO NOTHING;</code></pre>
       return;
     }
 
-    const { isCollaborator, role } = await checkUserRole(user.email);
+    const { isCollaborator, role, identifier } = await checkUserRole(user);
     currentUserRole = role;
 
     if (!isCollaborator) {
       if (authRequiredBox) authRequiredBox.style.display = 'none';
       if (unauthorizedBox) unauthorizedBox.style.display = 'block';
-      if (unauthEmailText) unauthEmailText.textContent = user.email || 'tu cuenta';
+      const ghName = user.user_metadata?.user_name || user.user_metadata?.preferred_username;
+      if (unauthEmailText) {
+        unauthEmailText.innerHTML = `Email: <strong>${user.email || 'No público'}</strong> ${ghName ? `| GitHub: <strong>@${ghName}</strong>` : ''}`;
+      }
       if (collabDashboard) collabDashboard.style.display = 'none';
       return;
     }
@@ -345,7 +391,10 @@ ON CONFLICT (email) DO NOTHING;</code></pre>
     if (unauthorizedBox) unauthorizedBox.style.display = 'none';
     if (collabDashboard) collabDashboard.style.display = 'block';
 
-    if (userGreetingEmail) userGreetingEmail.textContent = user.email || 'Piloto';
+    if (userGreetingEmail) {
+      const ghName = user.user_metadata?.user_name || user.user_metadata?.preferred_username;
+      userGreetingEmail.textContent = ghName ? `@${ghName} (${user.email || 'GitHub'})` : (user.email || 'Piloto');
+    }
     if (badgeUserRole) {
       if (role === 'owner') {
         badgeUserRole.textContent = '👑 DUEÑO / ADMINISTRADOR';

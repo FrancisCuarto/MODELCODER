@@ -2430,7 +2430,7 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
   githubPrBtn?.addEventListener('click', async () => {
     try {
       const user = await getCurrentUser();
-      const roleInfo = await checkUserRole(user?.email);
+      const roleInfo = await checkUserRole(user);
       const collabCard = document.getElementById('collab-direct-publish-card');
       const collabNotice = document.getElementById('collab-unauth-notice');
       const directUploadName = document.getElementById('direct-upload-name') as HTMLInputElement;
