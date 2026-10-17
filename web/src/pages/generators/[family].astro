@@ -35,9 +35,39 @@ gen.parameters.forEach((param: any) => {
   if (!groupedParams[g]) groupedParams[g] = [];
   groupedParams[g].push(param);
 });
+
+const pageTitle = `${gen.name} — Modelo 3D Low-Poly GLB Gratis`;
+const pageDesc = `${gen.description} Modelo 3D procedural low-poly optimizado en formato universal GLB. Listo para usar en Godot 4, Unity y Blender.`;
+const pageKeywords = `${gen.name}, modelo 3d ${gen.name.toLowerCase()}, ${gen.family}, 3d low poly, descargar glb gratis, godot 3d, unity 3d props, blender procedural, ${(gen.tags || []).join(', ')}`;
+
+const modelUrlAbsolute = gen.model_url.startsWith('http') 
+  ? gen.model_url 
+  : `https://modelcoder.vercel.app${gen.model_url.startsWith('/') ? '' : '/'}${gen.model_url}`;
+
+const modelSchema = {
+  "@type": "3DModel",
+  "@id": `https://modelcoder.vercel.app/generators/${gen.family}/#3dmodel`,
+  "name": `${gen.name} - Modelo 3D Low-Poly`,
+  "description": gen.description,
+  "encodingFormat": "model/gltf-binary",
+  "contentUrl": modelUrlAbsolute,
+  "license": gen.license === 'CC-BY-4.0' ? 'https://creativecommons.org/licenses/by/4.0/' : gen.license,
+  "creator": {
+    "@type": "Organization",
+    "name": "IV Orbit Games",
+    "url": "https://ivorbitgames.online"
+  },
+  "keywords": (gen.tags || []).join(', '),
+  "category": gen.category
+};
 ---
 
-<Layout title={`${gen.name} - Generador 3D Procedural`}>
+<Layout 
+  title={pageTitle}
+  description={pageDesc}
+  keywords={pageKeywords}
+  schemaData={modelSchema}
+>
   <!-- PS1 Breadcrumbs -->
   <nav class="ps1-breadcrumb">
     <a href="/" class="crumb-link">&lt; [CATÁLOGO]</a>

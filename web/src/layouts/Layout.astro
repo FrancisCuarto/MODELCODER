@@ -2,28 +2,103 @@
 interface Props {
   title: string;
   description?: string;
+  keywords?: string;
+  ogImage?: string;
+  ogType?: string;
+  schemaData?: Record<string, any>;
   useModelViewer?: boolean;
 }
 
 const {
   title,
-  description = "Biblioteca abierta de generadores procedurales 3D para Below Nominal",
+  description = "Biblioteca abierta de generadores y modelos 3D procedurales low-poly en formato universal GLB para Godot 4, Unity y Blender.",
+  keywords = "modelos 3d gratis, generador 3d procedural, low poly 3d models, glb download, godot 3d assets, unity 3d props, blender procedural, ps1 retro 3d, game development",
+  ogImage = "/logo.png",
+  ogType = "website",
+  schemaData,
   useModelViewer = true
 } = Astro.props;
+
 import catalog from '../data/catalog.json';
 import '../styles/global.css';
+
+const siteOrigin = Astro.site ? Astro.site.toString().replace(/\/$/, '') : 'https://modelcoder.vercel.app';
+const canonicalURL = new URL(Astro.url.pathname, siteOrigin).href;
+const fullOgImage = ogImage.startsWith('http') ? ogImage : `${siteOrigin}${ogImage.startsWith('/') ? '' : '/'}${ogImage}`;
+
+const globalJsonLd = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "@id": `${siteOrigin}/#website`,
+      "url": siteOrigin,
+      "name": "ModelCoder",
+      "alternateName": "ModelCoder 3D Platform",
+      "description": "Biblioteca abierta de modelos 3D low-poly y generadores procedurales en formato universal GLB para Godot, Unity y Blender.",
+      "inLanguage": "es",
+      "publisher": {
+        "@type": "Organization",
+        "name": "IV Orbit Games",
+        "url": "https://ivorbitgames.online"
+      }
+    },
+    {
+      "@type": "SoftwareApplication",
+      "@id": `${siteOrigin}/#app`,
+      "name": "ModelCoder 3D Studio",
+      "applicationCategory": "DesignApplication",
+      "operatingSystem": "Web, Windows, macOS, Linux",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "description": "Herramienta online para crear, modelar, personalizar y descargar modelos 3D procedurales low-poly en formato GLB."
+    },
+    ...(schemaData ? [schemaData] : [])
+  ]
+};
 ---
 
 <!doctype html>
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <meta name="description" content={description} />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title} | ModelCoder</title>
+    <meta name="description" content={description} />
+    <meta name="keywords" content={keywords} />
+    <meta name="author" content="Franciscuarto / IV Orbit Games" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+    <link rel="canonical" href={canonicalURL} />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:site_name" content="ModelCoder — Plataforma 3D Procedural" />
+    <meta property="og:type" content={ogType} />
+    <meta property="og:title" content={`${title} | ModelCoder`} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonicalURL} />
+    <meta property="og:image" content={fullOgImage} />
+    <meta property="og:image:alt" content="ModelCoder 3D Procedural Platform" />
+    <meta property="og:locale" content="es_ES" />
+
+    <!-- Twitter Cards -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@Franciscuarto" />
+    <meta name="twitter:creator" content="@Franciscuarto" />
+    <meta name="twitter:title" content={`${title} | ModelCoder`} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={fullOgImage} />
+
+    <!-- Branding & PWA Elements -->
     <link rel="icon" type="image/png" href="/logo.png" />
     <link rel="apple-touch-icon" href="/logo.png" />
+    <meta name="theme-color" content="#06080e" />
     <meta name="generator" content={Astro.generator} />
-    <title>{title} | ModelCoder PS1 3D Platform</title>
+
+    <!-- Schema.org JSON-LD Structured Data -->
+    <script type="application/ld+json" set:html={JSON.stringify(globalJsonLd)} />
 
     <!-- Retro PS1 / Bitmap Typography -->
     <link rel="preconnect" href="https://fonts.googleapis.com">

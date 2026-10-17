@@ -1,0 +1,8 @@
+# ModelCoder 3D Platform - Robots.txt
+# Permitir rastreo e indexación completa a Googlebot y otros buscadores
+User-agent: *
+Allow: /
+
+# Host & Sitemap Index
+Host: https://modelcoder.vercel.app
+Sitemap: https://modelcoder.vercel.app/sitemap-index.xml
