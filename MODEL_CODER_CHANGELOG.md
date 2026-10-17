@@ -50,3 +50,14 @@
   - Unified the catalog filter counter from `${visible} / ${cards.length} RECORDS` to `${visible} DE ${cards.length} MODELOS ENCONTRADOS`.
 - **Automated Regression Tests (`web/tests/user_inventory.test.ts`):**
   - Added regression tests covering polymorphic `saveProjectDraft(spec, thumbnail, existingId)` and `saveCollection` initialization with `model_ids`.
+
+### Phase 7 — Massive & Storage-Efficient PBR Texture Library Expansion (`MODEL_CODER_TEXTURE_LIBRARY.md`)
+- **138 Ready-to-Use PBR Materials Across 8 Families (`web/src/lib/studio/texture-library.ts`, `web/src/lib/studio/types.ts`):**
+  - Expanded `TextureLibrary` from 18 presets to **118 canonical procedural PBR base textures + 20 curated parametric variants (138 total materials)** across 8 complete material families: `metals` (29), `construction` (19), `woods` (12), `stones` (14), `plastics` (14), `tech` (22), `glass` (11), and `fabrics_organic` (17).
+  - Added automatic tangent-space **Normal Map** generation (`TextureLibrary.getNormalTexture`) via wrapped Sobel gradient filtering and parametric surface weathering (`TextureLibrary.applyParametricWear`), while keeping **0 bytes** of external image files in `web/public/` and adding only **+7.29 KB gzipped** (`~53 bytes/material`) to the Studio JS bundle.
+- **Interactive Visual Material Browser & Parametric Controls (`web/src/pages/studio.astro`, `web/src/lib/studio/procedural-engine.ts`):**
+  - Upgraded the Studio Material Inspector with a searchable, category-filtered visual **Material Browser** displaying lazily generated `48×48` WebP thumbnails (`TextureLibrary.getThumbnailDataURL`) and PBR capability badges (`NORM`, `METAL`, `EMISSIVE`, `ALPHA`, `VAR`).
+  - Added non-destructive vertex UV rotation (`comp.uvRotation` via `ProceduralEngine.applyUVRotation`), procedural wear/grime intensity (`comp.wear`), and normal relief intensity (`comp.normalStrength`).
+- **Fast, Compact GLB Export with NormalMap Stashing (`web/src/lib/studio/glb-exporter.ts`):**
+  - Fixed `GLBExporterService.exportSpec` to use `ProceduralEngine.buildModelFromSpec` and updated `exportToArrayBuffer` to temporarily stash `DataTexture` normal/roughness maps during `GLTFExporter.parse` and restore them immediately afterward, avoiding `GLTFExporter` `DataTexture` incompatibilities and keeping exported `.glb` files compact.
+

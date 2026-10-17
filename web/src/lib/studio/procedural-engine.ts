@@ -132,6 +132,10 @@ export class ProceduralEngine {
       }
     }
 
+    if (comp.uvRotation && Math.abs(comp.uvRotation) > 0.01) {
+      this.applyUVRotation(geom, comp.uvRotation);
+    }
+
     // Material and vertex color resolution
     const baseColor = this.resolveColor(comp.color);
     let mat: THREE.MeshStandardMaterial;
@@ -518,8 +522,30 @@ export class ProceduralEngine {
   }
 
   /**
+   * Rotates existing UV coordinates by angleDeg degrees around (0.5, 0.5) without duplicating textures.
+   */
+  public static applyUVRotation(geom: THREE.BufferGeometry, angleDeg: number): void {
+    const uvAttr = geom.getAttribute('uv');
+    if (!uvAttr) return;
+
+    const uvs = uvAttr.array as Float32Array;
+    const rad = THREE.MathUtils.degToRad(angleDeg);
+    const cos = Math.cos(rad);
+    const sin = Math.sin(rad);
+
+    for (let i = 0; i < uvs.length; i += 2) {
+      const u = uvs[i] - 0.5;
+      const v = uvs[i + 1] - 0.5;
+      uvs[i] = u * cos - v * sin + 0.5;
+      uvs[i + 1] = u * sin + v * cos + 0.5;
+    }
+
+    uvAttr.needsUpdate = true;
+  }
+
+  /**
    * Safely frees and disposes all GPU memory allocated by an Object3D subtree,
-   * while keeping reusable texture presets cached in TextureLibrary.
+   * while keeping reusable texture presets (BaseColor, Normal, Roughness) cached in TextureLibrary.
    */
   public static disposeHierarchy(obj: THREE.Object3D): void {
     obj.traverse((child) => {
@@ -530,9 +556,18 @@ export class ProceduralEngine {
         }
         if (mesh.material) {
           const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-          mats.forEach((m) => {
+          mats.forEach((m: any) => {
             if (m.map && !TextureLibrary.isPresetTexture(m.map)) {
               m.map.dispose();
+            }
+            if (m.normalMap && !TextureLibrary.isPresetTexture(m.normalMap)) {
+              m.normalMap.dispose();
+            }
+            if (m.roughnessMap && !TextureLibrary.isPresetTexture(m.roughnessMap)) {
+              m.roughnessMap.dispose();
+            }
+            if (m.emissiveMap && !TextureLibrary.isPresetTexture(m.emissiveMap)) {
+              m.emissiveMap.dispose();
             }
             m.dispose();
           });

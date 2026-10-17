@@ -61,7 +61,17 @@ export class GLBExporterService {
                 translate: () => {},
                 scale: () => {},
                 putImageData: () => {},
-                drawImage: () => {}
+                drawImage: () => {},
+                getImageData: (_x: number, _y: number, w = 64, h = 64) => ({
+                  data: new Uint8ClampedArray(w * h * 4),
+                  width: w,
+                  height: h
+                }),
+                createImageData: (w = 64, h = 64) => ({
+                  data: new Uint8ClampedArray(w * h * 4),
+                  width: w,
+                  height: h
+                })
               }),
               toBlob: (cb: any, type: string) => {
                 const png1x1 = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'base64');
@@ -116,11 +126,12 @@ export class GLBExporterService {
    * Generates a Three.js hierarchy from a ModelSpec and exports it to a binary GLB ArrayBuffer.
    */
   public static async exportSpec(spec: ModelSpec): Promise<ArrayBuffer> {
-    const genResult = ProceduralEngine.generate(spec);
-    if (!genResult.success || !genResult.object) {
-      throw new Error(`Error generando geometría para exportar: ${genResult.error || 'Desconocido'}`);
+    const { group } = ProceduralEngine.buildModelFromSpec(spec);
+    try {
+      return await this.exportToArrayBuffer(group);
+    } finally {
+      ProceduralEngine.disposeHierarchy(group);
     }
-    return this.exportToArrayBuffer(genResult.object);
   }
 
   /**
@@ -128,11 +139,32 @@ export class GLBExporterService {
    */
   public static exportToArrayBuffer(obj: THREE.Object3D): Promise<ArrayBuffer> {
     this.ensureNodePolyfills();
+    const stashedMaps: Array<{ mat: any; normalMap: any; roughnessMap: any }> = [];
+    obj.traverse((node: any) => {
+      if (node.isMesh && node.material) {
+        const mats = Array.isArray(node.material) ? node.material : [node.material];
+        for (const m of mats) {
+          if ((m.normalMap && m.normalMap.isDataTexture) || (m.roughnessMap && m.roughnessMap.isDataTexture)) {
+            stashedMaps.push({ mat: m, normalMap: m.normalMap, roughnessMap: m.roughnessMap });
+            if (m.normalMap?.isDataTexture) m.normalMap = null;
+            if (m.roughnessMap?.isDataTexture) m.roughnessMap = null;
+          }
+        }
+      }
+    });
+    const restoreMaps = () => {
+      for (const item of stashedMaps) {
+        item.mat.normalMap = item.normalMap;
+        item.mat.roughnessMap = item.roughnessMap;
+      }
+    };
+
     return new Promise((resolve, reject) => {
       const exporter = new GLTFExporter();
       exporter.parse(
         obj,
         (result) => {
+          restoreMaps();
           if (result instanceof ArrayBuffer) {
             resolve(result);
           } else {
@@ -143,6 +175,7 @@ export class GLBExporterService {
           }
         },
         (error) => {
+          restoreMaps();
           reject(new Error(`Error durante exportación GLTFExporter: ${error}`));
         },
         {

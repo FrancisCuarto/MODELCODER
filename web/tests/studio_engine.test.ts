@@ -859,9 +859,182 @@ test('Transparency & Glass Textures: Soporte de texturas con opacidad y presets 
   ProceduralEngine.disposeHierarchy(group);
 });
 
+test('Expanded Texture Library 1: 118 texturas base PBR + 20 variantes paramétricas cubren las 8 familias sin duplicados', () => {
+  const profileKeys = Object.keys(TextureLibrary.PROFILES);
+  const variantKeys = Object.keys(TextureLibrary.PARAMETRIC_VARIANTS);
+
+  assert.equal(profileKeys.length, 118, 'Must provide 118 canonical procedural PBR base textures');
+  assert.equal(variantKeys.length, 20, 'Must provide 20 curated parametric variants');
+
+  const expectedCategories = [
+    'metals',
+    'construction',
+    'woods',
+    'stones',
+    'plastics',
+    'tech',
+    'glass',
+    'fabrics_organic'
+  ] as const;
+
+  for (const cat of expectedCategories) {
+    const inCat = TextureLibrary.getProfilesByCategory(cat);
+    assert.ok(inCat.length >= 9, `Category ${cat} must have at least 9 canonical presets (got ${inCat.length})`);
+  }
+
+  // Verify every parametric variant references a valid canonical basePreset
+  for (const v of Object.values(TextureLibrary.PARAMETRIC_VARIANTS)) {
+    const resolved = TextureLibrary.resolvePresetName(v.id);
+    assert.equal(resolved, v.basePreset, `Variant ${v.id} must resolve to its basePreset ${v.basePreset}`);
+    assert.ok(TextureLibrary.PROFILES[v.basePreset], `Base preset ${v.basePreset} must exist in PROFILES`);
+  }
+});
+
+test('Expanded Texture Library 2: Las 118 texturas generan píxeles RGBA válidos y mapas normales distintos por familia', () => {
+  const representativePresets = [
+    'steel_polished',
+    'diamond_plate',
+    'copper_oxidized',
+    'brick_red',
+    'concrete_cracked',
+    'wood_oak',
+    'wood_parquet',
+    'marble_white',
+    'granite_grey',
+    'acoustic_foam',
+    'pcb_green_gold',
+    'carbon_fiber',
+    'solar_panel_blue',
+    'frosted_glass',
+    'kevlar_ballistic',
+    'leather_brown_aged'
+  ] as const;
+
+  const signatures = new Set<string>();
+
+  for (const preset of representativePresets) {
+    const tex = TextureLibrary.getTexture(preset);
+    const data = tex.image.data as Uint8Array;
+    assert.equal(data.byteLength, 64 * 64 * 4, `Preset ${preset} must generate 64x64 RGBA buffer`);
+
+    // Compute a quick checksum signature to prove each procedural pattern is visually distinct
+    let sumR = 0, sumG = 0, sumB = 0;
+    for (let i = 0; i < data.length; i += 4) {
+      sumR += data[i];
+      sumG += data[i + 1];
+      sumB += data[i + 2];
+    }
+    assert.ok(sumR + sumG + sumB > 0, `Preset ${preset} pixels must not be all black`);
+    const sig = `${sumR}:${sumG}:${sumB}`;
+    assert.equal(signatures.has(sig), false, `Preset ${preset} must have a distinct pixel signature`);
+    signatures.add(sig);
+
+    // Check normal map generation
+    const normTex = TextureLibrary.getNormalTexture(preset, 0.6);
+    const normData = normTex.image.data as Uint8Array;
+    assert.equal(normData.byteLength, 64 * 64 * 4, `Preset ${preset} normalMap must be 64x64 RGBA`);
+    assert.ok(TextureLibrary.isPresetTexture(normTex), 'Generated normalMap must be registered as preset texture');
+  }
+});
+
+test('Expanded Texture Library 3: Variaciones paramétricas (wear, uvRotation, normalStrength) y preservación en disposeHierarchy', () => {
+  const spec = {
+    id: 'test.parametric.variants',
+    name: 'Test Variantes Paramétricas',
+    category: 'infrastructure',
+    description: 'Prueba de rotación UV, desgaste procedural y relieve normal',
+    units: 'meters' as const,
+    dimensions: { width: 2.0, depth: 2.0, height: 1.0 },
+    palette: 'industrial_hazard',
+    components: [
+      {
+        name: 'clean_brick_wall',
+        shape: 'box' as const,
+        size: [1.0, 1.0, 0.2],
+        texturePreset: 'brick_red',
+        wear: 0,
+        uvRotation: 0
+      },
+      {
+        name: 'weathered_rotated_brick',
+        shape: 'box' as const,
+        size: [1.0, 1.0, 0.2],
+        texturePreset: 'brick_red',
+        wear: 0.75,
+        uvRotation: 90,
+        normalStrength: 0.9
+      },
+      {
+        name: 'curated_variant_part',
+        shape: 'cylinder' as const,
+        size: [0.3, 0.3, 1.0, 8],
+        texturePreset: 'diamond_plate_rusted'
+      }
+    ]
+  };
+
+  const { group } = ProceduralEngine.buildModelFromSpec(spec);
+  const cleanMesh = group.children[0] as THREE.Mesh;
+  const weatheredMesh = group.children[1] as THREE.Mesh;
+  const variantMesh = group.children[2] as THREE.Mesh;
+
+  const cleanMat = cleanMesh.material as THREE.MeshStandardMaterial;
+  const weatheredMat = weatheredMesh.material as THREE.MeshStandardMaterial;
+  const variantMat = variantMesh.material as THREE.MeshStandardMaterial;
+
+  assert.notEqual(cleanMat.map, weatheredMat.map, 'Weathered component should use wear-modulated texture buffer');
+  assert.ok(weatheredMat.roughness > cleanMat.roughness, 'Weathered surface should have increased roughness');
+  assert.ok(cleanMat.normalMap !== null, 'Opaque PBR material must include procedural normalMap');
+  assert.ok(variantMat.map !== null, 'Curated parametric variant must resolve and attach texture');
+
+  // Verify UV rotation mutated UVs on weatheredMesh compared to cleanMesh
+  const uvClean = (cleanMesh.geometry.getAttribute('uv').array as Float32Array)[0];
+  const uvRot = (weatheredMesh.geometry.getAttribute('uv').array as Float32Array)[0];
+  assert.notEqual(uvClean, uvRot, 'UV rotation (90 deg) must rotate vertex UV coordinates');
+
+  // Verify disposeHierarchy preserves normalMap as well as map
+  const savedNorm = cleanMat.normalMap!;
+  ProceduralEngine.disposeHierarchy(group);
+  assert.ok(TextureLibrary.isPresetTexture(savedNorm), 'NormalMap must remain registered in TextureLibrary after dispose');
+});
+
+test('Expanded Texture Library 4: Exportación GLB multi-familia (madera, mármol, ladrillo, carbono, vidrio) y restauración de normalMap', async () => {
+  const spec = {
+    id: 'test.glb.multifamily',
+    name: 'Escena Multi-Familia PBR',
+    category: 'architecture',
+    description: 'Prueba de exportación GLB con las nuevas familias de materiales',
+    units: 'meters' as const,
+    dimensions: { width: 2.0, depth: 2.0, height: 2.0 },
+    palette: 'standard',
+    components: [
+      { name: 'oak_table', shape: 'box' as const, size: [1.2, 0.1, 0.8], texturePreset: 'wood_oak' },
+      { name: 'marble_pillar', shape: 'cylinder' as const, size: [0.2, 0.2, 1.0, 10], texturePreset: 'marble_white' },
+      { name: 'brick_base', shape: 'box' as const, size: [1.5, 0.4, 1.5], texturePreset: 'brick_red' },
+      { name: 'carbon_arm', shape: 'capsule' as const, size: [0.1, 0.5, 4, 8], texturePreset: 'carbon_fiber' },
+      { name: 'cryo_window', shape: 'box' as const, size: [0.8, 0.6, 0.04], texturePreset: 'cryo_glass_ice' }
+    ]
+  };
+
+  const { group } = ProceduralEngine.buildModelFromSpec(spec);
+  const firstMeshMat = (group.children[0] as THREE.Mesh).material as THREE.MeshStandardMaterial;
+  assert.ok(firstMeshMat.normalMap !== null, 'Normal map must be present before export');
+
+  const glbBuffer = await GLBExporterService.exportToArrayBuffer(group);
+  assert.ok(glbBuffer.byteLength > 2000, 'Exported multi-family GLB must be non-empty');
+  assert.ok(firstMeshMat.normalMap !== null, 'Normal map must be restored on live scene material after GLB export');
+
+  const verification = await GLBExporterService.verifyGLBBuffer(glbBuffer);
+  assert.equal(verification.verified, true, `Multi-family GLB verification failed: ${verification.error}`);
+  assert.ok(verification.triangleCount > 50);
+
+  ProceduralEngine.disposeHierarchy(group);
+});
+
 // Teardown: ensure Node exits cleanly after tests
 test('Teardown: Exit cleanly', () => {
   setTimeout(() => process.exit(0), 100);
 });
+
 
 

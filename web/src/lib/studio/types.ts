@@ -13,6 +13,7 @@ export type ShapePrimitive =
   | 'wedge';
 
 export type TexturePreset = 
+  // Original 18 canonical presets (preserved for 100% backward compatibility)
   | 'worn_metal'
   | 'metal_dark_grime'
   | 'metal_light_brushed'
@@ -30,13 +31,129 @@ export type TexturePreset =
   | 'tinted_glass'
   | 'reinforced_glass'
   | 'clean_glass'
-  | 'hologram_cyan';
+  | 'hologram_cyan'
+  // Expanded Metals (16)
+  | 'steel_polished'
+  | 'steel_galvanized'
+  | 'iron_cast'
+  | 'iron_aged'
+  | 'aluminum_anodized'
+  | 'copper_polished'
+  | 'copper_oxidized'
+  | 'bronze_antique'
+  | 'brass_burnished'
+  | 'titanium_aerospace'
+  | 'diamond_plate'
+  | 'metal_perforated'
+  | 'gold_contacts'
+  | 'chrome_mirror'
+  | 'lead_shielding'
+  | 'painted_metal_blue'
+  | 'painted_metal_olive'
+  | 'painted_metal_yellow'
+  // Expanded Construction & Industrial (14)
+  | 'concrete_smooth'
+  | 'concrete_rough'
+  | 'concrete_cracked'
+  | 'cinder_block'
+  | 'brick_red'
+  | 'brick_industrial'
+  | 'stucco_plaster'
+  | 'asphalt_road'
+  | 'ceramic_tile_white'
+  | 'industrial_tile_dirty'
+  | 'nonslip_floor'
+  | 'station_modular_panel'
+  | 'corrugated_metal'
+  | 'terrazzo_floor'
+  // Expanded Woods (10)
+  | 'wood_oak'
+  | 'wood_pine'
+  | 'wood_walnut'
+  | 'wood_plywood'
+  | 'wood_painted_worn'
+  | 'wood_rustic_planks'
+  | 'wood_varnished'
+  | 'wood_parquet'
+  | 'wood_bamboo'
+  | 'wood_charred'
+  // Expanded Stones & Minerals (12)
+  | 'granite_grey'
+  | 'granite_pink'
+  | 'marble_white'
+  | 'marble_black_gold'
+  | 'slate_layered'
+  | 'basalt_lunar'
+  | 'limestone_sand'
+  | 'sand_compacted'
+  | 'gravel_mineral'
+  | 'quartz_crystal'
+  | 'energy_mineral'
+  | 'obsidian_volcanic'
+  // Expanded Plastics, Rubbers & Polymers (10)
+  | 'plastic_abs_matte'
+  | 'plastic_acrylic_gloss'
+  | 'plastic_translucent'
+  | 'rubber_ribbed_mat'
+  | 'silicone_medical'
+  | 'acoustic_foam'
+  | 'polymer_tactical'
+  | 'plastic_hazard_orange'
+  | 'vinyl_grip'
+  | 'teflon_white'
+  // Expanded Tech, Sci-Fi, Screens & Signage (16)
+  | 'pcb_green_gold'
+  | 'pcb_black_hd'
+  | 'pcb_blue_proto'
+  | 'carbon_fiber'
+  | 'hex_composite'
+  | 'server_vent_panel'
+  | 'thermal_tile_white'
+  | 'thermal_tile_black'
+  | 'solar_panel_blue'
+  | 'laser_grid_red'
+  | 'crt_screen_blue'
+  | 'crt_data_matrix'
+  | 'radiation_label'
+  | 'biohazard_label'
+  | 'high_voltage_label'
+  | 'plasma_core_glow'
+  // Expanded Glass & Transparencies (6)
+  | 'frosted_glass'
+  | 'cryo_glass_ice'
+  | 'amber_lab_glass'
+  | 'hologram_amber'
+  | 'forcefield_hex'
+  | 'visor_gold_mirror'
+  // Expanded Fabrics, Leather, Paper & Organic/Weathered (14)
+  | 'kevlar_ballistic'
+  | 'canvas_military'
+  | 'quilted_padding_white'
+  | 'quilted_padding_orange'
+  | 'synthetic_mesh'
+  | 'leather_black_worn'
+  | 'leather_brown_aged'
+  | 'cardboard_corrugated'
+  | 'blueprint_paper'
+  | 'duct_tape_silver'
+  | 'kapton_gold_foil'
+  | 'moss_biological'
+  | 'ash_dust_coating'
+  | 'soil_mud_packed';
 
 export type MaterialCategoryType =
+  | 'metals'
+  | 'construction'
+  | 'woods'
+  | 'stones'
+  | 'plastics'
+  | 'tech'
+  | 'glass'
+  | 'fabrics_organic'
+  // Legacy category identifiers kept for compatibility
   | 'painted_metal'
   | 'steel'
   | 'plastic'
-  | 'glass'
   | 'screen'
   | 'rubber'
   | 'ceramic';
@@ -72,12 +189,15 @@ export interface ComponentDef {
   opacity?: number;
   transparent?: boolean;
 
-  // Authentic PS1 Material & Texture Preset Extension (optional, backward-compatible)
+  // Authentic PS1 & PBR Material & Texture Preset Extension (optional, backward-compatible)
   texturePreset?: TexturePreset | string;
   materialType?: MaterialCategoryType | string;
   emissive?: string; // Hex color for CRT glows, LED lights or status lamps
   emissiveIntensity?: number;
   uvScale?: [number, number]; // [scaleU, scaleV] frequency modifier to prevent stretching
+  uvRotation?: number; // UV rotation angle in degrees (0..360)
+  wear?: number; // Parametric surface weathering/grime intensity (0..1)
+  normalStrength?: number; // Normal map relief intensity (0..2)
 }
 
 export interface ModelSpec {

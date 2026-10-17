@@ -80,7 +80,14 @@ export class AIGenerator {
 CRITICAL DIRECTIVE: You must invent a completely ORIGINAL, UNIQUE, and UNCONVENTIONAL 3D procedural composition for this request.
 Do NOT reuse standard repetitive box templates or previously seen presets.
 Design fresh component proportions, creative shapes (using combinations of box, cylinder, sphere, wedge, cone, torus, capsule), intricate details, and authentic retro vertex colors (casing, metal, metal_light, hazard, accent, screen, glass, red, blue, green, dark, rust, gold).
-Assign realistic texturePreset values where appropriate: "worn_metal" (chassis/hull), "rubber_black" (wheels/tires/feet), "crt_screen_green" or "crt_screen_amber" (monitors/displays), "hazard_stripes" (bumpers/warning zones), "vent_grill" (radiators/air intakes), "metal_light_brushed" (chrome/pipes/rims), "painted_metal_white" (body panels), "caution_label" (warning badges).
+Assign realistic texturePreset values where appropriate across our 8 PBR material families:
+- Metals: "worn_metal", "metal_light_brushed", "steel_polished", "steel_galvanized", "iron_cast", "copper_polished", "copper_oxidized", "bronze_antique", "brass_burnished", "titanium_aerospace", "diamond_plate", "metal_perforated", "gold_contacts", "chrome_mirror", "painted_metal_white", "red_paint_worn"
+- Construction: "concrete_smooth", "concrete_rough", "concrete_cracked", "brick_red", "brick_industrial", "cinder_block", "asphalt_road", "ceramic_tile_white", "corrugated_metal", "hazard_stripes"
+- Woods: "wood_oak", "wood_pine", "wood_walnut", "wood_plywood", "wood_rustic_planks", "wood_varnished", "wood_parquet"
+- Stones & Minerals: "granite_grey", "marble_white", "marble_black_gold", "slate_layered", "basalt_lunar", "sand_compacted", "quartz_crystal", "energy_mineral", "obsidian_volcanic"
+- Plastics & Rubbers: "beige_plastic_worn", "plastic_abs_matte", "plastic_acrylic_gloss", "rubber_black", "rubber_ribbed_mat", "acoustic_foam", "polymer_tactical"
+- Tech & Screens: "pcb_green_gold", "pcb_black_hd", "carbon_fiber", "hex_composite", "solar_panel_blue", "thermal_tile_white", "vent_grill", "crt_screen_green", "crt_screen_amber", "crt_screen_blue", "crt_data_matrix", "caution_label", "radiation_label", "biohazard_label", "plasma_core_glow"
+- Glass & Fabrics: "clean_glass", "tinted_glass", "reinforced_glass", "frosted_glass", "cryo_glass_ice", "hologram_cyan", "forcefield_hex", "kevlar_ballistic", "canvas_military", "quilted_padding_white", "leather_black_worn", "leather_brown_aged", "cardboard_corrugated", "kapton_gold_foil", "rust_heavy".
 Keep triangle budgets low (100 to 500 tris). All coordinates (position, size) must be real numbers in meters.
 Return ONLY valid JSON matching this schema:
 {
@@ -99,7 +106,7 @@ Return ONLY valid JSON matching this schema:
       "position": [<x>, <y>, <z>],
       "rotation": [<deg_x>, <deg_y>, <deg_z>],
       "color": "<hex_or_palette_name>",
-      "texturePreset": "worn_metal" | "metal_light_brushed" | "painted_metal_white" | "beige_plastic_worn" | "rubber_black" | "rust_heavy" | "hazard_stripes" | "vent_grill" | "crt_screen_green" | "crt_screen_amber" | "caution_label" | "red_paint_worn",
+      "texturePreset": "<any valid texturePreset from the list above>",
       "roughness": 0.7,
       "metalness": 0.2
     }

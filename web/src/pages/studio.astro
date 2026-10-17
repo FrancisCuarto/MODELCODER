@@ -519,11 +519,11 @@ import catalog from '../data/catalog.json';
         </section>
 
         <section id="doc-materials" class="doc-section">
-          <h3>5. Sistema Unificado de Materiales y Texturas Procedurales PS1</h3>
-          <p>ModelCoder cuenta con un sistema compartido de texturas procedurales calibradas al catálogo de Below Nominal y a la estética retro PS1 (Nearest Filter, patrones pixel-art y flat shading):</p>
+          <h3>5. Biblioteca Expandida de Materiales PBR y Texturas Procedurales (138 Materiales)</h3>
+          <p>ModelCoder incluye una biblioteca masiva de <strong>118 texturas base procedurales PBR + 20 variantes paramétricas curadas (138 materiales en total)</strong> organizadas en 8 familias con generación en memoria de Mapas de Color, Mapas Normales (Sobel Tangent-Space) y Desgaste Paramétrico:</p>
           <ul>
-            <li><strong>Presets Industriales:</strong> <code>worn_metal</code>, <code>metal_light_brushed</code>, <code>painted_metal_white</code>, <code>beige_plastic_worn</code>, <code>rubber_black</code>, <code>rust_heavy</code>, <code>hazard_stripes</code>, <code>vent_grill</code>, <code>crt_screen_green</code>, <code>crt_screen_amber</code>, <code>caution_label</code> y <code>red_paint_worn</code>.</li>
-            <li><strong>Mapeo UV Anti-Estiramiento:</strong> El motor calibra dinámicamente las coordenadas UV en metros reales sobre cajas, cilindros y cuñas para que los chevrons, rejillas y metal cepillado no se deformen en piezas alargadas.</li>
+            <li><strong>8 Familias Completas:</strong> ⚙️ Metales y Aleaciones (18+), 🧱 Construcción y Obra (15+), 🪵 Maderas y Carpintería (10+), 🪨 Piedras y Minerales (12+), 🧪 Plásticos y Polímeros (12+), 📟 Tecnología, PCB y Pantallas CRT (21+), 🪟 Vidrios y Hologramas (10+), 🧵 Telas, Cuero, Papel y Superficies Orgánicas (15+).</li>
+            <li><strong>Variantes Paramétricas en Tiempo Real:</strong> Ajusta tono/color, rugosidad, metalicidad, frecuencia UV <code>[U, V]</code>, rotación UV (<code>0°–360°</code>), desgaste/suciedad procedural (<code>0%–100%</code>) e intensidad de relieve normal sin duplicar archivos en disco.</li>
             <li><strong>Exportación GLB Completa:</strong> Todas las texturas y materiales se empaquetan de forma embebida en el archivo <code>.glb</code> binario listo para Godot 4, Blender y Unity.</li>
           </ul>
         </section>
@@ -767,7 +767,7 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
   import { AIGenerator } from '../lib/studio/ai-generator';
   import { GLBExporterService } from '../lib/studio/glb-exporter';
   import { StudioViewport } from '../lib/studio/three-viewport';
-  import { TextureLibrary } from '../lib/studio/texture-library';
+  import { TextureLibrary, MATERIAL_CATEGORY_LABELS, type MaterialFamilyCategory } from '../lib/studio/texture-library';
   import { getCurrentUser, checkUserRole, publishCommunityModel } from '../lib/supabase';
   import {
     saveProjectDraft,
@@ -1827,31 +1827,47 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
           <input type="range" id="inp-opacity" min="0.05" max="1.0" step="0.05" value="${comp.opacity ?? 1.0}" class="param-slider" />
         </div>
 
-        <!-- Textura Preset PS1 -->
+        <!-- Textura Preset PBR & Explorador Visual de Materiales (138 Materiales) -->
         <div class="prop-field-block">
-          <label class="field-label">Preset Textura Industrial PS1:</label>
+          <div class="field-label-row">
+            <label class="field-label">Biblioteca de Materiales PBR (138):</label>
+            <span class="field-unit-tag">8 Familias + Variantes</span>
+          </div>
           <select id="sel-texture-preset" class="form-input texture-dropdown">
             <option value="" ${!comp.texturePreset ? 'selected' : ''}>[Sin textura - Color plano]</option>
-            <option value="worn_metal" ${comp.texturePreset === 'worn_metal' ? 'selected' : ''}>🔩 Metal Desgastado (worn_metal)</option>
-            <option value="metal_light_brushed" ${comp.texturePreset === 'metal_light_brushed' ? 'selected' : ''}>✨ Metal Cepillado (metal_light_brushed)</option>
-            <option value="painted_metal_white" ${comp.texturePreset === 'painted_metal_white' ? 'selected' : ''}>⚪ Esmalte Blanco (painted_metal_white)</option>
-            <option value="beige_plastic_worn" ${comp.texturePreset === 'beige_plastic_worn' ? 'selected' : ''}>📟 Plástico Beige Retro (beige_plastic_worn)</option>
-            <option value="rubber_black" ${comp.texturePreset === 'rubber_black' ? 'selected' : ''}>⚫ Goma Negra (rubber_black)</option>
-            <option value="rust_heavy" ${comp.texturePreset === 'rust_heavy' ? 'selected' : ''}>🟤 Óxido Pesado (rust_heavy)</option>
-            <option value="hazard_stripes" ${comp.texturePreset === 'hazard_stripes' ? 'selected' : ''}>⚠️ Rayas de Peligro (hazard_stripes)</option>
-            <option value="vent_grill" ${comp.texturePreset === 'vent_grill' ? 'selected' : ''}>▦ Rejilla Ventilación (vent_grill)</option>
-            <option value="crt_screen_green" ${comp.texturePreset === 'crt_screen_green' ? 'selected' : ''}>🟢 Monitor CRT Verde (crt_screen_green)</option>
-            <option value="crt_screen_amber" ${comp.texturePreset === 'crt_screen_amber' ? 'selected' : ''}>🟠 Monitor CRT Ámbar (crt_screen_amber)</option>
-            <option value="caution_label" ${comp.texturePreset === 'caution_label' ? 'selected' : ''}>🏷️ Etiqueta Precaución (caution_label)</option>
-            <option value="red_paint_worn" ${comp.texturePreset === 'red_paint_worn' ? 'selected' : ''}>🔴 Pintura Roja Desgastada (red_paint_worn)</option>
-            <option value="tinted_glass" ${comp.texturePreset === 'tinted_glass' ? 'selected' : ''}>🪟 Vidrio Polarizado / Visor (tinted_glass)</option>
-            <option value="reinforced_glass" ${comp.texturePreset === 'reinforced_glass' ? 'selected' : ''}>🛡️ Vidrio Blindado con Malla (reinforced_glass)</option>
-            <option value="clean_glass" ${comp.texturePreset === 'clean_glass' ? 'selected' : ''}>🧊 Vidrio Transparente (clean_glass)</option>
-            <option value="hologram_cyan" ${comp.texturePreset === 'hologram_cyan' ? 'selected' : ''}>🌐 Holograma / HUD Sci-Fi (hologram_cyan)</option>
+            ${renderTextureSelectOptionsHTML(comp.texturePreset)}
           </select>
+
+          <!-- Explorador Visual con Búsqueda, Categorías y Miniaturas Lazy -->
+          <div class="mat-browser-panel ps1-inset">
+            <div class="mat-browser-toolbar">
+              <input
+                type="search"
+                id="inp-mat-browser-search"
+                class="form-input mat-search-inp"
+                placeholder="🔍 Buscar material (madera, mármol, cobre, pcb, kevlar...)"
+                autocomplete="off"
+              />
+              <div class="mat-cat-pills" id="mat-cat-pills">
+                <button type="button" class="mat-cat-pill active" data-mat-cat="all">Todos (138)</button>
+                <button type="button" class="mat-cat-pill" data-mat-cat="metals">⚙️ Metales</button>
+                <button type="button" class="mat-cat-pill" data-mat-cat="construction">🧱 Obra</button>
+                <button type="button" class="mat-cat-pill" data-mat-cat="woods">🪵 Maderas</button>
+                <button type="button" class="mat-cat-pill" data-mat-cat="stones">🪨 Piedras</button>
+                <button type="button" class="mat-cat-pill" data-mat-cat="plastics">🧪 Plásticos</button>
+                <button type="button" class="mat-cat-pill" data-mat-cat="tech">📟 Tech/CRT</button>
+                <button type="button" class="mat-cat-pill" data-mat-cat="glass">🪟 Vidrios</button>
+                <button type="button" class="mat-cat-pill" data-mat-cat="fabrics_organic">🧵 Telas/Otros</button>
+                <button type="button" class="mat-cat-pill" data-mat-cat="variants">🎨 Variantes</button>
+              </div>
+            </div>
+            <div id="mat-browser-grid" class="mat-browser-grid" role="listbox" aria-label="Explorador visual de materiales">
+              <!-- Populated dynamically with lazy WebP thumbnails -->
+            </div>
+          </div>
         </div>
 
-        <!-- Escala UV -->
+        <!-- Escala UV [U, V] -->
         <div class="prop-field-block">
           <div class="field-label-row">
             <label class="field-label">Frecuencia UV [U, V]:</label>
@@ -1867,6 +1883,36 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
               <input type="number" step="0.1" min="0.1" id="inp-uv-v" class="coord-num-inp" value="${comp.uvScale?.[1] ?? 1.0}" />
             </div>
           </div>
+        </div>
+
+        <!-- Rotación UV & Variaciones Paramétricas (Desgaste / Relieve Normal) -->
+        <div class="prop-field-block">
+          <div class="field-label-row">
+            <label class="field-label">Rotación UV (°):</label>
+            <div class="uv-rot-presets">
+              <button type="button" class="uv-rot-btn" data-rot="0">0°</button>
+              <button type="button" class="uv-rot-btn" data-rot="45">45°</button>
+              <button type="button" class="uv-rot-btn" data-rot="90">90°</button>
+              <span id="disp-uv-rot" class="param-val-disp">${comp.uvRotation ?? 0}°</span>
+            </div>
+          </div>
+          <input type="range" id="inp-uv-rot" min="0" max="360" step="15" value="${comp.uvRotation ?? 0}" class="param-slider" />
+        </div>
+
+        <div class="prop-field-block">
+          <div class="field-label-row">
+            <label class="field-label">Desgaste / Suciedad Procedural:</label>
+            <span id="disp-mat-wear" class="param-val-disp">${Math.round((comp.wear ?? 0) * 100)}%</span>
+          </div>
+          <input type="range" id="inp-mat-wear" min="0.0" max="1.0" step="0.05" value="${comp.wear ?? 0}" class="param-slider" />
+        </div>
+
+        <div class="prop-field-block">
+          <div class="field-label-row">
+            <label class="field-label">Relieve Mapa Normal (PBR):</label>
+            <span id="disp-mat-normal" class="param-val-disp">${comp.normalStrength ?? 0.55}</span>
+          </div>
+          <input type="range" id="inp-mat-normal" min="0.0" max="1.4" step="0.05" value="${comp.normalStrength ?? 0.55}" class="param-slider" />
         </div>
 
         <!-- Wireframe & Decal -->
@@ -1887,6 +1933,34 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
 
     updateEffectiveDimensions(comp);
     wireInspectorEventListeners(comp);
+  }
+
+  function renderTextureSelectOptionsHTML(selectedPreset?: string): string {
+    const categories = Object.keys(MATERIAL_CATEGORY_LABELS) as MaterialFamilyCategory[];
+    let html = '';
+
+    for (const cat of categories) {
+      const meta = MATERIAL_CATEGORY_LABELS[cat];
+      const profiles = TextureLibrary.getProfilesByCategory(cat);
+      html += `<optgroup label="${meta.icon} ${meta.label} (${profiles.length})">`;
+      for (const p of profiles) {
+        const sel = selectedPreset === p.name ? 'selected' : '';
+        html += `<option value="${p.name}" ${sel}>${p.label} (${p.name})</option>`;
+      }
+      html += `</optgroup>`;
+    }
+
+    const variants = Object.values(TextureLibrary.PARAMETRIC_VARIANTS);
+    if (variants.length > 0) {
+      html += `<optgroup label="🎨 Variantes Paramétricas Curadas (${variants.length})">`;
+      for (const v of variants) {
+        const sel = selectedPreset === v.id ? 'selected' : '';
+        html += `<option value="${v.id}" ${sel}>${v.label} (${v.id})</option>`;
+      }
+      html += `</optgroup>`;
+    }
+
+    return html;
   }
 
   function renderShapeSpecificParamsHTML(comp: ComponentDef): string {
@@ -2341,26 +2415,161 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
       renderCurrentSpec('visual');
     });
 
-    // Texture Preset
-    document.getElementById('sel-texture-preset')?.addEventListener('change', (e) => {
-      const val = (e.target as HTMLSelectElement).value;
+    // Texture Preset & Interactive Material Browser
+    const selTexturePreset = document.getElementById('sel-texture-preset') as HTMLSelectElement | null;
+    const matBrowserGrid = document.getElementById('mat-browser-grid');
+    const inpMatSearch = document.getElementById('inp-mat-browser-search') as HTMLInputElement | null;
+    const matCatPills = document.querySelectorAll('#mat-cat-pills .mat-cat-pill');
+    let activeMatCategory = 'all';
+
+    const applyPresetToComponent = (val: string) => {
       if (val) {
         comp.texturePreset = val;
-        // Auto-configure transparency for glass / hologram presets
-        const profile = TextureLibrary.PROFILES[val as any];
-        if (profile?.transparent) {
+        const variant = TextureLibrary.getParametricVariant(val);
+        const resolvedName = TextureLibrary.resolvePresetName(val);
+        const profile = resolvedName ? TextureLibrary.PROFILES[resolvedName] : undefined;
+
+        const isTransp = Boolean(variant?.transparent || profile?.transparent);
+        const defOpacity = variant?.opacity ?? profile?.opacity ?? 0.55;
+
+        if (isTransp) {
           comp.transparent = true;
           if (comp.opacity === undefined || comp.opacity >= 1.0) {
-            comp.opacity = profile.opacity ?? 0.55;
+            comp.opacity = defOpacity;
           }
           if (chkTransparent) chkTransparent.checked = true;
           if (inpOpacity && comp.opacity !== undefined) inpOpacity.value = String(comp.opacity);
           if (dispOpacity && comp.opacity !== undefined) dispOpacity.textContent = comp.opacity.toFixed(2);
         }
+
+        // Update roughness & metalness sliders to reflect selected material's physics defaults
+        const targetRoughness = variant?.roughness ?? profile?.roughness;
+        const targetMetalness = variant?.metalness ?? profile?.metalness;
+        if (targetRoughness !== undefined) {
+          comp.roughness = targetRoughness;
+          const inpR = document.getElementById('inp-roughness') as HTMLInputElement | null;
+          const dispR = document.getElementById('disp-roughness');
+          if (inpR) inpR.value = String(targetRoughness);
+          if (dispR) dispR.textContent = String(targetRoughness);
+        }
+        if (targetMetalness !== undefined) {
+          comp.metalness = targetMetalness;
+          const inpM = document.getElementById('inp-metalness') as HTMLInputElement | null;
+          const dispM = document.getElementById('disp-metalness');
+          if (inpM) inpM.value = String(targetMetalness);
+          if (dispM) dispM.textContent = String(targetMetalness);
+        }
+        if (variant?.wear !== undefined) {
+          comp.wear = variant.wear;
+          const inpW = document.getElementById('inp-mat-wear') as HTMLInputElement | null;
+          const dispW = document.getElementById('disp-mat-wear');
+          if (inpW) inpW.value = String(variant.wear);
+          if (dispW) dispW.textContent = `${Math.round(variant.wear * 100)}%`;
+        }
       } else {
         delete comp.texturePreset;
       }
+
+      if (selTexturePreset && selTexturePreset.value !== val) {
+        selTexturePreset.value = val;
+      }
+      renderMaterialBrowserCards();
       renderCurrentSpec('visual');
+    };
+
+    const renderMaterialBrowserCards = () => {
+      if (!matBrowserGrid) return;
+      const q = (inpMatSearch?.value || '').toLowerCase().trim();
+
+      interface BrowserItem {
+        id: string;
+        label: string;
+        badges: string[];
+      }
+      const items: BrowserItem[] = [];
+
+      if (activeMatCategory !== 'variants') {
+        const profiles = TextureLibrary.getProfilesByCategory(
+          activeMatCategory === 'all' ? 'all' : (activeMatCategory as MaterialFamilyCategory),
+          q
+        );
+        for (const p of profiles) {
+          const badges: string[] = [];
+          if ((p.normalStrength ?? 0.5) > 0.1 && !p.transparent) badges.push('NORM');
+          if (p.metalness >= 0.5) badges.push('METAL');
+          if (p.emissive) badges.push('EMISSIVE');
+          if (p.transparent) badges.push('ALPHA');
+          items.push({ id: p.name, label: p.label, badges });
+        }
+      }
+
+      if (activeMatCategory === 'all' || activeMatCategory === 'variants') {
+        for (const v of Object.values(TextureLibrary.PARAMETRIC_VARIANTS)) {
+          if (q) {
+            const match =
+              v.id.toLowerCase().includes(q) ||
+              v.label.toLowerCase().includes(q) ||
+              v.tags.some((t) => t.toLowerCase().includes(q));
+            if (!match) continue;
+          }
+          const badges = ['VAR'];
+          if (v.metalness >= 0.5) badges.push('METAL');
+          if (v.transparent) badges.push('ALPHA');
+          items.push({ id: v.id, label: v.label, badges });
+        }
+      }
+
+      if (items.length === 0) {
+        matBrowserGrid.innerHTML = `<div class="mat-empty-msg">Sin resultados para "${escapeHtml(q)}"</div>`;
+        return;
+      }
+
+      matBrowserGrid.innerHTML = items
+        .map((it) => {
+          const isActive = comp.texturePreset === it.id;
+          const thumbUrl = TextureLibrary.getThumbnailDataURL(it.id);
+          const badgeHtml = it.badges
+            .slice(0, 2)
+            .map((b) => `<span class="mat-pbr-badge badge-${b.toLowerCase()}">${b}</span>`)
+            .join('');
+          return `
+            <button type="button" class="mat-card-btn ${isActive ? 'active' : ''}" data-preset-id="${it.id}" title="${escapeHtml(it.label)} (${it.id})">
+              <img src="${thumbUrl}" alt="${escapeHtml(it.label)}" class="mat-card-thumb" loading="lazy" />
+              <div class="mat-card-meta">
+                <span class="mat-card-title">${escapeHtml(it.label)}</span>
+                <div class="mat-card-badges">${badgeHtml}</div>
+              </div>
+            </button>
+          `;
+        })
+        .join('');
+
+      matBrowserGrid.querySelectorAll('.mat-card-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const presetId = (btn as HTMLElement).dataset.presetId || '';
+          applyPresetToComponent(presetId);
+        });
+      });
+    };
+
+    renderMaterialBrowserCards();
+
+    selTexturePreset?.addEventListener('change', (e) => {
+      const val = (e.target as HTMLSelectElement).value;
+      applyPresetToComponent(val);
+    });
+
+    inpMatSearch?.addEventListener('input', () => {
+      renderMaterialBrowserCards();
+    });
+
+    matCatPills.forEach((pill) => {
+      pill.addEventListener('click', () => {
+        matCatPills.forEach((p) => p.classList.remove('active'));
+        pill.classList.add('active');
+        activeMatCategory = (pill as HTMLElement).dataset.matCat || 'all';
+        renderMaterialBrowserCards();
+      });
     });
 
     // UV Scale
@@ -2374,6 +2583,45 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     };
     inpUvU?.addEventListener('input', handleUVChange);
     inpUvV?.addEventListener('input', handleUVChange);
+
+    // UV Rotation
+    const inpUvRot = document.getElementById('inp-uv-rot') as HTMLInputElement | null;
+    const dispUvRot = document.getElementById('disp-uv-rot');
+    inpUvRot?.addEventListener('input', (e) => {
+      const deg = parseFloat((e.target as HTMLInputElement).value) || 0;
+      comp.uvRotation = deg;
+      if (dispUvRot) dispUvRot.textContent = `${deg}°`;
+      renderCurrentSpec('visual');
+    });
+    document.querySelectorAll('.uv-rot-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const deg = parseFloat((btn as HTMLElement).dataset.rot || '0') || 0;
+        comp.uvRotation = deg;
+        if (inpUvRot) inpUvRot.value = String(deg);
+        if (dispUvRot) dispUvRot.textContent = `${deg}°`;
+        renderCurrentSpec('visual');
+      });
+    });
+
+    // Parametric Wear / Grime
+    const inpMatWear = document.getElementById('inp-mat-wear') as HTMLInputElement | null;
+    const dispMatWear = document.getElementById('disp-mat-wear');
+    inpMatWear?.addEventListener('input', (e) => {
+      const wearVal = parseFloat((e.target as HTMLInputElement).value) || 0;
+      comp.wear = wearVal;
+      if (dispMatWear) dispMatWear.textContent = `${Math.round(wearVal * 100)}%`;
+      renderCurrentSpec('visual');
+    });
+
+    // Normal Map Relief Strength
+    const inpMatNormal = document.getElementById('inp-mat-normal') as HTMLInputElement | null;
+    const dispMatNormal = document.getElementById('disp-mat-normal');
+    inpMatNormal?.addEventListener('input', (e) => {
+      const normVal = parseFloat((e.target as HTMLInputElement).value) || 0;
+      comp.normalStrength = normVal;
+      if (dispMatNormal) dispMatNormal.textContent = normVal.toFixed(2);
+      renderCurrentSpec('visual');
+    });
 
     // Wireframe
     document.getElementById('chk-comp-wireframe')?.addEventListener('change', (e) => {
@@ -4775,5 +5023,172 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     border: 1px solid #1e293b;
     overflow-x: auto;
     font-size: 0.75rem;
+  }
+
+  /* PBR Material Browser in Studio Inspector */
+  .mat-browser-panel {
+    margin-top: 0.45rem;
+    padding: 0.45rem;
+    background: #050811;
+    border: 1px solid #1e293b;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .mat-browser-toolbar {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  .mat-search-inp {
+    font-size: 0.72rem;
+    padding: 0.3rem 0.45rem;
+    background: #090e1a;
+  }
+
+  .mat-cat-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+  }
+
+  .mat-cat-pill {
+    background: #0b1324;
+    border: 1px solid #1e293b;
+    color: #94a3b8;
+    font-family: var(--font-mono);
+    font-size: 0.63rem;
+    padding: 0.18rem 0.4rem;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.12s ease;
+  }
+
+  .mat-cat-pill:hover {
+    border-color: var(--ps1-cyan);
+    color: #e2e8f0;
+  }
+
+  .mat-cat-pill.active {
+    background: rgba(0, 240, 255, 0.14);
+    border-color: var(--ps1-cyan);
+    color: var(--ps1-cyan);
+    font-weight: 700;
+  }
+
+  .mat-browser-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.32rem;
+    max-height: 210px;
+    overflow-y: auto;
+    padding-right: 0.15rem;
+  }
+
+  .mat-card-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.28rem;
+    background: #0a101d;
+    border: 1px solid #1e293b;
+    color: #cbd5e1;
+    text-align: left;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: border-color 0.12s ease, background 0.12s ease;
+  }
+
+  .mat-card-btn:hover {
+    background: #111b30;
+    border-color: #38bdf8;
+  }
+
+  .mat-card-btn.active {
+    background: rgba(255, 176, 0, 0.14);
+    border-color: var(--ps1-gold);
+    box-shadow: inset 0 0 0 1px rgba(255, 176, 0, 0.4);
+  }
+
+  .mat-card-thumb {
+    width: 30px;
+    height: 30px;
+    border-radius: 2px;
+    border: 1px solid #334155;
+    flex-shrink: 0;
+    image-rendering: pixelated;
+    background: #020408;
+  }
+
+  .mat-card-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.12rem;
+    min-width: 0;
+    flex: 1;
+  }
+
+  .mat-card-title {
+    font-family: var(--font-mono);
+    font-size: 0.64rem;
+    line-height: 1.15;
+    color: #e2e8f0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .mat-card-badges {
+    display: flex;
+    gap: 0.2rem;
+    flex-wrap: wrap;
+  }
+
+  .mat-pbr-badge {
+    font-family: var(--font-mono);
+    font-size: 0.52rem;
+    padding: 0.04rem 0.22rem;
+    border-radius: 2px;
+    background: #1e293b;
+    color: #94a3b8;
+    letter-spacing: 0.02em;
+  }
+
+  .mat-pbr-badge.badge-norm { color: #60a5fa; background: rgba(59, 130, 246, 0.15); }
+  .mat-pbr-badge.badge-metal { color: #fbbf24; background: rgba(251, 191, 36, 0.15); }
+  .mat-pbr-badge.badge-emissive { color: #34d399; background: rgba(52, 211, 153, 0.15); }
+  .mat-pbr-badge.badge-alpha { color: #38bdf8; background: rgba(56, 189, 248, 0.15); }
+  .mat-pbr-badge.badge-var { color: #c084fc; background: rgba(192, 132, 252, 0.15); }
+
+  .mat-empty-msg {
+    grid-column: 1 / -1;
+    text-align: center;
+    font-size: 0.7rem;
+    color: #64748b;
+    padding: 0.75rem 0.25rem;
+  }
+
+  .uv-rot-presets {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
+  .uv-rot-btn {
+    background: #0b1324;
+    border: 1px solid #1e293b;
+    color: #94a3b8;
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    padding: 0.1rem 0.3rem;
+    cursor: pointer;
+    border-radius: 2px;
+  }
+
+  .uv-rot-btn:hover {
+    border-color: var(--ps1-cyan);
+    color: var(--ps1-cyan);
   }
 </style>
