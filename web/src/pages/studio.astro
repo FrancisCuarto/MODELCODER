@@ -221,7 +221,7 @@ import catalog from '../data/catalog.json';
             </div>
             
             <div class="outliner-footer">
-              <small class="outliner-hint">💡 Clic para seleccionar • 👁️ Visibilidad • 📋 Duplicar • 🗑️ Eliminar</small>
+              <small class="outliner-hint">💡 Clic para seleccionar • 👁️ Visibilidad • 📋 Duplicar • 🗑️ Eliminar (Ctrl+X)</small>
             </div>
           </div>
         </div>
@@ -1343,7 +1343,11 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
   });
 
   // --- RENDER CURRENT SPEC & GEOMETRY ---
-  function renderCurrentSpec(mode: 'ai' | 'visual' | 'code' = 'visual', recordHistory: boolean = true): void {
+  function renderCurrentSpec(
+    mode: 'ai' | 'visual' | 'code' = 'visual',
+    recordHistory: boolean = true,
+    rebuildInspector: boolean = true
+  ): void {
     if (!viewport) return;
 
     try {
@@ -1368,9 +1372,13 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
         viewport.selectComponent(null);
       }
 
-      // Sync outliner, inspector, code editor
+      // Sync outliner, inspector (only when selection/structure changes), code editor
       renderOutliner();
-      renderInspector();
+      if (rebuildInspector) {
+        renderInspector();
+      } else if (selectedComponentIndex !== null && currentSpec.components[selectedComponentIndex]) {
+        updateEffectiveDimensions(currentSpec.components[selectedComponentIndex]);
+      }
       updateSelectionPill();
       syncEditorFromSpec();
       setLinterValid();
@@ -1413,7 +1421,7 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
           <button type="button" class="btn-outliner-dup ps1-ctrl-btn" data-idx="${idx}" title="Duplicar componente">
             📋
           </button>
-          <button type="button" class="btn-outliner-del ps1-ctrl-btn" data-idx="${idx}" title="Eliminar componente">
+          <button type="button" class="btn-outliner-del ps1-ctrl-btn" data-idx="${idx}" title="Eliminar componente (Ctrl+X)">
             🗑️
           </button>
         </div>
@@ -1679,7 +1687,7 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
           <button type="button" id="btn-prop-dup" class="btn-mini btn-outline" title="Duplicar">
             📋 Duplicar
           </button>
-          <button type="button" id="btn-prop-del" class="btn-mini btn-danger" title="Eliminar">
+          <button type="button" id="btn-prop-del" class="btn-mini btn-danger" title="Eliminar pieza seleccionada (Ctrl+X)">
             🗑️ Eliminar
           </button>
         </div>
@@ -2253,10 +2261,32 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
   function wireInspectorEventListeners(comp: ComponentDef): void {
     const idx = selectedComponentIndex!;
 
+    // Helper: parse number while user is actively typing without breaking "-", ".", or empty string
+    const parseTypingNumber = (inp: HTMLInputElement | null): number | null => {
+      if (!inp) return null;
+      const raw = inp.value.trim().replace(',', '.');
+      if (raw === '' || raw === '-' || raw === '.' || raw === '-.' || raw === '+') {
+        return null;
+      }
+      const num = Number(raw);
+      return Number.isFinite(num) ? num : null;
+    };
+
     // Name input
-    document.getElementById('inp-comp-name')?.addEventListener('change', (e) => {
-      comp.name = (e.target as HTMLInputElement).value.trim() || `pieza_${idx + 1}`;
-      renderCurrentSpec('visual');
+    const inpCompName = document.getElementById('inp-comp-name') as HTMLInputElement | null;
+    inpCompName?.addEventListener('input', () => {
+      const val = inpCompName.value.trim();
+      if (val) {
+        comp.name = val;
+        renderOutliner();
+        updateSelectionPill();
+        syncEditorFromSpec();
+      }
+    });
+    inpCompName?.addEventListener('change', () => {
+      comp.name = inpCompName.value.trim() || `pieza_${idx + 1}`;
+      inpCompName.value = comp.name;
+      renderCurrentSpec('visual', true, false);
     });
 
     // Quick action buttons
@@ -2275,31 +2305,47 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
       comp.position = [0, 0, 0];
       comp.rotation = [0, 0, 0];
       comp.scale = [1, 1, 1];
-      renderCurrentSpec('visual');
+      renderCurrentSpec('visual', true, true);
     });
 
-    // Position inputs
-    const handlePosChange = () => {
-      const x = parseFloat((document.getElementById('inp-pos-x') as HTMLInputElement)?.value) || 0;
-      const y = parseFloat((document.getElementById('inp-pos-y') as HTMLInputElement)?.value) || 0;
-      const z = parseFloat((document.getElementById('inp-pos-z') as HTMLInputElement)?.value) || 0;
-      comp.position = [x, y, z];
-      renderCurrentSpec('visual');
-    };
-    ['inp-pos-x', 'inp-pos-y', 'inp-pos-z'].forEach((id) => {
-      document.getElementById(id)?.addEventListener('input', handlePosChange);
+    // Position inputs (live update without destroying focused input; commit on change/blur)
+    (['inp-pos-x', 'inp-pos-y', 'inp-pos-z'] as const).forEach((id, axisIdx) => {
+      const el = document.getElementById(id) as HTMLInputElement | null;
+      el?.addEventListener('input', () => {
+        const val = parseTypingNumber(el);
+        if (val === null) return; // User is clearing or typing '-' / '.'
+        if (!comp.position) comp.position = [0, 0, 0];
+        comp.position[axisIdx] = val;
+        renderCurrentSpec('visual', false, false);
+      });
+      el?.addEventListener('change', () => {
+        if (!comp.position) comp.position = [0, 0, 0];
+        const val = parseTypingNumber(el);
+        const finalVal = val !== null ? val : 0;
+        comp.position[axisIdx] = finalVal;
+        if (el) el.value = `${finalVal}`;
+        renderCurrentSpec('visual', true, false);
+      });
     });
 
-    // Rotation inputs
-    const handleRotChange = () => {
-      const x = parseFloat((document.getElementById('inp-rot-x') as HTMLInputElement)?.value) || 0;
-      const y = parseFloat((document.getElementById('inp-rot-y') as HTMLInputElement)?.value) || 0;
-      const z = parseFloat((document.getElementById('inp-rot-z') as HTMLInputElement)?.value) || 0;
-      comp.rotation = [x, y, z];
-      renderCurrentSpec('visual');
-    };
-    ['inp-rot-x', 'inp-rot-y', 'inp-rot-z'].forEach((id) => {
-      document.getElementById(id)?.addEventListener('input', handleRotChange);
+    // Rotation inputs (live update without destroying focused input; commit on change/blur)
+    (['inp-rot-x', 'inp-rot-y', 'inp-rot-z'] as const).forEach((id, axisIdx) => {
+      const el = document.getElementById(id) as HTMLInputElement | null;
+      el?.addEventListener('input', () => {
+        const val = parseTypingNumber(el);
+        if (val === null) return;
+        if (!comp.rotation) comp.rotation = [0, 0, 0];
+        comp.rotation[axisIdx] = val;
+        renderCurrentSpec('visual', false, false);
+      });
+      el?.addEventListener('change', () => {
+        if (!comp.rotation) comp.rotation = [0, 0, 0];
+        const val = parseTypingNumber(el);
+        const finalVal = val !== null ? val : 0;
+        comp.rotation[axisIdx] = finalVal;
+        if (el) el.value = `${finalVal}`;
+        renderCurrentSpec('visual', true, false);
+      });
     });
 
     // Scale Lock checkbox
@@ -2309,38 +2355,71 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     });
 
     // Scale inputs
-    const handleScaleInput = (axis: 0 | 1 | 2, e: Event) => {
-      const val = Math.max(0.01, parseFloat((e.target as HTMLInputElement).value) || 1.0);
+    const scaleIds = ['inp-scl-x', 'inp-scl-y', 'inp-scl-z'] as const;
+    const applyScaleAxis = (axis: 0 | 1 | 2, val: number, isFinalCommit: boolean) => {
       if (!comp.scale) comp.scale = [1, 1, 1];
 
       if (isUniformScaleLocked) {
         const oldVal = comp.scale[axis] || 1.0;
-        const ratio = val / oldVal;
-        comp.scale[0] = parseFloat((comp.scale[0] * ratio).toFixed(3));
-        comp.scale[1] = parseFloat((comp.scale[1] * ratio).toFixed(3));
-        comp.scale[2] = parseFloat((comp.scale[2] * ratio).toFixed(3));
-        (document.getElementById('inp-scl-x') as HTMLInputElement).value = `${comp.scale[0]}`;
-        (document.getElementById('inp-scl-y') as HTMLInputElement).value = `${comp.scale[1]}`;
-        (document.getElementById('inp-scl-z') as HTMLInputElement).value = `${comp.scale[2]}`;
+        const ratio = oldVal > 0 ? val / oldVal : 1.0;
+        comp.scale[0] = Math.max(0.01, parseFloat((comp.scale[0] * ratio).toFixed(3)));
+        comp.scale[1] = Math.max(0.01, parseFloat((comp.scale[1] * ratio).toFixed(3)));
+        comp.scale[2] = Math.max(0.01, parseFloat((comp.scale[2] * ratio).toFixed(3)));
+        comp.scale[axis] = val;
+        scaleIds.forEach((otherId, otherIdx) => {
+          if (isFinalCommit || otherIdx !== axis) {
+            const otherEl = document.getElementById(otherId) as HTMLInputElement | null;
+            if (otherEl) otherEl.value = `${comp.scale![otherIdx]}`;
+          }
+        });
       } else {
         comp.scale[axis] = val;
+        if (isFinalCommit) {
+          const el = document.getElementById(scaleIds[axis]) as HTMLInputElement | null;
+          if (el) el.value = `${val}`;
+        }
       }
-      renderCurrentSpec('visual');
+      renderCurrentSpec('visual', isFinalCommit, false);
     };
 
-    document.getElementById('inp-scl-x')?.addEventListener('input', (e) => handleScaleInput(0, e));
-    document.getElementById('inp-scl-y')?.addEventListener('input', (e) => handleScaleInput(1, e));
-    document.getElementById('inp-scl-z')?.addEventListener('input', (e) => handleScaleInput(2, e));
+    scaleIds.forEach((id, idxAxis) => {
+      const axis = idxAxis as 0 | 1 | 2;
+      const el = document.getElementById(id) as HTMLInputElement | null;
+      el?.addEventListener('input', () => {
+        const val = parseTypingNumber(el);
+        // Wait while user is typing '0' or '0.' on the way to '0.5'
+        if (val === null || val < 0.01) return;
+        applyScaleAxis(axis, val, false);
+      });
+      el?.addEventListener('change', () => {
+        const val = parseTypingNumber(el);
+        const safeVal = val !== null && val >= 0.01 ? val : (comp.scale?.[axis] || 1.0);
+        applyScaleAxis(axis, safeVal, true);
+      });
+    });
 
     // Shape-specific parameters
     document.querySelectorAll('.shape-num-inp').forEach((inp) => {
-      inp.addEventListener('input', (e) => {
-        const input = e.target as HTMLInputElement;
-        const paramIdx = parseInt(input.dataset.param || '0', 10);
-        const val = parseFloat(input.value) || 0.1;
+      const input = inp as HTMLInputElement;
+      const paramIdx = parseInt(input.dataset.param || '0', 10);
+      const minVal = parseFloat(input.min || '0.005') || 0.005;
+
+      input.addEventListener('input', () => {
+        const val = parseTypingNumber(input);
+        if (val === null || val < minVal) return; // Allow typing '0.' before '0.25'
         if (!comp.size) comp.size = getDefaultSizeForShape(comp.shape);
         comp.size[paramIdx] = val;
-        renderCurrentSpec('visual');
+        renderCurrentSpec('visual', false, false);
+      });
+
+      input.addEventListener('change', () => {
+        if (!comp.size) comp.size = getDefaultSizeForShape(comp.shape);
+        const val = parseTypingNumber(input);
+        const defSizes = getDefaultSizeForShape(comp.shape);
+        const safeVal = val !== null && val >= minVal ? val : (comp.size[paramIdx] ?? defSizes[paramIdx] ?? 0.1);
+        comp.size[paramIdx] = safeVal;
+        input.value = `${safeVal}`;
+        renderCurrentSpec('visual', true, false);
       });
     });
 
@@ -2352,14 +2431,25 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
       const val = (e.target as HTMLInputElement).value;
       comp.color = val;
       if (inpMatColorHex) inpMatColorHex.value = val;
-      renderCurrentSpec('visual');
+      renderCurrentSpec('visual', false, false);
+    });
+    inpMatColor?.addEventListener('change', () => {
+      pushHistoryState(currentSpec);
     });
 
-    inpMatColorHex?.addEventListener('change', (e) => {
+    inpMatColorHex?.addEventListener('input', (e) => {
       const val = (e.target as HTMLInputElement).value.trim();
+      if (/^#[0-9a-fA-F]{6}$/.test(val)) {
+        comp.color = val;
+        if (inpMatColor) inpMatColor.value = val;
+        renderCurrentSpec('visual', false, false);
+      }
+    });
+    inpMatColorHex?.addEventListener('change', (e) => {
+      const val = (e.target as HTMLInputElement).value.trim() || '#4a5568';
       comp.color = val;
-      if (inpMatColor && val.startsWith('#')) inpMatColor.value = val;
-      renderCurrentSpec('visual');
+      if (inpMatColor && /^#[0-9a-fA-F]{6}$/.test(val)) inpMatColor.value = val;
+      renderCurrentSpec('visual', true, false);
     });
 
     // Roughness & Metalness
@@ -2369,8 +2459,9 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
       const val = parseFloat((e.target as HTMLInputElement).value);
       comp.roughness = val;
       if (dispRoughness) dispRoughness.textContent = `${val}`;
-      renderCurrentSpec('visual');
+      renderCurrentSpec('visual', false, false);
     });
+    inpRoughness?.addEventListener('change', () => pushHistoryState(currentSpec));
 
     const inpMetalness = document.getElementById('inp-metalness') as HTMLInputElement | null;
     const dispMetalness = document.getElementById('disp-metalness');
@@ -2378,8 +2469,9 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
       const val = parseFloat((e.target as HTMLInputElement).value);
       comp.metalness = val;
       if (dispMetalness) dispMetalness.textContent = `${val}`;
-      renderCurrentSpec('visual');
+      renderCurrentSpec('visual', false, false);
     });
+    inpMetalness?.addEventListener('change', () => pushHistoryState(currentSpec));
 
     // Transparent & Opacity
     const chkTransparent = document.getElementById('chk-transparent') as HTMLInputElement | null;
@@ -2398,7 +2490,7 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
         if (inpOpacity) inpOpacity.value = '1.0';
         if (dispOpacity) dispOpacity.textContent = '1.00';
       }
-      renderCurrentSpec('visual');
+      renderCurrentSpec('visual', true, false);
     });
 
     inpOpacity?.addEventListener('input', (e) => {
@@ -2412,8 +2504,9 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
         if (chkTransparent) chkTransparent.checked = false;
       }
       if (dispOpacity) dispOpacity.textContent = val.toFixed(2);
-      renderCurrentSpec('visual');
+      renderCurrentSpec('visual', false, false);
     });
+    inpOpacity?.addEventListener('change', () => pushHistoryState(currentSpec));
 
     // Texture Preset & Interactive Material Browser
     const selTexturePreset = document.getElementById('sel-texture-preset') as HTMLSelectElement | null;
@@ -2491,7 +2584,7 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
         selTexturePreset.value = val;
       }
       renderMaterialBrowserCards();
-      renderCurrentSpec('visual');
+      renderCurrentSpec('visual', true, false);
     };
 
     const renderMaterialBrowserCards = () => {
@@ -2592,14 +2685,23 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     // UV Scale
     const inpUvU = document.getElementById('inp-uv-u') as HTMLInputElement | null;
     const inpUvV = document.getElementById('inp-uv-v') as HTMLInputElement | null;
-    const handleUVChange = () => {
-      const u = parseFloat(inpUvU?.value || '1.0') || 1.0;
-      const v = parseFloat(inpUvV?.value || '1.0') || 1.0;
-      comp.uvScale = [u, v];
-      renderCurrentSpec('visual');
-    };
-    inpUvU?.addEventListener('input', handleUVChange);
-    inpUvV?.addEventListener('input', handleUVChange);
+    ([inpUvU, inpUvV] as const).forEach((el, uvIdx) => {
+      el?.addEventListener('input', () => {
+        const val = parseTypingNumber(el);
+        if (val === null || val < 0.05) return;
+        if (!comp.uvScale) comp.uvScale = [1.0, 1.0];
+        comp.uvScale[uvIdx] = val;
+        renderCurrentSpec('visual', false, false);
+      });
+      el?.addEventListener('change', () => {
+        if (!comp.uvScale) comp.uvScale = [1.0, 1.0];
+        const val = parseTypingNumber(el);
+        const safeVal = val !== null && val >= 0.05 ? val : (comp.uvScale[uvIdx] || 1.0);
+        comp.uvScale[uvIdx] = safeVal;
+        if (el) el.value = `${safeVal}`;
+        renderCurrentSpec('visual', true, false);
+      });
+    });
 
     // UV Rotation
     const inpUvRot = document.getElementById('inp-uv-rot') as HTMLInputElement | null;
@@ -2608,15 +2710,16 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
       const deg = parseFloat((e.target as HTMLInputElement).value) || 0;
       comp.uvRotation = deg;
       if (dispUvRot) dispUvRot.textContent = `${deg}°`;
-      renderCurrentSpec('visual');
+      renderCurrentSpec('visual', false, false);
     });
+    inpUvRot?.addEventListener('change', () => pushHistoryState(currentSpec));
     document.querySelectorAll('.uv-rot-btn').forEach((btn) => {
       btn.addEventListener('click', () => {
         const deg = parseFloat((btn as HTMLElement).dataset.rot || '0') || 0;
         comp.uvRotation = deg;
         if (inpUvRot) inpUvRot.value = String(deg);
         if (dispUvRot) dispUvRot.textContent = `${deg}°`;
-        renderCurrentSpec('visual');
+        renderCurrentSpec('visual', true, false);
       });
     });
 
@@ -2627,8 +2730,9 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
       const wearVal = parseFloat((e.target as HTMLInputElement).value) || 0;
       comp.wear = wearVal;
       if (dispMatWear) dispMatWear.textContent = `${Math.round(wearVal * 100)}%`;
-      renderCurrentSpec('visual');
+      renderCurrentSpec('visual', false, false);
     });
+    inpMatWear?.addEventListener('change', () => pushHistoryState(currentSpec));
 
     // Normal Map Relief Strength
     const inpMatNormal = document.getElementById('inp-mat-normal') as HTMLInputElement | null;
@@ -2637,24 +2741,29 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
       const normVal = parseFloat((e.target as HTMLInputElement).value) || 0;
       comp.normalStrength = normVal;
       if (dispMatNormal) dispMatNormal.textContent = normVal.toFixed(2);
-      renderCurrentSpec('visual');
+      renderCurrentSpec('visual', false, false);
     });
+    inpMatNormal?.addEventListener('change', () => pushHistoryState(currentSpec));
 
     // Wireframe
     document.getElementById('chk-comp-wireframe')?.addEventListener('change', (e) => {
       comp.wireframe = (e.target as HTMLInputElement).checked;
-      renderCurrentSpec('visual');
+      renderCurrentSpec('visual', true, false);
     });
 
     // Label / Decal
-    document.getElementById('inp-comp-label')?.addEventListener('change', (e) => {
-      const val = (e.target as HTMLInputElement).value.trim();
-      if (val) {
-        comp.label = val;
-      } else {
-        delete comp.label;
-      }
-      renderCurrentSpec('visual');
+    const inpCompLabel = document.getElementById('inp-comp-label') as HTMLInputElement | null;
+    inpCompLabel?.addEventListener('input', () => {
+      const val = inpCompLabel.value.trim();
+      if (val) comp.label = val;
+      else delete comp.label;
+      renderCurrentSpec('visual', false, false);
+    });
+    inpCompLabel?.addEventListener('change', () => {
+      const val = inpCompLabel.value.trim();
+      if (val) comp.label = val;
+      else delete comp.label;
+      renderCurrentSpec('visual', true, false);
     });
   }
 
@@ -2736,24 +2845,44 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
 
   // --- KEYBOARD SHORTCUTS ---
   window.addEventListener('keydown', (e) => {
-    const targetTag = (e.target as HTMLElement)?.tagName?.toLowerCase();
-    const isInputActive = targetTag === 'input' || targetTag === 'textarea' || targetTag === 'select';
+    const targetEl = e.target as HTMLElement | null;
+    const activeEl = document.activeElement as HTMLElement | null;
+    const targetTag = targetEl?.tagName?.toLowerCase();
+    const activeTag = activeEl?.tagName?.toLowerCase();
+    const isInputActive =
+      targetTag === 'input' ||
+      targetTag === 'textarea' ||
+      targetTag === 'select' ||
+      activeTag === 'input' ||
+      activeTag === 'textarea' ||
+      activeTag === 'select' ||
+      Boolean(targetEl?.isContentEditable) ||
+      Boolean(activeEl?.isContentEditable);
 
-    // Undo / Redo (available everywhere)
-    if ((e.ctrlKey || e.metaKey) && (e.key === 'z' || e.key === 'Z')) {
+    // Undo / Redo (when not typing inside text fields so native input Undo still works)
+    if (!isInputActive && (e.ctrlKey || e.metaKey) && (e.key === 'z' || e.key === 'Z')) {
       e.preventDefault();
       if (e.shiftKey) redo();
       else undo();
       return;
     }
-    if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || e.key === 'Y')) {
+    if (!isInputActive && (e.ctrlKey || e.metaKey) && (e.key === 'y' || e.key === 'Y')) {
       e.preventDefault();
       redo();
       return;
     }
 
-    // Viewport & Editor shortcuts when not typing in text fields
-    if (!isInputActive) {
+    // Delete selected component with Ctrl + X (only when not editing a text field)
+    if (!isInputActive && (e.ctrlKey || e.metaKey) && (e.key === 'x' || e.key === 'X')) {
+      e.preventDefault();
+      if (selectedComponentIndex !== null) {
+        deleteComponent(selectedComponentIndex);
+      }
+      return;
+    }
+
+    // Viewport & Editor single-key shortcuts when not typing in text fields or pressing modifiers
+    if (!isInputActive && !e.ctrlKey && !e.metaKey && !e.altKey) {
       if (e.key === 'w' || e.key === 'W') {
         viewport?.setGizmoMode('translate');
         updateGizmoButtons('translate');
@@ -2769,10 +2898,6 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
       } else if (e.key === 'f' || e.key === 'F') {
         if (selectedComponentIndex !== null) {
           viewport?.focusComponent(selectedComponentIndex);
-        }
-      } else if (e.key === 'Delete' || e.key === 'Backspace') {
-        if (selectedComponentIndex !== null) {
-          deleteComponent(selectedComponentIndex);
         }
       }
     }
