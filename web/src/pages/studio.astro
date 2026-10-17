@@ -3063,19 +3063,32 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
   btnCancelSaveProject?.addEventListener('click', () => modalSaveProject?.close());
 
   btnConfirmSaveProject?.addEventListener('click', () => {
-    const name = inputSaveName?.value?.trim() || currentSpec.name || 'Sin Nombre';
-    const cat = selectSaveCat?.value || currentSpec.category || 'furniture';
-    const desc = textareaSaveDesc?.value?.trim() || currentSpec.description || '';
+    try {
+      const name = inputSaveName?.value?.trim() || currentSpec.name || 'Sin Nombre';
+      const cat = selectSaveCat?.value || currentSpec.category || 'furniture';
+      const desc = textareaSaveDesc?.value?.trim() || currentSpec.description || '';
 
-    currentSpec.name = name;
-    currentSpec.category = cat;
-    currentSpec.description = desc;
+      currentSpec.name = name;
+      currentSpec.category = cat;
+      currentSpec.description = desc;
 
-    saveProjectDraft(currentSpec, name, cat, desc, currentCapturedThumbnail);
-    clearAutoDraft();
-    updateDraftsBadge();
-    modalSaveProject?.close();
-    showStudioToast(`💾 ¡Proyecto '${name}' guardado correctamente!`);
+      saveProjectDraft({
+        spec: currentSpec,
+        name,
+        category: cat,
+        description: desc,
+        thumbnail: currentCapturedThumbnail,
+        tri_count: lastGeometricStats?.triangles || 0,
+      });
+
+      clearAutoDraft();
+      updateDraftsBadge();
+      modalSaveProject?.close();
+      showStudioToast(`💾 ¡Proyecto '${name}' guardado correctamente!`);
+    } catch (err: any) {
+      console.error('[ModelCoder] Error guardando proyecto:', err);
+      showStudioToast(`❌ Error al guardar: ${err?.message || 'Error inesperado'}`, true);
+    }
   });
 
   // --- MODAL: GESTOR DE PROYECTOS Y BORRADORES ---

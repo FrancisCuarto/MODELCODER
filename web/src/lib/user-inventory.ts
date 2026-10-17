@@ -62,28 +62,81 @@ export function getProjectDraft(id: string): UserProjectDraft | null {
   return drafts.find((d) => d.id === id) || null;
 }
 
-export function saveProjectDraft(draftData: {
-  id?: string;
-  name: string;
-  category?: string;
-  description?: string;
-  spec: ModelSpec;
-  thumbnail?: string;
-  tri_count?: number;
-}): UserProjectDraft {
+function notifyChange(type: 'drafts' | 'favorites' | 'collections', data: any) {
+  if (typeof window !== 'undefined') {
+    try {
+      window.dispatchEvent(new CustomEvent(`modelcoder:${type}-changed`, { detail: data }));
+      window.dispatchEvent(new CustomEvent('modelcoder:inventory_updated', { detail: { type, data } }));
+    } catch {}
+  }
+}
+
+export function saveProjectDraft(
+  arg1: {
+    id?: string;
+    name?: string;
+    category?: string;
+    description?: string;
+    spec: ModelSpec;
+    thumbnail?: string;
+    tri_count?: number;
+  } | ModelSpec,
+  nameArg?: string,
+  categoryArg?: string,
+  descriptionArg?: string,
+  thumbnailArg?: string,
+  triCountArg?: number
+): UserProjectDraft {
+  let draftData: {
+    id?: string;
+    name: string;
+    category?: string;
+    description?: string;
+    spec: ModelSpec;
+    thumbnail?: string;
+    tri_count?: number;
+  };
+
+  if (arg1 && 'components' in arg1) {
+    // Positional parameters call: saveProjectDraft(spec, name, category, description, thumbnail, tri_count)
+    draftData = {
+      spec: arg1,
+      name: nameArg || arg1.name || 'Proyecto Sin Nombre',
+      category: categoryArg || arg1.category || 'furniture',
+      description: descriptionArg || arg1.description || 'Modelo procedural en desarrollo.',
+      thumbnail: thumbnailArg,
+      tri_count: triCountArg,
+    };
+  } else {
+    const obj = arg1 as any;
+    draftData = {
+      id: obj?.id,
+      name: obj?.name || obj?.spec?.name || 'Proyecto Sin Nombre',
+      category: obj?.category || obj?.spec?.category || 'furniture',
+      description: obj?.description || obj?.spec?.description || 'Modelo procedural en desarrollo.',
+      spec: obj?.spec,
+      thumbnail: obj?.thumbnail,
+      tri_count: obj?.tri_count,
+    };
+  }
+
+  if (!draftData.spec || !Array.isArray(draftData.spec.components)) {
+    throw new Error('La especificación del modelo es inválida o no contiene componentes.');
+  }
+
   const drafts = getProjectDrafts();
   const now = new Date().toISOString();
   const id = draftData.id || `proj_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
   const existingIdx = drafts.findIndex((d) => d.id === id);
 
-  const componentsCount = draftData.spec.components?.length || 0;
+  const componentsCount = draftData.spec.components.length;
   const triCount = draftData.tri_count || 50;
 
   const newDraft: UserProjectDraft = {
     id,
-    name: draftData.name || draftData.spec.name || 'Proyecto Sin Nombre',
-    category: draftData.category || draftData.spec.category || 'furniture',
-    description: draftData.description || draftData.spec.description || 'Modelo procedural en desarrollo.',
+    name: draftData.name,
+    category: draftData.category || 'furniture',
+    description: draftData.description || 'Modelo procedural en desarrollo.',
     spec: JSON.parse(JSON.stringify(draftData.spec)),
     thumbnail: draftData.thumbnail || (existingIdx >= 0 ? drafts[existingIdx].thumbnail : undefined),
     tri_count: triCount,
@@ -101,10 +154,16 @@ export function saveProjectDraft(draftData: {
   if (typeof window !== 'undefined') {
     try {
       localStorage.setItem(STORAGE_KEYS.DRAFTS, JSON.stringify(drafts));
-      // Notify other components or tabs
-      window.dispatchEvent(new CustomEvent('modelcoder:drafts-changed', { detail: { drafts } }));
+      notifyChange('drafts', { drafts });
     } catch (e) {
-      console.warn('[ModelCoder Inventory] Almacenamiento lleno o no disponible:', e);
+      console.warn('[ModelCoder Inventory] Quota exceeded, guardando versión ligera sin miniaturas base64:', e);
+      try {
+        const lightweightDrafts = drafts.map((d, idx) => (idx > 2 ? { ...d, thumbnail: undefined } : d));
+        localStorage.setItem(STORAGE_KEYS.DRAFTS, JSON.stringify(lightweightDrafts));
+        notifyChange('drafts', { drafts: lightweightDrafts });
+      } catch (err2) {
+        console.error('[ModelCoder Inventory] Error fatal guardando en localStorage:', err2);
+      }
     }
   }
 
@@ -122,7 +181,7 @@ export function deleteProjectDraft(id: string): boolean {
   if (typeof window !== 'undefined') {
     try {
       localStorage.setItem(STORAGE_KEYS.DRAFTS, JSON.stringify(filtered));
-      window.dispatchEvent(new CustomEvent('modelcoder:drafts-changed', { detail: { drafts: filtered } }));
+      notifyChange('drafts', { drafts: filtered });
     } catch {}
   }
 
@@ -229,11 +288,7 @@ export function toggleFavorite(item: {
   if (typeof window !== 'undefined') {
     try {
       localStorage.setItem(STORAGE_KEYS.FAVORITES, JSON.stringify(favorites));
-      window.dispatchEvent(
-        new CustomEvent('modelcoder:favorites-changed', {
-          detail: { id: item.id, isFavorite: isNowFavorite, favorites },
-        })
-      );
+      notifyChange('favorites', { id: item.id, isFavorite: isNowFavorite, favorites });
     } catch {}
   }
 
@@ -312,7 +367,7 @@ export function saveCollection(collection: {
   if (typeof window !== 'undefined') {
     try {
       localStorage.setItem(STORAGE_KEYS.COLLECTIONS, JSON.stringify(collections));
-      window.dispatchEvent(new CustomEvent('modelcoder:collections-changed', { detail: { collections } }));
+      notifyChange('collections', { collections });
     } catch {}
   }
 
@@ -328,7 +383,7 @@ export function deleteCollection(id: string): boolean {
   if (typeof window !== 'undefined') {
     try {
       localStorage.setItem(STORAGE_KEYS.COLLECTIONS, JSON.stringify(filtered));
-      window.dispatchEvent(new CustomEvent('modelcoder:collections-changed', { detail: { collections: filtered } }));
+      notifyChange('collections', { collections: filtered });
     } catch {}
   }
 
@@ -355,7 +410,7 @@ export function toggleModelInCollection(collectionId: string, modelId: string): 
   if (typeof window !== 'undefined') {
     try {
       localStorage.setItem(STORAGE_KEYS.COLLECTIONS, JSON.stringify(collections));
-      window.dispatchEvent(new CustomEvent('modelcoder:collections-changed', { detail: { collections } }));
+      notifyChange('collections', { collections });
     } catch {}
   }
 

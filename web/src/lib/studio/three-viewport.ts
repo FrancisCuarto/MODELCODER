@@ -658,7 +658,8 @@ export class StudioViewport {
   }
 
   /**
-   * Captures a clean PNG thumbnail data URL for project drafts and inventory.
+   * Captures a clean, compact PNG/JPEG thumbnail data URL for project drafts and inventory.
+   * Resizes to 160x160 to prevent localStorage quota exhaustion.
    */
   public getThumbnailDataURL(): string {
     const prevGizmoHelper = typeof this.transformControls.getHelper === 'function'
@@ -667,16 +668,30 @@ export class StudioViewport {
     const wasGizmoVisible = prevGizmoHelper ? prevGizmoHelper.visible : false;
     const wasSelectionVisible = this.selectionBox.visible;
 
-    if (prevGizmoHelper) prevGizmoHelper.visible = false;
-    this.selectionBox.visible = false;
+    try {
+      if (prevGizmoHelper) prevGizmoHelper.visible = false;
+      this.selectionBox.visible = false;
 
-    this.renderer.render(this.scene, this.camera);
-    const dataUrl = this.renderer.domElement.toDataURL('image/png');
+      this.renderer.render(this.scene, this.camera);
 
-    if (prevGizmoHelper) prevGizmoHelper.visible = wasGizmoVisible;
-    this.selectionBox.visible = wasSelectionVisible;
+      // Create a 160x160 canvas to keep thumbnail under 10KB
+      const thumbCanvas = document.createElement('canvas');
+      thumbCanvas.width = 160;
+      thumbCanvas.height = 160;
+      const ctx = thumbCanvas.getContext('2d');
+      if (ctx && this.renderer.domElement.width > 0) {
+        ctx.drawImage(this.renderer.domElement, 0, 0, 160, 160);
+        return thumbCanvas.toDataURL('image/jpeg', 0.82);
+      }
 
-    return dataUrl;
+      return this.renderer.domElement.toDataURL('image/jpeg', 0.7);
+    } catch (e) {
+      console.warn('[StudioViewport] Failed to generate thumbnail:', e);
+      return '';
+    } finally {
+      if (prevGizmoHelper) prevGizmoHelper.visible = wasGizmoVisible;
+      this.selectionBox.visible = wasSelectionVisible;
+    }
   }
 
   public setOnComponentSelected(cb: (index: number | null) => void): void {
