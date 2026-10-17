@@ -576,6 +576,72 @@ export class StudioViewport {
     return this.activeVersion;
   }
 
+  /**
+   * Triggers an immediate recalculation of viewport bounds and projection.
+   */
+  public resize(): void {
+    this.handleResize();
+  }
+
+  /**
+   * Toggles smooth continuous 360 turntable auto-rotation around the model.
+   */
+  public setTurntable(enabled: boolean, speedMultiplier: number = 1.0): void {
+    this.controls.autoRotate = enabled;
+    this.controls.autoRotateSpeed = 2.0 * speedMultiplier;
+  }
+
+  public isTurntableEnabled(): boolean {
+    return this.controls.autoRotate;
+  }
+
+  /**
+   * Sets the 3D environment backdrop mode.
+   */
+  public setBackgroundMode(mode: 'dark' | 'studio' | 'transparent'): void {
+    if (mode === 'transparent') {
+      this.scene.background = null;
+      this.renderer.setClearColor(0x000000, 0);
+      this.gridHelper.visible = false;
+    } else if (mode === 'studio') {
+      this.scene.background = new THREE.Color(0x1a202c);
+      this.renderer.setClearColor(0x1a202c, 1);
+      this.gridHelper.visible = true;
+    } else {
+      // 'dark' (Default Retro Space)
+      this.scene.background = new THREE.Color(0x0a0d14);
+      this.renderer.setClearColor(0x0a0d14, 1);
+      this.gridHelper.visible = true;
+    }
+  }
+
+  /**
+   * Captures a clean high-definition PNG screenshot without editor gizmos or overlays.
+   */
+  public captureRenderScreenshot(filename: string = 'model_render.png'): void {
+    const prevGizmoHelper = typeof this.transformControls.getHelper === 'function'
+      ? this.transformControls.getHelper()
+      : (this.transformControls as any);
+    const wasGizmoVisible = prevGizmoHelper ? prevGizmoHelper.visible : false;
+    const wasSelectionVisible = this.selectionBox.visible;
+
+    if (prevGizmoHelper) prevGizmoHelper.visible = false;
+    this.selectionBox.visible = false;
+
+    this.renderer.render(this.scene, this.camera);
+    const dataUrl = this.renderer.domElement.toDataURL('image/png');
+
+    if (prevGizmoHelper) prevGizmoHelper.visible = wasGizmoVisible;
+    this.selectionBox.visible = wasSelectionVisible;
+
+    const a = document.createElement('a');
+    a.href = dataUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }
+
   public setOnComponentSelected(cb: (index: number | null) => void): void {
     this.onComponentSelected = cb;
   }

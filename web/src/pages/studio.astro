@@ -16,16 +16,25 @@ import catalog from '../data/catalog.json';
       </div>
 
       <div class="topbar-actions">
-        <!-- Mode Switcher Tabs -->
-        <div class="mode-switcher-group">
-          <button id="mode-tab-ai" class="btn-mode-tab" data-mode="ai" title="Creación de modelos mediante lenguaje natural">
-            ⚡ MODO IA
+        <!-- Blender-Style DCC Workspaces Switcher -->
+        <div class="workspace-tabs-group" id="workspace-tabs-group">
+          <button id="ws-tab-layout" class="btn-workspace-tab active" data-workspace="layout" title="Layout general: Visor 3D, Árbol de piezas e Inspector de propiedades">
+            📐 LAYOUT
           </button>
-          <button id="mode-tab-visual" class="btn-mode-tab active" data-mode="visual" title="Editor procedural 3D con árbol de piezas y gizmos">
-            🛠️ EDITOR 3D
+          <button id="ws-tab-modeling" class="btn-workspace-tab" data-workspace="modeling" title="Modelado: Primitivas geométricas, transformaciones métricas y gizmos W/E/R">
+            🛠️ MODELADO
           </button>
-          <button id="mode-tab-code" class="btn-mode-tab" data-mode="code" title="Editor de código procedural y especificaciones">
-            💻 EDITOR DE CÓDIGO
+          <button id="ws-tab-shading" class="btn-workspace-tab" data-workspace="shading" title="Shading y Materiales: Atlas de texturas PS1, rugosidad, metal y modos de visualización">
+            🎨 SHADING
+          </button>
+          <button id="ws-tab-render" class="btn-workspace-tab" data-workspace="render" title="Render y Presentación: Visor limpio al 100%, turntable 360°, fondos de estudio y captura HD">
+            🎬 RENDER
+          </button>
+          <button id="ws-tab-code" class="btn-workspace-tab" data-workspace="code" title="Editor de Código: JSON de geometría, DSL JavaScript y generator.py para Blender">
+            💻 CÓDIGO
+          </button>
+          <button id="ws-tab-ai" class="btn-workspace-tab" data-workspace="ai" title="Copiloto IA: Generación de geometría por lenguaje natural con Google Gemini">
+            ⚡ COPILOTO IA
           </button>
         </div>
 
@@ -41,6 +50,9 @@ import catalog from '../data/catalog.json';
 
         <!-- Action Buttons -->
         <div class="topbar-btn-group">
+          <button id="btn-toggle-fullscreen" class="btn btn-outline btn-fullscreen-toggle" title="Alternar Pantalla Completa estilo Blender (F11 / ESC)">
+            <span class="fs-icon">⛶</span> <span class="fs-text">PANTALLA COMPLETA</span>
+          </button>
           <button id="run-compile-btn" class="btn btn-cyan" title="Compilar código actual y actualizar visor 3D">
             ⚡ COMPILAR & VER 3D
           </button>
@@ -301,6 +313,45 @@ import catalog from '../data/catalog.json';
               <div class="generation-status-badge" id="viewport-status-badge">
                 <span class="badge-dot dot-completed"></span>
                 <span class="badge-text" id="status-badge-text">COMPLETADO</span>
+              </div>
+            </div>
+
+            <!-- Floating Render Presentation Studio Bar (Active in Render Workspace) -->
+            <div id="render-studio-controls" class="render-studio-controls" style="display: none;">
+              <div class="render-panel-inner ps1-window">
+                <div class="render-tool-item">
+                  <span class="render-tool-label">🔄 TURNTABLE 360°:</span>
+                  <button type="button" id="btn-render-turntable" class="btn-mini btn-outline" title="Iniciar / Pausar giro continuo 360°">
+                    ▶ INICIAR
+                  </button>
+                  <select id="select-turntable-speed" class="form-select render-speed-select" title="Velocidad de giro 360°">
+                    <option value="0.5">0.5x Lento</option>
+                    <option value="1.0" selected>1.0x Normal</option>
+                    <option value="2.0">2.0x Rápido</option>
+                  </select>
+                </div>
+
+                <div class="render-tool-divider"></div>
+
+                <div class="render-tool-item">
+                  <span class="render-tool-label">🌌 ENTORNO DE FONDO:</span>
+                  <div class="btn-group-mini">
+                    <button type="button" class="btn-mini btn-outline active" data-bg="dark" id="btn-bg-dark" title="Espacio Oscuro Retro">🌌 Oscuro</button>
+                    <button type="button" class="btn-mini btn-outline" data-bg="studio" id="btn-bg-studio" title="Estudio Neutro de Modelado">🏛️ Estudio</button>
+                    <button type="button" class="btn-mini btn-outline" data-bg="transparent" id="btn-bg-trans" title="Transparente (ideal para recortar)">🏁 Transparente</button>
+                  </div>
+                </div>
+
+                <div class="render-tool-divider"></div>
+
+                <div class="render-tool-item">
+                  <button type="button" id="btn-capture-render-hd" class="btn-mini btn-gold" title="Descargar render PNG en alta definición sin interfaz">
+                    📷 CAPTURAR RENDER HD (.PNG)
+                  </button>
+                  <button type="button" id="btn-render-frame-cam" class="btn-mini btn-cyan" title="Reencuadrar modelo en el centro">
+                    🎯 ENCUADRAR
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -952,26 +1003,59 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
 
   setEngineMode(currentEngine);
 
-  // --- WORKSPACE MODE SWITCHER (AI / VISUAL / CODE) ---
-  const modeTabs = document.querySelectorAll('.btn-mode-tab');
-  const modePanels = document.querySelectorAll('.mode-panel');
+  // --- BLENDER-STYLE DCC WORKSPACES CONTROLLER ---
+  type StudioWorkspace = 'layout' | 'modeling' | 'shading' | 'render' | 'code' | 'ai';
+  let activeWorkspace: StudioWorkspace = 'layout';
 
-  modeTabs.forEach((tab) => {
+  const workspaceTabs = document.querySelectorAll('.btn-workspace-tab');
+  const renderStudioControls = document.getElementById('render-studio-controls');
+  const btnRenderTurntable = document.getElementById('btn-render-turntable');
+  const selectTurntableSpeed = document.getElementById('select-turntable-speed') as HTMLSelectElement;
+  const btnBgDark = document.getElementById('btn-bg-dark');
+  const btnBgStudio = document.getElementById('btn-bg-studio');
+  const btnBgTrans = document.getElementById('btn-bg-trans');
+  const btnCaptureRenderHd = document.getElementById('btn-capture-render-hd');
+  const btnRenderFrameCam = document.getElementById('btn-render-frame-cam');
+  const btnToggleFullscreen = document.getElementById('btn-toggle-fullscreen');
+  const studioContainer = document.querySelector('.studio-container');
+
+  workspaceTabs.forEach((tab) => {
     tab.addEventListener('click', () => {
-      const mode = (tab as HTMLElement).dataset.mode as 'ai' | 'visual' | 'code';
-      if (!mode) return;
-      setStudioMode(mode);
+      const ws = (tab as HTMLElement).dataset.workspace as StudioWorkspace;
+      if (!ws) return;
+      setStudioWorkspace(ws);
     });
   });
 
-  function setStudioMode(mode: 'ai' | 'visual' | 'code'): void {
-    activeMode = mode;
-    modeTabs.forEach((t) => t.classList.remove('active'));
-    document.querySelector(`.btn-mode-tab[data-mode="${mode}"]`)?.classList.add('active');
+  function setStudioWorkspace(ws: StudioWorkspace): void {
+    activeWorkspace = ws;
+    workspaceTabs.forEach((t) => t.classList.remove('active'));
+    document.querySelector(`.btn-workspace-tab[data-workspace="${ws}"]`)?.classList.add('active');
 
-    modePanels.forEach((p) => p.classList.remove('active'));
+    // Remove previous workspace classes
+    studioWorkspace?.classList.remove(
+      'workspace-layout',
+      'workspace-modeling',
+      'workspace-shading',
+      'workspace-render',
+      'workspace-code',
+      'workspace-ai',
+      'mode-visual-active'
+    );
+    studioWorkspace?.classList.add(`workspace-${ws}`);
 
-    if (mode === 'visual') {
+    // Hide all mode panels
+    document.getElementById('outliner-mode-container')?.classList.remove('active');
+    document.getElementById('ai-mode-container')?.classList.remove('active');
+    document.getElementById('code-mode-container')?.classList.remove('active');
+
+    // Toggle render studio toolbar
+    if (renderStudioControls) {
+      renderStudioControls.style.display = (ws === 'render') ? 'flex' : 'none';
+    }
+
+    if (ws === 'layout') {
+      activeMode = 'visual';
       document.getElementById('outliner-mode-container')?.classList.add('active');
       studioWorkspace?.classList.add('mode-visual-active');
       if (visualInspectorContainer) visualInspectorContainer.style.display = 'block';
@@ -980,26 +1064,171 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
         viewport.setGizmoMode('translate');
         updateGizmoButtons('translate');
       }
-    } else if (mode === 'ai') {
-      document.getElementById('ai-mode-container')?.classList.add('active');
-      studioWorkspace?.classList.remove('mode-visual-active');
+    } else if (ws === 'modeling') {
+      activeMode = 'visual';
+      document.getElementById('outliner-mode-container')?.classList.add('active');
+      studioWorkspace?.classList.add('mode-visual-active');
+      if (visualInspectorContainer) visualInspectorContainer.style.display = 'block';
+      if (quickAdjustWindow) quickAdjustWindow.style.display = 'none';
+      if (viewport) {
+        viewport.setGizmoMode('translate');
+        updateGizmoButtons('translate');
+      }
+    } else if (ws === 'shading') {
+      activeMode = 'visual';
+      studioWorkspace?.classList.add('mode-visual-active');
+      if (visualInspectorContainer) visualInspectorContainer.style.display = 'block';
+      if (quickAdjustWindow) quickAdjustWindow.style.display = 'none';
+      if (viewport) {
+        viewport.setGizmoMode('none');
+        updateGizmoButtons('none');
+      }
+    } else if (ws === 'render') {
+      activeMode = 'visual';
       if (visualInspectorContainer) visualInspectorContainer.style.display = 'none';
-      if (quickAdjustWindow) quickAdjustWindow.style.display = 'block';
-      if (viewport) viewport.setGizmoMode('none');
-    } else if (mode === 'code') {
+      if (quickAdjustWindow) quickAdjustWindow.style.display = 'none';
+      if (viewport) {
+        viewport.setGizmoMode('none');
+        updateGizmoButtons('none');
+      }
+    } else if (ws === 'code') {
+      activeMode = 'code';
       document.getElementById('code-mode-container')?.classList.add('active');
-      studioWorkspace?.classList.remove('mode-visual-active');
       if (visualInspectorContainer) visualInspectorContainer.style.display = 'none';
       if (quickAdjustWindow) quickAdjustWindow.style.display = 'none';
       if (viewport) viewport.setGizmoMode('none');
       syncEditorFromSpec();
+    } else if (ws === 'ai') {
+      activeMode = 'ai';
+      document.getElementById('ai-mode-container')?.classList.add('active');
+      if (visualInspectorContainer) visualInspectorContainer.style.display = 'none';
+      if (quickAdjustWindow) quickAdjustWindow.style.display = 'block';
+      if (viewport) viewport.setGizmoMode('none');
     }
 
     // Force Three.js viewport resize
     setTimeout(() => {
       window.dispatchEvent(new Event('resize'));
-    }, 50);
+      if (viewport) viewport.resize();
+    }, 60);
   }
+
+  // Backward-compatible alias
+  function setStudioMode(mode: 'ai' | 'visual' | 'code'): void {
+    if (mode === 'visual') setStudioWorkspace('layout');
+    else if (mode === 'ai') setStudioWorkspace('ai');
+    else if (mode === 'code') setStudioWorkspace('code');
+  }
+
+  // --- RENDER PRESENTATION STUDIO CONTROLS ---
+  btnRenderTurntable?.addEventListener('click', () => {
+    if (!viewport) return;
+    const isRotating = viewport.isTurntableEnabled();
+    const speed = parseFloat(selectTurntableSpeed?.value || '1.0');
+    viewport.setTurntable(!isRotating, speed);
+    if (btnRenderTurntable) {
+      btnRenderTurntable.textContent = !isRotating ? '⏸ PAUSAR' : '▶ INICIAR';
+      btnRenderTurntable.classList.toggle('active', !isRotating);
+    }
+  });
+
+  selectTurntableSpeed?.addEventListener('change', () => {
+    if (!viewport) return;
+    const speed = parseFloat(selectTurntableSpeed.value || '1.0');
+    if (viewport.isTurntableEnabled()) {
+      viewport.setTurntable(true, speed);
+    }
+  });
+
+  const bgButtons = [btnBgDark, btnBgStudio, btnBgTrans];
+  function setBgMode(mode: 'dark' | 'studio' | 'transparent', activeBtn: HTMLElement | null) {
+    if (!viewport) return;
+    viewport.setBackgroundMode(mode);
+    bgButtons.forEach((b) => b?.classList.remove('active'));
+    activeBtn?.classList.add('active');
+  }
+
+  btnBgDark?.addEventListener('click', () => setBgMode('dark', btnBgDark));
+  btnBgStudio?.addEventListener('click', () => setBgMode('studio', btnBgStudio));
+  btnBgTrans?.addEventListener('click', () => setBgMode('transparent', btnBgTrans));
+
+  btnCaptureRenderHd?.addEventListener('click', () => {
+    if (!viewport) return;
+    const name = (currentSpec?.name || 'model').toLowerCase().replace(/\s+/g, '_');
+    viewport.captureRenderScreenshot(`${name}_render_hd.png`);
+  });
+
+  btnRenderFrameCam?.addEventListener('click', () => {
+    if (!viewport) return;
+    viewport.resetCameraAndFrame();
+  });
+
+  // --- FULLSCREEN BLENDER DCC MODE CONTROLLER ---
+  function updateFullscreenBtn(isFs: boolean): void {
+    if (!btnToggleFullscreen) return;
+    const icon = btnToggleFullscreen.querySelector('.fs-icon');
+    const text = btnToggleFullscreen.querySelector('.fs-text');
+    if (isFs) {
+      btnToggleFullscreen.classList.remove('btn-outline');
+      btnToggleFullscreen.classList.add('btn-gold');
+      if (icon) icon.textContent = '🗗';
+      if (text) text.textContent = 'SALIR PANTALLA COMPLETA';
+      btnToggleFullscreen.title = 'Salir de Pantalla Completa (ESC / F11)';
+    } else {
+      btnToggleFullscreen.classList.remove('btn-gold');
+      btnToggleFullscreen.classList.add('btn-outline');
+      if (icon) icon.textContent = '⛶';
+      if (text) text.textContent = 'PANTALLA COMPLETA';
+      btnToggleFullscreen.title = 'Alternar Pantalla Completa estilo Blender (F11 / ESC)';
+    }
+  }
+
+  function toggleStudioFullscreen(): void {
+    const isCurrentlyActive = document.body.classList.contains('studio-fullscreen-active');
+    const newState = !isCurrentlyActive;
+
+    document.body.classList.toggle('studio-fullscreen-active', newState);
+    studioContainer?.classList.toggle('fullscreen-active', newState);
+    updateFullscreenBtn(newState);
+
+    if (newState) {
+      if (document.documentElement.requestFullscreen && !document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      }
+    } else {
+      if (document.exitFullscreen && document.fullscreenElement) {
+        document.exitFullscreen().catch(() => {});
+      }
+    }
+
+    setTimeout(() => {
+      window.dispatchEvent(new Event('resize'));
+      if (viewport) viewport.resize();
+    }, 80);
+  }
+
+  btnToggleFullscreen?.addEventListener('click', toggleStudioFullscreen);
+
+  document.addEventListener('fullscreenchange', () => {
+    if (!document.fullscreenElement && document.body.classList.contains('studio-fullscreen-active')) {
+      document.body.classList.remove('studio-fullscreen-active');
+      studioContainer?.classList.remove('fullscreen-active');
+      updateFullscreenBtn(false);
+      setTimeout(() => {
+        window.dispatchEvent(new Event('resize'));
+        if (viewport) viewport.resize();
+      }, 80);
+    }
+  });
+
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'F11') {
+      e.preventDefault();
+      toggleStudioFullscreen();
+    } else if (e.key === 'Escape' && document.body.classList.contains('studio-fullscreen-active')) {
+      toggleStudioFullscreen();
+    }
+  });
 
   // --- RENDER CURRENT SPEC & GEOMETRY ---
   function renderCurrentSpec(mode: 'ai' | 'visual' | 'code' = 'visual', recordHistory: boolean = true): void {
@@ -2636,7 +2865,7 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
 
   // Initial Load
   pushHistoryState(currentSpec);
-  setStudioMode('visual');
+  setStudioWorkspace('layout');
   renderCurrentSpec('visual', false);
 </script>
 
@@ -2665,33 +2894,50 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     flex-wrap: wrap;
   }
 
-  .mode-switcher-group {
+  /* Blender-Style DCC Workspace Tabs */
+  .workspace-tabs-group {
     display: flex;
-    gap: 0.35rem;
+    gap: 0.25rem;
+    background: #060911;
+    padding: 0.2rem;
+    border: 1px solid #162440;
+    border-radius: 4px;
+    flex-wrap: wrap;
   }
 
-  .btn-mode-tab {
-    background: #0d1322;
-    border: 1px solid var(--border-color);
+  .btn-workspace-tab {
+    background: transparent;
+    border: 1px solid transparent;
     color: var(--text-muted);
     font-family: var(--font-pixel);
-    font-size: 0.75rem;
-    padding: 0.45rem 0.85rem;
+    font-size: 0.72rem;
+    padding: 0.35rem 0.65rem;
     cursor: pointer;
+    border-radius: 2px;
     transition: all 0.15s ease;
+    white-space: nowrap;
   }
 
-  .btn-mode-tab:hover {
-    border-color: var(--ps1-cyan);
+  .btn-workspace-tab:hover {
+    border-color: #2a4365;
     color: var(--text-bright);
+    background: rgba(0, 240, 255, 0.05);
   }
 
-  .btn-mode-tab.active {
+  .btn-workspace-tab.active {
     background: var(--ps1-cyan);
-    color: #000;
+    color: #060911;
     border-color: var(--ps1-cyan);
     font-weight: bold;
-    box-shadow: 0 0 10px rgba(0, 240, 255, 0.4);
+    box-shadow: 0 0 10px rgba(0, 240, 255, 0.35);
+  }
+
+  .btn-fullscreen-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.72rem;
+    font-weight: 700;
   }
 
   .history-actions-group {
@@ -2711,11 +2957,152 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     grid-template-columns: 1fr 1fr;
     gap: 0.75rem;
     min-height: 720px;
+    transition: all 0.2s ease;
   }
 
   /* 3-Column Responsive Grid in Visual 3D Mode */
-  .studio-workspace.mode-visual-active {
+  .studio-workspace.mode-visual-active,
+  .studio-workspace.workspace-layout,
+  .studio-workspace.workspace-modeling {
     grid-template-columns: 310px 1fr 350px;
+  }
+
+  .studio-workspace.workspace-shading {
+    grid-template-columns: 1fr 360px !important;
+  }
+  .studio-workspace.workspace-shading .creation-column {
+    display: none !important;
+  }
+
+  .studio-workspace.workspace-render {
+    grid-template-columns: 1fr !important;
+  }
+  .studio-workspace.workspace-render .creation-column,
+  .studio-workspace.workspace-render .inspector-column {
+    display: none !important;
+  }
+
+  .studio-workspace.workspace-code {
+    grid-template-columns: 1fr 1fr !important;
+  }
+  .studio-workspace.workspace-code .inspector-column {
+    display: none !important;
+  }
+
+  .studio-workspace.workspace-ai {
+    grid-template-columns: 1fr 1fr !important;
+  }
+
+  /* Render Studio Floating Controls */
+  .render-studio-controls {
+    position: absolute;
+    bottom: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 25;
+    pointer-events: auto;
+  }
+
+  .render-panel-inner {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.4rem 0.75rem;
+    background: rgba(6, 9, 16, 0.88);
+    backdrop-filter: blur(8px);
+    border: 1px solid var(--ps1-cyan);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6), 0 0 12px rgba(0, 240, 255, 0.2);
+    border-radius: 4px;
+  }
+
+  .render-tool-item {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .render-tool-label {
+    font-family: var(--font-pixel);
+    font-size: 0.68rem;
+    color: var(--ps1-cyan);
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+  }
+
+  .render-tool-divider {
+    width: 1px;
+    height: 20px;
+    background: #1a2942;
+  }
+
+  .render-speed-select {
+    padding: 0.15rem 0.35rem;
+    font-size: 0.68rem;
+    background: #0d1526;
+    border: 1px solid #1e3150;
+    color: var(--text-bright);
+    border-radius: 2px;
+  }
+
+  .btn-group-mini {
+    display: flex;
+    gap: 0.2rem;
+  }
+
+  /* Fullscreen Mode Immersive Studio (Blender DCC) */
+  body.studio-fullscreen-active {
+    overflow: hidden !important;
+  }
+
+  body.studio-fullscreen-active header,
+  body.studio-fullscreen-active footer,
+  body.studio-fullscreen-active .ps1-breadcrumb,
+  body.studio-fullscreen-active nav:not(.studio-topbar nav) {
+    display: none !important;
+  }
+
+  .studio-container.fullscreen-active {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    max-width: 100vw !important;
+    margin: 0 !important;
+    padding: 0.35rem 0.5rem !important;
+    box-sizing: border-box !important;
+    z-index: 99999 !important;
+    background: #060911 !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  .studio-container.fullscreen-active .studio-topbar {
+    margin-bottom: 0.35rem;
+    flex-shrink: 0;
+  }
+
+  .studio-container.fullscreen-active .studio-workspace {
+    flex: 1 1 auto;
+    height: calc(100vh - 65px) !important;
+    min-height: 0 !important;
+  }
+
+  .studio-container.fullscreen-active .studio-viewport-window {
+    height: 100% !important;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .studio-container.fullscreen-active .studio-viewport-surface {
+    flex: 1 1 auto;
+    height: 100% !important;
+    min-height: 0 !important;
+  }
+
+  .studio-container.fullscreen-active .creation-column,
+  .studio-container.fullscreen-active .inspector-column {
+    height: 100% !important;
+    min-height: 0 !important;
   }
 
   @media (max-width: 1300px) {

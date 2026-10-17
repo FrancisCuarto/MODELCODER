@@ -94,6 +94,9 @@ gen.parameters.forEach((param: any) => {
             <button id="screenshot-btn" class="ps1-ctrl-btn" title="Captura de Pantalla">
               📷 CAPTURA
             </button>
+            <button id="fullscreen-viewer-btn" class="ps1-ctrl-btn" title="Pantalla Completa (F11 / ESC)">
+              ⛶ PANTALLA COMPLETA
+            </button>
           </div>
 
           <!-- Preset Quick Pills Bar -->
@@ -501,6 +504,8 @@ gen.parameters.forEach((param: any) => {
   const toggleRotateBtn = document.getElementById('toggle-rotate-btn');
   const resetCamBtn = document.getElementById('reset-cam-btn');
   const screenshotBtn = document.getElementById('screenshot-btn');
+  const fullscreenViewerBtn = document.getElementById('fullscreen-viewer-btn');
+  const viewportWindow = document.querySelector('.viewport-window');
   const downloadCustomGlbBtn = document.getElementById('download-custom-glb-btn') as HTMLButtonElement;
   const downloadGlbBtn = document.querySelector('a[download$=".glb"]') as HTMLAnchorElement;
   const liveGenBtn = document.getElementById('live-generate-btn') as HTMLButtonElement;
@@ -844,6 +849,24 @@ gen.parameters.forEach((param: any) => {
       a.href = dataUrl;
       a.download = `${familyName}_psx_screenshot.png`;
       a.click();
+    }
+  });
+
+  function toggleViewerFullscreen() {
+    if (!viewportWindow) return;
+    const isFs = viewportWindow.classList.toggle('viewer-fullscreen-active');
+    document.body.classList.toggle('viewer-fullscreen-open', isFs);
+    if (fullscreenViewerBtn) {
+      fullscreenViewerBtn.textContent = isFs ? '🗗 SALIR' : '⛶ PANTALLA COMPLETA';
+      fullscreenViewerBtn.classList.toggle('active', isFs);
+    }
+  }
+
+  fullscreenViewerBtn?.addEventListener('click', toggleViewerFullscreen);
+
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && viewportWindow?.classList.contains('viewer-fullscreen-active')) {
+      toggleViewerFullscreen();
     }
   });
 
@@ -1380,6 +1403,33 @@ gen.parameters.forEach((param: any) => {
     height: 480px;
     background: radial-gradient(circle at center, #182236 0%, #060912 100%);
     overflow: hidden;
+  }
+
+  /* Fullscreen Viewer Mode in Generator Page */
+  body.viewer-fullscreen-open {
+    overflow: hidden !important;
+  }
+  body.viewer-fullscreen-open header,
+  body.viewer-fullscreen-open footer,
+  body.viewer-fullscreen-open .ps1-breadcrumb {
+    display: none !important;
+  }
+  .viewport-window.viewer-fullscreen-active {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    max-width: 100vw !important;
+    z-index: 99999 !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+  .viewport-window.viewer-fullscreen-active .viewport-container {
+    flex: 1 1 auto;
+    height: calc(100vh - 40px) !important;
+    max-height: 100vh !important;
   }
 
   .interactive-viewer {
