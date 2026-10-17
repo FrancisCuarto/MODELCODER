@@ -76,16 +76,27 @@ export class StudioViewport {
     this.camera = new THREE.PerspectiveCamera(45, aspect, 0.05, 100);
     this.camera.position.set(2.2, 1.8, 2.8);
 
-    // 3. Renderer setup
-    this.renderer = new THREE.WebGLRenderer({
-      antialias: true,
-      powerPreference: 'high-performance',
-      preserveDrawingBuffer: true
-    });
+    // 3. Renderer setup (with multi-tier fallback for constrained GPUs / WebGL context limits)
+    try {
+      this.renderer = new THREE.WebGLRenderer({
+        antialias: true,
+        powerPreference: 'high-performance',
+        preserveDrawingBuffer: true
+      });
+    } catch {
+      try {
+        this.renderer = new THREE.WebGLRenderer({
+          antialias: false,
+          preserveDrawingBuffer: true
+        });
+      } catch {
+        this.renderer = new THREE.WebGLRenderer();
+      }
+    }
     this.renderer.setSize(initialWidth, initialHeight);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     this.renderer.shadowMap.enabled = true;
-    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.renderer.shadowMap.type = THREE.PCFShadowMap;
 
     // Clear previous children in container and append renderer canvas
     while (container.firstChild) {

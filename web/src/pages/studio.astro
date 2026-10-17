@@ -3,7 +3,7 @@ import Layout from '../layouts/Layout.astro';
 import catalog from '../data/catalog.json';
 ---
 
-<Layout title="ModelCoder Web Studio - Editor de Generadores 3D">
+<Layout title="ModelCoder Web Studio - Editor de Generadores 3D" useModelViewer={false}>
   <div class="studio-container">
     <!-- Studio Header Bar -->
     <div class="ps1-window studio-topbar">
@@ -757,9 +757,21 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
       </div>
     </div>
   </dialog>
-</Layout>
 
 <script is:inline src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script is:inline>
+  // Self-healing watchdog: if a stale cached HTML references an old chunk hash right after a deployment,
+  // automatically reload once with cache-busting so the Studio UI never stays uninitialized.
+  window.__modelcoderStudioReady = false;
+  window.addEventListener('load', function () {
+    setTimeout(function () {
+      if (!window.__modelcoderStudioReady && !window.location.search.includes('_cb=')) {
+        var sep = window.location.search ? '&' : '?';
+        window.location.replace(window.location.pathname + window.location.search + sep + '_cb=' + Date.now());
+      }
+    }, 2200);
+  });
+</script>
 
 <script>
   import { ProceduralEngine } from '../lib/studio/procedural-engine';
@@ -784,6 +796,10 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
   } from '../lib/user-inventory';
   import type { ModelSpec, ComponentDef, GeometricStats, GenerationResult, ShadingMode, ShapePrimitive, TransformGizmoMode, CameraViewPreset } from '../lib/studio/types';
 
+  if (typeof window !== 'undefined') {
+    (window as any).__modelcoderStudioReady = true;
+  }
+
   // State Management
   let generationCounter = 1;
   let activeMode: 'ai' | 'visual' | 'code' = 'visual';
@@ -805,7 +821,7 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
   let historyIndex = -1;
 
   // Default Initial Model (Authentic Industrial Cargo Crate)
-  let currentSpec: ModelSpec = {
+  const DEFAULT_INITIAL_SPEC: ModelSpec = {
     id: 'below_nominal.furniture.crate',
     name: 'Cargo Crate',
     category: 'furniture',
@@ -863,6 +879,7 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
       }
     ]
   };
+  let currentSpec: ModelSpec = JSON.parse(JSON.stringify(DEFAULT_INITIAL_SPEC));
 
   // DOM Elements
   const studioWorkspace = document.getElementById('studio-workspace') as HTMLElement;
@@ -942,18 +959,22 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
   const paramMetalness = document.getElementById('param-metalness') as HTMLInputElement;
   const paramMetalnessVal = document.getElementById('param-metalness-val');
 
-  // Initialize Three.js Viewport
-  let viewport: StudioViewport;
+  // Initialize Three.js Viewport safely so any WebGL context issue never aborts UI rendering
+  let viewport: StudioViewport | null = null;
   if (threeMountEl) {
-    viewport = new StudioViewport(
-      threeMountEl,
-      handleViewportStatsUpdate,
-      handleViewportComponentSelect,
-      handleViewportGizmoTransform
-    );
-    document.getElementById('studio-reset-cam')?.addEventListener('click', () => {
-      viewport.resetCameraAndFrame();
-    });
+    try {
+      viewport = new StudioViewport(
+        threeMountEl,
+        handleViewportStatsUpdate,
+        handleViewportComponentSelect,
+        handleViewportGizmoTransform
+      );
+      document.getElementById('studio-reset-cam')?.addEventListener('click', () => {
+        viewport?.resetCameraAndFrame();
+      });
+    } catch (err) {
+      console.warn('[ModelCoder Studio] No se pudo inicializar el contexto WebGL en el primer intento:', err);
+    }
   }
 
   function handleViewportStatsUpdate(stats: GeometricStats | null, result: GenerationResult | null) {
@@ -1361,28 +1382,42 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     recordHistory: boolean = true,
     rebuildInspector: boolean = true
   ): void {
-    if (!viewport) return;
+    if (!currentSpec || !Array.isArray(currentSpec.components) || currentSpec.components.length === 0) {
+      currentSpec = JSON.parse(JSON.stringify(DEFAULT_INITIAL_SPEC));
+    }
 
     try {
       const reqId = `GEN-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
       generationCounter++;
 
       const { group, stats } = ProceduralEngine.buildModelFromSpec(currentSpec);
-      viewport.displayGeneratedMesh(group, reqId, generationCounter, stats, mode);
+      if (viewport) {
+        viewport.displayGeneratedMesh(group, reqId, generationCounter, stats, mode);
+      } else {
+        handleViewportStatsUpdate(stats, {
+          id: reqId,
+          version: generationCounter,
+          timestamp: Date.now(),
+          success: true,
+          mode,
+          stats
+        });
+        ProceduralEngine.disposeHierarchy(group);
+      }
 
       if (viewportModelName) {
-        viewportModelName.textContent = currentSpec.name.toUpperCase();
+        viewportModelName.textContent = (currentSpec.name || 'MODELO ACTIVO').toUpperCase();
       }
 
       // Sync active component selection with viewport
       if (selectedComponentIndex !== null && selectedComponentIndex < currentSpec.components.length) {
-        viewport.selectComponent(selectedComponentIndex);
+        viewport?.selectComponent(selectedComponentIndex);
       } else if (currentSpec.components.length > 0) {
         selectedComponentIndex = 0;
-        viewport.selectComponent(0);
+        viewport?.selectComponent(0);
       } else {
         selectedComponentIndex = null;
-        viewport.selectComponent(null);
+        viewport?.selectComponent(null);
       }
 
       // Sync outliner, inspector (only when selection/structure changes), code editor
@@ -1401,8 +1436,15 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
       }
     } catch (err: any) {
       const reqId = `GEN-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
-      viewport.displayError(err.message, reqId, generationCounter, mode);
-      setLinterError(err.message);
+      const msg = err?.message || String(err);
+      if (viewport) {
+        viewport.displayError(msg, reqId, generationCounter, mode);
+      }
+      setLinterError(msg);
+      renderOutliner();
+      if (rebuildInspector) {
+        renderInspector();
+      }
     }
   }
 
@@ -2796,17 +2838,25 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
         return;
       }
 
+      const PLACEHOLDER_THUMB = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+      const pendingThumbIds: string[] = [];
+
       matBrowserGrid.innerHTML = items
-        .map((it) => {
+        .map((it, itemIdx) => {
           const isActive = comp.texturePreset === it.id;
-          const thumbUrl = TextureLibrary.getThumbnailDataURL(it.id);
+          // Render first 16 visible cards (or active preset) immediately; hydrate remaining cards in non-blocking frames
+          const immediateThumb = itemIdx < 16 || isActive;
+          const thumbUrl = immediateThumb ? TextureLibrary.getThumbnailDataURL(it.id) : PLACEHOLDER_THUMB;
+          if (!immediateThumb) {
+            pendingThumbIds.push(it.id);
+          }
           const badgeHtml = it.badges
             .slice(0, 2)
             .map((b) => `<span class="mat-pbr-badge badge-${b.toLowerCase()}">${b}</span>`)
             .join('');
           return `
             <button type="button" class="mat-card-btn ${isActive ? 'active' : ''}" data-preset-id="${it.id}" title="${escapeHtml(it.label)} (${it.id})">
-              <img src="${thumbUrl}" alt="${escapeHtml(it.label)}" class="mat-card-thumb" loading="lazy" />
+              <img src="${thumbUrl}" data-thumb-preset="${it.id}" alt="${escapeHtml(it.label)}" class="mat-card-thumb" loading="lazy" />
               <div class="mat-card-meta">
                 <span class="mat-card-title">${escapeHtml(it.label)}</span>
                 <div class="mat-card-badges">${badgeHtml}</div>
@@ -2815,6 +2865,26 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
           `;
         })
         .join('');
+
+      if (pendingThumbIds.length > 0) {
+        let cursor = 0;
+        const hydrateBatch = () => {
+          if (!matBrowserGrid || !matBrowserGrid.isConnected) return;
+          const end = Math.min(cursor + 20, pendingThumbIds.length);
+          for (; cursor < end; cursor++) {
+            const presetId = pendingThumbIds[cursor];
+            const imgEl = matBrowserGrid.querySelector(`img[data-thumb-preset="${presetId}"]`) as HTMLImageElement | null;
+            if (imgEl) {
+              const url = TextureLibrary.getThumbnailDataURL(presetId);
+              if (url) imgEl.src = url;
+            }
+          }
+          if (cursor < pendingThumbIds.length) {
+            requestAnimationFrame(hydrateBatch);
+          }
+        };
+        requestAnimationFrame(hydrateBatch);
+      }
 
       matBrowserGrid.querySelectorAll('.mat-card-btn').forEach((btn) => {
         btn.addEventListener('click', () => {
@@ -2943,7 +3013,7 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
       }
 
       renderCurrentSpec('visual', true, true);
-      showStudioToast(`📐 UV adaptada a la escala de "${comp.name}" (UV: ${comp.uvScale[0]} × ${comp.uvScale[1]})`, 'success');
+      showStudioToast(`📐 UV adaptada a la escala de "${comp.name}" (UV: ${comp.uvScale[0]} × ${comp.uvScale[1]})`, false);
     });
 
     // Reset UV to 1:1 Metric (1m x 1m world-space)
@@ -2951,7 +3021,7 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
       bakeScaleIntoGeometrySize();
       comp.uvScale = [1.0, 1.0];
       renderCurrentSpec('visual', true, true);
-      showStudioToast(`📏 UV restablecida a escala métrica 1:1 en "${comp.name}"`, 'info');
+      showStudioToast(`📏 UV restablecida a escala métrica 1:1 en "${comp.name}"`, false);
     });
 
     // UV Scale
@@ -3670,7 +3740,7 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
   if (savedSpecStr) {
     try {
       const loadedSpec = JSON.parse(savedSpecStr);
-      if (loadedSpec && Array.isArray(loadedSpec.components)) {
+      if (loadedSpec && Array.isArray(loadedSpec.components) && loadedSpec.components.length > 0) {
         currentSpec = loadedSpec;
       }
     } catch (err) {
@@ -3988,7 +4058,7 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
   const draftIdParam = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('draft') : null;
   if (draftIdParam) {
     const loadedDraft = getProjectDraft(draftIdParam);
-    if (loadedDraft && loadedDraft.spec) {
+    if (loadedDraft && loadedDraft.spec && Array.isArray(loadedDraft.spec.components) && loadedDraft.spec.components.length > 0) {
       currentSpec = JSON.parse(JSON.stringify(loadedDraft.spec));
       pushHistoryState(currentSpec);
       renderCurrentSpec('visual', false);
@@ -4024,6 +4094,7 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
   setStudioWorkspace('layout');
   renderCurrentSpec('visual', false);
 </script>
+</Layout>
 
 <style is:global>
   .studio-container {
