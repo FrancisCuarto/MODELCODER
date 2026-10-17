@@ -792,6 +792,13 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
   let isUniformScaleLocked = true;
   let isGridSnapEnabled = false;
   let lastGeometricStats: GeometricStats | null = null;
+  const inspectorSectionsOpen: Record<string, boolean> = {
+    transform: true,
+    geometry: true,
+    uv: true,
+    surface: true,
+    textures: true
+  };
 
   // History Stack (Undo / Redo)
   const historyStack: ModelSpec[] = [];
@@ -987,7 +994,8 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     index: number,
     pos: [number, number, number],
     rot: [number, number, number],
-    scale: [number, number, number]
+    scale: [number, number, number],
+    isCommit: boolean = false
   ): void {
     const comp = currentSpec.components[index];
     if (!comp) return;
@@ -999,6 +1007,11 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     // Update inspector numeric inputs in real time without tearing down scene
     updateTransformInspectorInputs(pos, rot, scale);
     updateEffectiveDimensions(comp);
+
+    // When gizmo drag finishes, rebuild mesh so world-space UVs adapt to the new scale and record history
+    if (isCommit) {
+      renderCurrentSpec('visual', true, false);
+    }
   }
 
   // --- HISTORY MANAGEMENT (UNDO / REDO) ---
@@ -1673,6 +1686,9 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     const rot = comp.rotation;
     const scl = comp.scale;
 
+    const isOpen = (secId: string) => inspectorSectionsOpen[secId] !== false;
+    const activeTexBadge = comp.texturePreset ? escapeHtml(comp.texturePreset) : 'color plano';
+
     inspectorContentMount.innerHTML = `
       <!-- Component Header / Identifier -->
       <div class="prop-card-header ps1-inset">
@@ -1693,248 +1709,322 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
         </div>
       </div>
 
+      <!-- Barra de Pestañas Expandibles / Contraíbles Rápidas -->
+      <div class="inspector-tabs-bar ps1-inset" role="navigation" aria-label="Secciones de propiedades">
+        <button type="button" class="insp-tab-pill ${isOpen('transform') ? 'active' : ''}" data-toggle-sec="transform" title="Expandir/contraer Transformación">
+          📐 Transf.
+        </button>
+        <button type="button" class="insp-tab-pill ${isOpen('geometry') ? 'active' : ''}" data-toggle-sec="geometry" title="Expandir/contraer Geometría">
+          📦 Geom.
+        </button>
+        <button type="button" class="insp-tab-pill ${isOpen('uv') ? 'active' : ''}" data-toggle-sec="uv" title="Expandir/contraer Mapeo UV y Anti-estiramiento">
+          📏 UV
+        </button>
+        <button type="button" class="insp-tab-pill ${isOpen('surface') ? 'active' : ''}" data-toggle-sec="surface" title="Expandir/contraer Superficie PBR y Color">
+          🎨 PBR
+        </button>
+        <button type="button" class="insp-tab-pill ${isOpen('textures') ? 'active' : ''}" data-toggle-sec="textures" title="Expandir/contraer Biblioteca de 138 Texturas">
+          🧱 Texturas
+        </button>
+        <button type="button" id="btn-toggle-all-secs" class="insp-tab-pill insp-tab-all" title="Expandir o contraer todas las pestañas">
+          ↕ Todo
+        </button>
+      </div>
+
       <!-- SECTION 1: TRANSFORMACIÓN -->
-      <div class="prop-section ps1-inset">
-        <div class="section-titlebar">
+      <div class="prop-section collapsible-section ps1-inset ${isOpen('transform') ? 'is-open' : 'is-collapsed'}" data-sec-id="transform">
+        <div class="section-titlebar section-toggle-header" data-sec-target="transform" role="button" tabindex="0" aria-expanded="${isOpen('transform')}">
           <span class="section-badge">1</span>
           <span class="section-heading">TRANSFORMACIÓN</span>
           <button type="button" id="btn-reset-transform" class="btn-mini-link" title="Restablecer posición, rotación y escala a valores neutros">
             ↺ Restablecer
           </button>
+          <span class="sec-chevron">${isOpen('transform') ? '▼' : '▶'}</span>
         </div>
 
-        <!-- Posición -->
-        <div class="prop-field-block">
-          <div class="field-label-row">
-            <label class="field-label">Posición [X, Y, Z]:</label>
-            <span class="field-unit-tag">metros (m)</span>
+        <div class="section-body">
+          <!-- Posición -->
+          <div class="prop-field-block">
+            <div class="field-label-row">
+              <label class="field-label">Posición [X, Y, Z]:</label>
+              <span class="field-unit-tag">metros (m)</span>
+            </div>
+            <div class="coord-3-grid">
+              <div class="coord-input-wrap">
+                <span class="axis-tag axis-x">X</span>
+                <input type="number" step="0.01" id="inp-pos-x" class="coord-num-inp" value="${pos[0]}" />
+              </div>
+              <div class="coord-input-wrap">
+                <span class="axis-tag axis-y">Y</span>
+                <input type="number" step="0.01" id="inp-pos-y" class="coord-num-inp" value="${pos[1]}" />
+              </div>
+              <div class="coord-input-wrap">
+                <span class="axis-tag axis-z">Z</span>
+                <input type="number" step="0.01" id="inp-pos-z" class="coord-num-inp" value="${pos[2]}" />
+              </div>
+            </div>
           </div>
-          <div class="coord-3-grid">
-            <div class="coord-input-wrap">
-              <span class="axis-tag axis-x">X</span>
-              <input type="number" step="0.01" id="inp-pos-x" class="coord-num-inp" value="${pos[0]}" />
-            </div>
-            <div class="coord-input-wrap">
-              <span class="axis-tag axis-y">Y</span>
-              <input type="number" step="0.01" id="inp-pos-y" class="coord-num-inp" value="${pos[1]}" />
-            </div>
-            <div class="coord-input-wrap">
-              <span class="axis-tag axis-z">Z</span>
-              <input type="number" step="0.01" id="inp-pos-z" class="coord-num-inp" value="${pos[2]}" />
-            </div>
-          </div>
-        </div>
 
-        <!-- Rotación -->
-        <div class="prop-field-block">
-          <div class="field-label-row">
-            <label class="field-label">Rotación [X, Y, Z]:</label>
-            <span class="field-unit-tag">grados (°)</span>
+          <!-- Rotación -->
+          <div class="prop-field-block">
+            <div class="field-label-row">
+              <label class="field-label">Rotación [X, Y, Z]:</label>
+              <span class="field-unit-tag">grados (°)</span>
+            </div>
+            <div class="coord-3-grid">
+              <div class="coord-input-wrap">
+                <span class="axis-tag axis-x">X</span>
+                <input type="number" step="1" id="inp-rot-x" class="coord-num-inp" value="${rot[0]}" />
+              </div>
+              <div class="coord-input-wrap">
+                <span class="axis-tag axis-y">Y</span>
+                <input type="number" step="1" id="inp-rot-y" class="coord-num-inp" value="${rot[1]}" />
+              </div>
+              <div class="coord-input-wrap">
+                <span class="axis-tag axis-z">Z</span>
+                <input type="number" step="1" id="inp-rot-z" class="coord-num-inp" value="${rot[2]}" />
+              </div>
+            </div>
           </div>
-          <div class="coord-3-grid">
-            <div class="coord-input-wrap">
-              <span class="axis-tag axis-x">X</span>
-              <input type="number" step="1" id="inp-rot-x" class="coord-num-inp" value="${rot[0]}" />
-            </div>
-            <div class="coord-input-wrap">
-              <span class="axis-tag axis-y">Y</span>
-              <input type="number" step="1" id="inp-rot-y" class="coord-num-inp" value="${rot[1]}" />
-            </div>
-            <div class="coord-input-wrap">
-              <span class="axis-tag axis-z">Z</span>
-              <input type="number" step="1" id="inp-rot-z" class="coord-num-inp" value="${rot[2]}" />
-            </div>
-          </div>
-        </div>
 
-        <!-- Escala -->
-        <div class="prop-field-block">
-          <div class="field-label-row">
-            <label class="field-label">Escala [X, Y, Z]:</label>
-            <label class="lock-proportions-toggle" title="Bloquear escala proporcional uniforme">
-              <input type="checkbox" id="chk-scale-lock" ${isUniformScaleLocked ? 'checked' : ''} />
-              <span>🔒 Proporcional</span>
-            </label>
+          <!-- Escala -->
+          <div class="prop-field-block">
+            <div class="field-label-row">
+              <label class="field-label">Escala [X, Y, Z]:</label>
+              <label class="lock-proportions-toggle" title="Bloquear escala proporcional uniforme">
+                <input type="checkbox" id="chk-scale-lock" ${isUniformScaleLocked ? 'checked' : ''} />
+                <span>🔒 Proporcional</span>
+              </label>
+            </div>
+            <div class="coord-3-grid">
+              <div class="coord-input-wrap">
+                <span class="axis-tag axis-x">X</span>
+                <input type="number" step="0.01" min="0.01" id="inp-scl-x" class="coord-num-inp" value="${scl[0]}" />
+              </div>
+              <div class="coord-input-wrap">
+                <span class="axis-tag axis-y">Y</span>
+                <input type="number" step="0.01" min="0.01" id="inp-scl-y" class="coord-num-inp" value="${scl[1]}" />
+              </div>
+              <div class="coord-input-wrap">
+                <span class="axis-tag axis-z">Z</span>
+                <input type="number" step="0.01" min="0.01" id="inp-scl-z" class="coord-num-inp" value="${scl[2]}" />
+              </div>
+            </div>
           </div>
-          <div class="coord-3-grid">
-            <div class="coord-input-wrap">
-              <span class="axis-tag axis-x">X</span>
-              <input type="number" step="0.01" min="0.01" id="inp-scl-x" class="coord-num-inp" value="${scl[0]}" />
-            </div>
-            <div class="coord-input-wrap">
-              <span class="axis-tag axis-y">Y</span>
-              <input type="number" step="0.01" min="0.01" id="inp-scl-y" class="coord-num-inp" value="${scl[1]}" />
-            </div>
-            <div class="coord-input-wrap">
-              <span class="axis-tag axis-z">Z</span>
-              <input type="number" step="0.01" min="0.01" id="inp-scl-z" class="coord-num-inp" value="${scl[2]}" />
-            </div>
-          </div>
-        </div>
 
-        <!-- Dimensiones Efectivas Resultantes -->
-        <div class="effective-dims-box">
-          <span class="eff-label">DIMENSIONES REALES EFECTIVAS:</span>
-          <span id="eff-dims-val" class="eff-val">Calculando...</span>
+          <!-- Dimensiones Efectivas Resultantes -->
+          <div class="effective-dims-box">
+            <span class="eff-label">DIMENSIONES REALES EFECTIVAS:</span>
+            <span id="eff-dims-val" class="eff-val">Calculando...</span>
+          </div>
         </div>
       </div>
 
       <!-- SECTION 2: GEOMETRÍA ESPECÍFICA DE LA FORMA -->
-      <div class="prop-section ps1-inset">
-        <div class="section-titlebar">
+      <div class="prop-section collapsible-section ps1-inset ${isOpen('geometry') ? 'is-open' : 'is-collapsed'}" data-sec-id="geometry">
+        <div class="section-titlebar section-toggle-header" data-sec-target="geometry" role="button" tabindex="0" aria-expanded="${isOpen('geometry')}">
           <span class="section-badge">2</span>
           <span class="section-heading">GEOMETRÍA (${comp.shape.toUpperCase()})</span>
+          <span class="sec-chevron">${isOpen('geometry') ? '▼' : '▶'}</span>
         </div>
-        <div id="shape-params-mount" class="shape-params-mount">
-          ${renderShapeSpecificParamsHTML(comp)}
+        <div class="section-body">
+          <div id="shape-params-mount" class="shape-params-mount">
+            ${renderShapeSpecificParamsHTML(comp)}
+          </div>
         </div>
       </div>
 
-      <!-- SECTION 3: MATERIALES Y APARIENCIA -->
-      <div class="prop-section ps1-inset">
-        <div class="section-titlebar">
+      <!-- SECTION 3: MAPEO UV Y ANTI-ESTIRAMIENTO -->
+      <div class="prop-section collapsible-section ps1-inset ${isOpen('uv') ? 'is-open' : 'is-collapsed'}" data-sec-id="uv">
+        <div class="section-titlebar section-toggle-header" data-sec-target="uv" role="button" tabindex="0" aria-expanded="${isOpen('uv')}">
           <span class="section-badge">3</span>
-          <span class="section-heading">MATERIALES Y APARIENCIA</span>
+          <span class="section-heading">MAPEO UV Y ESCALA DE TEXTURA</span>
+          <span class="sec-chevron">${isOpen('uv') ? '▼' : '▶'}</span>
         </div>
 
-        <!-- Color -->
-        <div class="prop-field-row">
-          <label class="field-label">Color Superficial:</label>
-          <div class="color-picker-group">
-            <input type="color" id="inp-mat-color" class="color-swatch-input" value="${comp.color?.startsWith('#') ? comp.color : '#4a5568'}" />
-            <input type="text" id="inp-mat-color-hex" class="form-input color-hex-input" value="${comp.color || '#4a5568'}" />
+        <div class="section-body">
+          <!-- Botones de adaptación rápida UV a la escala de la pieza -->
+          <div class="uv-adapt-actions">
+            <button
+              type="button"
+              id="btn-auto-fit-uv"
+              class="btn-adapt-uv btn-adapt-primary"
+              title="Hornea la escala actual en las dimensiones reales de la pieza y adapta la frecuencia UV proporcionalmente para eliminar cualquier estiramiento"
+            >
+              📐 Adaptar UV a Escala de Pieza
+            </button>
+            <button
+              type="button"
+              id="btn-reset-uv-metric"
+              class="btn-adapt-uv btn-adapt-secondary"
+              title="Restablecer densidad UV a escala métrica 1:1 (1 mosaico por metro real)"
+            >
+              📏 1:1 Métrico
+            </button>
           </div>
-        </div>
 
-        <!-- Rugosidad & Metalicidad -->
-        <div class="prop-field-block">
-          <div class="field-label-row">
-            <label class="field-label">Rugosidad:</label>
-            <span id="disp-roughness" class="param-val-disp">${comp.roughness ?? 0.75}</span>
-          </div>
-          <input type="range" id="inp-roughness" min="0.0" max="1.0" step="0.05" value="${comp.roughness ?? 0.75}" class="param-slider" />
-        </div>
-
-        <div class="prop-field-block">
-          <div class="field-label-row">
-            <label class="field-label">Aspecto Metálico:</label>
-            <span id="disp-metalness" class="param-val-disp">${comp.metalness ?? 0.25}</span>
-          </div>
-          <input type="range" id="inp-metalness" min="0.0" max="1.0" step="0.05" value="${comp.metalness ?? 0.25}" class="param-slider" />
-        </div>
-
-        <!-- Transparencia & Opacidad -->
-        <div class="prop-field-block">
-          <div class="field-label-row">
-            <label class="checkbox-label" title="Permitir transparencia en esta pieza">
-              <input type="checkbox" id="chk-transparent" ${comp.transparent || (comp.opacity !== undefined && comp.opacity < 1.0) ? 'checked' : ''} />
-              <span>Transparente</span>
-            </label>
-            <span id="disp-opacity" class="param-val-disp">${comp.opacity ?? 1.0}</span>
-          </div>
-          <input type="range" id="inp-opacity" min="0.05" max="1.0" step="0.05" value="${comp.opacity ?? 1.0}" class="param-slider" />
-        </div>
-
-        <!-- Textura Preset PBR & Explorador Visual de Materiales (138 Materiales) -->
-        <div class="prop-field-block">
-          <div class="field-label-row">
-            <label class="field-label">Biblioteca de Materiales PBR (138):</label>
-            <span class="field-unit-tag">8 Familias + Variantes</span>
-          </div>
-          <select id="sel-texture-preset" class="form-input texture-dropdown">
-            <option value="" ${!comp.texturePreset ? 'selected' : ''}>[Sin textura - Color plano]</option>
-            ${renderTextureSelectOptionsHTML(comp.texturePreset)}
-          </select>
-
-          <!-- Explorador Visual con Búsqueda, Categorías y Miniaturas Lazy -->
-          <div class="mat-browser-panel ps1-inset">
-            <div class="mat-browser-toolbar">
-              <input
-                type="search"
-                id="inp-mat-browser-search"
-                class="form-input mat-search-inp"
-                placeholder="🔍 Buscar material (madera, mármol, cobre, pcb, kevlar...)"
-                autocomplete="off"
-              />
-              <div class="mat-cat-pills" id="mat-cat-pills">
-                <button type="button" class="mat-cat-pill active" data-mat-cat="all">Todos (138)</button>
-                <button type="button" class="mat-cat-pill" data-mat-cat="metals">⚙️ Metales</button>
-                <button type="button" class="mat-cat-pill" data-mat-cat="construction">🧱 Obra</button>
-                <button type="button" class="mat-cat-pill" data-mat-cat="woods">🪵 Maderas</button>
-                <button type="button" class="mat-cat-pill" data-mat-cat="stones">🪨 Piedras</button>
-                <button type="button" class="mat-cat-pill" data-mat-cat="plastics">🧪 Plásticos</button>
-                <button type="button" class="mat-cat-pill" data-mat-cat="tech">📟 Tech/CRT</button>
-                <button type="button" class="mat-cat-pill" data-mat-cat="glass">🪟 Vidrios</button>
-                <button type="button" class="mat-cat-pill" data-mat-cat="fabrics_organic">🧵 Telas/Otros</button>
-                <button type="button" class="mat-cat-pill" data-mat-cat="variants">🎨 Variantes</button>
+          <!-- Escala UV [U, V] -->
+          <div class="prop-field-block">
+            <div class="field-label-row">
+              <label class="field-label">Frecuencia UV [U, V]:</label>
+              <span class="field-unit-tag">Anti-estiramiento</span>
+            </div>
+            <div class="coord-2-grid">
+              <div class="coord-input-wrap">
+                <span class="axis-tag">U</span>
+                <input type="number" step="0.1" min="0.05" id="inp-uv-u" class="coord-num-inp" value="${comp.uvScale?.[0] ?? 1.0}" />
+              </div>
+              <div class="coord-input-wrap">
+                <span class="axis-tag">V</span>
+                <input type="number" step="0.1" min="0.05" id="inp-uv-v" class="coord-num-inp" value="${comp.uvScale?.[1] ?? 1.0}" />
               </div>
             </div>
-            <div id="mat-browser-grid" class="mat-browser-grid" role="listbox" aria-label="Explorador visual de materiales">
-              <!-- Populated dynamically with lazy WebP thumbnails -->
+          </div>
+
+          <!-- Rotación UV -->
+          <div class="prop-field-block">
+            <div class="field-label-row">
+              <label class="field-label">Rotación UV (°):</label>
+              <div class="uv-rot-presets">
+                <button type="button" class="uv-rot-btn" data-rot="0">0°</button>
+                <button type="button" class="uv-rot-btn" data-rot="45">45°</button>
+                <button type="button" class="uv-rot-btn" data-rot="90">90°</button>
+                <span id="disp-uv-rot" class="param-val-disp">${comp.uvRotation ?? 0}°</span>
+              </div>
+            </div>
+            <input type="range" id="inp-uv-rot" min="0" max="360" step="15" value="${comp.uvRotation ?? 0}" class="param-slider" />
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION 4: SUPERFICIE PBR, COLOR Y DESGASTE -->
+      <div class="prop-section collapsible-section ps1-inset ${isOpen('surface') ? 'is-open' : 'is-collapsed'}" data-sec-id="surface">
+        <div class="section-titlebar section-toggle-header" data-sec-target="surface" role="button" tabindex="0" aria-expanded="${isOpen('surface')}">
+          <span class="section-badge">4</span>
+          <span class="section-heading">SUPERFICIE PBR Y COLOR</span>
+          <span class="sec-chevron">${isOpen('surface') ? '▼' : '▶'}</span>
+        </div>
+
+        <div class="section-body">
+          <!-- Color -->
+          <div class="prop-field-row">
+            <label class="field-label">Color Superficial:</label>
+            <div class="color-picker-group">
+              <input type="color" id="inp-mat-color" class="color-swatch-input" value="${comp.color?.startsWith('#') ? comp.color : '#4a5568'}" />
+              <input type="text" id="inp-mat-color-hex" class="form-input color-hex-input" value="${comp.color || '#4a5568'}" />
             </div>
           </div>
-        </div>
 
-        <!-- Escala UV [U, V] -->
-        <div class="prop-field-block">
-          <div class="field-label-row">
-            <label class="field-label">Frecuencia UV [U, V]:</label>
-            <span class="field-unit-tag">Anti-estiramiento</span>
-          </div>
-          <div class="coord-2-grid">
-            <div class="coord-input-wrap">
-              <span class="axis-tag">U</span>
-              <input type="number" step="0.1" min="0.1" id="inp-uv-u" class="coord-num-inp" value="${comp.uvScale?.[0] ?? 1.0}" />
+          <!-- Rugosidad & Metalicidad -->
+          <div class="prop-field-block">
+            <div class="field-label-row">
+              <label class="field-label">Rugosidad:</label>
+              <span id="disp-roughness" class="param-val-disp">${comp.roughness ?? 0.75}</span>
             </div>
-            <div class="coord-input-wrap">
-              <span class="axis-tag">V</span>
-              <input type="number" step="0.1" min="0.1" id="inp-uv-v" class="coord-num-inp" value="${comp.uvScale?.[1] ?? 1.0}" />
+            <input type="range" id="inp-roughness" min="0.0" max="1.0" step="0.05" value="${comp.roughness ?? 0.75}" class="param-slider" />
+          </div>
+
+          <div class="prop-field-block">
+            <div class="field-label-row">
+              <label class="field-label">Aspecto Metálico:</label>
+              <span id="disp-metalness" class="param-val-disp">${comp.metalness ?? 0.25}</span>
+            </div>
+            <input type="range" id="inp-metalness" min="0.0" max="1.0" step="0.05" value="${comp.metalness ?? 0.25}" class="param-slider" />
+          </div>
+
+          <!-- Transparencia & Opacidad -->
+          <div class="prop-field-block">
+            <div class="field-label-row">
+              <label class="checkbox-label" title="Permitir transparencia en esta pieza">
+                <input type="checkbox" id="chk-transparent" ${comp.transparent || (comp.opacity !== undefined && comp.opacity < 1.0) ? 'checked' : ''} />
+                <span>Transparente</span>
+              </label>
+              <span id="disp-opacity" class="param-val-disp">${comp.opacity ?? 1.0}</span>
+            </div>
+            <input type="range" id="inp-opacity" min="0.05" max="1.0" step="0.05" value="${comp.opacity ?? 1.0}" class="param-slider" />
+          </div>
+
+          <!-- Desgaste & Relieve Normal -->
+          <div class="prop-field-block">
+            <div class="field-label-row">
+              <label class="field-label">Desgaste / Suciedad Procedural:</label>
+              <span id="disp-mat-wear" class="param-val-disp">${Math.round((comp.wear ?? 0) * 100)}%</span>
+            </div>
+            <input type="range" id="inp-mat-wear" min="0.0" max="1.0" step="0.05" value="${comp.wear ?? 0}" class="param-slider" />
+          </div>
+
+          <div class="prop-field-block">
+            <div class="field-label-row">
+              <label class="field-label">Relieve Mapa Normal (PBR):</label>
+              <span id="disp-mat-normal" class="param-val-disp">${comp.normalStrength ?? 0.55}</span>
+            </div>
+            <input type="range" id="inp-mat-normal" min="0.0" max="1.4" step="0.05" value="${comp.normalStrength ?? 0.55}" class="param-slider" />
+          </div>
+
+          <!-- Wireframe & Decal -->
+          <div class="prop-field-row" style="margin-top: 0.35rem;">
+            <label class="checkbox-label" title="Visualizar solo estructura poligonal para este componente">
+              <input type="checkbox" id="chk-comp-wireframe" ${comp.wireframe ? 'checked' : ''} />
+              <span>Malla Alámbrica</span>
+            </label>
+          </div>
+
+          <!-- Rótulo / Calcomanía -->
+          <div class="prop-field-block" style="margin-top: 0.35rem;">
+            <label class="field-label">Texto de Calcomanía / Rótulo:</label>
+            <input type="text" id="inp-comp-label" class="form-input" placeholder="ej. CARGO-77 / DANGER" value="${escapeHtml(comp.label || '')}" />
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION 5: BIBLIOTECA DE TEXTURAS PBR (138 MATERIALES) -->
+      <div class="prop-section collapsible-section ps1-inset ${isOpen('textures') ? 'is-open' : 'is-collapsed'}" data-sec-id="textures">
+        <div class="section-titlebar section-toggle-header" data-sec-target="textures" role="button" tabindex="0" aria-expanded="${isOpen('textures')}">
+          <span class="section-badge">5</span>
+          <span class="section-heading">TEXTURAS PBR (138)</span>
+          <span class="sec-active-tex-pill" id="disp-active-tex-pill">${activeTexBadge}</span>
+          <span class="sec-chevron">${isOpen('textures') ? '▼' : '▶'}</span>
+        </div>
+
+        <div class="section-body">
+          <div class="prop-field-block">
+            <div class="field-label-row">
+              <label class="field-label">Selector Rápido:</label>
+              <span class="field-unit-tag">8 Familias + Variantes</span>
+            </div>
+            <select id="sel-texture-preset" class="form-input texture-dropdown">
+              <option value="" ${!comp.texturePreset ? 'selected' : ''}>[Sin textura - Color plano]</option>
+              ${renderTextureSelectOptionsHTML(comp.texturePreset)}
+            </select>
+
+            <!-- Explorador Visual con Búsqueda, Categorías y Miniaturas Lazy -->
+            <div class="mat-browser-panel ps1-inset">
+              <div class="mat-browser-toolbar">
+                <input
+                  type="search"
+                  id="inp-mat-browser-search"
+                  class="form-input mat-search-inp"
+                  placeholder="🔍 Buscar material (madera, mármol, cobre, pcb, kevlar...)"
+                  autocomplete="off"
+                />
+                <div class="mat-cat-pills" id="mat-cat-pills">
+                  <button type="button" class="mat-cat-pill active" data-mat-cat="all">Todos (138)</button>
+                  <button type="button" class="mat-cat-pill" data-mat-cat="metals">⚙️ Metales</button>
+                  <button type="button" class="mat-cat-pill" data-mat-cat="construction">🧱 Obra</button>
+                  <button type="button" class="mat-cat-pill" data-mat-cat="woods">🪵 Maderas</button>
+                  <button type="button" class="mat-cat-pill" data-mat-cat="stones">🪨 Piedras</button>
+                  <button type="button" class="mat-cat-pill" data-mat-cat="plastics">🧪 Plásticos</button>
+                  <button type="button" class="mat-cat-pill" data-mat-cat="tech">📟 Tech/CRT</button>
+                  <button type="button" class="mat-cat-pill" data-mat-cat="glass">🪟 Vidrios</button>
+                  <button type="button" class="mat-cat-pill" data-mat-cat="fabrics_organic">🧵 Telas/Otros</button>
+                  <button type="button" class="mat-cat-pill" data-mat-cat="variants">🎨 Variantes</button>
+                </div>
+              </div>
+              <div id="mat-browser-grid" class="mat-browser-grid" role="listbox" aria-label="Explorador visual de materiales">
+                <!-- Populated dynamically with lazy WebP thumbnails -->
+              </div>
             </div>
           </div>
-        </div>
-
-        <!-- Rotación UV & Variaciones Paramétricas (Desgaste / Relieve Normal) -->
-        <div class="prop-field-block">
-          <div class="field-label-row">
-            <label class="field-label">Rotación UV (°):</label>
-            <div class="uv-rot-presets">
-              <button type="button" class="uv-rot-btn" data-rot="0">0°</button>
-              <button type="button" class="uv-rot-btn" data-rot="45">45°</button>
-              <button type="button" class="uv-rot-btn" data-rot="90">90°</button>
-              <span id="disp-uv-rot" class="param-val-disp">${comp.uvRotation ?? 0}°</span>
-            </div>
-          </div>
-          <input type="range" id="inp-uv-rot" min="0" max="360" step="15" value="${comp.uvRotation ?? 0}" class="param-slider" />
-        </div>
-
-        <div class="prop-field-block">
-          <div class="field-label-row">
-            <label class="field-label">Desgaste / Suciedad Procedural:</label>
-            <span id="disp-mat-wear" class="param-val-disp">${Math.round((comp.wear ?? 0) * 100)}%</span>
-          </div>
-          <input type="range" id="inp-mat-wear" min="0.0" max="1.0" step="0.05" value="${comp.wear ?? 0}" class="param-slider" />
-        </div>
-
-        <div class="prop-field-block">
-          <div class="field-label-row">
-            <label class="field-label">Relieve Mapa Normal (PBR):</label>
-            <span id="disp-mat-normal" class="param-val-disp">${comp.normalStrength ?? 0.55}</span>
-          </div>
-          <input type="range" id="inp-mat-normal" min="0.0" max="1.4" step="0.05" value="${comp.normalStrength ?? 0.55}" class="param-slider" />
-        </div>
-
-        <!-- Wireframe & Decal -->
-        <div class="prop-field-row" style="margin-top: 0.5rem;">
-          <label class="checkbox-label" title="Visualizar solo estructura poligonal para este componente">
-            <input type="checkbox" id="chk-comp-wireframe" ${comp.wireframe ? 'checked' : ''} />
-            <span>Malla Alámbrica</span>
-          </label>
-        </div>
-
-        <!-- Rótulo / Calcomanía -->
-        <div class="prop-field-block" style="margin-top: 0.5rem;">
-          <label class="field-label">Texto de Calcomanía / Rótulo:</label>
-          <input type="text" id="inp-comp-label" class="form-input" placeholder="ej. CARGO-77 / DANGER" value="${escapeHtml(comp.label || '')}" />
         </div>
       </div>
     `;
@@ -2289,6 +2379,73 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
       renderCurrentSpec('visual', true, false);
     });
 
+    // Collapsible Sections / Tabs logic
+    const syncSectionDOM = (secId: string) => {
+      const open = inspectorSectionsOpen[secId] !== false;
+      const secEl = inspectorContentMount?.querySelector(`.collapsible-section[data-sec-id="${secId}"]`);
+      const headerEl = secEl?.querySelector('.section-toggle-header');
+      const chevronEl = secEl?.querySelector('.sec-chevron');
+      const pillEl = inspectorContentMount?.querySelector(`.insp-tab-pill[data-toggle-sec="${secId}"]`);
+
+      if (secEl) {
+        secEl.classList.toggle('is-open', open);
+        secEl.classList.toggle('is-collapsed', !open);
+      }
+      if (headerEl) {
+        headerEl.setAttribute('aria-expanded', String(open));
+      }
+      if (chevronEl) {
+        chevronEl.textContent = open ? '▼' : '▶';
+      }
+      if (pillEl) {
+        pillEl.classList.toggle('active', open);
+      }
+    };
+
+    const toggleSection = (secId: string) => {
+      inspectorSectionsOpen[secId] = !(inspectorSectionsOpen[secId] !== false);
+      syncSectionDOM(secId);
+    };
+
+    inspectorContentMount?.querySelectorAll('.section-toggle-header').forEach((hdr) => {
+      hdr.addEventListener('click', (e) => {
+        const target = e.target as HTMLElement;
+        if (target.closest('button')) return; // Ignore clicks on inner action buttons like Reset
+        const secId = (hdr as HTMLElement).dataset.secTarget;
+        if (secId) toggleSection(secId);
+      });
+      hdr.addEventListener('keydown', (e) => {
+        const ke = e as KeyboardEvent;
+        if (ke.key === 'Enter' || ke.key === ' ') {
+          ke.preventDefault();
+          const secId = (hdr as HTMLElement).dataset.secTarget;
+          if (secId) toggleSection(secId);
+        }
+      });
+    });
+
+    inspectorContentMount?.querySelectorAll('.insp-tab-pill[data-toggle-sec]').forEach((pill) => {
+      pill.addEventListener('click', () => {
+        const secId = (pill as HTMLElement).dataset.toggleSec;
+        if (!secId) return;
+        toggleSection(secId);
+        if (inspectorSectionsOpen[secId]) {
+          const secEl = inspectorContentMount?.querySelector(`.collapsible-section[data-sec-id="${secId}"]`);
+          secEl?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+      });
+    });
+
+    document.getElementById('btn-toggle-all-secs')?.addEventListener('click', () => {
+      const keys = ['transform', 'geometry', 'uv', 'surface', 'textures'];
+      const anyCollapsed = keys.some((k) => inspectorSectionsOpen[k] === false);
+      const nextState = anyCollapsed ? true : false;
+      keys.forEach((k) => {
+        inspectorSectionsOpen[k] = nextState;
+        syncSectionDOM(k);
+      });
+    });
+
     // Quick action buttons
     document.getElementById('btn-prop-vis')?.addEventListener('click', () => {
       toggleComponentVisibility(idx);
@@ -2301,7 +2458,8 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     });
 
     // Reset Transform
-    document.getElementById('btn-reset-transform')?.addEventListener('click', () => {
+    document.getElementById('btn-reset-transform')?.addEventListener('click', (e) => {
+      e.stopPropagation();
       comp.position = [0, 0, 0];
       comp.rotation = [0, 0, 0];
       comp.scale = [1, 1, 1];
@@ -2583,6 +2741,10 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
       if (selTexturePreset && selTexturePreset.value !== val) {
         selTexturePreset.value = val;
       }
+      const dispActiveTexPill = document.getElementById('disp-active-tex-pill');
+      if (dispActiveTexPill) {
+        dispActiveTexPill.textContent = val || 'color plano';
+      }
       renderMaterialBrowserCards();
       renderCurrentSpec('visual', true, false);
     };
@@ -2680,6 +2842,116 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
         activeMatCategory = (pill as HTMLElement).dataset.matCat || 'all';
         renderMaterialBrowserCards();
       });
+    });
+
+    // Helper: Bake non-unit scale into geometry size and compute effective dimensions
+    const bakeScaleIntoGeometrySize = (): { effW: number; effH: number; effD: number } => {
+      if (!comp.size) comp.size = getDefaultSizeForShape(comp.shape);
+      const s = comp.size;
+      const [sx, sy, sz] = comp.scale || [1, 1, 1];
+      const r2 = (n: number) => Math.max(0.01, parseFloat(n.toFixed(3)));
+
+      let effW = 1.0;
+      let effH = 1.0;
+      let effD = 1.0;
+
+      switch (comp.shape) {
+        case 'box':
+        case 'wedge':
+          s[0] = r2((s[0] ?? 1.0) * sx);
+          s[1] = r2((s[1] ?? 1.0) * sy);
+          s[2] = r2((s[2] ?? 1.0) * sz);
+          effW = s[0];
+          effH = s[1];
+          effD = s[2];
+          break;
+        case 'cylinder': {
+          const radFactor = (sx + sz) / 2;
+          s[0] = r2((s[0] ?? 0.35) * radFactor);
+          s[1] = r2((s[1] ?? 0.35) * radFactor);
+          s[2] = r2((s[2] ?? 1.0) * sy);
+          const maxR = Math.max(s[0], s[1]);
+          effW = maxR * 2;
+          effH = s[2];
+          effD = maxR * 2;
+          break;
+        }
+        case 'sphere': {
+          const avgS = (sx + sy + sz) / 3;
+          s[0] = r2((s[0] ?? 0.5) * avgS);
+          effW = s[0] * 2;
+          effH = s[0] * 2;
+          effD = s[0] * 2;
+          break;
+        }
+        case 'cone': {
+          const radFactor = (sx + sz) / 2;
+          s[0] = r2((s[0] ?? 0.4) * radFactor);
+          s[1] = r2((s[1] ?? 1.0) * sy);
+          effW = s[0] * 2;
+          effH = s[1];
+          effD = s[0] * 2;
+          break;
+        }
+        case 'torus': {
+          const radFactor = (sx + sz) / 2;
+          s[0] = r2((s[0] ?? 0.5) * radFactor);
+          s[1] = r2((s[1] ?? 0.15) * sy);
+          effW = (s[0] + s[1]) * 2;
+          effH = s[1] * 2;
+          effD = (s[0] + s[1]) * 2;
+          break;
+        }
+        case 'capsule': {
+          const radFactor = (sx + sz) / 2;
+          s[0] = r2((s[0] ?? 0.25) * radFactor);
+          s[1] = r2((s[1] ?? 0.5) * sy);
+          effW = s[0] * 2;
+          effH = s[1] + s[0] * 2;
+          effD = s[0] * 2;
+          break;
+        }
+        case 'plane':
+          s[0] = r2((s[0] ?? 1.0) * sx);
+          s[1] = r2((s[1] ?? 1.0) * sy);
+          effW = s[0];
+          effH = s[1];
+          effD = s[1];
+          break;
+      }
+
+      comp.scale = [1, 1, 1];
+      return { effW, effH, effD };
+    };
+
+    // Auto-Adapt UV to Piece Scale button
+    document.getElementById('btn-auto-fit-uv')?.addEventListener('click', () => {
+      const { effW, effH, effD } = bakeScaleIntoGeometrySize();
+
+      if (comp.shape === 'box' || comp.shape === 'wedge' || comp.shape === 'cylinder' || comp.shape === 'plane') {
+        // World-space UV generators already multiply each face's width & height by uvScale[0] and uvScale[1].
+        // Setting isotropic density = 1 / minMainDim fits 1 full tile across the narrowest dimension with zero stretching.
+        const dims = comp.shape === 'plane' ? [effW, effH] : [effW, effH, effD];
+        const minDim = Math.max(0.08, Math.min(...dims));
+        const density = Math.max(0.25, Math.min(12.0, parseFloat((1.0 / minDim).toFixed(2))));
+        comp.uvScale = [density, density];
+      } else {
+        // Parametric shapes (sphere, cone, torus, capsule) use normalized 0..1 UVs
+        const uTiles = Math.max(0.5, Math.min(12.0, parseFloat((effW * 1.5).toFixed(2))));
+        const vTiles = Math.max(0.5, Math.min(12.0, parseFloat((effH * 1.5).toFixed(2))));
+        comp.uvScale = [uTiles, vTiles];
+      }
+
+      renderCurrentSpec('visual', true, true);
+      showStudioToast(`📐 UV adaptada a la escala de "${comp.name}" (UV: ${comp.uvScale[0]} × ${comp.uvScale[1]})`, 'success');
+    });
+
+    // Reset UV to 1:1 Metric (1m x 1m world-space)
+    document.getElementById('btn-reset-uv-metric')?.addEventListener('click', () => {
+      bakeScaleIntoGeometrySize();
+      comp.uvScale = [1.0, 1.0];
+      renderCurrentSpec('visual', true, true);
+      showStudioToast(`📏 UV restablecida a escala métrica 1:1 en "${comp.name}"`, 'info');
     });
 
     // UV Scale
@@ -3753,7 +4025,7 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
   renderCurrentSpec('visual', false);
 </script>
 
-<style>
+<style is:global>
   .studio-container {
     display: flex;
     flex-direction: column;
@@ -5332,5 +5604,148 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
   .uv-rot-btn:hover {
     border-color: var(--ps1-cyan);
     color: var(--ps1-cyan);
+  }
+
+  /* Collapsible Inspector Tabs & Sections */
+  .inspector-tabs-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    padding: 0.35rem;
+    background: #070b15;
+    border: 1px solid #1a253a;
+  }
+
+  .insp-tab-pill {
+    flex: 1 1 auto;
+    background: #0b1222;
+    border: 1px solid #1e293b;
+    color: #94a3b8;
+    font-family: var(--font-pixel);
+    font-size: 0.58rem;
+    padding: 0.22rem 0.38rem;
+    cursor: pointer;
+    border-radius: 2px;
+    text-align: center;
+    transition: all 0.12s ease;
+    white-space: nowrap;
+  }
+
+  .insp-tab-pill:hover {
+    border-color: var(--ps1-cyan);
+    color: #f8fafc;
+  }
+
+  .insp-tab-pill.active {
+    background: rgba(0, 240, 255, 0.14);
+    border-color: var(--ps1-cyan);
+    color: var(--ps1-cyan);
+    font-weight: bold;
+  }
+
+  .insp-tab-pill.insp-tab-all {
+    background: #141c2f;
+    border-color: #334155;
+    color: var(--ps1-gold);
+  }
+
+  .insp-tab-pill.insp-tab-all:hover {
+    border-color: var(--ps1-gold);
+    background: rgba(255, 176, 0, 0.15);
+  }
+
+  .section-toggle-header {
+    cursor: pointer;
+    user-select: none;
+    padding: 0.25rem 0.2rem;
+    border-radius: 2px;
+    transition: background 0.12s ease;
+  }
+
+  .section-toggle-header:hover {
+    background: rgba(0, 240, 255, 0.06);
+  }
+
+  .sec-chevron {
+    font-size: 0.62rem;
+    color: var(--ps1-cyan);
+    font-family: var(--font-mono);
+    margin-left: 0.25rem;
+    transition: transform 0.15s ease;
+  }
+
+  .sec-active-tex-pill {
+    font-family: var(--font-mono);
+    font-size: 0.58rem;
+    color: var(--ps1-gold);
+    background: rgba(255, 176, 0, 0.12);
+    border: 1px solid rgba(255, 176, 0, 0.35);
+    padding: 0.06rem 0.32rem;
+    border-radius: 2px;
+    max-width: 110px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .collapsible-section > .section-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding-top: 0.2rem;
+  }
+
+  .collapsible-section.is-collapsed > .section-body {
+    display: none;
+  }
+
+  .collapsible-section.is-collapsed > .section-titlebar {
+    border-bottom: none;
+    padding-bottom: 0.1rem;
+    margin-bottom: 0;
+  }
+
+  /* UV Adapt Buttons */
+  .uv-adapt-actions {
+    display: flex;
+    gap: 0.35rem;
+    flex-wrap: wrap;
+  }
+
+  .btn-adapt-uv {
+    flex: 1;
+    font-family: var(--font-pixel);
+    font-size: 0.62rem;
+    padding: 0.38rem 0.5rem;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.14s ease;
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  .btn-adapt-primary {
+    background: rgba(0, 240, 255, 0.14);
+    border: 1px solid var(--ps1-cyan);
+    color: var(--ps1-cyan);
+    font-weight: bold;
+    box-shadow: 0 0 8px rgba(0, 240, 255, 0.15);
+  }
+
+  .btn-adapt-primary:hover {
+    background: rgba(0, 240, 255, 0.25);
+    color: #fff;
+  }
+
+  .btn-adapt-secondary {
+    flex: 0 0 auto;
+    background: #0c1426;
+    border: 1px solid #2b3b59;
+    color: #cbd5e1;
+  }
+
+  .btn-adapt-secondary:hover {
+    border-color: var(--ps1-gold);
+    color: var(--ps1-gold);
   }
 </style>

@@ -38,14 +38,26 @@ export class StudioViewport {
   // Callbacks
   private onStatsUpdate?: (stats: GeometricStats | null, result: GenerationResult | null) => void;
   private onComponentSelected?: (index: number | null) => void;
-  private onComponentTransformChange?: (index: number, pos: [number, number, number], rot: [number, number, number], scale: [number, number, number]) => void;
+  private onComponentTransformChange?: (
+    index: number,
+    pos: [number, number, number],
+    rot: [number, number, number],
+    scale: [number, number, number],
+    isCommit?: boolean
+  ) => void;
   private resizeObserver: ResizeObserver | null = null;
 
   constructor(
     container: HTMLElement,
     onStatsUpdate?: (stats: GeometricStats | null, result: GenerationResult | null) => void,
     onComponentSelected?: (index: number | null) => void,
-    onComponentTransformChange?: (index: number, pos: [number, number, number], rot: [number, number, number], scale: [number, number, number]) => void
+    onComponentTransformChange?: (
+      index: number,
+      pos: [number, number, number],
+      rot: [number, number, number],
+      scale: [number, number, number],
+      isCommit?: boolean
+    ) => void
   ) {
     this.container = container;
     this.onStatsUpdate = onStatsUpdate;
@@ -123,11 +135,7 @@ export class StudioViewport {
     // 8. TransformControls (Gizmos)
     this.transformControls = new TransformControls(this.camera, this.renderer.domElement);
     this.transformControls.size = 0.75;
-    this.transformControls.addEventListener('dragging-changed', (event) => {
-      this.controls.enabled = !event.value;
-      this.isTransformDragging = Boolean(event.value);
-    });
-    this.transformControls.addEventListener('objectChange', () => {
+    const emitTransformUpdate = (isCommit: boolean) => {
       if (this.selectedMesh && this.selectedComponentIndex !== null) {
         const pos: [number, number, number] = [
           parseFloat(this.selectedMesh.position.x.toFixed(3)),
@@ -146,9 +154,19 @@ export class StudioViewport {
         ];
         this.selectionBox.setFromObject(this.selectedMesh);
         if (this.onComponentTransformChange) {
-          this.onComponentTransformChange(this.selectedComponentIndex, pos, rot, scale);
+          this.onComponentTransformChange(this.selectedComponentIndex, pos, rot, scale, isCommit);
         }
       }
+    };
+    this.transformControls.addEventListener('dragging-changed', (event) => {
+      this.controls.enabled = !event.value;
+      this.isTransformDragging = Boolean(event.value);
+      if (!event.value) {
+        emitTransformUpdate(true);
+      }
+    });
+    this.transformControls.addEventListener('objectChange', () => {
+      emitTransformUpdate(false);
     });
     const gizmoHelper = typeof this.transformControls.getHelper === 'function'
       ? this.transformControls.getHelper()

@@ -1035,6 +1035,46 @@ test('Expanded Texture Library 4: Exportación GLB multi-familia (madera, mármo
   ProceduralEngine.disposeHierarchy(group);
 });
 
+test('Expanded Texture Library 5: Adaptación UV automática ante escala no uniforme (comp.scale)', () => {
+  const spec = {
+    id: 'test.uv.nonuniform_scale',
+    name: 'Prueba UV Escala No Uniforme',
+    category: 'industrial',
+    description: 'Verifica que escalar una pieza con gizmo/escala adapte las coordenadas UV proporcionalmente sin estirar la textura',
+    units: 'meters' as const,
+    dimensions: { width: 1.0, depth: 1.0, height: 2.0 },
+    palette: 'industrial',
+    components: [
+      {
+        name: 'hazard_stripe_scaled',
+        shape: 'box' as const,
+        size: [1.0, 1.0, 1.0],
+        scale: [0.29, 1.88, 1.38] as [number, number, number],
+        texturePreset: 'hazard_stripes',
+        uvScale: [1.0, 1.0] as [number, number]
+      }
+    ]
+  };
+
+  const { group } = ProceduralEngine.buildModelFromSpec(spec);
+  const mesh = group.children[0] as THREE.Mesh;
+  const uvs = mesh.geometry.getAttribute('uv') as THREE.BufferAttribute;
+
+  // Face 0 (+X side face) has width = d * sz = 1.38 and height = h * sy = 1.88
+  const uMaxRightFace = Math.max(uvs.getX(0), uvs.getX(1), uvs.getX(2), uvs.getX(3));
+  const vMaxRightFace = Math.max(uvs.getY(0), uvs.getY(1), uvs.getY(2), uvs.getY(3));
+  assert.ok(Math.abs(uMaxRightFace - 1.38) < 0.01, `Expected +X face U span ~1.38, got ${uMaxRightFace}`);
+  assert.ok(Math.abs(vMaxRightFace - 1.88) < 0.01, `Expected +X face V span ~1.88, got ${vMaxRightFace}`);
+
+  // Face 4 (+Z front face) has width = w * sx = 0.29 and height = h * sy = 1.88
+  const uMaxFrontFace = Math.max(uvs.getX(16), uvs.getX(17), uvs.getX(18), uvs.getX(19));
+  const vMaxFrontFace = Math.max(uvs.getY(16), uvs.getY(17), uvs.getY(18), uvs.getY(19));
+  assert.ok(Math.abs(uMaxFrontFace - 0.29) < 0.01, `Expected +Z face U span ~0.29, got ${uMaxFrontFace}`);
+  assert.ok(Math.abs(vMaxFrontFace - 1.88) < 0.01, `Expected +Z face V span ~1.88, got ${vMaxFrontFace}`);
+
+  ProceduralEngine.disposeHierarchy(group);
+});
+
 // Teardown: ensure Node exits cleanly after tests
 test('Teardown: Exit cleanly', () => {
   setTimeout(() => process.exit(0), 100);

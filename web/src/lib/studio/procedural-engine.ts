@@ -37,6 +37,9 @@ export class ProceduralEngine {
   public static createComponentMesh(comp: ComponentDef): THREE.Object3D {
     const shape = comp.shape || 'box';
     const s = comp.size || [1, 1, 1];
+    const sx = Math.max(0.01, Math.abs(comp.scale?.[0] ?? 1.0));
+    const sy = Math.max(0.01, Math.abs(comp.scale?.[1] ?? 1.0));
+    const sz = Math.max(0.01, Math.abs(comp.scale?.[2] ?? 1.0));
     let geom: THREE.BufferGeometry;
 
     switch (shape) {
@@ -49,7 +52,7 @@ export class ProceduralEngine {
           const presetName = TextureLibrary.resolvePresetName(comp.texturePreset);
           const profile = presetName ? TextureLibrary.PROFILES[presetName] : null;
           if (!profile?.isDecal) {
-            this.adjustBoxUVs(geom, w, h, d, comp.uvScale);
+            this.adjustBoxUVs(geom, w * sx, h * sy, d * sz, comp.uvScale);
           } else if (comp.uvScale) {
             this.applyUVScale(geom, comp.uvScale);
           }
@@ -63,7 +66,8 @@ export class ProceduralEngine {
         const segs = Math.max(4, Math.min(32, Math.round(s[3] ?? 8)));
         geom = new THREE.CylinderGeometry(rt, rb, h, segs);
         if (comp.texturePreset) {
-          this.adjustCylinderUVs(geom, (rt + rb) * 0.5, h, comp.uvScale);
+          const avgScaleR = (sx + sz) * 0.5;
+          this.adjustCylinderUVs(geom, (rt + rb) * 0.5 * avgScaleR, h * sy, comp.uvScale);
         }
         break;
       }
@@ -81,7 +85,17 @@ export class ProceduralEngine {
         const w = Math.max(0.01, s[0] ?? 1.0);
         const h = Math.max(0.01, s[1] ?? 1.0);
         geom = new THREE.PlaneGeometry(w, h);
-        if (comp.uvScale) {
+        if (comp.texturePreset) {
+          const presetName = TextureLibrary.resolvePresetName(comp.texturePreset);
+          const profile = presetName ? TextureLibrary.PROFILES[presetName] : null;
+          if (!profile?.isDecal) {
+            const su = comp.uvScale?.[0] ?? 1.0;
+            const sv = comp.uvScale?.[1] ?? 1.0;
+            this.applyUVScale(geom, [w * sx * su, h * sy * sv]);
+          } else if (comp.uvScale) {
+            this.applyUVScale(geom, comp.uvScale);
+          }
+        } else if (comp.uvScale) {
           this.applyUVScale(geom, comp.uvScale);
         }
         break;
@@ -123,7 +137,7 @@ export class ProceduralEngine {
         const w = Math.max(0.01, s[0] ?? 1.0);
         const h = Math.max(0.01, s[1] ?? 1.0);
         const d = Math.max(0.01, s[2] ?? 1.0);
-        geom = this.createWedgeGeometry(w, h, d, comp.uvScale);
+        geom = this.createWedgeGeometry(w, h, d, comp.uvScale, [sx, sy, sz]);
         break;
       }
       default: {
@@ -207,14 +221,27 @@ export class ProceduralEngine {
   /**
    * Creates a triangular prism wedge geometry with explicit unstretched UV coordinates.
    */
-  private static createWedgeGeometry(w: number, h: number, d: number, uvScale?: [number, number]): THREE.BufferGeometry {
+  private static createWedgeGeometry(
+    w: number,
+    h: number,
+    d: number,
+    uvScale?: [number, number],
+    scale?: [number, number, number]
+  ): THREE.BufferGeometry {
     const hw = w * 0.5;
     const hh = h * 0.5;
     const hd = d * 0.5;
 
+    const sx = scale?.[0] ?? 1.0;
+    const sy = scale?.[1] ?? 1.0;
+    const sz = scale?.[2] ?? 1.0;
+    const ew = w * sx;
+    const eh = h * sy;
+    const ed = d * sz;
+
     const su = uvScale?.[0] ?? 1.0;
     const sv = uvScale?.[1] ?? 1.0;
-    const hyp = Math.sqrt(w * w + h * h);
+    const hyp = Math.sqrt(ew * ew + eh * eh);
 
     // 24 vertices of a triangular prism
     const positions = new Float32Array([
@@ -256,36 +283,36 @@ export class ProceduralEngine {
     const uvs = new Float32Array([
       // Front triangle
       0, 0,
-      w * su, 0,
-      0, h * sv,
+      ew * su, 0,
+      0, eh * sv,
 
       // Back triangle
-      w * su, 0,
+      ew * su, 0,
       0, 0,
-      0, h * sv,
+      0, eh * sv,
 
       // Bottom quad
       0, 0,
-      w * su, 0,
-      w * su, d * sv,
+      ew * su, 0,
+      ew * su, ed * sv,
       0, 0,
-      w * su, d * sv,
-      0, d * sv,
+      ew * su, ed * sv,
+      0, ed * sv,
 
       // Back vertical quad
       0, 0,
-      d * su, 0,
-      d * su, h * sv,
+      ed * su, 0,
+      ed * su, eh * sv,
       0, 0,
-      d * su, h * sv,
-      0, h * sv,
+      ed * su, eh * sv,
+      0, eh * sv,
 
       // Sloped quad
       0, 0,
-      0, d * sv,
-      hyp * su, d * sv,
+      0, ed * sv,
+      hyp * su, ed * sv,
       0, 0,
-      hyp * su, d * sv,
+      hyp * su, ed * sv,
       hyp * su, 0,
     ]);
 
