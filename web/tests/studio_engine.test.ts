@@ -1089,12 +1089,14 @@ test('Expanded Texture Library 5: Adaptación UV automática ante escala no unif
   ProceduralEngine.disposeHierarchy(group);
 });
 
-test('Instagram Story Exporter: Genera lienzo 1080x1920 con marca de agua, ficha técnica y temas', async () => {
+test('Instagram Story & Post Exporter: Genera lienzo Story (1080x1920) y Post 1:1 (1080x1080) con marca de agua y ficha técnica', async () => {
   const {
     drawStoryCard,
     STORY_THEMES,
     STORY_CANVAS_WIDTH,
     STORY_CANVAS_HEIGHT,
+    POST_CANVAS_WIDTH,
+    POST_CANVAS_HEIGHT,
     wrapAndDrawText,
     exportStoryToBlob
   } = await import('../src/lib/studio/story-generator.ts');
@@ -1102,6 +1104,8 @@ test('Instagram Story Exporter: Genera lienzo 1080x1920 con marca de agua, ficha
   // Verify dimensions
   assert.equal(STORY_CANVAS_WIDTH, 1080);
   assert.equal(STORY_CANVAS_HEIGHT, 1920);
+  assert.equal(POST_CANVAS_WIDTH, 1080);
+  assert.equal(POST_CANVAS_HEIGHT, 1080);
 
   // Verify 5 themes defined
   const themeKeys = Object.keys(STORY_THEMES);
@@ -1125,7 +1129,9 @@ test('Instagram Story Exporter: Genera lienzo 1080x1920 con marca de agua, ficha
   mockModelCanvas.width = 1080;
   mockModelCanvas.height = 1080;
 
+  // 1. Story 9:16
   const storyCanvas = drawStoryCard(mockModelCanvas, {
+    format: 'story',
     title: 'Crate Hull Alpha',
     description: longDesc,
     author: 'FrancisCoder',
@@ -1146,10 +1152,37 @@ test('Instagram Story Exporter: Genera lienzo 1080x1920 con marca de agua, ficha
   assert.equal(storyCanvas.width, 1080);
   assert.equal(storyCanvas.height, 1920);
 
+  // 2. Post 1:1 (Square Feed)
+  const postCanvas = drawStoryCard(mockModelCanvas, {
+    format: 'post',
+    title: 'Crate Hull Alpha',
+    description: longDesc,
+    author: 'FrancisCoder',
+    theme: 'gold_luxury',
+    showWatermark: true,
+    showDescription: true,
+    showStats: true,
+    showTechFrame: true,
+    stats: {
+      triangles: 50,
+      vertices: 100,
+      componentCount: 4,
+      materialsSummary: 'GOLD · TITANIUM',
+      generationId: 'GEN-TEST-02'
+    }
+  });
+
+  assert.equal(postCanvas.width, 1080);
+  assert.equal(postCanvas.height, 1080);
+
   // Test export to blob
-  const blob = await exportStoryToBlob(storyCanvas);
-  assert.ok(blob instanceof Blob);
-  assert.equal(blob.type, 'image/png');
+  const storyBlob = await exportStoryToBlob(storyCanvas);
+  assert.ok(storyBlob instanceof Blob);
+  assert.equal(storyBlob.type, 'image/png');
+
+  const postBlob = await exportStoryToBlob(postCanvas);
+  assert.ok(postBlob instanceof Blob);
+  assert.equal(postBlob.type, 'image/png');
 });
 
 // Teardown: ensure Node exits cleanly after tests

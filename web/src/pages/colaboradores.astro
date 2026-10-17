@@ -7,7 +7,7 @@ import Layout from '../layouts/Layout.astro';
     <!-- Pantalla 1: No autenticado -->
     <div id="auth-required-box" class="ps1-window state-window">
       <div class="ps1-titlebar">
-        <span>// ACCESO RESTRINGIDO // IDENTIFICACIÓN REQUERIDA</span>
+        <span>ACCESO RESTRINGIDO · IDENTIFICACIÓN REQUERIDA</span>
         <span class="ps1-telemetry-tag" style="color: var(--ps1-gold);">SECURITY LEVEL 4</span>
       </div>
       <div class="window-inner-pad">
@@ -31,7 +31,7 @@ import Layout from '../layouts/Layout.astro';
     <!-- Pantalla 2: Usuario autenticado pero NO autorizado -->
     <div id="unauthorized-box" class="ps1-window state-window" style="display: none; border-color: var(--ps1-red);">
       <div class="ps1-titlebar" style="background: linear-gradient(90deg, #440000, #1a0000);">
-        <span>// ACCESO DENEGADO // PERMISOS INSUFICIENTES</span>
+        <span>ACCESO DENEGADO · PERMISOS INSUFICIENTES</span>
         <span class="ps1-telemetry-tag" style="color: var(--ps1-red);">ACCESS RESTRICTED</span>
       </div>
       <div class="window-inner-pad">
@@ -80,7 +80,7 @@ import Layout from '../layouts/Layout.astro';
         <div class="ps1-titlebar">
           <div style="display: flex; align-items: center; gap: 0.5rem;">
             <img src="/logo.png" alt="Logo" style="width: 20px; height: 20px; object-fit: contain; border-radius: 3px;" />
-            <span>// PORTAL DE COLABORADORES & MODERACIÓN DE LA COMUNIDAD</span>
+            <span>PORTAL DE COLABORADORES & MODERACIÓN DE LA COMUNIDAD</span>
           </div>
           <span id="badge-user-role" class="ps1-telemetry-tag badge-role">COLABORADOR</span>
         </div>
@@ -181,7 +181,7 @@ import Layout from '../layouts/Layout.astro';
       <div id="tab-team" class="tab-content-panel" style="display: none;">
         <div class="ps1-window team-window">
           <div class="ps1-titlebar">
-            <span>// CONTROL DE ACCESO // LISTA BLANCA DE COLABORADORES</span>
+            <span>CONTROL DE ACCESO · LISTA BLANCA DE COLABORADORES</span>
             <span class="ps1-telemetry-tag" style="color: var(--ps1-gold);">ADMIN ONLY</span>
           </div>
           <div class="team-body">
@@ -244,7 +244,7 @@ import Layout from '../layouts/Layout.astro';
       <div id="tab-sql" class="tab-content-panel" style="display: none;">
         <div class="ps1-window">
           <div class="ps1-titlebar">
-            <span>// MIGRACIÓN SQL PARA EL DASHBOARD DE SUPABASE</span>
+            <span>MIGRACIÓN SQL PARA EL DASHBOARD DE SUPABASE</span>
             <span class="ps1-telemetry-tag">POSTGRESQL</span>
           </div>
           <div class="window-inner-pad">
@@ -548,7 +548,7 @@ ON CONFLICT (email) DO NOTHING;</code></pre>
 
       card.innerHTML = `
         <div class="ps1-titlebar" style="background: linear-gradient(90deg, #332200, #171100);">
-          <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 200px;">// SOLICITUD: ${model.name}</span>
+          <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 200px;">SOLICITUD: ${model.name}</span>
           <span class="ps1-telemetry-tag" style="color: var(--ps1-gold);">⏳ REVISIÓN</span>
         </div>
         <div class="model-card-body">
@@ -653,7 +653,7 @@ ON CONFLICT (email) DO NOTHING;</code></pre>
 
       card.innerHTML = `
         <div class="ps1-titlebar" style="background: ${isPublic ? 'linear-gradient(90deg, #002233, #001122)' : 'linear-gradient(90deg, #332200, #110b00)'}">
-          <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 200px;">// ${model.name}</span>
+          <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 200px;">${model.name}</span>
           <span class="ps1-telemetry-tag" style="color: ${isPublic ? 'var(--ps1-green)' : 'var(--ps1-gold)'}">
             ${isPublic ? '● EN CATÁLOGO' : '🔒 PRIVADO'}
           </span>

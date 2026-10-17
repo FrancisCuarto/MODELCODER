@@ -8,9 +8,12 @@ import catalog from '../data/catalog.json';
     <!-- Studio Header Bar -->
     <div class="ps1-window studio-topbar">
       <div class="ps1-titlebar">
-        <div style="display: flex; align-items: center; gap: 0.5rem;">
-          <img src="/logo.png" alt="ModelCoder Logo" style="width: 18px; height: 18px; object-fit: contain; border-radius: 3px;" />
-          <span>// MODELCODER_WEB_STUDIO // IN-BROWSER 3D PROCEDURAL IDE</span>
+        <div style="display: flex; align-items: center; gap: 0.65rem;">
+          <a href="/" title="Ir al Catálogo de ModelCoder" style="display: flex; align-items: center;">
+            <img src="/logo.png" alt="ModelCoder Logo" style="width: 34px; height: 34px; object-fit: contain; filter: drop-shadow(0 0 8px rgba(255, 184, 0, 0.55));" />
+          </a>
+          <strong style="color: var(--ps1-gold); font-family: var(--font-pixel); font-size: 0.82rem; letter-spacing: 0.5px;">MODELCODER STUDIO</strong>
+          <span style="color: var(--text-dim); font-size: 0.72rem;">· ENTORNO 3D PROCEDURAL</span>
         </div>
         <span class="ps1-telemetry-tag">BY IV ORBIT GAMES &bull; THREE.JS PROCEDURAL CORE</span>
       </div>
@@ -105,7 +108,7 @@ import catalog from '../data/catalog.json';
             <div class="ps1-titlebar ai-titlebar">
               <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
                 <span class="ai-status-pulse"></span>
-                <span>// MODELCODER_AI: CREACIÓN_POR_LENGUAJE_NATURAL</span>
+                <span>MODELCODER AI: CREACIÓN POR LENGUAJE NATURAL</span>
                 <span id="ai-engine-badge" class="ai-badge-gemini">🤖 MOTOR PROCEDURAL LOCAL</span>
               </div>
               <div class="ai-titlebar-tools">
@@ -194,7 +197,7 @@ import catalog from '../data/catalog.json';
         <div id="outliner-mode-container" class="mode-panel active">
           <div class="ps1-window outliner-window">
             <div class="ps1-titlebar">
-              <span>// ÁRBOL DE COMPONENTES (<span id="outliner-count">0</span>)</span>
+              <span>ÁRBOL DE COMPONENTES (<span id="outliner-count">0</span>)</span>
               <div class="outliner-titlebar-tools">
                 <button type="button" id="btn-outliner-undo" class="ps1-ctrl-btn" title="Deshacer (Ctrl+Z)" disabled>↩</button>
                 <button type="button" id="btn-outliner-redo" class="ps1-ctrl-btn" title="Rehacer (Ctrl+Y)" disabled>↪</button>
@@ -257,7 +260,7 @@ import catalog from '../data/catalog.json';
               </div>
               <div class="status-right" id="linter-badge">
                 <span class="status-dot"></span>
-                <span id="linter-text">SINTAXIS: VÁLIDA // 0 ERRORES</span>
+                <span id="linter-text">SINTAXIS: VÁLIDA · 0 ERRORES</span>
               </div>
             </div>
           </div>
@@ -270,7 +273,7 @@ import catalog from '../data/catalog.json';
           <!-- Viewport Header Toolbar -->
           <div class="ps1-titlebar viewport-main-titlebar">
             <div class="viewport-title-left">
-              <span class="viewport-tag">// 3D_VIEWPORT:</span>
+              <span class="viewport-tag">VISOR 3D:</span>
               <span id="viewport-model-name" class="viewport-model-title">MODELO ACTIVO</span>
             </div>
 
@@ -411,7 +414,7 @@ import catalog from '../data/catalog.json';
         <!-- Global Param Panel (Only visible in AI / Code modes) -->
         <div class="ps1-window inspector-window" id="quick-adjust-window" style="display: none;">
           <div class="ps1-titlebar">
-            <span>// AJUSTES_RÁPIDOS_GLOBALES</span>
+            <span>AJUSTES GLOBALES DEL MODELO</span>
             <span class="ps1-telemetry-tag">PARÁMETROS GENERALES</span>
           </div>
 
@@ -441,7 +444,7 @@ import catalog from '../data/catalog.json';
       <div class="inspector-column" id="visual-inspector-container">
         <div class="ps1-window inspector-window" id="visual-inspector-panel">
           <div class="ps1-titlebar">
-            <span>// PROPIEDADES_DE_PIEZA</span>
+            <span>PROPIEDADES DE PIEZA</span>
             <span id="inspector-comp-badge" class="comp-badge">CUBO</span>
           </div>
 
@@ -458,7 +461,7 @@ import catalog from '../data/catalog.json';
   <!-- Documentation Modal -->
   <dialog id="docs-modal" class="ps1-window docs-modal">
     <div class="ps1-titlebar">
-      <span>// GUÍA_DE_APRENDIZAJE // MODELADO_PROCEDURAL_3D</span>
+      <span>GUÍA DE MODELADO PROCEDURAL 3D</span>
       <button id="close-docs-btn" class="ps1-ctrl-btn">X</button>
     </div>
     <div class="docs-modal-body">
@@ -613,14 +616,14 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
   <!-- Modal de Publicación en la Comunidad & Moderación -->
   <dialog id="github-modal" class="ps1-window gh-modal" style="max-width: 580px; width: 92%;">
     <div class="ps1-titlebar">
-      <span>// TRANSMISIÓN & PUBLICACIÓN EN EL CATÁLOGO</span>
+      <span>PUBLICAR MODELO EN EL CATÁLOGO</span>
       <button id="close-modal-btn" class="ps1-ctrl-btn">X</button>
     </div>
     <div class="modal-body" style="padding: 1.25rem;">
       <div id="publish-role-banner" class="ps1-inset" style="padding: 0.75rem 1rem; margin-bottom: 1.25rem; background: #07101e; border-left: 4px solid var(--ps1-gold);">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem; flex-wrap: wrap; gap: 0.4rem;">
           <span id="publish-mode-title" style="font-family: var(--font-pixel); font-size: 0.82rem; color: var(--ps1-gold); display: flex; align-items: center; gap: 0.4rem;">
-            👑 MODO COLABORADOR // SUBIDA DIRECTA
+            👑 MODO COLABORADOR · SUBIDA DIRECTA
           </span>
           <span id="collab-badge-indicator" class="ps1-telemetry-tag" style="color: var(--ps1-gold);">AUTORIZADO</span>
         </div>
@@ -689,7 +692,7 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
   <!-- Modal: Guardar Proyecto / Borrador -->
   <dialog id="modal-save-project" class="ps1-window project-modal" style="max-width: 520px; width: 92%;">
     <div class="ps1-titlebar">
-      <span>// GUARDAR PROYECTO // MEMORIA DE MODELADO</span>
+      <span>GUARDAR PROYECTO · MEMORIA DE MODELADO</span>
       <button id="close-save-project-btn" class="ps1-ctrl-btn" type="button">X</button>
     </div>
     <div class="modal-body" style="padding: 1.25rem;">
@@ -739,7 +742,7 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
   <!-- Modal: Gestor de Proyectos y Borradores -->
   <dialog id="modal-my-projects" class="ps1-window project-modal" style="max-width: 780px; width: 95%;">
     <div class="ps1-titlebar">
-      <span>// GESTOR DE PROYECTOS Y BORRADORES EN CURSO</span>
+      <span>GESTOR DE PROYECTOS Y BORRADORES</span>
       <button id="close-my-projects-btn" class="ps1-ctrl-btn" type="button">X</button>
     </div>
     <div class="modal-body" style="padding: 1.25rem;">
@@ -764,34 +767,47 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     </div>
   </dialog>
 
-  <!-- Modal: Generador de Historias de Instagram (9:16) -->
+  <!-- Modal: Generador de Historias y Posts de Instagram -->
   <dialog id="modal-ig-story" class="ps1-window ig-story-modal" style="max-width: 980px; width: 95%; max-height: 94vh;">
     <div class="ps1-titlebar">
-      <span>// EXPORTADOR PARA HISTORIAS DE INSTAGRAM (9:16) // MODELCODER</span>
+      <span>EXPORTADOR PARA INSTAGRAM · STORIES Y POSTS</span>
       <button id="close-story-modal-btn" class="ps1-ctrl-btn" type="button">X</button>
     </div>
     <div class="modal-body" style="padding: 1.25rem; overflow-y: auto; max-height: calc(94vh - 55px);">
       <div class="story-modal-grid">
-        <!-- Columna Izquierda: Vista Previa 9:16 -->
+        <!-- Columna Izquierda: Vista Previa Adaptativa -->
         <div class="story-preview-column">
           <div class="story-preview-header">
-            <span class="story-ratio-badge">📱 9:16 VERTICAL (1080 × 1920)</span>
+            <span class="story-ratio-badge" id="story-ratio-badge">📱 9:16 VERTICAL (1080 × 1920)</span>
             <span class="story-status-badge" id="story-preview-status">HD LISTO</span>
           </div>
-          <div class="story-preview-frame ps1-inset">
+          <div class="story-preview-frame ps1-inset" id="story-preview-frame">
             <canvas id="story-preview-canvas" width="1080" height="1920" class="story-canvas-render"></canvas>
             <div id="story-loading-overlay" class="story-loading-overlay" style="display: none;">
               <span class="story-spinner">⏳</span>
-              <span>RENDERIZANDO HISTORIA HD...</span>
+              <span>RENDERIZANDO GRÁFICA HD...</span>
             </div>
           </div>
-          <div class="story-preview-hints">
+          <div class="story-preview-hints" id="story-preview-hints">
             <span>💡 Listo para Instagram Stories, WhatsApp Status, TikTok y Reels.</span>
           </div>
         </div>
 
         <!-- Columna Derecha: Opciones y Personalización -->
         <div class="story-options-column">
+          <!-- Formato: Story 9:16 vs Post 1:1 -->
+          <div class="story-form-group">
+            <label class="story-label">FORMATO DE PUBLICACIÓN:</label>
+            <div class="story-format-toggle-grid" style="display: flex; gap: 0.5rem;">
+              <button type="button" id="btn-format-story" class="story-format-btn active" data-format="story" title="Historia Vertical 9:16 (1080 × 1920) para Instagram Stories, TikTok y WhatsApp">
+                📱 Historia 9:16 (1080 × 1920)
+              </button>
+              <button type="button" id="btn-format-post" class="story-format-btn" data-format="post" title="Publicación Cuadrada 1:1 (1080 × 1080) para el Feed de Instagram">
+                ⏹️ Post 1:1 (1080 × 1080)
+              </button>
+            </div>
+          </div>
+
           <!-- Título y Autor -->
           <div class="story-form-group">
             <label for="story-input-title" class="story-label">TÍTULO DEL MODELO:</label>
@@ -856,7 +872,7 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
           <div class="story-form-group ps1-inset" style="padding: 0.75rem; display: flex; flex-direction: column; gap: 0.5rem;">
             <label class="story-checkbox-label">
               <input type="checkbox" id="story-toggle-watermark" checked />
-              <span>Incluir Marca de Agua y Cabecera <strong>ModelCoder // 3D Studio</strong></span>
+              <span>Incluir Marca de Agua y Cabecera <strong>ModelCoder · 3D Studio</strong></span>
             </label>
             <label class="story-checkbox-label">
               <input type="checkbox" id="story-toggle-desc" checked />
@@ -875,7 +891,7 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
           <!-- Botones de Acción -->
           <div class="story-actions-wrapper">
             <button type="button" id="btn-download-story" class="btn btn-gold btn-story-main">
-              📥 DESCARGAR IMAGEN (1080×1920 PNG)
+              📥 DESCARGAR HISTORIA (1080×1920 PNG)
             </button>
             <div style="display: flex; gap: 0.5rem;">
               <button type="button" id="btn-copy-story-clipboard" class="btn btn-cyan" style="flex: 1;">
@@ -936,7 +952,8 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     shareStory,
     STORY_THEMES,
     type StoryOptions,
-    type StoryTheme
+    type StoryTheme,
+    type SocialFormat
   } from '../lib/studio/story-generator';
 
   if (typeof window !== 'undefined') {
@@ -4259,9 +4276,56 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
   const btnCopyStoryClipboard = document.getElementById('btn-copy-story-clipboard');
   const btnShareStory = document.getElementById('btn-share-story');
 
+  const btnFormatStory = document.getElementById('btn-format-story');
+  const btnFormatPost = document.getElementById('btn-format-post');
+  const storyRatioBadge = document.getElementById('story-ratio-badge');
+  const storyPreviewFrame = document.getElementById('story-preview-frame');
+  const storyPreviewHints = document.getElementById('story-preview-hints');
+
+  let activeSocialFormat: SocialFormat = 'story';
   let activeStoryTheme: StoryTheme = 'cyber_dark';
   let cachedModelRenderCanvas: HTMLCanvasElement | null = null;
   let isStoryRendering = false;
+
+  function setSocialFormat(format: SocialFormat): void {
+    activeSocialFormat = format;
+    btnFormatStory?.classList.toggle('active', format === 'story');
+    btnFormatPost?.classList.toggle('active', format === 'post');
+
+    if (storyPreviewCanvas) {
+      storyPreviewCanvas.width = 1080;
+      storyPreviewCanvas.height = format === 'post' ? 1080 : 1920;
+    }
+
+    if (storyPreviewFrame) {
+      storyPreviewFrame.classList.toggle('format-post', format === 'post');
+    }
+
+    if (storyRatioBadge) {
+      storyRatioBadge.textContent = format === 'post' ? '⏹️ 1:1 CUADRADO (1080 × 1080)' : '📱 9:16 VERTICAL (1080 × 1920)';
+    }
+
+    if (storyPreviewStatus) {
+      storyPreviewStatus.textContent = format === 'post' ? 'HD 1080×1080' : 'HD 1080×1920';
+    }
+
+    if (storyPreviewHints) {
+      storyPreviewHints.innerHTML = format === 'post'
+        ? '<span>💡 Formato ideal para Feed de Instagram, Twitter/X, LinkedIn y portafolios.</span>'
+        : '<span>💡 Listo para Instagram Stories, WhatsApp Status, TikTok y Reels.</span>';
+    }
+
+    if (btnDownloadStory) {
+      btnDownloadStory.textContent = format === 'post'
+        ? '📥 DESCARGAR POST (1080×1080 PNG)'
+        : '📥 DESCARGAR HISTORIA (1080×1920 PNG)';
+    }
+
+    redrawStoryPreview();
+  }
+
+  btnFormatStory?.addEventListener('click', () => setSocialFormat('story'));
+  btnFormatPost?.addEventListener('click', () => setSocialFormat('post'));
 
   async function captureAndRefreshStory(autoFrame: boolean = false): Promise<void> {
     if (!viewport || !storyPreviewCanvas || isStoryRendering) return;
@@ -4278,7 +4342,7 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
       });
 
       redrawStoryPreview();
-      if (storyPreviewStatus) storyPreviewStatus.textContent = 'HD 1080×1920';
+      if (storyPreviewStatus) storyPreviewStatus.textContent = activeSocialFormat === 'post' ? 'HD 1080×1080' : 'HD 1080×1920';
     } catch (err: any) {
       console.warn('[ModelCoder] Error capturando render para historia:', err);
       if (storyPreviewStatus) storyPreviewStatus.textContent = 'ERROR RENDER';
@@ -4305,6 +4369,7 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     const hudGenId = document.getElementById('hud-gen-id')?.textContent?.trim() || 'GEN-3D';
 
     return {
+      format: activeSocialFormat,
       title: rawTitle,
       description: rawDesc,
       author: rawAuthor,
@@ -4395,8 +4460,10 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     if (!storyPreviewCanvas) return;
     const name = (storyInputTitle?.value.trim() || currentSpec.name || 'modelo_3d')
       .toLowerCase().replace(/[^a-z0-9_-]/g, '_');
-    downloadStoryImage(storyPreviewCanvas, `${name}_historia_ig.png`);
-    showStudioToast(`📥 Historia de Instagram descargada: ${name}_historia_ig.png`);
+    const suffix = activeSocialFormat === 'post' ? 'post_ig' : 'historia_ig';
+    const label = activeSocialFormat === 'post' ? 'Post de Instagram' : 'Historia de Instagram';
+    downloadStoryImage(storyPreviewCanvas, `${name}_${suffix}.png`);
+    showStudioToast(`📥 ${label} descargado: ${name}_${suffix}.png`);
   });
 
   // Copy to Clipboard
@@ -4407,7 +4474,7 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
       await copyStoryToClipboard(storyPreviewCanvas);
       showStudioToast('📋 ¡Imagen copiada al portapapeles! Pegala con Ctrl+V en Instagram o chats.');
     } catch (e: any) {
-      console.warn('[ModelCoder] Error al copiar historia:', e);
+      console.warn('[ModelCoder] Error al copiar historia/post:', e);
       showStudioToast(`⚠️ No se pudo copiar directo: ${e?.message || 'Descargala en PNG'}`, true);
     } finally {
       btnCopyStoryClipboard.textContent = '📋 COPIAR AL PORTAPAPELES';
@@ -4419,7 +4486,8 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     if (!storyPreviewCanvas) return;
     try {
       const name = storyInputTitle?.value.trim() || currentSpec.name || 'Modelo 3D';
-      await shareStory(storyPreviewCanvas, `${name}_historia.png`, `Mi Modelo 3D: ${name}`);
+      const suffix = activeSocialFormat === 'post' ? 'post' : 'historia';
+      await shareStory(storyPreviewCanvas, `${name}_${suffix}.png`, `Mi Modelo 3D: ${name}`);
       showStudioToast('📱 ¡Compartido con éxito!');
     } catch (e: any) {
       if (e?.name !== 'AbortError') {
@@ -6213,6 +6281,17 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     align-items: center;
     justify-content: center;
     box-shadow: 0 12px 30px rgba(0, 0, 0, 0.8), 0 0 15px rgba(0, 240, 255, 0.15);
+    transition: width 0.25s ease, height 0.25s ease;
+  }
+  .story-preview-frame.format-post {
+    width: 340px;
+    height: 340px;
+  }
+  @media (max-width: 800px) {
+    .story-preview-frame.format-post {
+      width: 270px;
+      height: 270px;
+    }
   }
   .story-canvas-render {
     width: 100%;
@@ -6264,6 +6343,34 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     color: var(--ps1-gold);
     margin-bottom: 0.25rem;
     letter-spacing: 0.5px;
+  }
+  .story-format-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    padding: 0.55rem 0.65rem;
+    background: #0f141f;
+    border: 1px solid var(--ps1-steel);
+    border-radius: 4px;
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .story-format-btn:hover {
+    border-color: var(--ps1-cyan);
+    background: #141b2b;
+  }
+  .story-format-btn.active {
+    border-color: var(--ps1-cyan);
+    background: rgba(0, 240, 255, 0.15);
+    box-shadow: 0 0 12px rgba(0, 240, 255, 0.3);
+    color: var(--ps1-cyan);
+    font-weight: 700;
   }
   .story-theme-grid {
     display: grid;

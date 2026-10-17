@@ -53,8 +53,8 @@ gen.parameters.forEach((param: any) => {
       <!-- 3D Viewport Window -->
       <div class="ps1-window viewport-window">
         <div class="ps1-titlebar">
-          <span>// 3D_VIEWPORT: [{gen.family.toUpperCase()}]</span>
-          <span class="ps1-telemetry-tag">FPS: 60 // PBR_PSX</span>
+          <span>VISOR 3D: [{gen.family.toUpperCase()}]</span>
+          <span class="ps1-telemetry-tag">FPS: 60 · PBR_PSX</span>
         </div>
 
         <div class="ps1-inset viewport-container">
@@ -206,7 +206,7 @@ gen.parameters.forEach((param: any) => {
           <!-- Código Python del Generador -->
           <div class="advanced-sub-block">
             <div class="advanced-sub-header">
-              <span class="sub-title">// CÓDIGO PYTHON PROCEDURAL [generator.py]</span>
+              <span class="sub-title">CÓDIGO PYTHON PROCEDURAL [generator.py]</span>
               <button id="copy-code-btn" type="button" class="btn btn-outline btn-sm">
                 [ COPIAR CÓDIGO ]
               </button>
@@ -217,7 +217,7 @@ gen.parameters.forEach((param: any) => {
           <!-- Blender CLI Command -->
           <div class="advanced-sub-block">
             <div class="advanced-sub-header">
-              <span class="sub-title">// COMANDO CLI DE BLENDER</span>
+              <span class="sub-title">COMANDO CLI DE BLENDER</span>
               <button id="copy-cli-btn" class="btn btn-outline btn-sm">
                 [ COPIAR ]
               </button>
@@ -258,7 +258,7 @@ gen.parameters.forEach((param: any) => {
       <!-- Model Title & Description Header Card -->
       <div class="ps1-window model-info-card">
         <div class="ps1-titlebar">
-          <span>// INFORMACIÓN DEL OBJETO</span>
+          <span>INFORMACIÓN DEL OBJETO</span>
           <span class="meta-pill-ver">v{gen.version}</span>
         </div>
         <div class="model-info-body">
@@ -277,7 +277,7 @@ gen.parameters.forEach((param: any) => {
 
       <div class="ps1-window configurator-card">
         <div class="ps1-titlebar">
-          <span>// CONTROLES Y PARÁMETROS</span>
+          <span>CONTROLES Y PARÁMETROS</span>
           <span class="param-count-badge">[{gen.parameters.length} CONTROLES]</span>
         </div>
 
@@ -383,7 +383,7 @@ gen.parameters.forEach((param: any) => {
                       )}
 
                       {p.description && (
-                        <p class="param-help">// {p.description}</p>
+                        <p class="param-help">{p.description}</p>
                       )}
                     </div>
                   ))}
@@ -468,7 +468,7 @@ gen.parameters.forEach((param: any) => {
     <!-- Community Comments & Feedback Terminal (Native Supabase + Local Fallback) -->
     <div class="ps1-window community-comments-window" style="margin-top: 2rem;">
       <div class="ps1-titlebar" style="background: linear-gradient(90deg, #112233, #08111e);">
-        <span>// TRANSMISIONES_LOG: COMENTARIOS Y DISCUSIÓN SOBRE {gen.name.toUpperCase()}</span>
+        <span>TRANSMISIONES LOG: COMENTARIOS Y DISCUSIÓN SOBRE {gen.name.toUpperCase()}</span>
         <span class="ps1-telemetry-tag" style="color: var(--ps1-green);">CANAL ACTIVO</span>
       </div>
       <div style="padding: 1.5rem; background: #070c18;">
