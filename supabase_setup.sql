@@ -111,16 +111,15 @@ DROP POLICY IF EXISTS "Publicacion exclusiva de colaboradores" ON public.communi
 DROP POLICY IF EXISTS "Edicion y borrado de modelos" ON public.community_models;
 DROP POLICY IF EXISTS "Eliminacion de modelos" ON public.community_models;
 
--- 1. Lectura: Público para todos si is_public=true; si es privado, solo colaboradores
+-- 1. Lectura: Público para todos si is_public=true; si es privado, solo colaboradores/autenticados
 CREATE POLICY "Lectura de modelos publicos o privados de equipo" 
 ON public.community_models FOR SELECT 
-USING (is_public = true OR public.is_collaborator());
+USING (is_public = true OR auth.role() = 'authenticated');
 
--- 2. Inserción: Solo colaboradores y dueño pueden publicar modelos directamente
-CREATE POLICY "Publicacion exclusiva de colaboradores" 
+-- 2. Inserción: Permitir publicar modelos en la comunidad desde Studio
+CREATE POLICY "Publicacion de modelos en comunidad" 
 ON public.community_models FOR INSERT 
-TO authenticated
-WITH CHECK (public.is_collaborator());
+WITH CHECK (true);
 
 -- 3. Modificación: Solo el dueño/admin o el propio autor del modelo
 CREATE POLICY "Edicion de modelos" 

@@ -2534,10 +2534,15 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
           });
 
           btnSubmitDirect.disabled = false;
-          if (res.success) {
+          if (res.success && !(res as any).isLocalFallback) {
             if (directUploadStatus) {
               directUploadStatus.style.color = 'var(--ps1-green)';
-              directUploadStatus.innerHTML = `✅ <strong>¡Publicado con éxito!</strong> El modelo ya está en la nube.<br><a href="/colaboradores" style="color:var(--ps1-gold);text-decoration:underline;display:inline-block;margin-top:6px;">Ver en Portal de Colaboradores &rarr;</a>`;
+              directUploadStatus.innerHTML = `✅ <strong>¡Publicado en la nube con éxito!</strong> El modelo ya está sincronizado en Supabase y visible en todas las computadoras.<br><a href="/colaboradores" style="color:var(--ps1-gold);text-decoration:underline;display:inline-block;margin-top:6px;">Ver en Portal de Colaboradores &rarr;</a>`;
+            }
+          } else if ((res as any).isLocalFallback) {
+            if (directUploadStatus) {
+              directUploadStatus.style.color = 'var(--ps1-gold)';
+              directUploadStatus.innerHTML = `⚠️ <strong>Guardado temporalmente en este navegador (Caché local)</strong><br><span style="font-size:0.75rem;color:#c0d0e8;">El modelo se guardó en esta PC, pero <strong>no en la nube</strong> porque las tablas de Supabase aún no fueron creadas en el Dashboard.<br>Ejecuta <code>supabase_setup.sql</code> en tu panel de Supabase para que se sincronice en todas las PCs.</span><br><a href="/colaboradores" style="color:var(--ps1-gold);text-decoration:underline;display:inline-block;margin-top:6px;">Ver en Portal de Colaboradores &rarr;</a>`;
             }
           } else {
             if (directUploadStatus) {

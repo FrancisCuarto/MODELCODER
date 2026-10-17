@@ -367,6 +367,9 @@ export async function publishCommunityModel(modelData: {
   };
 
   const supabase = getSupabase();
+  let supabaseSuccess = false;
+  let supabaseErrorMsg = '';
+
   if (supabase) {
     try {
       const { data, error } = await supabase.from('community_models').insert([
@@ -384,11 +387,16 @@ export async function publishCommunityModel(modelData: {
         }
       ]).select().single();
 
-      if (!error && data) {
+      if (error) {
+        supabaseErrorMsg = error.message;
+        console.warn('[ModelCoder] Fallo inserción en Supabase:', error.message);
+      } else if (data) {
         newModel.id = data.id;
+        supabaseSuccess = true;
       }
-    } catch (err) {
-      console.warn('[ModelCoder] Guardando en cache local por fallo en Supabase:', err);
+    } catch (err: any) {
+      supabaseErrorMsg = err?.message || String(err);
+      console.warn('[ModelCoder] Guardando en cache local por excepción en Supabase:', err);
     }
   }
 
@@ -397,7 +405,53 @@ export async function publishCommunityModel(modelData: {
   localList.unshift(newModel);
   saveLocalCommunityModels(localList);
 
-  return { success: true, model: newModel };
+  if (!supabaseSuccess && supabaseErrorMsg) {
+    return { 
+      success: true, 
+      model: newModel, 
+      isLocalFallback: true,
+      error: `Guardado en este navegador. Aún no se guardó en la nube porque las tablas de Supabase no están listas (${supabaseErrorMsg}). Ejecuta supabase_setup.sql en Supabase para sincronizarlo globalmente.`
+    };
+  }
+
+  return { success: true, model: newModel, isLocalFallback: false };
+}
+
+/**
+ * Sincroniza automáticamente modelos guardados en la caché local hacia Supabase
+ * si no existen todavía en la base de datos de la nube.
+ */
+export async function syncLocalModelsToCloud(): Promise<number> {
+  const supabase = getSupabase();
+  if (!supabase) return 0;
+  const localModels = getLocalCommunityModels();
+  if (localModels.length === 0) return 0;
+
+  let synced = 0;
+  for (const m of localModels) {
+    try {
+      const { data, error } = await supabase.from('community_models').select('id').eq('slug', m.slug).maybeSingle();
+      if (!error && !data) {
+        const insertRes = await supabase.from('community_models').insert([{
+          slug: m.slug,
+          name: m.name,
+          category: m.category,
+          description: m.description,
+          spec: m.spec,
+          tri_count: m.tri_count,
+          author_name: m.author_name,
+          author_email: m.author_email,
+          is_public: m.is_public,
+          glb_data: m.glb_data
+        }]);
+        if (!insertRes.error) {
+          synced++;
+          console.log(`[ModelCoder] Sincronizado a la nube con éxito: ${m.name} (${m.slug})`);
+        }
+      }
+    } catch {}
+  }
+  return synced;
 }
 
 /**
@@ -409,6 +463,9 @@ export async function getCommunityModels(options?: { onlyPublic?: boolean }): Pr
 
   if (supabase) {
     try {
+      // Intentar sincronizar en segundo plano si hay modelos locales pendientes
+      syncLocalModelsToCloud().catch(() => {});
+
       let query = supabase.from('community_models').select('*').order('created_at', { ascending: false });
       if (options?.onlyPublic) {
         query = query.eq('is_public', true);
@@ -416,6 +473,8 @@ export async function getCommunityModels(options?: { onlyPublic?: boolean }): Pr
       const { data, error } = await query;
       if (!error && data && data.length > 0) {
         models = data;
+        // Actualizar caché local con la verdad de la nube
+        saveLocalCommunityModels(data);
       }
     } catch {}
   }

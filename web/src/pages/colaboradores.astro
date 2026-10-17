@@ -273,8 +273,8 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 CREATE POLICY "Lectura publica de colaboradores" ON public.collaborators FOR SELECT USING (true);
 CREATE POLICY "Gestion exclusiva de colaboradores para owner y admin" ON public.collaborators FOR ALL TO authenticated USING (public.is_owner_or_admin()) WITH CHECK (public.is_owner_or_admin());
 
-CREATE POLICY "Lectura de modelos publicos o privados de equipo" ON public.community_models FOR SELECT USING (is_public = true OR public.is_collaborator());
-CREATE POLICY "Publicacion exclusiva de colaboradores" ON public.community_models FOR INSERT TO authenticated WITH CHECK (public.is_collaborator());
+CREATE POLICY "Lectura de modelos publicos o privados de equipo" ON public.community_models FOR SELECT USING (is_public = true OR auth.role() = 'authenticated');
+CREATE POLICY "Publicacion de modelos en comunidad" ON public.community_models FOR INSERT WITH CHECK (true);
 CREATE POLICY "Edicion de modelos" ON public.community_models FOR UPDATE TO authenticated USING (public.is_owner_or_admin() OR author_email = (auth.jwt() ->> 'email') OR author_name ILIKE ('%' || coalesce(auth.jwt() -> 'user_metadata' ->> 'user_name', 'xyz') || '%'));
 CREATE POLICY "Eliminacion de modelos" ON public.community_models FOR DELETE TO authenticated USING (public.is_owner_or_admin() OR author_email = (auth.jwt() ->> 'email') OR author_name ILIKE ('%' || coalesce(auth.jwt() -> 'user_metadata' ->> 'user_name', 'xyz') || '%'));
 
