@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { ProceduralEngine } from './procedural-engine.ts';
+import type { ModelSpec } from './types.ts';
 
 export interface ExportVerificationResult {
   verified: boolean;
@@ -108,6 +110,17 @@ export class GLBExporterService {
     }
 
     return verification;
+  }
+
+  /**
+   * Generates a Three.js hierarchy from a ModelSpec and exports it to a binary GLB ArrayBuffer.
+   */
+  public static async exportSpec(spec: ModelSpec): Promise<ArrayBuffer> {
+    const genResult = ProceduralEngine.generate(spec);
+    if (!genResult.success || !genResult.object) {
+      throw new Error(`Error generando geometría para exportar: ${genResult.error || 'Desconocido'}`);
+    }
+    return this.exportToArrayBuffer(genResult.object);
   }
 
   /**
