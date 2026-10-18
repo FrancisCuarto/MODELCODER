@@ -2154,6 +2154,77 @@ test('Animation Loop Control: StudioViewport y Mixer soportan modo Bucle y 1 Vez
   mixer.uncacheRoot(mesh);
 });
 
+test('Hierarchy Reparenting: reparentComponentPreservingWorldTransform preserva posición mundial y rechaza ciclos', () => {
+  const components: any[] = [
+    {
+      name: 'Torso',
+      shape: 'box',
+      size: [1, 2, 1],
+      position: [0, 5, 0],
+      rotation: [0, 0, 0]
+    },
+    {
+      name: 'Brazo',
+      shape: 'cylinder',
+      size: [0.3, 1.5, 0.3],
+      position: [2, 5, 1],
+      rotation: [0, 0, 0]
+    }
+  ];
+
+  // 1. Reparentar Brazo como hijo de Torso
+  const ok1 = ProceduralEngine.reparentComponentPreservingWorldTransform(components, 'Brazo', 'Torso');
+  assert.equal(ok1, true);
+
+  const brazoComp = components.find(c => c.name === 'Brazo');
+  assert.equal(brazoComp.parentId, 'Torso');
+  // Al ser hijo de Torso (que está en Y=5), la posición local de Brazo debe ser [2, 0, 1]
+  assert.equal(brazoComp.position[0], 2);
+  assert.equal(brazoComp.position[1], 0);
+  assert.equal(brazoComp.position[2], 1);
+
+  // Verificar que en la escena 3D reconstruida, la posición mundial de Brazo sigue siendo exactamente [2, 5, 1]
+  const built1 = ProceduralEngine.buildModelFromSpec({
+    id: 'test_rep',
+    name: 'RepTest',
+    category: 'fixtures',
+    description: '',
+    units: 'meters',
+    dimensions: { width: 1, depth: 1, height: 1 },
+    palette: 'industrial_hazard',
+    components
+  });
+  built1.group.updateMatrixWorld(true);
+
+  let brazoMesh: THREE.Object3D | null = null;
+  built1.group.traverse(obj => {
+    if (obj.name === 'Brazo') brazoMesh = obj;
+  });
+  assert.ok(brazoMesh);
+  const worldPos = new THREE.Vector3();
+  brazoMesh!.getWorldPosition(worldPos);
+
+  assert.ok(Math.abs(worldPos.x - 2) < 0.001);
+  assert.ok(Math.abs(worldPos.y - 5) < 0.001);
+  assert.ok(Math.abs(worldPos.z - 1) < 0.001);
+  ProceduralEngine.disposeHierarchy(built1.group);
+
+  // 2. Intentar ciclo: hacer a Torso hijo de Brazo (debe fallar y rechazar el ciclo)
+  const okCycle = ProceduralEngine.reparentComponentPreservingWorldTransform(components, 'Torso', 'Brazo');
+  assert.equal(okCycle, false);
+  const torsoComp = components.find(c => c.name === 'Torso');
+  assert.equal(torsoComp.parentId, undefined);
+
+  // 3. Desvincular Brazo a nivel raíz (newParentName: undefined)
+  const okUnparent = ProceduralEngine.reparentComponentPreservingWorldTransform(components, 'Brazo', undefined);
+  assert.equal(okUnparent, true);
+  assert.equal(brazoComp.parentId, undefined);
+  // Al volver a la raíz, su posición local vuelve a ser idéntica a su posición mundial [2, 5, 0]
+  assert.equal(brazoComp.position[0], 2);
+  assert.equal(brazoComp.position[1], 5);
+  assert.equal(brazoComp.position[2], 1);
+});
+
 // Teardown: ensure Node exits cleanly after tests
 test('Teardown: Exit cleanly', () => {
   setTimeout(() => process.exit(0), 100);

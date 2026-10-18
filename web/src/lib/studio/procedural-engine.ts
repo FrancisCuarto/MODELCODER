@@ -33,6 +33,113 @@ export class ProceduralEngine {
   }
 
   /**
+   * Reparents a component to a new parent (or to root if newParentName is undefined)
+   * while recalculating position, rotation, and scale so that its world-space transform
+   * is 100% preserved. The 3D piece does NOT move or shift in the scene.
+   */
+  public static reparentComponentPreservingWorldTransform(
+    components: ComponentDef[],
+    childName: string,
+    newParentName: string | undefined
+  ): boolean {
+    const childComp = components.find((c) => c.name === childName);
+    if (!childComp) return false;
+
+    const currentParent = childComp.parentId || undefined;
+    const targetParent = newParentName && newParentName.trim() !== '' ? newParentName.trim() : undefined;
+    if (currentParent === targetParent) return true;
+
+    // Cycle check
+    if (targetParent && this.wouldCreateCycle(components, childName, targetParent)) {
+      return false;
+    }
+
+    // Build the existing hierarchy to capture the exact current world matrices
+    const dummySpec: ModelSpec = {
+      id: 'temp_reparent',
+      name: 'Temp',
+      category: 'fixtures',
+      description: 'Temp',
+      units: 'meters',
+      dimensions: { width: 1, depth: 1, height: 1 },
+      palette: 'industrial_hazard',
+      components
+    };
+
+    let group: THREE.Group | null = null;
+    try {
+      const built = this.buildModelFromSpec(dummySpec);
+      group = built.group;
+      group.updateMatrixWorld(true);
+
+      let childMesh: THREE.Object3D | null = null;
+      let targetParentMesh: THREE.Object3D | null = null;
+
+      group.traverse((obj) => {
+        if (obj.name === childName) childMesh = obj;
+        if (targetParent && obj.name === targetParent) targetParentMesh = obj;
+      });
+
+      if (!childMesh) return false;
+      if (targetParent && !targetParentMesh) return false;
+
+      const childWorldMatrix = (childMesh as THREE.Object3D).matrixWorld.clone();
+
+      let newLocalMatrix: THREE.Matrix4;
+      if (targetParentMesh) {
+        // Local matrix relative to the new parent: inv(newParentWorld) * childWorld
+        const invParentWorld = (targetParentMesh as THREE.Object3D).matrixWorld.clone().invert();
+        newLocalMatrix = new THREE.Matrix4().multiplyMatrices(invParentWorld, childWorldMatrix);
+      } else {
+        // Target is root (unparenting): world matrix becomes the new local matrix
+        newLocalMatrix = childWorldMatrix;
+      }
+
+      const newPos = new THREE.Vector3();
+      const newQuat = new THREE.Quaternion();
+      const newScale = new THREE.Vector3();
+      newLocalMatrix.decompose(newPos, newQuat, newScale);
+
+      const newEuler = new THREE.Euler().setFromQuaternion(newQuat, 'XYZ');
+      const rotDeg: [number, number, number] = [
+        parseFloat(THREE.MathUtils.radToDeg(newEuler.x).toFixed(1)),
+        parseFloat(THREE.MathUtils.radToDeg(newEuler.y).toFixed(1)),
+        parseFloat(THREE.MathUtils.radToDeg(newEuler.z).toFixed(1))
+      ];
+
+      const posArr: [number, number, number] = [
+        parseFloat(newPos.x.toFixed(3)),
+        parseFloat(newPos.y.toFixed(3)),
+        parseFloat(newPos.z.toFixed(3))
+      ];
+
+      const scaleArr: [number, number, number] = [
+        parseFloat(newScale.x.toFixed(3)),
+        parseFloat(newScale.y.toFixed(3)),
+        parseFloat(newScale.z.toFixed(3))
+      ];
+
+      if (targetParent) {
+        childComp.parentId = targetParent;
+      } else {
+        delete childComp.parentId;
+      }
+
+      childComp.position = posArr;
+      childComp.rotation = rotDeg;
+      if (childComp.scale || Math.abs(scaleArr[0] - 1) > 0.001 || Math.abs(scaleArr[1] - 1) > 0.001 || Math.abs(scaleArr[2] - 1) > 0.001) {
+        childComp.scale = scaleArr;
+      }
+
+      return true;
+    } finally {
+      if (group) {
+        this.disposeHierarchy(group);
+      }
+    }
+  }
+
+  /**
    * Calculates the standard pivot offset [ox, oy, oz] in meters for a given shape and dimensions.
    */
   public static computePresetPivot(
