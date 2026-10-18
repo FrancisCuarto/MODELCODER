@@ -1930,6 +1930,179 @@ test('Pivot & Mirror: Exportación GLB preserva geometrías con pivote y piezas 
   ProceduralEngine.disposeHierarchy(group);
 });
 
+test('Animation Curves: applyEasingProfile calcula perfiles de aceleración correctamente (linear, ease-in-out, bounce, ease-out, step)', () => {
+  const start: [number, number, number] = [0, 0, 0];
+  const end: [number, number, number] = [10, 20, 30];
+  const duration = 2.0;
+
+  // 1. Linear profile
+  const linearKfs = AnimationEngine.applyEasingProfile('linear', duration, start, end);
+  assert.equal(linearKfs.length, 2);
+  assert.equal(linearKfs[0].time, 0);
+  assert.deepEqual(linearKfs[0].value, [0, 0, 0]);
+  assert.equal(linearKfs[0].interpolation, 'linear');
+  assert.equal(linearKfs[1].time, 2.0);
+  assert.deepEqual(linearKfs[1].value, [10, 20, 30]);
+
+  // 2. Ease-in-out profile (smooth S-curve with cubic interpolation)
+  const easeInOutKfs = AnimationEngine.applyEasingProfile('ease-in-out', duration, start, end);
+  assert.equal(easeInOutKfs.length, 5);
+  assert.equal(easeInOutKfs[0].interpolation, 'cubic');
+  assert.equal(easeInOutKfs[2].time, 1.0); // Midpoint at 50% time
+  assert.deepEqual(easeInOutKfs[2].value, [5, 10, 15]); // Exactly 50% value
+  assert.deepEqual(easeInOutKfs[4].value, [10, 20, 30]);
+
+  // 3. Bounce / Spring profile with mechanical overshoot
+  const bounceKfs = AnimationEngine.applyEasingProfile('bounce', duration, start, end);
+  assert.equal(bounceKfs.length, 5);
+  // Keyframe at 68% duration should overshoot target by 18%
+  const overshootKf = bounceKfs[2];
+  assert.ok(overshootKf.value[0] > 10, 'X must overshoot target 10');
+  assert.ok(overshootKf.value[1] > 20, 'Y must overshoot target 20');
+  assert.ok(overshootKf.value[2] > 30, 'Z must overshoot target 30');
+  assert.equal(overshootKf.value[0], 11.8);
+  assert.equal(overshootKf.value[1], 23.6);
+  assert.equal(overshootKf.value[2], 35.4);
+  // Recoil keyframe at 86% should settle slightly below 100%
+  const recoilKf = bounceKfs[3];
+  assert.equal(recoilKf.value[0], 9.5);
+  // Final keyframe settles exactly at target
+  assert.deepEqual(bounceKfs[4].value, [10, 20, 30]);
+
+  // 4. Ease-out profile (fast burst decelerating sharply)
+  const easeOutKfs = AnimationEngine.applyEasingProfile('ease-out', duration, start, end);
+  assert.equal(easeOutKfs.length, 5);
+  assert.equal(easeOutKfs[0].interpolation, 'cubic');
+  // At 20% duration, value is already at 55% of travel
+  assert.equal(easeOutKfs[1].value[0], 5.5);
+  assert.equal(easeOutKfs[1].value[1], 11);
+  assert.deepEqual(easeOutKfs[4].value, [10, 20, 30]);
+
+  // 5. Step profile (discrete robotic steps)
+  const stepKfs = AnimationEngine.applyEasingProfile('step', duration, start, end);
+  assert.equal(stepKfs.length, 3);
+  assert.equal(stepKfs[0].interpolation, 'step');
+  assert.equal(stepKfs[1].interpolation, 'step');
+  assert.deepEqual(stepKfs[1].value, [5, 10, 15]);
+  assert.deepEqual(stepKfs[2].value, [10, 20, 30]);
+});
+
+test('Animation Curves: Compilación a Three.js traduce modos de interpolación discretos, lineales y cúbicos', () => {
+  const discreteTrack = {
+    targetComponent: 'robot_arm',
+    property: 'position' as const,
+    keyframes: [
+      { time: 0, value: [0, 0, 0] as [number, number, number], interpolation: 'step' as const },
+      { time: 1.0, value: [1, 2, 3] as [number, number, number], interpolation: 'step' as const }
+    ]
+  };
+  const smoothTrack = {
+    targetComponent: 'robot_arm',
+    property: 'scale' as const,
+    keyframes: [
+      { time: 0, value: [1, 1, 1] as [number, number, number], interpolation: 'cubic' as const },
+      { time: 1.0, value: [1.5, 1.5, 1.5] as [number, number, number], interpolation: 'cubic' as const }
+    ]
+  };
+  const linearRotTrack = {
+    targetComponent: 'robot_arm',
+    property: 'rotation' as const,
+    keyframes: [
+      { time: 0, value: [0, 0, 0] as [number, number, number], interpolation: 'linear' as const },
+      { time: 1.0, value: [0, 90, 0] as [number, number, number], interpolation: 'linear' as const }
+    ]
+  };
+
+  const clip = {
+    id: 'test_clip',
+    name: 'MultiInterpTest',
+    duration: 1.0,
+    tracks: [discreteTrack, smoothTrack, linearRotTrack]
+  };
+
+  const threeClip = AnimationEngine.compileClipToThree(clip);
+  assert.equal(threeClip.tracks.length, 3);
+
+  // Track 0: Position with discrete interpolation
+  const posTrack = threeClip.tracks[0];
+  assert.equal(posTrack.name, 'robot_arm.position');
+  assert.equal(posTrack.getInterpolation(), THREE.InterpolateDiscrete);
+
+  // Track 1: Scale with smooth (cubic) interpolation
+  const scaleTrack = threeClip.tracks[1];
+  assert.equal(scaleTrack.name, 'robot_arm.scale');
+  assert.equal(scaleTrack.getInterpolation(), THREE.InterpolateSmooth);
+
+  // Track 2: Rotation with linear interpolation (QuaternionKeyframeTrack)
+  const rotTrack = threeClip.tracks[2];
+  assert.equal(rotTrack.name, 'robot_arm.quaternion');
+  assert.equal(rotTrack.getInterpolation(), THREE.InterpolateLinear);
+});
+
+test('Animation Curves & GLB: Animación con rebote mecánico y keyframes personalizados exporta e inicializa en GLB', async () => {
+  const bounceKfs = AnimationEngine.applyEasingProfile('bounce', 1.6, [0, 0, 0], [0, 1.5, 0]);
+
+  const spec: ModelSpec = {
+    id: 'test.anim.bounce.glb',
+    name: 'Pistón con Rebote Mecánico',
+    category: 'machinery',
+    description: 'Pistón neumático con amortiguación y rebote elástico',
+    units: 'meters',
+    dimensions: { width: 1, depth: 1, height: 2 },
+    palette: 'industrial_hazard',
+    components: [
+      {
+        name: 'cilindro_base',
+        shape: 'cylinder',
+        size: [0.3, 0.3, 1.0, 12],
+        position: [0, 0.5, 0]
+      },
+      {
+        name: 'piston_eje',
+        shape: 'cylinder',
+        size: [0.15, 0.15, 1.2, 12],
+        position: [0, 1.1, 0]
+      }
+    ],
+    animations: [
+      {
+        id: 'clip_piston_bounce',
+        name: 'Piston_Disparo_Rebote',
+        duration: 1.6,
+        loop: 'pingpong',
+        tracks: [
+          {
+            targetComponent: 'piston_eje',
+            property: 'position',
+            keyframes: bounceKfs
+          }
+        ]
+      }
+    ]
+  };
+
+  const { group } = ProceduralEngine.buildModelFromSpec(spec);
+  assert.equal(group.children.length, 2);
+
+  // Compilar clips Three.js
+  const threeClips = AnimationEngine.compileClipsToThree(spec.animations);
+  assert.equal(threeClips.length, 1);
+  assert.equal(threeClips[0].name, 'Piston_Disparo_Rebote');
+  assert.equal(threeClips[0].tracks[0].times.length, 5);
+
+  // Exportar a GLB con clips de animación incluidos
+  const glbBuffer = await GLBExporterService.exportToArrayBuffer(group, threeClips);
+  assert.ok(glbBuffer instanceof ArrayBuffer);
+  assert.ok(glbBuffer.byteLength > 1000);
+
+  // Verificar integridad del GLB
+  const verification = await GLBExporterService.verifyGLBBuffer(glbBuffer);
+  assert.equal(verification.verified, true);
+  assert.ok(verification.triangleCount > 0);
+
+  ProceduralEngine.disposeHierarchy(group);
+});
+
 // Teardown: ensure Node exits cleanly after tests
 test('Teardown: Exit cleanly', () => {
   setTimeout(() => process.exit(0), 100);

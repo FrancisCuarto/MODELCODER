@@ -431,6 +431,9 @@ import catalog from '../data/catalog.json';
               <button type="button" id="btn-open-anim-modal" class="btn-mini btn-gold" title="Añadir nueva pista o preset mecánico a este modelo">
                 ⚡ + NUEVA PISTA
               </button>
+              <button type="button" id="btn-timeline-edit-anim" class="btn-mini btn-outline" title="Editar keyframes, curvas y tiempos de la pista activa" style="display: none;">
+                ✏️ EDITAR
+              </button>
             </div>
 
             <div class="anim-bar-center" id="anim-player-controls">
@@ -444,6 +447,9 @@ import catalog from '../data/catalog.json';
                 <input type="range" id="anim-time-slider" min="0" max="1" step="0.01" value="0" class="anim-scrubber-slider" title="Línea de tiempo de la animación" disabled />
               </div>
               <span id="anim-time-display" class="anim-time-display">0.00s / 0.00s</span>
+              <button type="button" id="btn-capture-timeline-pose" class="btn-mini btn-gold" title="Capturar la pose 3D actual de la pieza en el segundo del cabezal" disabled>
+                📸 CAPTURAR POSE
+              </button>
             </div>
 
             <div class="anim-bar-right">
@@ -1142,6 +1148,57 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
               Restablecer keyframes base
             </button>
           </div>
+
+          <!-- Perfiles Rápidos de Easing & Aceleración Mecánica -->
+          <div style="margin-top: 0.75rem; margin-bottom: 0.6rem; padding: 0.55rem; background: #080d18; border: 1px solid #1a253a;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.45rem; flex-wrap: wrap; gap: 0.3rem;">
+              <span style="font-family: var(--font-pixel); font-size: 0.68rem; color: var(--ps1-gold);">
+                ⚡ PERFILES DE ACELERACIÓN & EASING:
+              </span>
+              <span style="font-family: var(--font-mono); font-size: 0.62rem; color: #94a3b8;">
+                Genera curvas mecánicas avanzadas en 1 clic
+              </span>
+            </div>
+            <div style="display: flex; gap: 0.35rem; flex-wrap: wrap;">
+              <button type="button" id="btn-ease-in-out" class="btn btn-mini btn-outline" style="font-size: 0.66rem; padding: 0.22rem 0.45rem;" title="Aceleración suave al inicio y frenado suave al final">
+                🌊 Suave (Ease-In-Out)
+              </button>
+              <button type="button" id="btn-ease-bounce" class="btn btn-mini btn-outline" style="font-size: 0.66rem; padding: 0.22rem 0.45rem; color: var(--ps1-cyan); border-color: rgba(0, 240, 255, 0.4);" title="Rebote mecánico con overshoot de muelle realista (+18%)">
+                🏀 Rebote Mecánico
+              </button>
+              <button type="button" id="btn-ease-out" class="btn btn-mini btn-outline" style="font-size: 0.66rem; padding: 0.22rem 0.45rem;" title="Inicio rápido e impacto seco / desaceleración agresiva">
+                ⚡ Impacto (Ease-Out)
+              </button>
+              <button type="button" id="btn-ease-linear" class="btn btn-mini btn-outline" style="font-size: 0.66rem; padding: 0.22rem 0.45rem;" title="Velocidad lineal constante sin aceleración">
+                📏 Lineal
+              </button>
+              <button type="button" id="btn-ease-step" class="btn btn-mini btn-outline" style="font-size: 0.66rem; padding: 0.22rem 0.45rem; color: #f59e0b; border-color: rgba(245, 158, 11, 0.4);" title="Movimiento en pasos discretos (estilo robótico retro)">
+                🤖 Robótico (Step)
+              </button>
+            </div>
+          </div>
+
+          <!-- Visualizador / Editor Gráfico de Curvas 2D -->
+          <div style="margin-top: 0.6rem; margin-bottom: 0.4rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem; flex-wrap: wrap; gap: 0.3rem;">
+              <label style="font-family: var(--font-pixel); font-size: 0.7rem; color: var(--ps1-cyan);">
+                📈 VISUALIZADOR DE CURVAS DE ANIMACIÓN (TIEMPO vs VALOR):
+              </label>
+              <div style="display: flex; gap: 0.6rem; align-items: center; font-family: var(--font-mono); font-size: 0.65rem;">
+                <span style="color: #f87171; display: inline-flex; align-items: center; gap: 0.2rem;">● Canal X</span>
+                <span style="color: #4ade80; display: inline-flex; align-items: center; gap: 0.2rem;">● Canal Y</span>
+                <span style="color: #60a5fa; display: inline-flex; align-items: center; gap: 0.2rem;">● Canal Z</span>
+                <span style="color: #fbbf24; display: inline-flex; align-items: center; gap: 0.2rem;">| Cabezal</span>
+              </div>
+            </div>
+            <div class="ps1-inset" style="padding: 0.25rem; background: #050811; border: 1px solid #1a253a;">
+              <canvas id="anim-curve-canvas" height="120" style="width: 100%; height: 120px; display: block; cursor: crosshair;"></canvas>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.25rem; font-family: var(--font-mono); font-size: 0.62rem; color: #64748b;">
+              <span id="anim-curve-telemetry">Eje vertical: Magnitud · Eje horizontal: Tiempo (segundos)</span>
+              <span>💡 Haz clic en la gráfica para saltar al fotograma correspondiente</span>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -1251,7 +1308,7 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
   import { GLBExporterService } from '../lib/studio/glb-exporter';
   import { StudioViewport } from '../lib/studio/three-viewport';
   import { TextureLibrary, MATERIAL_CATEGORY_LABELS, type MaterialFamilyCategory } from '../lib/studio/texture-library';
-  import { AnimationEngine } from '../lib/studio/animation-engine';
+  import { AnimationEngine, type EasingProfileType } from '../lib/studio/animation-engine';
   import { getCurrentUser, checkUserRole, publishCommunityModel } from '../lib/supabase';
   import {
     saveProjectDraft,
@@ -1481,10 +1538,12 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
   const animationStudioBar = document.getElementById('animation-studio-bar');
   const animClipSelect = document.getElementById('anim-clip-select') as HTMLSelectElement | null;
   const btnOpenAnimModal = document.getElementById('btn-open-anim-modal');
+  const btnTimelineEditAnim = document.getElementById('btn-timeline-edit-anim');
   const btnAnimPlay = document.getElementById('btn-anim-play') as HTMLButtonElement | null;
   const btnAnimStop = document.getElementById('btn-anim-stop') as HTMLButtonElement | null;
   const animTimeSlider = document.getElementById('anim-time-slider') as HTMLInputElement | null;
   const animTimeDisplay = document.getElementById('anim-time-display');
+  const btnCaptureTimelinePose = document.getElementById('btn-capture-timeline-pose') as HTMLButtonElement | null;
   const animSpeedSelect = document.getElementById('anim-speed-select') as HTMLSelectElement | null;
   const btnExportVideo = document.getElementById('btn-export-video') as HTMLButtonElement | null;
   const btnAnimDelete = document.getElementById('btn-anim-delete');
@@ -1522,6 +1581,15 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
   const thValY = document.getElementById('th-val-y');
   const thValZ = document.getElementById('th-val-z');
 
+  // Curve Graph & Acceleration Profiles DOM Elements
+  const animCurveCanvas = document.getElementById('anim-curve-canvas') as HTMLCanvasElement | null;
+  const animCurveTelemetry = document.getElementById('anim-curve-telemetry');
+  const btnEaseInOut = document.getElementById('btn-ease-in-out');
+  const btnEaseBounce = document.getElementById('btn-ease-bounce');
+  const btnEaseOut = document.getElementById('btn-ease-out');
+  const btnEaseLinear = document.getElementById('btn-ease-linear');
+  const btnEaseStep = document.getElementById('btn-ease-step');
+
   // Initialize Three.js Viewport safely so any WebGL context issue never aborts UI rendering
   let viewport: StudioViewport | null = null;
   if (threeMountEl) {
@@ -1545,6 +1613,9 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
         }
         if (animClipSelect && clipName && animClipSelect.value !== clipName) {
           animClipSelect.value = clipName;
+        }
+        if (modalAnimPreset && modalAnimPreset.open) {
+          renderAnimationCurveCanvas();
         }
       });
       document.getElementById('studio-reset-cam')?.addEventListener('click', () => {
@@ -3930,6 +4001,9 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
                 <button type="button" class="btn-mini btn-cyan btn-test-comp-anim" data-anim-name="${escapeHtml(anim.name)}" title="Probar esta animación en el visor">
                   ▶ Probar
                 </button>
+                <button type="button" class="btn-mini btn-outline btn-edit-comp-anim" data-anim-name="${escapeHtml(anim.name)}" title="Editar fotogramas, curvas y tiempos de esta animación">
+                  ✏️ Editar
+                </button>
                 <button type="button" class="btn-mini btn-danger-link btn-del-comp-anim" data-anim-name="${escapeHtml(anim.name)}" title="Eliminar animación">
                   🗑️
                 </button>
@@ -3947,6 +4021,15 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
               if (animClipSelect) animClipSelect.value = name;
               viewport?.playAnimation(name);
               showStudioToast(`▶ Reproduciendo: ${name}`);
+            }
+          });
+        });
+
+        animsWrap.querySelectorAll('.btn-edit-comp-anim').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            const name = (btn as HTMLElement).dataset.animName;
+            if (name) {
+              editExistingAnimation(name);
             }
           });
         });
@@ -4591,6 +4674,8 @@ if __name__ == "__main__":
       if (animTimeDisplay) animTimeDisplay.textContent = '0.00s / 0.00s';
       if (btnExportVideo) btnExportVideo.disabled = false;
       if (btnAnimDelete) btnAnimDelete.style.display = 'none';
+      if (btnTimelineEditAnim) btnTimelineEditAnim.style.display = 'none';
+      if (btnCaptureTimelinePose) btnCaptureTimelinePose.disabled = true;
       return;
     }
 
@@ -4607,6 +4692,8 @@ if __name__ == "__main__":
     if (animTimeSlider) animTimeSlider.disabled = false;
     if (btnExportVideo) btnExportVideo.disabled = false;
     if (btnAnimDelete) btnAnimDelete.style.display = 'inline-block';
+    if (btnTimelineEditAnim) btnTimelineEditAnim.style.display = 'inline-block';
+    if (btnCaptureTimelinePose) btnCaptureTimelinePose.disabled = false;
 
     const info = viewport?.getActiveClipInfo();
     if (info && info.name) {
@@ -4707,6 +4794,8 @@ if __name__ == "__main__":
   }
 
   let activeAnimModalTab: 'preset' | 'custom' = 'preset';
+  let editingAnimOriginalName: string | null = null;
+
   interface CustomKfRow {
     time: number;
     val: [number, number, number];
@@ -4730,11 +4819,14 @@ if __name__ == "__main__":
       tabBtnAnimPreset?.classList.add('btn-outline');
       if (animSectionPresets) animSectionPresets.style.display = 'none';
       if (animSectionCustom) animSectionCustom.style.display = 'block';
-      if (btnConfirmAddAnim) btnConfirmAddAnim.textContent = '🎨 AÑADIR ANIMACIÓN PERSONALIZADA';
+      if (btnConfirmAddAnim) {
+        btnConfirmAddAnim.textContent = editingAnimOriginalName ? '💾 GUARDAR CAMBIOS EN LA PISTA' : '🎨 AÑADIR ANIMACIÓN PERSONALIZADA';
+      }
       if (customKeyframeList.length === 0) {
         initDefaultCustomKeyframes();
       }
       renderCustomKeyframeTable();
+      renderAnimationCurveCanvas();
     }
   }
 
@@ -4774,6 +4866,210 @@ if __name__ == "__main__":
     if (thValX) thValX.textContent = prop === 'rotation' ? 'ROT X (°)' : prop === 'scale' ? 'ESCALA X' : 'POS X (m)';
     if (thValY) thValY.textContent = prop === 'rotation' ? 'ROT Y (°)' : prop === 'scale' ? 'ESCALA Y' : 'POS Y (m)';
     if (thValZ) thValZ.textContent = prop === 'rotation' ? 'ROT Z (°)' : prop === 'scale' ? 'ESCALA Z' : 'POS Z (m)';
+  }
+
+  function renderAnimationCurveCanvas(): void {
+    if (!animCurveCanvas) return;
+    const ctx = animCurveCanvas.getContext('2d');
+    if (!ctx) return;
+
+    const rect = animCurveCanvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    const cssWidth = rect.width > 50 ? rect.width : 540;
+    const cssHeight = 120;
+
+    animCurveCanvas.width = Math.round(cssWidth * dpr);
+    animCurveCanvas.height = Math.round(cssHeight * dpr);
+
+    ctx.save();
+    ctx.scale(dpr, dpr);
+
+    // Background
+    ctx.fillStyle = '#060a12';
+    ctx.fillRect(0, 0, cssWidth, cssHeight);
+
+    if (customKeyframeList.length === 0) {
+      ctx.fillStyle = '#64748b';
+      ctx.font = '11px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('Sin keyframes definidos', cssWidth / 2, cssHeight / 2);
+      ctx.restore();
+      return;
+    }
+
+    const padLeft = 40;
+    const padRight = 20;
+    const padTop = 14;
+    const padBottom = 22;
+    const pw = Math.max(10, cssWidth - padLeft - padRight);
+    const ph = Math.max(10, cssHeight - padTop - padBottom);
+
+    const totalDur = parseFloat(customAnimDurationInput?.value || '2.0') || 2.0;
+    const maxKfT = Math.max(...customKeyframeList.map((k) => k.time), 0.1);
+    const maxTime = Math.max(totalDur, maxKfT);
+
+    let minVal = Infinity;
+    let maxVal = -Infinity;
+    customKeyframeList.forEach((kf) => {
+      kf.val.forEach((v) => {
+        if (v < minVal) minVal = v;
+        if (v > maxVal) maxVal = v;
+      });
+    });
+
+    if (!isFinite(minVal) || !isFinite(maxVal) || minVal === maxVal) {
+      minVal -= 1;
+      maxVal += 1;
+    }
+    const span = maxVal - minVal;
+    const vPad = Math.max(span * 0.14, 0.4);
+    minVal -= vPad;
+    maxVal += vPad;
+
+    const toX = (t: number) => padLeft + (Math.max(0, t) / maxTime) * pw;
+    const toY = (v: number) => padTop + ph - ((v - minVal) / (maxVal - minVal)) * ph;
+
+    // Grid: zero reference line
+    if (minVal <= 0 && maxVal >= 0) {
+      const y0 = toY(0);
+      ctx.strokeStyle = '#223249';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([4, 4]);
+      ctx.beginPath();
+      ctx.moveTo(padLeft, y0);
+      ctx.lineTo(padLeft + pw, y0);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = '#64748b';
+      ctx.font = '9px monospace';
+      ctx.textAlign = 'right';
+      ctx.fillText('0', padLeft - 6, y0 + 3);
+    }
+
+    // Vertical time grid lines & labels
+    const timeStep = maxTime <= 2.5 ? 0.5 : maxTime <= 6 ? 1.0 : 2.0;
+    ctx.strokeStyle = '#121b2b';
+    ctx.lineWidth = 1;
+    ctx.fillStyle = '#64748b';
+    ctx.font = '9px monospace';
+    ctx.textAlign = 'center';
+
+    for (let t = 0; t <= maxTime + 0.001; t += timeStep) {
+      const gx = toX(t);
+      ctx.beginPath();
+      ctx.moveTo(gx, padTop);
+      ctx.lineTo(gx, padTop + ph);
+      ctx.stroke();
+      ctx.fillText(`${t.toFixed(1)}s`, gx, padTop + ph + 14);
+    }
+
+    // Min and Max telemetry labels
+    ctx.textAlign = 'right';
+    ctx.fillStyle = '#475569';
+    ctx.fillText(maxVal.toFixed(1), padLeft - 6, padTop + 8);
+    ctx.fillText(minVal.toFixed(1), padLeft - 6, padTop + ph);
+
+    // Sorted keyframes
+    const sorted = [...customKeyframeList].sort((a, b) => a.time - b.time);
+    const interp = (customAnimInterpSelect?.value as AnimationInterpolation) || 'linear';
+
+    const channels: Array<{ idx: number; color: string; label: string }> = [
+      { idx: 0, color: '#f87171', label: 'X' },
+      { idx: 1, color: '#4ade80', label: 'Y' },
+      { idx: 2, color: '#60a5fa', label: 'Z' }
+    ];
+
+    // Draw curves for each channel
+    channels.forEach((ch) => {
+      ctx.strokeStyle = ch.color;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+
+      if (interp === 'step') {
+        for (let i = 0; i < sorted.length; i++) {
+          const px = toX(sorted[i].time);
+          const py = toY(sorted[i].val[ch.idx]);
+          if (i === 0) {
+            ctx.moveTo(px, py);
+          } else {
+            const prevY = toY(sorted[i - 1].val[ch.idx]);
+            ctx.lineTo(px, prevY);
+            ctx.lineTo(px, py);
+          }
+        }
+      } else if (interp === 'cubic' && sorted.length > 2) {
+        ctx.moveTo(toX(sorted[0].time), toY(sorted[0].val[ch.idx]));
+        for (let i = 0; i < sorted.length - 1; i++) {
+          const p0 = sorted[Math.max(0, i - 1)];
+          const p1 = sorted[i];
+          const p2 = sorted[i + 1];
+          const p3 = sorted[Math.min(sorted.length - 1, i + 2)];
+
+          const x1 = toX(p1.time);
+          const y1 = toY(p1.val[ch.idx]);
+          const x2 = toX(p2.time);
+          const y2 = toY(p2.val[ch.idx]);
+
+          const cp1x = x1 + (toX(p2.time) - toX(p0.time)) / 6;
+          const cp1y = y1 + (toY(p2.val[ch.idx]) - toY(p0.val[ch.idx])) / 6;
+          const cp2x = x2 - (toX(p3.time) - toX(p1.time)) / 6;
+          const cp2y = y2 - (toY(p3.val[ch.idx]) - toY(p1.val[ch.idx])) / 6;
+
+          ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, x2, y2);
+        }
+      } else {
+        // Linear
+        for (let i = 0; i < sorted.length; i++) {
+          const px = toX(sorted[i].time);
+          const py = toY(sorted[i].val[ch.idx]);
+          if (i === 0) ctx.moveTo(px, py);
+          else ctx.lineTo(px, py);
+        }
+      }
+      ctx.stroke();
+
+      // Keyframe dots
+      sorted.forEach((kf) => {
+        const kx = toX(kf.time);
+        const ky = toY(kf.val[ch.idx]);
+        ctx.fillStyle = ch.color;
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.arc(kx, ky, 3.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+      });
+    });
+
+    // Playhead line
+    const activeTime = parseFloat(animTimeSlider?.value || '0') || 0;
+    if (activeTime >= 0 && activeTime <= maxTime) {
+      const hx = toX(activeTime);
+      ctx.strokeStyle = '#fbbf24';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(hx, padTop);
+      ctx.lineTo(hx, padTop + ph);
+      ctx.stroke();
+
+      // Arrow tip
+      ctx.fillStyle = '#fbbf24';
+      ctx.beginPath();
+      ctx.moveTo(hx - 4, padTop);
+      ctx.lineTo(hx + 4, padTop);
+      ctx.lineTo(hx, padTop + 6);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    ctx.restore();
+
+    if (animCurveTelemetry) {
+      const prop = customAnimPropSelect?.value || 'rotation';
+      const unit = prop === 'rotation' ? '°' : prop === 'scale' ? 'x' : 'm';
+      animCurveTelemetry.textContent = `Rango vertical: [${minVal.toFixed(1)}${unit} .. ${maxVal.toFixed(1)}${unit}] · Duración: ${maxTime.toFixed(2)}s · ${sorted.length} keyframes`;
+    }
   }
 
   function renderCustomKeyframeTable(): void {
@@ -4823,6 +5119,7 @@ if __name__ == "__main__":
           parseFloat(yInp.value) || 0,
           parseFloat(zInp.value) || 0
         ];
+        renderAnimationCurveCanvas();
       };
 
       [timeInp, xInp, yInp, zInp].forEach((inp) => inp.addEventListener('input', updateValues));
@@ -4835,6 +5132,7 @@ if __name__ == "__main__":
         xInp.value = String(Number(kf.val[0].toFixed(2)));
         yInp.value = String(Number(kf.val[1].toFixed(2)));
         zInp.value = String(Number(kf.val[2].toFixed(2)));
+        renderAnimationCurveCanvas();
         showStudioToast(`📍 Pose capturada para keyframe (${kf.time}s): [${kf.val.map((v) => v.toFixed(2)).join(', ')}]`);
       });
 
@@ -4849,6 +5147,8 @@ if __name__ == "__main__":
 
       customKfTableBody.appendChild(tr);
     });
+
+    renderAnimationCurveCanvas();
   }
 
   function openAnimationPresetModal(preselectedComponent?: string, preselectedPreset?: AnimationPresetType, startTab?: 'preset' | 'custom'): void {
@@ -4873,17 +5173,53 @@ if __name__ == "__main__":
       selectedPresetType = preselectedPreset;
     }
 
-    const currentTarget = animTargetCompSelect?.value || 'Pieza';
-    if (customAnimNameInput) {
-      customAnimNameInput.value = `Anim_${currentTarget}`;
+    if (!editingAnimOriginalName) {
+      const currentTarget = animTargetCompSelect?.value || 'Pieza';
+      if (customAnimNameInput) {
+        customAnimNameInput.value = `Anim_${currentTarget}`;
+      }
+      initDefaultCustomKeyframes();
     }
 
     renderPresetCards();
     updatePresetConfigForm();
-    initDefaultCustomKeyframes();
 
     switchAnimModalTab(startTab || (preselectedPreset ? 'preset' : activeAnimModalTab));
+    renderAnimationCurveCanvas();
     modalAnimPreset.showModal();
+  }
+
+  function editExistingAnimation(animName: string): void {
+    if (!animName || !currentSpec.animations) return;
+    const clip = currentSpec.animations.find((a) => a.name === animName);
+    if (!clip || !clip.tracks || clip.tracks.length === 0) {
+      showStudioToast('⚠️ No se encontró la pista de animación para editar.', true);
+      return;
+    }
+
+    editingAnimOriginalName = clip.name;
+    const track = clip.tracks[0];
+    const targetComp = track.targetComponent || (track as any).targetName;
+
+    // Set custom form fields
+    if (customAnimNameInput) customAnimNameInput.value = clip.name;
+    if (customAnimDurationInput) customAnimDurationInput.value = String(clip.duration);
+    if (customAnimLoopSelect) customAnimLoopSelect.value = clip.loop || 'repeat';
+    if (customAnimPropSelect) customAnimPropSelect.value = track.property || 'rotation';
+    if (customAnimInterpSelect) customAnimInterpSelect.value = track.keyframes[0]?.interpolation || 'linear';
+
+    customKeyframeList = track.keyframes.map((k) => ({
+      time: Number(k.time.toFixed(2)),
+      val: [Number(k.value[0].toFixed(2)), Number(k.value[1].toFixed(2)), Number(k.value[2].toFixed(2))]
+    }));
+
+    openAnimationPresetModal(targetComp, undefined, 'custom');
+    if (btnConfirmAddAnim) {
+      btnConfirmAddAnim.textContent = '💾 GUARDAR CAMBIOS EN LA PISTA';
+    }
+    renderCustomKeyframeTable();
+    renderAnimationCurveCanvas();
+    showStudioToast(`✏️ Editando pista: ${clip.name}`);
   }
 
   // Animation timeline buttons
@@ -4903,11 +5239,76 @@ if __name__ == "__main__":
     viewport?.stopAnimation();
     if (btnAnimPlay) btnAnimPlay.textContent = '▶ PLAY';
     if (animTimeSlider) animTimeSlider.value = '0';
+    renderAnimationCurveCanvas();
   });
 
   animTimeSlider?.addEventListener('input', () => {
     const t = parseFloat(animTimeSlider.value) || 0;
     viewport?.seekAnimation(t);
+    renderAnimationCurveCanvas();
+  });
+
+  btnTimelineEditAnim?.addEventListener('click', () => {
+    const activeName = animClipSelect?.value;
+    if (activeName) {
+      editExistingAnimation(activeName);
+    }
+  });
+
+  btnCaptureTimelinePose?.addEventListener('click', () => {
+    const activeClipName = animClipSelect?.value;
+    if (!activeClipName || !currentSpec.animations) {
+      showStudioToast('⚠️ No hay ninguna pista de animación activa para registrar la pose.', true);
+      return;
+    }
+
+    const clip = currentSpec.animations.find((a) => a.name === activeClipName);
+    if (!clip || !clip.tracks || clip.tracks.length === 0) return;
+
+    const track = clip.tracks[0];
+    const targetCompName = (selectedComponentIndex !== null && currentSpec.components[selectedComponentIndex]?.name)
+      || track.targetComponent;
+
+    const comp = currentSpec.components.find((c) => c.name === targetCompName);
+    if (!comp) {
+      showStudioToast('⚠️ Componente no encontrado en el modelo.', true);
+      return;
+    }
+
+    const currentTime = Math.max(0, parseFloat(animTimeSlider?.value || '0') || (viewport?.getActiveClipInfo()?.time || 0));
+    const roundedTime = Number(currentTime.toFixed(2));
+
+    const prop = track.property || 'rotation';
+    let capturedVal: [number, number, number];
+    if (prop === 'rotation') {
+      capturedVal = comp.rotation ? [comp.rotation[0], comp.rotation[1], comp.rotation[2]] : [0, 0, 0];
+    } else if (prop === 'scale') {
+      capturedVal = comp.scale ? [comp.scale[0], comp.scale[1], comp.scale[2]] : [1, 1, 1];
+    } else {
+      capturedVal = comp.position ? [comp.position[0], comp.position[1], comp.position[2]] : [0, 0, 0];
+    }
+
+    const existingKfIdx = track.keyframes.findIndex((k) => Math.abs(k.time - roundedTime) < 0.05);
+    if (existingKfIdx >= 0) {
+      track.keyframes[existingKfIdx].value = [capturedVal[0], capturedVal[1], capturedVal[2]];
+    } else {
+      track.keyframes.push({
+        time: roundedTime,
+        value: [capturedVal[0], capturedVal[1], capturedVal[2]],
+        interpolation: track.keyframes[0]?.interpolation || 'linear'
+      });
+      track.keyframes.sort((a, b) => a.time - b.time);
+    }
+
+    const maxT = Math.max(...track.keyframes.map((k) => k.time));
+    if (maxT > clip.duration) {
+      clip.duration = Number(maxT.toFixed(2));
+    }
+
+    renderCurrentSpec('visual', true, true);
+    if (animClipSelect) animClipSelect.value = clip.name;
+    viewport?.seekAnimation(roundedTime);
+    showStudioToast(`📸 Pose capturada en t=${roundedTime}s: [${capturedVal.map((v) => v.toFixed(2)).join(', ')}]`);
   });
 
   animSpeedSelect?.addEventListener('change', () => {
@@ -4972,14 +5373,17 @@ if __name__ == "__main__":
   });
 
   btnOpenAnimModal?.addEventListener('click', () => {
+    editingAnimOriginalName = null;
     openAnimationPresetModal();
   });
 
   closeAnimModalBtn?.addEventListener('click', () => {
+    editingAnimOriginalName = null;
     modalAnimPreset?.close();
   });
 
   btnCancelAnimModal?.addEventListener('click', () => {
+    editingAnimOriginalName = null;
     modalAnimPreset?.close();
   });
 
@@ -5038,15 +5442,85 @@ if __name__ == "__main__":
     renderCustomKeyframeTable();
   });
 
+  customAnimDurationInput?.addEventListener('input', () => {
+    renderAnimationCurveCanvas();
+  });
+
+  customAnimInterpSelect?.addEventListener('change', () => {
+    renderAnimationCurveCanvas();
+  });
+
   animTargetCompSelect?.addEventListener('change', () => {
     updatePresetConfigForm();
     const currentTarget = animTargetCompSelect?.value || 'Pieza';
-    if (customAnimNameInput) {
+    if (customAnimNameInput && !editingAnimOriginalName) {
       customAnimNameInput.value = `Anim_${currentTarget}`;
     }
     initDefaultCustomKeyframes();
     if (activeAnimModalTab === 'custom') {
       renderCustomKeyframeTable();
+    }
+  });
+
+  // Easing Profiles Handlers
+  const applyEasingToCustomTrack = (profile: EasingProfileType) => {
+    const dur = parseFloat(customAnimDurationInput?.value || '2.0') || 2.0;
+    if (customKeyframeList.length < 2) {
+      initDefaultCustomKeyframes();
+    }
+    const sorted = [...customKeyframeList].sort((a, b) => a.time - b.time);
+    const startVal = sorted[0].val;
+    const endVal = sorted[sorted.length - 1].val;
+
+    const generated = AnimationEngine.applyEasingProfile(profile, dur, startVal, endVal);
+    customKeyframeList = generated.map((g) => ({
+      time: g.time,
+      val: [g.value[0], g.value[1], g.value[2]]
+    }));
+
+    if (customAnimInterpSelect) {
+      customAnimInterpSelect.value = generated[0]?.interpolation || 'linear';
+    }
+
+    renderCustomKeyframeTable();
+
+    const labels: Record<EasingProfileType, string> = {
+      'ease-in-out': '🌊 Perfil Suave (Ease-In-Out) aplicado',
+      'bounce': '🏀 Perfil Rebote Mecánico con Overshoot (+18%) aplicado',
+      'ease-out': '⚡ Perfil Impacto Seco (Ease-Out) aplicado',
+      'linear': '📏 Perfil Lineal Constante aplicado',
+      'step': '🤖 Perfil Robótico Discreto (Step) aplicado'
+    };
+    showStudioToast(labels[profile] || 'Curva aplicada');
+  };
+
+  btnEaseInOut?.addEventListener('click', () => applyEasingToCustomTrack('ease-in-out'));
+  btnEaseBounce?.addEventListener('click', () => applyEasingToCustomTrack('bounce'));
+  btnEaseOut?.addEventListener('click', () => applyEasingToCustomTrack('ease-out'));
+  btnEaseLinear?.addEventListener('click', () => applyEasingToCustomTrack('linear'));
+  btnEaseStep?.addEventListener('click', () => applyEasingToCustomTrack('step'));
+
+  // Canvas Click Seeking
+  animCurveCanvas?.addEventListener('click', (e) => {
+    if (!animCurveCanvas) return;
+    const rect = animCurveCanvas.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const padLeft = 40;
+    const padRight = 20;
+    const pw = rect.width - padLeft - padRight;
+    const totalDur = parseFloat(customAnimDurationInput?.value || '2.0') || 2.0;
+    const maxKfT = Math.max(...customKeyframeList.map((k) => k.time), 0.1);
+    const maxTime = Math.max(totalDur, maxKfT);
+
+    if (clickX >= padLeft && clickX <= padLeft + pw) {
+      const clickedTime = Math.max(0, Math.min(maxTime, ((clickX - padLeft) / pw) * maxTime));
+      const roundedT = Number(clickedTime.toFixed(2));
+      if (animTimeSlider) {
+        animTimeSlider.value = String(roundedT);
+      }
+      viewport?.seekAnimation(roundedT);
+      renderAnimationCurveCanvas();
+      showStudioToast(`⏱️ Fotograma seleccionado: ${roundedT}s`);
     }
   });
 
@@ -5093,18 +5567,28 @@ if __name__ == "__main__":
       };
 
       currentSpec.animations = currentSpec.animations || [];
-      const existingIdx = currentSpec.animations.findIndex((a) => a.name === customClip.name);
-      if (existingIdx >= 0) {
-        currentSpec.animations[existingIdx] = customClip;
+      if (editingAnimOriginalName) {
+        const editIdx = currentSpec.animations.findIndex((a) => a.name === editingAnimOriginalName);
+        if (editIdx >= 0) {
+          currentSpec.animations[editIdx] = customClip;
+        } else {
+          currentSpec.animations.push(customClip);
+        }
+        editingAnimOriginalName = null;
       } else {
-        currentSpec.animations.push(customClip);
+        const existingIdx = currentSpec.animations.findIndex((a) => a.name === customClip.name);
+        if (existingIdx >= 0) {
+          currentSpec.animations[existingIdx] = customClip;
+        } else {
+          currentSpec.animations.push(customClip);
+        }
       }
 
       modalAnimPreset?.close();
       renderCurrentSpec('visual', true, true);
       if (animClipSelect) animClipSelect.value = customClip.name;
       viewport?.playAnimation(customClip.name);
-      showStudioToast(`🎨 Pista personalizada creada: ${customClip.name} (${sortedKfs.length} keyframes)`);
+      showStudioToast(`🎨 Pista guardada: ${customClip.name} (${sortedKfs.length} keyframes)`);
       return;
     }
 

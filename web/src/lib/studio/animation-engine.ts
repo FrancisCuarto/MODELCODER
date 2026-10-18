@@ -421,4 +421,78 @@ export class AnimationEngine {
       errors
     };
   }
+
+  /**
+   * Generates a set of keyframes between startVal and endVal over duration
+   * according to a selected easing / acceleration profile.
+   */
+  public static applyEasingProfile(
+    profile: EasingProfileType,
+    duration: number,
+    startVal: [number, number, number],
+    endVal: [number, number, number]
+  ): Array<{ time: number; value: [number, number, number]; interpolation: AnimationInterpolation }> {
+    const dur = Math.max(0.1, duration);
+    const dX = endVal[0] - startVal[0];
+    const dY = endVal[1] - startVal[1];
+    const dZ = endVal[2] - startVal[2];
+
+    const lerp = (_tNorm: number, factor: number): [number, number, number] => [
+      Number((startVal[0] + dX * factor).toFixed(2)),
+      Number((startVal[1] + dY * factor).toFixed(2)),
+      Number((startVal[2] + dZ * factor).toFixed(2))
+    ];
+
+    switch (profile) {
+      case 'linear':
+        return [
+          { time: 0, value: [...startVal], interpolation: 'linear' },
+          { time: Number(dur.toFixed(2)), value: [...endVal], interpolation: 'linear' }
+        ];
+
+      case 'ease-in-out':
+        return [
+          { time: 0, value: [...startVal], interpolation: 'cubic' },
+          { time: Number((dur * 0.25).toFixed(2)), value: lerp(0.25, 0.15), interpolation: 'cubic' },
+          { time: Number((dur * 0.50).toFixed(2)), value: lerp(0.50, 0.50), interpolation: 'cubic' },
+          { time: Number((dur * 0.75).toFixed(2)), value: lerp(0.75, 0.85), interpolation: 'cubic' },
+          { time: Number(dur.toFixed(2)), value: [...endVal], interpolation: 'cubic' }
+        ];
+
+      case 'bounce':
+        // Mechanical spring/bounce with realistic overshoot (18%) and subtle recoil settling (-5%)
+        return [
+          { time: 0, value: [...startVal], interpolation: 'linear' },
+          { time: Number((dur * 0.38).toFixed(2)), value: lerp(0.38, 0.70), interpolation: 'linear' },
+          { time: Number((dur * 0.68).toFixed(2)), value: lerp(0.68, 1.18), interpolation: 'linear' },
+          { time: Number((dur * 0.86).toFixed(2)), value: lerp(0.86, 0.95), interpolation: 'linear' },
+          { time: Number(dur.toFixed(2)), value: [...endVal], interpolation: 'linear' }
+        ];
+
+      case 'ease-out':
+        // Fast dynamic burst that decelerates smoothly into the target pose
+        return [
+          { time: 0, value: [...startVal], interpolation: 'cubic' },
+          { time: Number((dur * 0.20).toFixed(2)), value: lerp(0.20, 0.55), interpolation: 'cubic' },
+          { time: Number((dur * 0.50).toFixed(2)), value: lerp(0.50, 0.85), interpolation: 'cubic' },
+          { time: Number((dur * 0.80).toFixed(2)), value: lerp(0.80, 0.97), interpolation: 'cubic' },
+          { time: Number(dur.toFixed(2)), value: [...endVal], interpolation: 'cubic' }
+        ];
+
+      case 'step':
+        return [
+          { time: 0, value: [...startVal], interpolation: 'step' },
+          { time: Number((dur * 0.50).toFixed(2)), value: lerp(0.50, 0.50), interpolation: 'step' },
+          { time: Number(dur.toFixed(2)), value: [...endVal], interpolation: 'step' }
+        ];
+
+      default:
+        return [
+          { time: 0, value: [...startVal], interpolation: 'linear' },
+          { time: Number(dur.toFixed(2)), value: [...endVal], interpolation: 'linear' }
+        ];
+    }
+  }
 }
+
+export type EasingProfileType = 'ease-in-out' | 'bounce' | 'ease-out' | 'linear' | 'step';
