@@ -54,16 +54,20 @@ export class GLBExporterService {
       (globalThis as any).FileReader = NodeFileReader;
     }
     if (typeof (globalThis as any).document === 'undefined') {
+      const selfRef = this;
       (globalThis as any).document = {
         createElement: (tag: string) => {
           if (tag === 'canvas') {
-            return {
+            const canvasObj: any = {
               width: 0,
               height: 0,
+              _imageData: null,
               getContext: () => ({
                 translate: () => {},
                 scale: () => {},
-                putImageData: () => {},
+                putImageData: (imgData: any) => {
+                  canvasObj._imageData = imgData;
+                },
                 drawImage: () => {},
                 getImageData: (_x: number, _y: number, w = 64, h = 64) => ({
                   data: new Uint8ClampedArray(w * h * 4),
@@ -77,14 +81,80 @@ export class GLBExporterService {
                 })
               }),
               toBlob: (cb: any, type: string) => {
-                const png1x1 = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'base64');
-                cb(new Blob([png1x1], { type: type || 'image/png' }));
+                let pngBuf: any = null;
+                if (canvasObj._imageData && canvasObj._imageData.data && canvasObj._imageData.width > 0 && canvasObj._imageData.height > 0) {
+                  pngBuf = selfRef.encodeNodePNG(canvasObj._imageData.width, canvasObj._imageData.height, canvasObj._imageData.data);
+                }
+                if (!pngBuf && typeof Buffer !== 'undefined') {
+                  // Fallback: 1x1 neutral pure white PNG (leaves base color 100% unaltered, never turns green)
+                  pngBuf = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4////fwAJ+wP9KobjigAAAABJRU5ErkJggg==', 'base64');
+                }
+                cb(new Blob([pngBuf], { type: type || 'image/png' }));
               }
             };
+            return canvasObj;
           }
           return {};
         }
       };
+    }
+  }
+
+  /**
+   * Encodes raw RGBA buffer into a real PNG binary buffer in Node.js environments.
+   */
+  private static encodeNodePNG(width: number, height: number, rgba: Uint8Array | Uint8ClampedArray): any {
+    try {
+      const zlib = (globalThis as any).process?.getBuiltinModule?.('node:zlib');
+      if (!zlib || typeof zlib.deflateSync !== 'function' || typeof Buffer === 'undefined') return null;
+
+      const crcTable = new Uint32Array(256);
+      for (let i = 0; i < 256; i++) {
+        let c = i;
+        for (let k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+        crcTable[i] = c;
+      }
+      const crc32 = (b: any): number => {
+        let c = 0xFFFFFFFF;
+        for (let i = 0; i < b.length; i++) c = crcTable[(c ^ b[i]) & 0xFF] ^ (c >>> 8);
+        return (c ^ 0xFFFFFFFF) >>> 0;
+      };
+      const makeChunk = (type: string, d: any): any => {
+        const b = Buffer.alloc(12 + d.length);
+        b.writeUInt32BE(d.length, 0);
+        b.write(type, 4, 4, 'ascii');
+        d.copy(b, 8);
+        b.writeUInt32BE(crc32(b.subarray(4, 8 + d.length)), 8 + d.length);
+        return b;
+      };
+
+      const header = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
+      const ihdr = Buffer.alloc(13);
+      ihdr.writeUInt32BE(width, 0);
+      ihdr.writeUInt32BE(height, 4);
+      ihdr[8] = 8;
+      ihdr[9] = 6;
+      ihdr[10] = 0;
+      ihdr[11] = 0;
+      ihdr[12] = 0;
+      const ihdrChunk = makeChunk('IHDR', ihdr);
+
+      const rowBytes = width * 4;
+      const scanlines = Buffer.alloc(height * (rowBytes + 1));
+      const srcBuf = Buffer.from(rgba.buffer, rgba.byteOffset, rgba.byteLength);
+      for (let y = 0; y < height; y++) {
+        const rowOffset = y * (rowBytes + 1);
+        scanlines[rowOffset] = 0;
+        srcBuf.copy(scanlines, rowOffset + 1, y * rowBytes, (y + 1) * rowBytes);
+      }
+
+      const compressed = zlib.deflateSync(scanlines);
+      const idatChunk = makeChunk('IDAT', compressed);
+      const iendChunk = makeChunk('IEND', Buffer.alloc(0));
+
+      return Buffer.concat([header, ihdrChunk, idatChunk, iendChunk]);
+    } catch {
+      return null;
     }
   }
 

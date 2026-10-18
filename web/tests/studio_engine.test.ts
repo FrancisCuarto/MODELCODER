@@ -19,16 +19,58 @@ if (typeof (globalThis as any).ImageData === 'undefined') {
   };
 }
 if (typeof (globalThis as any).document === 'undefined') {
+  function testEncodePNG(width: number, height: number, rgba: Uint8Array | Uint8ClampedArray): Buffer | null {
+    try {
+      const zlib = (globalThis as any).process?.getBuiltinModule?.('node:zlib');
+      if (!zlib || typeof zlib.deflateSync !== 'function' || typeof Buffer === 'undefined') return null;
+      const crcTable = new Uint32Array(256);
+      for (let i = 0; i < 256; i++) {
+        let c = i;
+        for (let k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+        crcTable[i] = c;
+      }
+      const crc32 = (b: any): number => {
+        let c = 0xFFFFFFFF;
+        for (let i = 0; i < b.length; i++) c = crcTable[(c ^ b[i]) & 0xFF] ^ (c >>> 8);
+        return (c ^ 0xFFFFFFFF) >>> 0;
+      };
+      const makeChunk = (type: string, d: any): any => {
+        const b = Buffer.alloc(12 + d.length);
+        b.writeUInt32BE(d.length, 0);
+        b.write(type, 4, 4, 'ascii');
+        d.copy(b, 8);
+        b.writeUInt32BE(crc32(b.subarray(4, 8 + d.length)), 8 + d.length);
+        return b;
+      };
+      const header = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
+      const ihdr = Buffer.alloc(13);
+      ihdr.writeUInt32BE(width, 0); ihdr.writeUInt32BE(height, 4);
+      ihdr[8] = 8; ihdr[9] = 6;
+      const scanlines = Buffer.alloc(height * (width * 4 + 1));
+      const srcBuf = Buffer.from(rgba.buffer, rgba.byteOffset, rgba.byteLength);
+      for (let y = 0; y < height; y++) {
+        scanlines[y * (width * 4 + 1)] = 0;
+        srcBuf.copy(scanlines, y * (width * 4 + 1) + 1, y * width * 4, (y + 1) * width * 4);
+      }
+      return Buffer.concat([header, makeChunk('IHDR', ihdr), makeChunk('IDAT', zlib.deflateSync(scanlines)), makeChunk('IEND', Buffer.alloc(0))]);
+    } catch {
+      return null;
+    }
+  }
+
   (globalThis as any).document = {
     createElement: (tag: string) => {
       if (tag === 'canvas') {
-        return {
+        const canvasObj: any = {
           width: 0,
           height: 0,
+          _imageData: null,
           getContext: () => ({
             translate: () => {},
             scale: () => {},
-            putImageData: () => {},
+            putImageData: (imgData: any) => {
+              canvasObj._imageData = imgData;
+            },
             drawImage: () => {},
             beginPath: () => {},
             moveTo: () => {},
@@ -46,10 +88,17 @@ if (typeof (globalThis as any).document === 'undefined') {
           }),
           toDataURL: (type: string) => 'data:image/png;base64,mock',
           toBlob: (cb: any, type: string) => {
-            const png1x1 = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'base64');
-            cb(new Blob([png1x1], { type: type || 'image/png' }));
+            let pngBuf: any = null;
+            if (canvasObj._imageData && canvasObj._imageData.data && canvasObj._imageData.width > 0 && canvasObj._imageData.height > 0) {
+              pngBuf = testEncodePNG(canvasObj._imageData.width, canvasObj._imageData.height, canvasObj._imageData.data);
+            }
+            if (!pngBuf && typeof Buffer !== 'undefined') {
+              pngBuf = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4////fwAJ+wP9KobjigAAAABJRU5ErkJggg==', 'base64');
+            }
+            cb(new Blob([pngBuf], { type: type || 'image/png' }));
           }
         };
+        return canvasObj;
       }
       return {};
     }
