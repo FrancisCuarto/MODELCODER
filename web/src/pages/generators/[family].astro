@@ -84,7 +84,7 @@ const modelSchema = {
       <div class="ps1-window viewport-window">
         <div class="ps1-titlebar">
           <span>VISOR 3D: [{gen.family.toUpperCase()}]</span>
-          <span class="ps1-telemetry-tag">FPS: 60 · PBR_PSX</span>
+          <span class="ps1-telemetry-tag">FPS: 60 · PBR_PSX · 🧊 MALLA BAKEADA</span>
         </div>
 
         <div class="ps1-inset viewport-container">
@@ -129,9 +129,6 @@ const modelSchema = {
             </button>
             <button id="fullscreen-viewer-btn" class="ps1-ctrl-btn" title="Pantalla Completa (F11 / ESC)">
               ⛶ PANTALLA COMPLETA
-            </button>
-            <button id="btn-viewport-studio" class="ps1-ctrl-btn" style="color: var(--ps1-gold); font-weight: bold;" title="Desarmar piezas y personalizar en el Studio 3D">
-              ⚡ EDITAR EN STUDIO
             </button>
             <button 
               id="btn-family-fav" 
@@ -303,7 +300,10 @@ const modelSchema = {
               <h1 class="generator-title">{gen.name}</h1>
               <span class="model-category-label">Categoría: {gen.category}</span>
             </div>
-            <span class="meta-pill">{gen.license}</span>
+            <div style="display: flex; gap: 0.35rem; align-items: center; flex-wrap: wrap; justify-content: flex-end;">
+              <span class="meta-pill meta-pill-baked" title="Modelo 3D con geometría horneada en una sola pieza optimizada para videojuegos">🧊 BAKEADO</span>
+              <span class="meta-pill">{gen.license}</span>
+            </div>
           </div>
           <p class="summary-desc">
             {gen.description}
@@ -430,10 +430,18 @@ const modelSchema = {
 
           <!-- Sección de Descarga Inequívoca y Asistencia -->
           <div class="download-section-box">
-            <!-- Acción de Remix / Edición en Studio 3D -->
-            <button type="button" id="btn-edit-in-studio" class="btn btn-gold btn-download-hero" style="margin-bottom: 0.65rem; border: 2px outset var(--ps1-gold); text-shadow: 1px 1px 0px #000;" title="Desarmar este modelo en piezas y modificarlo a fondo en el Studio 3D">
-              ⚡ ABRIR Y EDITAR EN STUDIO 3D
-            </button>
+            <!-- Indicador de Malla Bakeada -->
+            <div class="baked-asset-notice ps1-inset" style="margin-bottom: 0.75rem; padding: 0.6rem 0.75rem; background: #0c1220; border: 1px solid #334155; display: flex; align-items: flex-start; gap: 0.6rem;">
+              <span style="font-size: 1.1rem; line-height: 1;">🧊</span>
+              <div>
+                <strong style="color: #94a3b8; font-family: var(--font-pixel); font-size: 0.68rem; display: block; margin-bottom: 0.2rem;">
+                  ASSET 3D BAKEADO (LISTO PARA MOTORES DE JUEGO)
+                </strong>
+                <p style="font-size: 0.68rem; color: #64748b; margin: 0; line-height: 1.35;">
+                  Este modelo cuenta con geometría horneada en una única malla optimizada para alto rendimiento en Godot 4, Unity y Unreal. No está dividido en capas editables.
+                </p>
+              </div>
+            </div>
 
             <!-- Acción Principal Única -->
             <button type="button" id="download-custom-glb-btn" class="btn btn-primary btn-download-hero">
@@ -1852,6 +1860,13 @@ const modelSchema = {
     background: #141b29;
     border: 1px inset var(--ps1-steel);
     padding: 0.2rem 0.5rem;
+  }
+
+  .meta-pill-baked {
+    color: #94a3b8;
+    background: #0f172a;
+    border: 1px solid #334155;
+    letter-spacing: 0.5px;
   }
 
   .meta-pill-ver {

@@ -4,7 +4,6 @@ import { ProceduralEngine } from './procedural-engine.ts';
 import type { ModelSpec, ComponentDef } from './types.ts';
 import { AIGenerator } from './ai-generator.ts';
 import catalog from '../../data/catalog.json' with { type: 'json' };
-import { CatalogBlueprintRegistry } from './catalog-blueprints.ts';
 
 export interface CatalogTemplateInfo {
   family: string;
@@ -41,19 +40,11 @@ export class CatalogBridge {
     family: string,
     userParams?: Record<string, any>
   ): Promise<ModelSpec> {
-    // 1. First priority: native modular procedural blueprint (separated layers + editable code)
-    if (CatalogBlueprintRegistry.has(family)) {
-      const blueprint = CatalogBlueprintRegistry.get(family, userParams);
-      if (blueprint) {
-        return blueprint;
-      }
-    }
-
     const entry = (catalog as any[]).find((c: any) => c.family === family) || {
       family,
       name: family.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase()),
       category: 'props',
-      description: 'Modelo original desglosado para edición modular.'
+      description: 'Modelo 3D bakeado original del catálogo.'
     };
 
     // Safe polyfills for GLTFLoader when running in headless Node.js tests
@@ -218,14 +209,6 @@ export class CatalogBridge {
     family: string,
     userParams?: Record<string, any>
   ): ModelSpec {
-    // 1. First priority: native modular procedural blueprint
-    if (CatalogBlueprintRegistry.has(family)) {
-      const blueprint = CatalogBlueprintRegistry.get(family, userParams);
-      if (blueprint) {
-        return blueprint;
-      }
-    }
-
     const entry = (catalog as any[]).find((c: any) => c.family === family) || {
       family,
       name: family.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase()),

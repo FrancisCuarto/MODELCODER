@@ -2275,55 +2275,28 @@ test('Catalog Bridge: Deconstructs catalog models into editable ModelSpec with r
   assert.ok(stats.triangles > 0, 'Debe tener triángulos válidos');
 });
 
-test('Catalog Bridge: loads modular procedural blueprints with real editable primitives', async () => {
-  // Test with registered blueprint models
-  const blueprintModels = ['alarm_siren', 'door', 'bunk_bed', 'terminal', 'security_camera'];
-
-  for (const fam of blueprintModels) {
+test('Catalog Bridge: loadCatalogModelAsSpec loads genuine 3D meshes from real catalog GLBs', async () => {
+  // Test with authentic catalog models (e.g. bunk_bed, alarm_siren, antenna_dish)
+  for (const fam of ['bunk_bed', 'alarm_siren', 'antenna_dish']) {
     const spec = await CatalogBridge.loadCatalogModelAsSpec(fam);
-    assert.ok(spec.components.length >= 5, `${fam} debe tener múltiples componentes modulares (tiene ${spec.components.length})`);
-    assert.ok(spec.components.every((c) => c.shape !== 'mesh'), `${fam} debe usar primitivas procedurales editables, no un mesh único`);
+    assert.ok(spec.components.length >= 1, `${fam} debe contener componentes del GLB`);
+    assert.ok(spec.components.some((c) => c.shape === 'mesh'), `${fam} debe contener la malla bakeada original del GLB`);
     assert.ok(spec.id.startsWith(`remix.${fam}.`), 'ID con prefijo remix');
 
-    // Verify Three.js scene compilation in ProceduralEngine
+    // Verify compilation in ProceduralEngine
     const { group, stats } = ProceduralEngine.buildModelFromSpec(spec);
-    assert.ok(group, 'Debe generar Three.js Group');
-    assert.ok(stats.triangles > 0, `${fam} debe tener triángulos válidos (actual: ${stats.triangles})`);
+    assert.ok(group, 'Debe generar Three.js Group con mallas registradas');
+    assert.ok(stats.triangles >= 100, `Debe contener los triángulos reales del modelo GLB (actual: ${stats.triangles})`);
 
-    let meshCount = 0;
-    group.traverse((n: any) => { if (n.isMesh) meshCount++; });
-    assert.ok(meshCount >= 5, `${fam} debe tener múltiples mallas separadas en la jerarquía (actual: ${meshCount})`);
-
-    // Verify GLB export round-trip fidelity
+    // Test GLB export round-trip fidelity
     const glbBuffer = await GLBExporterService.exportToArrayBuffer(group);
-    assert.ok(glbBuffer.byteLength > 500);
+    assert.ok(glbBuffer.byteLength > 1000);
     const verify = await GLBExporterService.verifyGLBBuffer(glbBuffer);
     assert.equal(verify.verified, true);
+    assert.ok(verify.triangleCount >= 100);
 
     ProceduralEngine.disposeHierarchy(group);
   }
-});
-
-test('Catalog Bridge: loadCatalogModelAsSpec fallback loads genuine 3D meshes for unmapped GLBs', async () => {
-  // Test with a model without a procedural blueprint (e.g. antenna_dish)
-  const dishSpec = await CatalogBridge.loadCatalogModelAsSpec('antenna_dish');
-  assert.ok(dishSpec.components.length >= 1, 'Debe contener componentes del GLB');
-  assert.ok(dishSpec.components.some((c) => c.shape === 'mesh'), 'Debe contener componentes con forma mesh de fallback');
-  assert.ok(dishSpec.id.startsWith('remix.antenna_dish.'), 'ID con prefijo remix');
-
-  // Verify compilation in ProceduralEngine
-  const { group, stats } = ProceduralEngine.buildModelFromSpec(dishSpec);
-  assert.ok(group, 'Debe generar Three.js Group con mallas registradas');
-  assert.ok(stats.triangles >= 100, `Debe contener los triángulos reales del modelo GLB (actual: ${stats.triangles})`);
-
-  // Test GLB export round-trip fidelity
-  const glbBuffer = await GLBExporterService.exportToArrayBuffer(group);
-  assert.ok(glbBuffer.byteLength > 1000);
-  const verify = await GLBExporterService.verifyGLBBuffer(glbBuffer);
-  assert.equal(verify.verified, true);
-  assert.ok(verify.triangleCount >= 100);
-
-  ProceduralEngine.disposeHierarchy(group);
 });
 
 // Teardown: ensure Node exits cleanly after tests

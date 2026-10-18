@@ -250,6 +250,9 @@ const categories = [
             <span class={`category-badge category-${gen.category}`}>
               {gen.category}
             </span>
+            <span class="category-badge badge-baked-pill" title="Modelo 3D con geometría horneada (mesh unificado para motores de juegos)">
+              🧊 BAKEADO
+            </span>
             {isAnim && (
               <span class="category-badge badge-anim-pill" title="Pista de animación lista para motores de juegos">
                 🎬 ANIMACIÓN
@@ -268,6 +271,7 @@ const categories = [
           <p class="card-description">{gen.description}</p>
 
           <div class="card-meta">
+            <span class="ps1-inset meta-tag tag-baked" title="Malla horneada no modificable por piezas individuales">🧊 MALLA BAKEADA</span>
             <span class="ps1-inset meta-tag">📐 {gen.parameters.length} CONTROLES</span>
             <span class="ps1-inset meta-tag">~{gen.export_capabilities?.target_tri_budget || 450} TRIS</span>
             <span class="ps1-inset meta-tag">v{gen.version}</span>
@@ -277,9 +281,6 @@ const categories = [
         <div class="card-footer">
           <a href={`/generators/${gen.family}`} class="btn btn-primary" title="Abrir generador para personalizar en 3D">
             PERSONALIZAR 3D
-          </a>
-          <a href={`/studio?remix=${gen.family}`} class="btn btn-gold btn-sm" title="Desarmar piezas y remixar en Studio 3D" style="font-size: 0.68rem; padding: 0.35rem 0.55rem; text-decoration: none;">
-            ⚡ REMIXAR
           </a>
           {gen.has_model && (
             <a 
@@ -1074,6 +1075,21 @@ const categories = [
     color: var(--ps1-cyan) !important;
     border: 1px solid var(--ps1-cyan) !important;
     box-shadow: 0 0 6px rgba(0, 240, 255, 0.25);
+  }
+
+  .badge-baked-pill {
+    background: #101624 !important;
+    color: #94a3b8 !important;
+    border: 1px solid #334155 !important;
+    letter-spacing: 0.5px;
+    font-size: 0.58rem !important;
+    box-shadow: 0 0 4px rgba(148, 163, 184, 0.15);
+  }
+
+  .tag-baked {
+    color: #94a3b8 !important;
+    border-color: #334155 !important;
+    background: #0b1120 !important;
   }
 
   /* Nota: Los estilos de .generators-grid, .generator-card, .card-preview, .card-body y .card-footer

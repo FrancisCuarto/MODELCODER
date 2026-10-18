@@ -847,10 +847,10 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     </div>
   </dialog>
 
-  <!-- Modal: Catálogo de Plantillas y Modelos Base para Remixar -->
+  <!-- Modal: Catálogo de Plantillas y Modelos Base -->
   <dialog id="modal-catalog-templates" class="ps1-window project-modal" style="max-width: 880px; width: 95%;">
     <div class="ps1-titlebar">
-      <span>PLANTILLAS DEL CATÁLOGO PROCEDURAL (100+ OBJETOS PARA REMIXAR)</span>
+      <span>CATÁLOGO PROCEDURAL (100+ ASSETS 3D BAKEADOS)</span>
       <button id="close-catalog-templates-btn" class="ps1-ctrl-btn" type="button">X</button>
     </div>
     <div class="modal-body" style="padding: 1.25rem;">
@@ -6980,7 +6980,10 @@ if __name__ == "__main__":
         <div>
           <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; margin-bottom: 0.25rem;">
             <strong style="font-family: var(--font-pixel); font-size: 0.72rem; color: var(--ps1-gold);">${tpl.name}</strong>
-            <span class="category-badge category-${tpl.category}" style="font-size: 0.58rem; padding: 0.15rem 0.35rem;">${tpl.category.toUpperCase()}</span>
+            <div style="display: flex; gap: 0.3rem; align-items: center;">
+              <span style="font-size: 0.55rem; padding: 0.1rem 0.3rem; background: #0b1120; border: 1px solid #334155; color: #94a3b8; font-family: var(--font-pixel);">🧊 BAKEADO</span>
+              <span class="category-badge category-${tpl.category}" style="font-size: 0.58rem; padding: 0.15rem 0.35rem;">${tpl.category.toUpperCase()}</span>
+            </div>
           </div>
           <p style="font-size: 0.72rem; color: #a4b8d4; line-height: 1.35; margin: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
             ${tpl.description}
@@ -6990,8 +6993,8 @@ if __name__ == "__main__":
           <span style="font-size: 0.65rem; color: var(--text-dim); font-family: var(--font-mono);">
             📦 ${tpl.defaultTriBudget} TRIS
           </span>
-          <button type="button" class="btn btn-gold btn-mini btn-load-template" data-family="${tpl.family}" style="font-size: 0.65rem; padding: 0.25rem 0.55rem;">
-            ⚡ DESARMAR Y EDITAR
+          <button type="button" class="btn btn-outline btn-mini btn-load-template" data-family="${tpl.family}" style="font-size: 0.65rem; padding: 0.25rem 0.55rem;" title="Cargar malla bakeada original del catálogo">
+            🧊 CARGAR MALLA
           </button>
         </div>
       </div>
@@ -7002,12 +7005,12 @@ if __name__ == "__main__":
         const fam = (btn as HTMLElement).dataset.family;
         if (!fam) return;
         modalCatalogTemplates?.close();
-        showStudioToast(`📦 Cargando modelo original "${fam}"...`);
+        showStudioToast(`📦 Cargando modelo bakeado "${fam}"...`);
         const spec = await CatalogBridge.loadCatalogModelAsSpec(fam);
         currentSpec = spec;
         pushHistoryState(currentSpec);
         renderCurrentSpec('visual', false);
-        showStudioToast(`📦 ¡Modelo "${spec.name}" cargado con sus mallas originales!`);
+        showStudioToast(`📦 ¡Modelo bakeado "${spec.name}" cargado!`);
       });
     });
   }
