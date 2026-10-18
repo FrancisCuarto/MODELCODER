@@ -1368,6 +1368,85 @@ test('Animation System 4: CodeSandbox supports programmatic animation scripting 
   assert.equal(spec.animations[0].tracks[0].property, 'position');
 });
 
+test('Animation System 5: Custom keyframe animations can be authored with arbitrary tracks and exported to GLB', async () => {
+  const customSpec: ModelSpec = {
+    id: 'test_custom_anim_spec',
+    name: 'Custom Robotic Arm',
+    category: 'robotics',
+    description: 'Arm with user-authored keyframes',
+    units: 'meters',
+    dimensions: { width: 1, height: 2, depth: 1 },
+    palette: 'industrial_hazard',
+    components: [
+      {
+        name: 'base_pillar',
+        shape: 'cylinder',
+        size: [0.3, 0.3, 1.0, 10],
+        position: [0, 0.5, 0],
+        color: '#4a5568'
+      },
+      {
+        name: 'servo_head',
+        shape: 'box',
+        size: [0.4, 0.3, 0.4],
+        position: [0, 1.15, 0],
+        rotation: [0, 0, 0],
+        color: '#ffcc00'
+      }
+    ],
+    animations: [
+      {
+        id: 'clip_user_dance',
+        name: 'RoboDance_Custom',
+        duration: 3.0,
+        loop: 'repeat',
+        tracks: [
+          {
+            targetComponent: 'servo_head',
+            targetName: 'servo_head',
+            property: 'rotation',
+            keyframes: [
+              { time: 0.0, value: [0, 0, 0], interpolation: 'linear' },
+              { time: 0.75, value: [0, 45, -15], interpolation: 'linear' },
+              { time: 1.5, value: [10, -45, 15], interpolation: 'linear' },
+              { time: 2.25, value: [-10, 30, 0], interpolation: 'linear' },
+              { time: 3.0, value: [0, 0, 0], interpolation: 'linear' }
+            ]
+          },
+          {
+            targetComponent: 'servo_head',
+            targetName: 'servo_head',
+            property: 'position',
+            keyframes: [
+              { time: 0.0, value: [0, 1.15, 0], interpolation: 'cubic' },
+              { time: 1.5, value: [0, 1.35, 0], interpolation: 'cubic' },
+              { time: 3.0, value: [0, 1.15, 0], interpolation: 'cubic' }
+            ]
+          }
+        ]
+      }
+    ]
+  };
+
+  // Compile to Three.js AnimationClip
+  const threeClips = AnimationEngine.compileClipsToThree(customSpec.animations);
+  assert.equal(threeClips.length, 1);
+  assert.equal(threeClips[0].name, 'RoboDance_Custom');
+  assert.equal(threeClips[0].duration, 3.0);
+  assert.equal(threeClips[0].tracks.length, 2);
+  assert.equal(threeClips[0].tracks[0].name, 'servo_head.quaternion');
+  assert.equal(threeClips[0].tracks[1].name, 'servo_head.position');
+
+  // Export to GLB with embedded custom animation
+  const glbBuf = await GLBExporterService.exportSpec(customSpec);
+  assert.ok(glbBuf instanceof ArrayBuffer);
+
+  const verification = await GLBExporterService.verifyGLBBuffer(glbBuf);
+  assert.equal(verification.verified, true);
+  assert.equal(verification.animationCount, 1);
+  assert.ok(verification.animationNames?.includes('RoboDance_Custom'));
+});
+
 test('Catalog Animations: Modelos clave del catálogo público contienen pistas de animación reproducibles', async () => {
   const publicModelsDir = fs.existsSync(path.resolve(process.cwd(), 'public/models'))
     ? path.resolve(process.cwd(), 'public/models')

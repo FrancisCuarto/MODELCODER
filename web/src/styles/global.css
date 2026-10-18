@@ -41,6 +41,8 @@
   --font-telemetry: 'VT323', monospace;
 
   --text-main: #ffffff;
+  --text-bright: #f0f4fc;
+  --text-muted: #94a3b8;
   --text-dim: #9aa8be;
   --text-gold: #ffcc00;
   --text-cyan: #00f0ff;
@@ -113,14 +115,22 @@ a:hover {
    ========================================================================== */
 
 /* Outer PS1 Metallic Window Frame with Gold/Steel Bevel */
-.ps1-window {
+.ps1-window,
+dialog.ps1-window,
+dialog {
   background: var(--ps1-panel-bg);
+  color: var(--text-main);
   border: 3px outset var(--ps1-steel-light);
   box-shadow: 
     inset 2px 2px 0px var(--ps1-gold-light), 
     inset -2px -2px 0px var(--ps1-gold-shadow),
     3px 3px 0px #000000;
   position: relative;
+}
+
+dialog::backdrop {
+  background: rgba(0, 4, 36, 0.78);
+  backdrop-filter: blur(2px);
 }
 
 /* Inset Recessed Surface for Viewers, Inputs, and Previews */

@@ -182,7 +182,7 @@ class ForkliftCartGenerator(BaseAssetGenerator):
             rgba=casing_rgba,
             uv_rect=PS1TextureAtlas.get_rect("painted_metal_white")
         )
-        rot_mat = Matrix.Rotation(-t_rad, 4, 'X')
+        rot_mat = Matrix.Rotation(t_rad, 4, 'X')
         trans_mat = Matrix.Translation(Vector((0.0, arm_mid_y, arm_mid_z)))
         tiller_verts = list({v for f in tiller_stem for v in f.verts})
         bmesh.ops.transform(bm, matrix=trans_mat @ rot_mat, verts=tiller_verts)
