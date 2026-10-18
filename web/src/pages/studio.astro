@@ -669,6 +669,22 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
       <button id="close-modal-btn" class="ps1-ctrl-btn">X</button>
     </div>
     <div class="modal-body" style="padding: 1.25rem;">
+      <!-- BLOQUE DE INICIO DE SESIÓN OBLIGATORIO (Si no está logueado) -->
+      <div id="publish-auth-required-box" class="ps1-inset" style="padding: 1.5rem 1rem; text-align: center; margin-bottom: 1.25rem; background: #07101e; border: 1px solid var(--ps1-cyan); display: none;">
+        <div style="font-size: 2.2rem; margin-bottom: 0.5rem; filter: drop-shadow(0 0 8px rgba(0,240,255,0.4));">🔒</div>
+        <h3 style="font-family: var(--font-pixel); font-size: 0.95rem; color: var(--ps1-cyan); margin: 0 0 0.5rem 0; letter-spacing: 0.5px;">
+          REGISTRO REQUERIDO PARA PUBLICAR
+        </h3>
+        <p style="font-size: 0.8rem; color: #c0d0e0; margin: 0 0 1.2rem 0; line-height: 1.5; max-width: 440px; margin-inline: auto;">
+          Para mantener la calidad, autoría y trazabilidad en el catálogo de la comunidad, necesitas iniciar sesión con tu cuenta de Piloto (vía GitHub o Correo electrónico).
+        </p>
+        <div style="display: flex; justify-content: center; gap: 0.75rem; flex-wrap: wrap;">
+          <button id="btn-publish-login-now" type="button" class="btn btn-primary" style="font-size: 0.82rem; padding: 0.6rem 1.25rem; cursor: pointer;">
+            🔑 ACCEDER / REGISTRARSE
+          </button>
+        </div>
+      </div>
+
       <div id="publish-role-banner" class="ps1-inset" style="padding: 0.75rem 1rem; margin-bottom: 1.25rem; background: #07101e; border-left: 4px solid var(--ps1-gold);">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem; flex-wrap: wrap; gap: 0.4rem;">
           <span id="publish-mode-title" style="font-family: var(--font-pixel); font-size: 0.82rem; color: var(--ps1-gold); display: flex; align-items: center; gap: 0.4rem;">
@@ -681,7 +697,7 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
         </p>
       </div>
 
-      <div style="display: flex; flex-direction: column; gap: 0.85rem; margin-bottom: 1.25rem;">
+      <div id="publish-form-fields" style="display: flex; flex-direction: column; gap: 0.85rem; margin-bottom: 1.25rem;">
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
           <div>
             <label style="font-family: var(--font-pixel); font-size: 0.62rem; color: var(--ps1-cyan); display: block; margin-bottom: 0.25rem;">NOMBRE DEL MODELO *</label>
@@ -5789,6 +5805,9 @@ if __name__ == "__main__":
       activeCurrentUser = await getCurrentUser();
       activeRoleInfo = await checkUserRole(activeCurrentUser);
       
+      const authRequiredBox = document.getElementById('publish-auth-required-box');
+      const publishRoleBanner = document.getElementById('publish-role-banner');
+      const publishFormFields = document.getElementById('publish-form-fields');
       const publishModeTitle = document.getElementById('publish-mode-title');
       const publishModeDesc = document.getElementById('publish-mode-desc');
       const collabBadgeIndicator = document.getElementById('collab-badge-indicator');
@@ -5798,61 +5817,93 @@ if __name__ == "__main__":
       const directUploadAuthor = document.getElementById('direct-upload-author') as HTMLInputElement;
       const directUploadDesc = document.getElementById('direct-upload-desc') as HTMLTextAreaElement;
       const btnSubmit = document.getElementById('btn-submit-direct-publish') as HTMLButtonElement;
+      const directUploadStatus = document.getElementById('direct-upload-status');
 
-      if (directUploadName) directUploadName.value = currentSpec.name;
-      if (directUploadCat) directUploadCat.value = currentSpec.category || 'furniture';
-      if (directUploadDesc) directUploadDesc.value = currentSpec.description || '';
-
-      const authorDefault = 
-        activeRoleInfo.identifier || 
-        activeCurrentUser?.user_metadata?.user_name || 
-        activeCurrentUser?.user_metadata?.preferred_username || 
-        activeCurrentUser?.email?.split('@')[0] || 
-        '';
-
-      if (directUploadAuthor) {
-        directUploadAuthor.value = authorDefault;
+      if (directUploadStatus) {
+        directUploadStatus.classList.add('hidden');
+        directUploadStatus.style.display = 'none';
+        directUploadStatus.innerHTML = '';
       }
 
-      if (activeRoleInfo.isCollaborator) {
-        if (publishModeTitle) {
-          publishModeTitle.innerHTML = '👑 MODO COLABORADOR // SUBIDA DIRECTA';
-          publishModeTitle.style.color = 'var(--ps1-gold)';
-        }
-        if (collabBadgeIndicator) {
-          collabBadgeIndicator.textContent = activeRoleInfo.role === 'owner' ? 'CREADOR / DUEÑO' : 'COLABORADOR VERIFICADO';
-          collabBadgeIndicator.style.color = 'var(--ps1-gold)';
-        }
-        if (publishModeDesc) {
-          publishModeDesc.textContent = 'Como colaborador o creador autorizado, tu modelo se subirá de inmediato al catálogo público sin requerir aprobación.';
-        }
-        if (visFieldContainer) visFieldContainer.style.display = 'block';
-        if (btnSubmit) {
-          btnSubmit.textContent = '👑 SUBIR AL CATÁLOGO DIRECTO AHORA';
-          btnSubmit.className = 'btn btn-gold';
-        }
+      if (!activeCurrentUser) {
+        // Usuario NO autenticado -> bloquear publicación y mostrar aviso de registro obligatorio
+        if (authRequiredBox) authRequiredBox.style.display = 'block';
+        if (publishRoleBanner) publishRoleBanner.style.display = 'none';
+        if (publishFormFields) publishFormFields.style.display = 'none';
+        if (btnSubmit) btnSubmit.style.display = 'none';
       } else {
-        if (publishModeTitle) {
-          publishModeTitle.innerHTML = '🚀 COMUNIDAD // SOLICITUD DE PUBLICACIÓN';
-          publishModeTitle.style.color = 'var(--ps1-cyan)';
+        // Usuario autenticado -> mostrar formulario según rol
+        if (authRequiredBox) authRequiredBox.style.display = 'none';
+        if (publishRoleBanner) publishRoleBanner.style.display = 'block';
+        if (publishFormFields) publishFormFields.style.display = 'flex';
+        if (btnSubmit) btnSubmit.style.display = 'block';
+
+        if (directUploadName) directUploadName.value = currentSpec.name;
+        if (directUploadCat) directUploadCat.value = currentSpec.category || 'furniture';
+        if (directUploadDesc) directUploadDesc.value = currentSpec.description || '';
+
+        const authorDefault = 
+          activeRoleInfo.identifier || 
+          activeCurrentUser?.user_metadata?.user_name || 
+          activeCurrentUser?.user_metadata?.preferred_username || 
+          activeCurrentUser?.email?.split('@')[0] || 
+          '';
+
+        if (directUploadAuthor) {
+          directUploadAuthor.value = authorDefault;
         }
-        if (collabBadgeIndicator) {
-          collabBadgeIndicator.textContent = 'PILOTO DE LA COMUNIDAD';
-          collabBadgeIndicator.style.color = 'var(--ps1-cyan)';
-        }
-        if (publishModeDesc) {
-          publishModeDesc.textContent = 'Envía tu modelo directamente desde la web. Quedará en la mesa de revisión para que los colaboradores y FrancisCuarto lo aprueben y publiquen en el catálogo oficial.';
-        }
-        if (visFieldContainer) visFieldContainer.style.display = 'none';
-        if (btnSubmit) {
-          btnSubmit.textContent = '🚀 ENVIAR SOLICITUD DE PUBLICACIÓN';
-          btnSubmit.className = 'btn btn-primary';
+
+        if (activeRoleInfo.isCollaborator) {
+          if (publishModeTitle) {
+            publishModeTitle.innerHTML = '👑 MODO COLABORADOR // SUBIDA DIRECTA';
+            publishModeTitle.style.color = 'var(--ps1-gold)';
+          }
+          if (collabBadgeIndicator) {
+            collabBadgeIndicator.textContent = activeRoleInfo.role === 'owner' ? 'CREADOR / DUEÑO' : 'COLABORADOR VERIFICADO';
+            collabBadgeIndicator.style.color = 'var(--ps1-gold)';
+          }
+          if (publishModeDesc) {
+            publishModeDesc.textContent = 'Como colaborador o creador autorizado, tu modelo se subirá de inmediato al catálogo público sin requerir aprobación.';
+          }
+          if (visFieldContainer) visFieldContainer.style.display = 'block';
+          if (btnSubmit) {
+            btnSubmit.textContent = '👑 SUBIR AL CATÁLOGO DIRECTO AHORA';
+            btnSubmit.className = 'btn btn-gold';
+          }
+        } else {
+          if (publishModeTitle) {
+            publishModeTitle.innerHTML = '🚀 COMUNIDAD // SOLICITUD DE PUBLICACIÓN';
+            publishModeTitle.style.color = 'var(--ps1-cyan)';
+          }
+          if (collabBadgeIndicator) {
+            collabBadgeIndicator.textContent = 'PILOTO DE LA COMUNIDAD';
+            collabBadgeIndicator.style.color = 'var(--ps1-cyan)';
+          }
+          if (publishModeDesc) {
+            publishModeDesc.textContent = 'Envía tu modelo directamente desde la web. Quedará en la mesa de revisión para que los colaboradores y FrancisCuarto lo aprueben y publiquen en el catálogo oficial.';
+          }
+          if (visFieldContainer) visFieldContainer.style.display = 'none';
+          if (btnSubmit) {
+            btnSubmit.textContent = '🚀 ENVIAR SOLICITUD DE PUBLICACIÓN';
+            btnSubmit.className = 'btn btn-primary';
+          }
         }
       }
     } catch (e) {
       console.warn('[ModelCoder] Error checking collaborator permissions:', e);
     }
     if (githubModal) githubModal.showModal();
+  });
+
+  const btnPublishLoginNow = document.getElementById('btn-publish-login-now');
+  btnPublishLoginNow?.addEventListener('click', () => {
+    if (githubModal) githubModal.close();
+    const btnOpenAuth = document.getElementById('btn-open-auth');
+    if (btnOpenAuth) {
+      btnOpenAuth.click();
+    } else {
+      window.location.href = '/colaboradores';
+    }
   });
 
   const btnSubmitDirect = document.getElementById('btn-submit-direct-publish') as HTMLButtonElement;
@@ -5864,6 +5915,21 @@ if __name__ == "__main__":
   const directUploadCat = document.getElementById('direct-upload-cat') as HTMLSelectElement;
 
   btnSubmitDirect?.addEventListener('click', async () => {
+    if (!activeCurrentUser) {
+      activeCurrentUser = await getCurrentUser();
+    }
+    if (!activeCurrentUser) {
+      showStudioToast('⚠️ Debes registrarte o iniciar sesión para poder publicar modelos.', true);
+      const authRequiredBox = document.getElementById('publish-auth-required-box');
+      const publishRoleBanner = document.getElementById('publish-role-banner');
+      const publishFormFields = document.getElementById('publish-form-fields');
+      if (authRequiredBox) authRequiredBox.style.display = 'block';
+      if (publishRoleBanner) publishRoleBanner.style.display = 'none';
+      if (publishFormFields) publishFormFields.style.display = 'none';
+      if (btnSubmitDirect) btnSubmitDirect.style.display = 'none';
+      return;
+    }
+
     const modelName = directUploadName?.value.trim() || currentSpec.name;
     const modelVis = directUploadVis?.value || 'public';
     const modelCat = directUploadCat?.value || currentSpec.category || 'furniture';

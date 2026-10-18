@@ -188,8 +188,23 @@ function getLocalCommunityModels(): CommunityModel[] {
 
 function saveLocalCommunityModels(list: CommunityModel[]) {
   if (typeof window === 'undefined') return;
-  const filtered = list.filter(m => m.slug !== 'test_connection_1792201558636' && m.name !== 'Test Model');
-  localStorage.setItem(LOCAL_MODELS_KEY, JSON.stringify(filtered));
+  const existingLocal = getLocalCommunityModels();
+  const pendingLocal = existingLocal.filter(m => !m.is_public || m.status === 'pending' || m.spec?._submission_status === 'pending');
+
+  const map = new Map<string, CommunityModel>();
+  for (const item of list) {
+    if (item.slug && item.slug !== 'test_connection_1792201558636' && item.name !== 'Test Model') {
+      map.set(item.slug, item);
+    }
+  }
+  for (const pending of pendingLocal) {
+    if (!map.has(pending.slug)) {
+      map.set(pending.slug, pending);
+    }
+  }
+
+  const merged = Array.from(map.values());
+  localStorage.setItem(LOCAL_MODELS_KEY, JSON.stringify(merged));
 }
 
 /**
@@ -382,6 +397,16 @@ export async function publishCommunityModel(modelData: {
   isLocalFallback?: boolean; 
   error?: string 
 }> {
+  // Exigir registro e inicio de sesión obligatorio para publicar
+  const user = await getCurrentUser();
+  if (!user) {
+    return {
+      success: false,
+      isPendingReview: false,
+      error: 'Debes iniciar sesión con tu cuenta de piloto para enviar modelos a revisión o publicarlos en el catálogo.'
+    };
+  }
+
   const isCollaborator = !!modelData.isCollaborator;
   const status: 'pending' | 'approved' = modelData.status || (isCollaborator ? 'approved' : 'pending');
   const isPublic = isCollaborator ? (modelData.is_public ?? true) : false;
@@ -393,6 +418,13 @@ export async function publishCommunityModel(modelData: {
     _submission_status: status
   };
 
+  const authorEmail = user.email || modelData.author_email || 'piloto@modelcoder.community';
+  const authorName = modelData.author_name?.trim() || 
+    user.user_metadata?.user_name || 
+    user.user_metadata?.preferred_username || 
+    user.email?.split('@')[0] || 
+    'Piloto Registrado';
+
   const newModel: CommunityModel = {
     id: 'model-' + Date.now(),
     slug,
@@ -401,8 +433,8 @@ export async function publishCommunityModel(modelData: {
     description: modelData.description || '',
     spec: specWithStatus,
     tri_count: modelData.tri_count || 350,
-    author_name: modelData.author_name || (isCollaborator ? 'Colaborador' : 'Piloto de la Comunidad'),
-    author_email: modelData.author_email || 'comunidad@modelcoder.space',
+    author_name: authorName,
+    author_email: authorEmail,
     is_public: isPublic,
     status,
     glb_data: modelData.glb_data,
@@ -429,37 +461,36 @@ export async function publishCommunityModel(modelData: {
         glb_data: newModel.glb_data
       };
 
-      const { data, error } = await supabase
+      // Se inserta directamente sin .select().single() para evitar que la política RLS de SELECT
+      // aborte la transacción con código 42501 en modelos pendientes
+      const { error } = await supabase
         .from('community_models')
-        .insert([insertPayload])
-        .select()
-        .single();
+        .insert([insertPayload]);
 
       if (error) {
         supabaseErrorMsg = error.message;
         console.warn('[ModelCoder] Fallo inserción en Supabase:', error.message);
-      } else if (data) {
-        newModel.id = data.id;
+      } else {
         supabaseSuccess = true;
       }
     } catch (err: any) {
       supabaseErrorMsg = err?.message || String(err);
-      console.warn('[ModelCoder] Guardando en cache local por excepción en Supabase:', err);
+      console.warn('[ModelCoder] Excepción en inserción en Supabase:', err);
     }
   }
 
-  // Guardar en la caché local
+  // Guardar siempre copia en la caché local para persistencia inmediata
   const localList = getLocalCommunityModels().filter((m) => m.slug !== newModel.slug);
   localList.unshift(newModel);
   saveLocalCommunityModels(localList);
 
   if (!supabaseSuccess && supabaseErrorMsg) {
     return { 
-      success: true, 
+      success: false, 
       model: newModel, 
       isPendingReview: !isCollaborator,
       isLocalFallback: true,
-      error: `Guardado en este navegador. Aún no se sincronizó con Supabase (${supabaseErrorMsg}).`
+      error: `No se pudo registrar la solicitud en la base de datos de Supabase (${supabaseErrorMsg}).`
     };
   }
 
@@ -482,7 +513,7 @@ export async function getCommunityModels(options?: {
   status?: 'all' | 'pending' | 'approved' 
 }): Promise<CommunityModel[]> {
   const supabase = getSupabase();
-  let models: CommunityModel[] = [];
+  let remoteModels: CommunityModel[] = [];
 
   if (supabase) {
     try {
@@ -494,21 +525,37 @@ export async function getCommunityModels(options?: {
 
       const { data, error } = await query;
       if (!error && data && data.length > 0) {
-        models = data.map((item: any) => {
+        remoteModels = data.map((item: any) => {
           const itemStatus = item.status || item.spec?._submission_status || (item.is_public ? 'approved' : 'pending');
           return {
             ...item,
             status: itemStatus
           };
         });
-        saveLocalCommunityModels(models);
       }
-    } catch {}
+    } catch (err) {
+      console.warn('[ModelCoder] Error consultando modelos remotos en Supabase:', err);
+    }
   }
 
-  if (models.length === 0) {
-    models = getLocalCommunityModels();
+  // Combinar modelos remotos de Supabase con solicitudes locales
+  const localModels = getLocalCommunityModels();
+  const map = new Map<string, CommunityModel>();
+
+  // 1. Añadir locales primero
+  for (const m of localModels) {
+    if (m.slug && m.slug !== 'test_connection_1792201558636' && m.name !== 'Test Model') {
+      map.set(m.slug, m);
+    }
   }
+  // 2. Superponer remotos de Supabase
+  for (const m of remoteModels) {
+    if (m.slug && m.slug !== 'test_connection_1792201558636' && m.name !== 'Test Model') {
+      map.set(m.slug, m);
+    }
+  }
+
+  let models = Array.from(map.values());
 
   // Filtro de seguridad: purgar modelo de test ping si existiese
   models = models.filter((m) => m.slug !== 'test_connection_1792201558636' && m.name !== 'Test Model');
@@ -542,20 +589,20 @@ export async function approveCommunityModel(id: string): Promise<{ success: bool
   const supabase = getSupabase();
   if (supabase) {
     try {
-      const { data: existing } = await supabase.from('community_models').select('*').eq('id', id).maybeSingle();
+      const { data: existing } = await supabase.from('community_models').select('*').or(`id.eq.${id},slug.eq.${id}`).maybeSingle();
       const updatedSpec = existing?.spec ? { ...existing.spec, _submission_status: 'approved' } : undefined;
 
       const updatePayload: any = { is_public: true };
       if (updatedSpec) updatePayload.spec = updatedSpec;
 
-      await supabase.from('community_models').update(updatePayload).eq('id', id);
+      await supabase.from('community_models').update(updatePayload).or(`id.eq.${id},slug.eq.${id}`);
     } catch (err: any) {
       console.warn('[ModelCoder] Error approving model in Supabase:', err);
     }
   }
 
   const localList = getLocalCommunityModels();
-  const match = localList.find((m) => m.id === id);
+  const match = localList.find((m) => m.id === id || m.slug === id);
   if (match) {
     match.is_public = true;
     match.status = 'approved';
@@ -573,12 +620,12 @@ export async function toggleModelVisibility(id: string, is_public: boolean): Pro
   const supabase = getSupabase();
   if (supabase) {
     try {
-      await supabase.from('community_models').update({ is_public }).eq('id', id);
+      await supabase.from('community_models').update({ is_public }).or(`id.eq.${id},slug.eq.${id}`);
     } catch {}
   }
 
   const localList = getLocalCommunityModels();
-  const match = localList.find((m) => m.id === id);
+  const match = localList.find((m) => m.id === id || m.slug === id);
   if (match) {
     match.is_public = is_public;
     saveLocalCommunityModels(localList);
@@ -593,13 +640,13 @@ export async function deleteCommunityModel(id: string): Promise<{ success: boole
   const supabase = getSupabase();
   if (supabase) {
     try {
-      await supabase.from('community_models').delete().eq('id', id);
+      await supabase.from('community_models').delete().or(`id.eq.${id},slug.eq.${id}`);
     } catch (err: any) {
       console.warn('[ModelCoder] Error deleting from Supabase:', err);
     }
   }
 
-  const localList = getLocalCommunityModels().filter((m) => m.id !== id);
+  const localList = getLocalCommunityModels().filter((m) => m.id !== id && m.slug !== id);
   saveLocalCommunityModels(localList);
   return { success: true };
 }
