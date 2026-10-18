@@ -1314,7 +1314,7 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     importProjectFromJSON,
     type UserProjectDraft
   } from '../lib/user-inventory';
-  import type { ModelSpec, ComponentDef, GeometricStats, GenerationResult, ShadingMode, ShapePrimitive, TransformGizmoMode, CameraViewPreset, AnimationClipDef, AnimationPresetType } from '../lib/studio/types';
+  import type { ModelSpec, ComponentDef, GeometricStats, GenerationResult, ShadingMode, ShapePrimitive, TransformGizmoMode, CameraViewPreset, AnimationClipDef, AnimationPresetType, AnimationTrackProperty, AnimationInterpolation, AnimationTrackDef } from '../lib/studio/types';
   import {
     drawStoryCard,
     exportStoryToBlob,
@@ -1801,6 +1801,7 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
   const btnBgStudio = document.getElementById('btn-bg-studio');
   const btnBgTrans = document.getElementById('btn-bg-trans');
   const btnCaptureRenderHd = document.getElementById('btn-capture-render-hd');
+  const btnRenderFrameCam = document.getElementById('btn-render-frame-cam');
   const btnToggleFullscreen = document.getElementById('btn-toggle-fullscreen');
   const btnTopbarMore = document.getElementById('btn-topbar-more');
   const topbarMoreMenu = document.getElementById('topbar-more-menu');
