@@ -103,6 +103,13 @@ import { AIGenerator } from '../src/lib/studio/ai-generator.ts';
 import { GLBExporterService } from '../src/lib/studio/glb-exporter.ts';
 import { ProceduralMemory } from '../src/lib/studio/procedural-memory.ts';
 import { TextureLibrary } from '../src/lib/studio/texture-library.ts';
+import { AnimationEngine } from '../src/lib/studio/animation-engine.ts';
+import { StudioViewport } from '../src/lib/studio/three-viewport.ts';
+import { serializeSpecToHash, deserializeSpecFromHash } from '../src/lib/studio/share-serializer.ts';
+import { generateAllSnippets, generateGodotScript, generateUnityScript, generateThreeJsScript } from '../src/lib/studio/gamedev-exporter.ts';
+import type { ModelSpec } from '../src/lib/studio/types.ts';
+import fs from 'node:fs';
+import path from 'node:path';
 
 test('Criterion 1 & 2: Solicitar un cubo y luego una esfera genera geometrías distintas y dimensiones reales', () => {
   // 1. Generate cube
@@ -1183,6 +1190,348 @@ test('Instagram Story & Post Exporter: Genera lienzo Story (1080x1920) y Post 1:
   const postBlob = await exportStoryToBlob(postCanvas);
   assert.ok(postBlob instanceof Blob);
   assert.equal(postBlob.type, 'image/png');
+});
+
+test('Animation System 1: AnimationEngine presets generate valid declarative tracks and keyframes', () => {
+  const presets = AnimationEngine.getAvailablePresets();
+  assert.equal(presets.length, 6, 'Must provide 6 standard animation presets');
+
+  // Sliding door
+  const doorClip = AnimationEngine.createPresetClip('sliding_door', {
+    targetComponent: 'door_left',
+    axis: 'x',
+    distance: 1.5,
+    duration: 1.0,
+    initialPos: [0, 0, 0]
+  });
+  assert.equal(doorClip.tracks.length, 1);
+  assert.equal(doorClip.tracks[0].targetComponent, 'door_left');
+  assert.equal(doorClip.tracks[0].property, 'position');
+  assert.equal(doorClip.tracks[0].keyframes.length, 3);
+  assert.deepEqual(doorClip.tracks[0].keyframes[0].value, [0, 0, 0]);
+  assert.deepEqual(doorClip.tracks[0].keyframes[1].value, [1.5, 0, 0]);
+
+  // Hinge lid
+  const lidClip = AnimationEngine.createPresetClip('hinge_lid', {
+    targetComponent: 'hatch_top',
+    axis: 'y',
+    openAngleDeg: 90,
+    duration: 1.2,
+    initialRot: [0, 0, 0]
+  });
+  assert.equal(lidClip.tracks.length, 1);
+  assert.equal(lidClip.tracks[0].property, 'rotation');
+  assert.deepEqual(lidClip.tracks[0].keyframes[1].value, [0, 90, 0]);
+
+  // Spin continuous 360
+  const spinClip = AnimationEngine.createPresetClip('spin_continuous', {
+    targetComponent: 'radar_dish',
+    axis: 'z',
+    duration: 3.0,
+    initialRot: [0, 0, 0]
+  });
+  assert.equal(spinClip.tracks.length, 1);
+  assert.equal(spinClip.tracks[0].keyframes.length, 4);
+  assert.deepEqual(spinClip.tracks[0].keyframes[3].value, [0, 0, 360]);
+
+  // Mechanical deploy (both position and rotation tracks)
+  const deployClip = AnimationEngine.createPresetClip('mechanical_deploy', {
+    targetComponent: 'landing_gear',
+    axis: 'y',
+    extendDistance: 1.0,
+    deployAngleDeg: 45,
+    duration: 2.0
+  });
+  assert.equal(deployClip.tracks.length, 2, 'Mechanical deploy combines position and rotation tracks');
+});
+
+test('Animation System 2: Three.js compilation converts Euler angles to Quaternions and sets track targets', () => {
+  const doorClip = AnimationEngine.createPresetClip('sliding_door', {
+    targetComponent: 'gate',
+    axis: 'x',
+    distance: 2.0,
+    duration: 1.0
+  });
+  const spinClip = AnimationEngine.createPresetClip('spin_continuous', {
+    targetComponent: 'rotor',
+    axis: 'y',
+    duration: 2.0
+  });
+
+  const threeClips = AnimationEngine.compileClipsToThree([doorClip, spinClip]);
+  assert.equal(threeClips.length, 2);
+
+  // Door clip has VectorKeyframeTrack
+  const threeDoor = threeClips[0];
+  assert.equal(threeDoor.name, doorClip.name);
+  assert.equal(threeDoor.tracks.length, 1);
+  assert.equal(threeDoor.tracks[0].name, 'gate.position');
+  assert.ok(threeDoor.tracks[0] instanceof THREE.VectorKeyframeTrack);
+
+  // Spin clip has QuaternionKeyframeTrack
+  const threeSpin = threeClips[1];
+  assert.equal(threeSpin.tracks.length, 1);
+  assert.equal(threeSpin.tracks[0].name, 'rotor.quaternion');
+  assert.ok(threeSpin.tracks[0] instanceof THREE.QuaternionKeyframeTrack);
+  assert.equal(threeSpin.tracks[0].values.length, 4 * 4, '4 keyframes * 4 quaternion components = 16 values');
+});
+
+test('Animation System 3: GLB export embeds animation tracks and verifyGLBBuffer confirms round-trip fidelity', async () => {
+  const testSpec: ModelSpec = {
+    id: 'anim_test_spec',
+    name: 'Animated Mech Door Unit',
+    category: 'sci-fi',
+    description: 'Unit test model with sliding door and spinning radar',
+    units: 'meters',
+    dimensions: { width: 3, height: 2, depth: 2 },
+    palette: 'industrial',
+    components: [
+      {
+        name: 'frame_base',
+        shape: 'box',
+        size: [2.0, 0.2, 1.0],
+        position: [0, 0, 0],
+        color: '#444444'
+      },
+      {
+        name: 'door_panel',
+        shape: 'box',
+        size: [0.8, 1.5, 0.1],
+        position: [0, 0.85, 0],
+        color: '#3182ce'
+      },
+      {
+        name: 'radar_beacon',
+        shape: 'cylinder',
+        size: [0.2, 0.2, 0.4, 8],
+        position: [0, 1.8, 0],
+        color: '#dd6b20'
+      }
+    ],
+    animations: [
+      AnimationEngine.createPresetClip('sliding_door', {
+        name: 'OpenDoor',
+        targetComponent: 'door_panel',
+        axis: 'x',
+        distance: 0.9,
+        duration: 1.5,
+        initialPos: [0, 0.85, 0]
+      }),
+      AnimationEngine.createPresetClip('spin_continuous', {
+        name: 'SpinRadar',
+        targetComponent: 'radar_beacon',
+        axis: 'y',
+        duration: 2.0,
+        initialRot: [0, 0, 0]
+      })
+    ]
+  };
+
+  // Export to GLB
+  const glbBuffer = await GLBExporterService.exportSpec(testSpec);
+  assert.ok(glbBuffer instanceof ArrayBuffer);
+  assert.ok(glbBuffer.byteLength > 100);
+
+  // Mandatory verification
+  const verification = await GLBExporterService.verifyGLBBuffer(glbBuffer);
+  assert.equal(verification.verified, true, 'Exported animated GLB must pass test-import verification');
+  assert.ok(verification.triangleCount > 0);
+  assert.equal(verification.animationCount, 2, 'Exported GLB must contain exactly 2 animation clips');
+  assert.ok(verification.animationNames?.includes('OpenDoor'));
+  assert.ok(verification.animationNames?.includes('SpinRadar'));
+});
+
+test('Animation System 4: CodeSandbox supports programmatic animation scripting and presets', () => {
+  const scriptCode = `
+    builder.setName("Bunker Hatch");
+    builder.addBox({ name: "frame", size: [2, 0.2, 2], position: [0, 0, 0] });
+    builder.addBox({ name: "hatch_door", size: [1.8, 0.1, 1.8], position: [0, 0.1, 0] });
+    builder.addPresetAnimation('sliding_door', {
+      targetName: 'hatch_door',
+      clipName: 'Abrir_Hatch',
+      deltaDistance: 1.5,
+      axis: 'z',
+      duration: 1.5
+    });
+  `;
+
+  const { spec, error } = CodeSandbox.executeCode(scriptCode);
+  assert.equal(error, undefined, `Script execution error: ${error}`);
+  assert.equal(spec.name, 'Bunker Hatch');
+  assert.equal(spec.components.length, 2);
+  assert.ok(spec.animations, 'Animations array should be populated');
+  assert.equal(spec.animations.length, 1);
+  assert.equal(spec.animations[0].name, 'Abrir_Hatch');
+  assert.equal(spec.animations[0].duration, 1.5);
+  assert.equal(spec.animations[0].tracks.length, 1);
+  assert.equal(spec.animations[0].tracks[0].targetName, 'hatch_door');
+  assert.equal(spec.animations[0].tracks[0].property, 'position');
+});
+
+test('Catalog Animations: Modelos clave del catálogo público contienen pistas de animación reproducibles', async () => {
+  const publicModelsDir = fs.existsSync(path.resolve(process.cwd(), 'public/models'))
+    ? path.resolve(process.cwd(), 'public/models')
+    : path.resolve(process.cwd(), 'web/public/models');
+
+  const catalogTargets = [
+    { file: 'antenna_dish.glb', clip: 'Giro_Escaner' },
+    { file: 'alarm_siren.glb', clip: 'Baliza_Giro' },
+    { file: 'security_camera.glb', clip: 'Vigilancia_Pan' },
+    { file: 'door.glb', clip: 'Abrir_Puerta' },
+    { file: 'maintenance_hatch.glb', clip: 'Abrir_Escotilla' },
+    { file: 'crate.glb', clip: 'Inspeccion_Flotante' }
+  ];
+
+  for (const item of catalogTargets) {
+    const fullPath = path.join(publicModelsDir, item.file);
+    assert.ok(fs.existsSync(fullPath), `El modelo ${item.file} debe existir en el catálogo público`);
+
+    const fileBuf = fs.readFileSync(fullPath);
+    const arrayBuf = fileBuf.buffer.slice(fileBuf.byteOffset, fileBuf.byteOffset + fileBuf.byteLength);
+
+    const verification = await GLBExporterService.verifyGLBBuffer(arrayBuf);
+    assert.equal(verification.verified, true, `El archivo ${item.file} debe pasar la verificación de importación GLB`);
+    assert.ok(verification.triangleCount > 0, `${item.file} debe contener geometría válida`);
+    assert.ok(verification.animationCount >= 1, `${item.file} debe incluir al menos 1 clip de animación`);
+    assert.ok(
+      verification.animationNames?.includes(item.clip),
+      `${item.file} debe incluir el clip '${item.clip}', encontrados: ${verification.animationNames?.join(', ')}`
+    );
+  }
+});
+
+test('Studio Video Loop: StudioViewport expone recordAnimationLoop para exportar clips WebM', () => {
+  assert.equal(
+    typeof StudioViewport.prototype.recordAnimationLoop,
+    'function',
+    'StudioViewport debe implementar el método recordAnimationLoop'
+  );
+});
+
+test('URL Share Serializer: Serializar y deserializar un ModelSpec preserva su estructura completa', () => {
+  const sampleSpec: ModelSpec = {
+    id: 'test.share.unit',
+    name: 'Radar Móvil',
+    category: 'fixtures',
+    description: 'Antena de prueba para compartir en URL',
+    units: 'meters',
+    dimensions: { width: 1, depth: 1, height: 1.5 },
+    palette: 'industrial_hazard',
+    components: [
+      {
+        name: 'base_mount',
+        shape: 'box',
+        size: [1, 0.2, 1],
+        position: [0, 0.1, 0],
+        rotation: [0, 0, 0],
+        scale: [1, 1, 1],
+        color: '#334455'
+      },
+      {
+        name: 'radar_dish',
+        shape: 'cylinder',
+        size: [0.8, 0.8, 0.2, 8],
+        position: [0, 1.0, 0],
+        rotation: [0, 0, 0],
+        scale: [1, 1, 1],
+        color: '#f0ad4e'
+      }
+    ],
+    animations: [
+      {
+        name: 'GiroRadar',
+        duration: 2.0,
+        tracks: [
+          {
+            targetComponent: 'radar_dish',
+            property: 'rotation',
+            interpolation: 'linear',
+            keyframes: [
+              { time: 0, value: [0, 0, 0] },
+              { time: 2, value: [0, 360, 0] }
+            ]
+          }
+        ]
+      }
+    ]
+  };
+
+  const hashToken = serializeSpecToHash(sampleSpec);
+  assert.ok(hashToken.length > 20, 'Hash token debe ser una cadena no vacía');
+  assert.match(hashToken, /^[A-Za-z0-9_-]+$/, 'Hash token debe ser URL-safe (sin +, /, ni =)');
+
+  // Deserializar sin prefijo
+  const restored1 = deserializeSpecFromHash(hashToken);
+  assert.ok(restored1, 'Debe restaurar el objeto');
+  assert.equal(restored1?.name, sampleSpec.name);
+  assert.equal(restored1?.components.length, 2);
+  assert.equal(restored1?.animations?.length, 1);
+  assert.equal(restored1?.animations?.[0].name, 'GiroRadar');
+
+  // Deserializar con prefijo # o #model=
+  const restored2 = deserializeSpecFromHash(`#model=${hashToken}`);
+  assert.equal(restored2?.name, sampleSpec.name);
+
+  // Manejo de tokens corruptos
+  const invalid = deserializeSpecFromHash('token_invalido_corrupto_!!!');
+  assert.equal(invalid, null, 'Tokens corruptos deben devolver null de forma segura');
+});
+
+test('GameDev Code Exporter: Genera scripts válidos para Godot 4, Unity y Three.js con soporte de animaciones', () => {
+  const animatedSpec: ModelSpec = {
+    id: 'below_nominal.fixtures.antenna_dish',
+    name: 'Antena Parabólica',
+    category: 'fixtures',
+    description: 'Antena parabólica con rotación',
+    units: 'meters',
+    dimensions: { width: 1.5, depth: 1.5, height: 2.2 },
+    palette: 'industrial_hazard',
+    components: [
+      {
+        name: 'plato_parabolico',
+        shape: 'cylinder',
+        size: [1.2, 1.2, 0.2, 8],
+        position: [0, 1.5, 0],
+        rotation: [0, 0, 0],
+        scale: [1, 1, 1],
+        color: '#f6ad55'
+      }
+    ],
+    animations: [
+      {
+        name: 'Giro_Escaner',
+        duration: 3.0,
+        tracks: [
+          {
+            targetComponent: 'plato_parabolico',
+            property: 'rotation',
+            interpolation: 'linear',
+            keyframes: [
+              { time: 0, value: [0, 0, 0] },
+              { time: 3, value: [0, 360, 0] }
+            ]
+          }
+        ]
+      }
+    ]
+  };
+
+  const snippets = generateAllSnippets(animatedSpec, 'antenna_dish.glb');
+
+  // 1. Godot 4 GDScript
+  assert.ok(snippets.godot.includes('extends Node3D'), 'Debe extender Node3D');
+  assert.ok(snippets.godot.includes('AnimationPlayer'), 'Debe incluir referencia a AnimationPlayer');
+  assert.ok(snippets.godot.includes('"Giro_Escaner"'), 'Debe incluir el clip Giro_Escaner');
+
+  // 2. Unity C#
+  assert.ok(snippets.unity.includes('MonoBehaviour'), 'Debe heredar de MonoBehaviour');
+  assert.ok(snippets.unity.includes('Animator'), 'Debe incluir Animator');
+  assert.ok(snippets.unity.includes('Giro_Escaner'), 'Debe referenciar el clip Giro_Escaner');
+
+  // 3. Three.js TypeScript
+  assert.ok(snippets.threejs.includes('GLTFLoader'), 'Debe importar GLTFLoader');
+  assert.ok(snippets.threejs.includes('AnimationMixer'), 'Debe incluir AnimationMixer');
+  assert.ok(snippets.threejs.includes('loadAntenaParabolica'), 'Debe generar función de carga con nombre sanitizado');
 });
 
 // Teardown: ensure Node exits cleanly after tests

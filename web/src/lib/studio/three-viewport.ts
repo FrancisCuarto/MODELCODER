@@ -1,8 +1,9 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js';
-import { ProceduralEngine } from './procedural-engine';
-import type { ShadingMode, GenerationState, GeometricStats, GenerationResult, TransformGizmoMode, CameraViewPreset } from './types';
+import { ProceduralEngine } from './procedural-engine.ts';
+import { AnimationEngine } from './animation-engine.ts';
+import type { ShadingMode, GenerationState, GeometricStats, GenerationResult, TransformGizmoMode, CameraViewPreset, AnimationClipDef } from './types.ts';
 
 export class StudioViewport {
   private container: HTMLElement;
@@ -34,6 +35,17 @@ export class StudioViewport {
   private activeRequestId = '';
   private activeVersion = 0;
   private currentState: GenerationState = 'idle';
+
+  // Animation System state
+  private clock = new THREE.Clock();
+  private mixer: THREE.AnimationMixer | null = null;
+  private animationActions: Map<string, THREE.AnimationAction> = new Map();
+  private compiledClips: THREE.AnimationClip[] = [];
+  private activeAction: THREE.AnimationAction | null = null;
+  private activeClipName: string | null = null;
+  private isAnimationPlaying = false;
+  private animationSpeed = 1.0;
+  private onAnimationProgress?: (time: number, duration: number, isPlaying: boolean, clipName: string) => void;
 
   // Callbacks
   private onStatsUpdate?: (stats: GeometricStats | null, result: GenerationResult | null) => void;
@@ -257,6 +269,18 @@ export class StudioViewport {
 
   private animate = (): void => {
     requestAnimationFrame(this.animate);
+    const delta = this.clock.getDelta();
+    if (this.mixer && this.isAnimationPlaying && this.activeAction) {
+      this.mixer.update(delta * this.animationSpeed);
+      if (this.selectedMesh && this.selectionBox.visible) {
+        this.selectionBox.update();
+      }
+      if (this.onAnimationProgress) {
+        const dur = this.activeAction.getClip().duration || 1.0;
+        const curTime = this.activeAction.time % dur;
+        this.onAnimationProgress(curTime, dur, true, this.activeClipName || '');
+      }
+    }
     this.controls.update();
     this.renderer.render(this.scene, this.camera);
   };
@@ -270,7 +294,8 @@ export class StudioViewport {
     reqId: string,
     version: number,
     stats: GeometricStats,
-    mode: 'ai' | 'visual' | 'code'
+    mode: 'ai' | 'visual' | 'code',
+    animations?: AnimationClipDef[]
   ): void {
     // Guard against older out-of-order responses overwriting newer generations
     if (this.activeVersion > version) {
@@ -287,6 +312,20 @@ export class StudioViewport {
     this.transformControls.detach();
     this.selectionBox.visible = false;
 
+    // Dispose old animation mixer and actions
+    if (this.mixer) {
+      this.mixer.stopAllAction();
+      if (this.currentMesh) {
+        this.mixer.uncacheRoot(this.currentMesh);
+      }
+      this.mixer = null;
+    }
+    this.animationActions.clear();
+    this.compiledClips = [];
+    this.activeAction = null;
+    this.activeClipName = null;
+    this.isAnimationPlaying = false;
+
     // Dispose old active mesh (after restoring original PBR materials so textures are not leaked)
     if (this.currentMesh) {
       this.restoreOriginalMaterialsOnCurrentMesh();
@@ -298,6 +337,12 @@ export class StudioViewport {
     this.currentMesh = obj;
     this.lastValidStats = stats; // Cache validated stats for safe error fallback without dangling BufferGeometry refs
     this.scene.add(obj);
+
+    // Initialize mixer and load animations if present
+    this.mixer = new THREE.AnimationMixer(obj);
+    if (animations && animations.length > 0) {
+      this.loadAnimations(animations);
+    }
 
     // Backup original materials for shading toggles
     this.currentShadingMaterialsBackup.clear();
@@ -327,6 +372,167 @@ export class StudioViewport {
         stats
       });
     }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Animation System Viewport Control Methods
+  // ---------------------------------------------------------------------------
+
+  public setOnAnimationProgressCallback(
+    cb: (time: number, duration: number, isPlaying: boolean, clipName: string) => void
+  ): void {
+    this.onAnimationProgress = cb;
+  }
+
+  public loadAnimations(animations?: AnimationClipDef[]): void {
+    if (this.mixer) {
+      this.mixer.stopAllAction();
+    }
+    this.animationActions.clear();
+    this.compiledClips = [];
+    this.activeAction = null;
+    this.activeClipName = null;
+    this.isAnimationPlaying = false;
+
+    if (!this.currentMesh) return;
+    if (!this.mixer) {
+      this.mixer = new THREE.AnimationMixer(this.currentMesh);
+    }
+
+    if (!animations || animations.length === 0) return;
+
+    this.compiledClips = AnimationEngine.compileClipsToThree(animations, this.currentMesh);
+    for (const clip of this.compiledClips) {
+      const action = this.mixer.clipAction(clip);
+      const loopType = clip.userData.loop || 'repeat';
+      if (loopType === 'pingpong') {
+        action.setLoop(THREE.LoopPingPong, Infinity);
+      } else if (loopType === 'once') {
+        action.setLoop(THREE.LoopOnce, 1);
+        action.clampWhenFinished = true;
+      } else {
+        action.setLoop(THREE.LoopRepeat, Infinity);
+      }
+      this.animationActions.set(clip.name, action);
+    }
+
+    if (this.compiledClips.length > 0) {
+      const firstClip = this.compiledClips[0];
+      this.activeClipName = firstClip.name;
+      this.activeAction = this.animationActions.get(firstClip.name) || null;
+      if (this.activeAction) {
+        this.activeAction.time = 0;
+        this.mixer.update(0);
+      }
+    }
+  }
+
+  public playAnimation(clipName?: string): void {
+    if (!this.mixer || this.compiledClips.length === 0) return;
+
+    let targetName = clipName || this.activeClipName || this.compiledClips[0]?.name;
+    if (!targetName) return;
+
+    const nextAction = this.animationActions.get(targetName);
+    if (!nextAction) return;
+
+    if (this.activeAction && this.activeAction !== nextAction) {
+      this.activeAction.fadeOut(0.15);
+      nextAction.reset().fadeIn(0.15);
+    }
+
+    this.activeClipName = targetName;
+    this.activeAction = nextAction;
+    this.activeAction.paused = false;
+    this.activeAction.play();
+    this.isAnimationPlaying = true;
+  }
+
+  public pauseAnimation(): void {
+    if (this.activeAction) {
+      this.activeAction.paused = true;
+    }
+    this.isAnimationPlaying = false;
+    if (this.onAnimationProgress && this.activeAction) {
+      this.onAnimationProgress(
+        this.activeAction.time,
+        this.activeAction.getClip().duration,
+        false,
+        this.activeClipName || ''
+      );
+    }
+  }
+
+  public stopAnimation(): void {
+    if (this.mixer) {
+      this.mixer.stopAllAction();
+      this.mixer.setTime(0);
+    }
+    this.isAnimationPlaying = false;
+    if (this.activeAction) {
+      this.activeAction.time = 0;
+    }
+    if (this.onAnimationProgress && this.activeAction) {
+      this.onAnimationProgress(0, this.activeAction.getClip().duration, false, this.activeClipName || '');
+    }
+    this.renderer.render(this.scene, this.camera);
+  }
+
+  public seekAnimation(timeInSeconds: number): void {
+    if (!this.mixer || !this.activeAction) return;
+    const dur = this.activeAction.getClip().duration || 1.0;
+    const clamped = Math.max(0, Math.min(dur, timeInSeconds));
+
+    this.activeAction.time = clamped;
+    this.activeAction.paused = true;
+    this.isAnimationPlaying = false;
+    this.mixer.update(0);
+    if (this.selectedMesh && this.selectionBox.visible) {
+      this.selectionBox.update();
+    }
+    this.renderer.render(this.scene, this.camera);
+
+    if (this.onAnimationProgress) {
+      this.onAnimationProgress(clamped, dur, false, this.activeClipName || '');
+    }
+  }
+
+  public setAnimationSpeed(speedMultiplier: number): void {
+    this.animationSpeed = Math.max(0.1, Math.min(5.0, speedMultiplier));
+    if (this.activeAction) {
+      this.activeAction.setEffectiveTimeScale(this.animationSpeed);
+    }
+  }
+
+  public getActiveClipInfo(): {
+    name: string;
+    duration: number;
+    time: number;
+    isPlaying: boolean;
+    speed: number;
+    clipCount: number;
+    clipNames: string[];
+  } | null {
+    if (!this.activeAction || !this.activeClipName) {
+      return {
+        name: '',
+        duration: 0,
+        time: 0,
+        isPlaying: false,
+        speed: this.animationSpeed,
+        clipCount: this.compiledClips.length,
+        clipNames: this.compiledClips.map((c) => c.name)
+      };
+    }
+    return {
+      name: this.activeClipName,
+      duration: this.activeAction.getClip().duration,
+      time: this.activeAction.time % (this.activeAction.getClip().duration || 1),
+      isPlaying: this.isAnimationPlaying,
+      speed: this.animationSpeed,
+      clipCount: this.compiledClips.length,
+      clipNames: this.compiledClips.map((c) => c.name)
+    };
   }
 
   /**
@@ -878,6 +1084,124 @@ export class StudioViewport {
 
   public setOnComponentTransformChange(cb: (index: number, pos: [number, number, number], rot: [number, number, number], scale: [number, number, number]) => void): void {
     this.onComponentTransformChange = cb;
+  }
+
+  /**
+   * Records the viewport during animation playback (or a smooth 360° turntable orbit)
+   * directly into a WebM video Blob.
+   * Automatically disables gizmos and selection boxes during capture and restores them when finished.
+   */
+  public async recordAnimationLoop(options: {
+    duration?: number;
+    fps?: number;
+    onProgress?: (progress01: number) => void;
+  } = {}): Promise<Blob> {
+    if (!this.currentMesh) {
+      throw new Error('No hay ningún modelo en el visor para grabar.');
+    }
+
+    if (typeof (globalThis as any).MediaRecorder === 'undefined') {
+      throw new Error('MediaRecorder no está soportado en este entorno o navegador.');
+    }
+
+    const canvas = this.renderer.domElement;
+    if (typeof (canvas as any).captureStream !== 'function') {
+      throw new Error('captureStream no está disponible en este canvas.');
+    }
+
+    const prevGizmoHelper = typeof this.transformControls.getHelper === 'function'
+      ? this.transformControls.getHelper()
+      : (this.transformControls as any);
+    const wasGizmoVisible = prevGizmoHelper ? prevGizmoHelper.visible : false;
+    const wasSelectionVisible = this.selectionBox.visible;
+
+    try {
+      if (prevGizmoHelper) prevGizmoHelper.visible = false;
+      this.selectionBox.visible = false;
+
+      // Determine duration
+      let targetDuration = options.duration;
+      const isTurntableOnly = !this.activeAction && this.compiledClips.length === 0;
+
+      if (!targetDuration || targetDuration <= 0) {
+        if (this.activeAction && this.activeAction.getClip().duration > 0) {
+          targetDuration = this.activeAction.getClip().duration;
+        } else if (this.compiledClips.length > 0 && this.compiledClips[0].duration > 0) {
+          targetDuration = this.compiledClips[0].duration;
+        } else {
+          targetDuration = 3.0; // 3-second 360-turntable spin
+        }
+      }
+
+      // If animation is loaded, restart from time 0 and play at 1.0x
+      if (this.activeAction) {
+        this.activeAction.time = 0;
+        this.activeAction.paused = false;
+        this.activeAction.play();
+        this.isAnimationPlaying = true;
+      }
+
+      const prevRotation = this.currentMesh.rotation.y;
+      const fps = options.fps || 30;
+      const stream = (canvas as any).captureStream(fps);
+
+      let mimeType = 'video/webm;codecs=vp9';
+      if (!MediaRecorder.isTypeSupported(mimeType)) {
+        mimeType = 'video/webm;codecs=vp8';
+      }
+      if (!MediaRecorder.isTypeSupported(mimeType)) {
+        mimeType = 'video/webm';
+      }
+
+      const recorder = new MediaRecorder(stream, {
+        mimeType,
+        videoBitsPerSecond: 5_000_000
+      });
+
+      const chunks: BlobPart[] = [];
+      recorder.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) {
+          chunks.push(e.data);
+        }
+      };
+
+      return await new Promise<Blob>((resolve, reject) => {
+        recorder.onstop = () => {
+          if (isTurntableOnly && this.currentMesh) {
+            this.currentMesh.rotation.y = prevRotation;
+          }
+          const blob = new Blob(chunks, { type: mimeType });
+          resolve(blob);
+        };
+        recorder.onerror = (e) => reject(e);
+
+        recorder.start();
+        const startTime = performance.now();
+        const totalMs = targetDuration! * 1000;
+
+        const intervalId = setInterval(() => {
+          const elapsed = performance.now() - startTime;
+          const prog = Math.min(1.0, elapsed / totalMs);
+
+          if (isTurntableOnly && this.currentMesh) {
+            this.currentMesh.rotation.y = prevRotation + prog * Math.PI * 2;
+          }
+
+          if (options.onProgress) {
+            options.onProgress(prog);
+          }
+          if (elapsed >= totalMs) {
+            clearInterval(intervalId);
+            if (recorder.state === 'recording') {
+              recorder.stop();
+            }
+          }
+        }, 33);
+      });
+    } finally {
+      if (prevGizmoHelper) prevGizmoHelper.visible = wasGizmoVisible;
+      this.selectionBox.visible = wasSelectionVisible;
+    }
   }
 
   public destroy(): void {

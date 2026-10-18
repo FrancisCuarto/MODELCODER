@@ -1,4 +1,5 @@
-import type { ModelSpec, ComponentDef, ShapePrimitive } from './types';
+import type { ModelSpec, ComponentDef, ShapePrimitive, AnimationClipDef, AnimationPresetType } from './types.ts';
+import { AnimationEngine } from './animation-engine.ts';
 
 export class ProceduralBuilderContext {
   public spec: ModelSpec;
@@ -169,6 +170,60 @@ export class ProceduralBuilderContext {
       emissiveIntensity: opts.emissiveIntensity,
       uvScale: opts.uvScale
     });
+  }
+
+  public addAnimation(clip: AnimationClipDef): this {
+    if (!this.spec.animations) {
+      this.spec.animations = [];
+    }
+    this.spec.animations.push(clip);
+    return this;
+  }
+
+  public addPresetAnimation(
+    presetType: AnimationPresetType,
+    opts: {
+      targetName?: string;
+      targetComponent?: string;
+      name?: string;
+      clipName?: string;
+      duration?: number;
+      deltaDistance?: number;
+      distance?: number;
+      deltaAngleDeg?: number;
+      openAngleDeg?: number;
+      pressDepth?: number;
+      amplitude?: number;
+      extendDistance?: number;
+      deployAngleDeg?: number;
+      axis?: 'x' | 'y' | 'z';
+      initialPos?: [number, number, number];
+      initialRot?: [number, number, number];
+      initialScale?: [number, number, number];
+      loop?: 'repeat' | 'pingpong' | 'once';
+    }
+  ): this {
+    if (!this.spec.animations) {
+      this.spec.animations = [];
+    }
+    const clip = AnimationEngine.createPresetClip(presetType, {
+      targetComponent: opts.targetComponent || opts.targetName || 'component',
+      name: opts.name || opts.clipName,
+      duration: opts.duration,
+      axis: opts.axis,
+      distance: opts.distance ?? opts.deltaDistance,
+      openAngleDeg: opts.openAngleDeg ?? opts.deltaAngleDeg,
+      pressDepth: opts.pressDepth,
+      amplitude: opts.amplitude,
+      extendDistance: opts.extendDistance,
+      deployAngleDeg: opts.deployAngleDeg,
+      initialPos: opts.initialPos,
+      initialRot: opts.initialRot,
+      initialScale: opts.initialScale,
+      loop: opts.loop
+    });
+    this.spec.animations.push(clip);
+    return this;
   }
 }
 

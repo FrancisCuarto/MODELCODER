@@ -200,6 +200,44 @@ export interface ComponentDef {
   normalStrength?: number; // Normal map relief intensity (0..2)
 }
 
+// ---------------------------------------------------------------------------
+// Animation Data Models (Exportable glTF/GLB Animation Tracks)
+// ---------------------------------------------------------------------------
+
+export type AnimationInterpolation = 'linear' | 'step' | 'cubic';
+
+export type AnimationTrackProperty = 'position' | 'rotation' | 'scale';
+
+export interface AnimationKeyframeDef {
+  time: number; // in seconds (e.g. 0.0, 0.5, 1.2)
+  value: [number, number, number]; // [x, y, z] for pos/scale, or Euler degrees [degX, degY, degZ] for rotation
+  interpolation?: AnimationInterpolation;
+}
+
+export interface AnimationTrackDef {
+  targetComponent: string; // Target mesh name matching component.name
+  targetName?: string; // Developer convenience alias matching targetComponent
+  property: AnimationTrackProperty; // 'position' | 'rotation' | 'scale'
+  keyframes: AnimationKeyframeDef[];
+}
+
+export type AnimationPresetType =
+  | 'sliding_door'
+  | 'hinge_lid'
+  | 'button_press'
+  | 'spin_continuous'
+  | 'mechanical_deploy'
+  | 'idle_hover';
+
+export interface AnimationClipDef {
+  id: string;
+  name: string; // glTF animation name shown in game engines (e.g. 'OpenDoor', 'DeployGear', 'IdleSpin')
+  duration: number; // Total length in seconds
+  loop?: 'repeat' | 'pingpong' | 'once';
+  tracks: AnimationTrackDef[];
+  presetType?: AnimationPresetType;
+}
+
 export interface ModelSpec {
   id: string;
   name: string;
@@ -213,6 +251,7 @@ export interface ModelSpec {
   };
   palette: string;
   components: ComponentDef[];
+  animations?: AnimationClipDef[]; // Exportable glTF animation clips
   parameters?: Array<{
     key: string;
     label: string;

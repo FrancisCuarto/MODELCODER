@@ -118,6 +118,9 @@ const modelSchema = {
             <button id="toggle-rotate-btn" class="ps1-ctrl-btn" title="Pausar / Reanudar Rotación">
               🔄 ROTACIÓN
             </button>
+            <button id="toggle-anim-btn" class="ps1-ctrl-btn" title="Reproducir / Pausar Animación GLB" style="display: none;">
+              🎬 ANIMACIÓN: PLAY
+            </button>
             <button id="reset-cam-btn" class="ps1-ctrl-btn" title="Restablecer Cámara">
               🎯 CENTRAR
             </button>
@@ -475,6 +478,17 @@ const modelSchema = {
                     En Blender andá a <code>Archivo &gt; Importar &gt; glTF 2.0 (.glb)</code>. Conserva las coordenadas UV y el origen centrado en el suelo.
                   </p>
                 </div>
+                <div class="import-step-card">
+                  <span class="import-engine-name">🌐 Three.js / Web:</span>
+                  <p class="import-step-text">
+                    Importalo con <code>GLTFLoader</code> y reproducí sus animaciones cinemáticas mediante <code>THREE.AnimationMixer</code>.
+                  </p>
+                </div>
+                <div style="margin-top: 0.4rem; padding-top: 0.4rem; border-top: 1px dashed var(--ps1-steel);">
+                  <a href={`/studio`} class="btn btn-outline btn-sm" style="width: 100%; text-decoration: none; text-align: center; font-size: 0.72rem; display: block;">
+                    🎮 GENERAR SCRIPTS C# / GDSCRIPT EN STUDIO 3D &rarr;
+                  </a>
+                </div>
               </div>
             </div>
 
@@ -580,6 +594,7 @@ const modelSchema = {
   const presetPills = document.querySelectorAll('.preset-pill');
   const viewer = document.getElementById('main-viewer') as any;
   const toggleRotateBtn = document.getElementById('toggle-rotate-btn');
+  const toggleAnimBtn = document.getElementById('toggle-anim-btn');
   const resetCamBtn = document.getElementById('reset-cam-btn');
   const screenshotBtn = document.getElementById('screenshot-btn');
   const fullscreenViewerBtn = document.getElementById('fullscreen-viewer-btn');
@@ -1023,6 +1038,34 @@ const modelSchema = {
       isRotating = !isRotating;
       viewer.autoRotate = isRotating;
       toggleRotateBtn.textContent = isRotating ? '🔄 ROTACIÓN' : '⏸️ PAUSADO';
+    }
+  });
+
+  let isAnimating = false;
+  viewer?.addEventListener('load', () => {
+    try {
+      const anims = viewer.availableAnimations;
+      if (anims && anims.length > 0 && toggleAnimBtn) {
+        toggleAnimBtn.style.display = 'inline-block';
+        toggleAnimBtn.title = `Reproducir animación: ${anims.join(', ')}`;
+      } else if (toggleAnimBtn) {
+        toggleAnimBtn.style.display = 'none';
+      }
+    } catch (e) {
+      // ignore
+    }
+  });
+
+  toggleAnimBtn?.addEventListener('click', () => {
+    if (!viewer) return;
+    if (isAnimating) {
+      viewer.pause();
+      isAnimating = false;
+      toggleAnimBtn.textContent = '🎬 ANIMACIÓN: PLAY';
+    } else {
+      viewer.play({ repetitions: Infinity });
+      isAnimating = true;
+      toggleAnimBtn.textContent = '⏸️ ANIMACIÓN: PAUSA';
     }
   });
 

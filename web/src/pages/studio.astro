@@ -76,6 +76,12 @@ import catalog from '../data/catalog.json';
           <button id="btn-header-story" class="btn btn-magenta" title="Generar tarjeta de Instagram Stories (9:16) con marca de agua y descripción">
             📱 HISTORIA IG
           </button>
+          <button id="btn-share-url" class="btn btn-outline" title="Compartir este modelo 3D con un enlace directo instantáneo">
+            🔗 COMPARTIR
+          </button>
+          <button id="btn-gamedev-code" class="btn btn-outline" title="Generar código de integración para Godot 4, Unity y Three.js">
+            🎮 CÓDIGO MOTOR
+          </button>
           <button id="export-zip-btn" class="btn btn-primary" title="Descargar paquete de código para Blender (.ZIP)">
             📦 PAQUETE (.ZIP)
           </button>
@@ -412,6 +418,47 @@ import catalog from '../data/catalog.json';
               <div class="error-banner-footer" id="error-banner-fallback-note">
                 ℹ️ Mostrando el último modelo válido anterior como referencia.
               </div>
+            </div>
+          </div>
+
+          <!-- Animation Studio Timeline Bar (Bottom of 3D Viewport) -->
+          <div class="animation-studio-bar ps1-titlebar" id="animation-studio-bar">
+            <div class="anim-bar-left">
+              <span class="anim-title-tag">🎬 ANIMACIÓN:</span>
+              <select id="anim-clip-select" class="form-select anim-clip-select" title="Pista de animación activa">
+                <option value="">(Sin animaciones)</option>
+              </select>
+              <button type="button" id="btn-open-anim-modal" class="btn-mini btn-gold" title="Añadir nueva pista o preset mecánico a este modelo">
+                ⚡ + NUEVA PISTA
+              </button>
+            </div>
+
+            <div class="anim-bar-center" id="anim-player-controls">
+              <button type="button" id="btn-anim-play" class="btn-mini btn-cyan" title="Reproducir / Pausar animación [Espacio]" disabled>
+                ▶ PLAY
+              </button>
+              <button type="button" id="btn-anim-stop" class="btn-mini ps1-ctrl-btn" title="Detener y volver al inicio" disabled>
+                ⏹ STOP
+              </button>
+              <div class="anim-scrubber-wrap">
+                <input type="range" id="anim-time-slider" min="0" max="1" step="0.01" value="0" class="anim-scrubber-slider" title="Línea de tiempo de la animación" disabled />
+              </div>
+              <span id="anim-time-display" class="anim-time-display">0.00s / 0.00s</span>
+            </div>
+
+            <div class="anim-bar-right">
+              <select id="anim-speed-select" class="form-select anim-speed-select" title="Velocidad de reproducción">
+                <option value="0.5">0.5x</option>
+                <option value="1.0" selected>1.0x</option>
+                <option value="1.5">1.5x</option>
+                <option value="2.0">2.0x</option>
+              </select>
+              <button type="button" id="btn-export-video" class="btn-mini btn-magenta" title="Exportar clip de video / GIF animado (WebM)">
+                📹 VIDEO (WebM)
+              </button>
+              <button type="button" id="btn-anim-delete" class="btn-mini btn-danger-link" title="Eliminar la pista activa actual" style="display: none;">
+                🗑️
+              </button>
             </div>
           </div>
         </div>
@@ -902,11 +949,172 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
               <button type="button" id="btn-copy-story-clipboard" class="btn btn-cyan" style="flex: 1;">
                 📋 COPIAR AL PORTAPAPELES
               </button>
-              <button type="button" id="btn-share-story" class="btn btn-magenta" style="flex: 1;">
+              <button type="button" id="btn-download-story-video" class="btn btn-magenta" style="flex: 1;" title="Exportar reel/historia animada en bucle (WebM)">
+                🎬 REEL ANIMADO (WebM)
+              </button>
+              <button type="button" id="btn-share-story" class="btn btn-outline" style="flex: 0.8;">
                 📱 COMPARTIR
               </button>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Modal: Crear Pista de Animación Exportable -->
+  <dialog id="modal-anim-preset" class="ps1-window anim-modal" style="max-width: 680px; width: 95%; max-height: 90vh;">
+    <div class="ps1-titlebar">
+      <span>⚡ NUEVA PISTA DE ANIMACIÓN · PRESETS MECÁNICOS GLB</span>
+      <button id="close-anim-modal-btn" class="ps1-ctrl-btn" type="button">X</button>
+    </div>
+    <div class="modal-body" style="padding: 1.25rem; overflow-y: auto; max-height: calc(90vh - 55px);">
+      <!-- Componente Objetivo -->
+      <div style="margin-bottom: 1rem;">
+        <label for="anim-target-comp-select" style="font-family: var(--font-pixel); font-size: 0.72rem; color: var(--ps1-cyan); display: block; margin-bottom: 0.35rem;">
+          1. PIEZA / COMPONENTE OBJETIVO A ANIMAR:
+        </label>
+        <select id="anim-target-comp-select" class="form-select ps1-input" style="width: 100%; font-family: var(--font-mono); font-size: 0.8rem;">
+          <!-- Populated dynamically -->
+        </select>
+      </div>
+
+      <!-- Presets Cards Grid -->
+      <div style="margin-bottom: 1rem;">
+        <label style="font-family: var(--font-pixel); font-size: 0.72rem; color: var(--ps1-gold); display: block; margin-bottom: 0.4rem;">
+          2. ELIGE UN COMPORTAMIENTO MECÁNICO (PRESET GLTF):
+        </label>
+        <div class="anim-presets-grid" id="anim-presets-grid">
+          <!-- 6 Presets buttons/cards -->
+        </div>
+      </div>
+
+      <!-- Preset Configuration Options -->
+      <div id="anim-preset-options" class="ps1-inset" style="padding: 0.85rem; margin-bottom: 1rem;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 0.75rem;">
+          <div>
+            <label for="anim-clip-name-input" style="font-family: var(--font-mono); font-size: 0.7rem; color: var(--text-muted); display: block; margin-bottom: 0.2rem;">
+              Nombre de la pista (glTF Animation):
+            </label>
+            <input type="text" id="anim-clip-name-input" class="ps1-input" value="Abrir_Puerta" style="width: 100%; font-family: var(--font-mono); font-size: 0.78rem;" />
+          </div>
+          <div>
+            <label for="anim-axis-select" style="font-family: var(--font-mono); font-size: 0.7rem; color: var(--text-muted); display: block; margin-bottom: 0.2rem;">
+              Eje de movimiento o rotación:
+            </label>
+            <select id="anim-axis-select" class="form-select ps1-input" style="width: 100%; font-family: var(--font-mono); font-size: 0.78rem;">
+              <option value="x">Eje X (Lateral / Horizontal)</option>
+              <option value="y" selected>Eje Y (Vertical / Elevación)</option>
+              <option value="z">Eje Z (Frontal / Profundidad)</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem;">
+          <div id="anim-param-magnitude-wrap">
+            <label id="anim-param-magnitude-label" for="anim-magnitude-input" style="font-family: var(--font-mono); font-size: 0.7rem; color: var(--text-muted); display: block; margin-bottom: 0.2rem;">
+              Distancia (metros):
+            </label>
+            <input type="number" step="0.05" id="anim-magnitude-input" class="ps1-input" value="1.0" style="width: 100%; font-family: var(--font-mono); font-size: 0.78rem;" />
+          </div>
+          <div>
+            <label for="anim-duration-input" style="font-family: var(--font-mono); font-size: 0.7rem; color: var(--text-muted); display: block; margin-bottom: 0.2rem;">
+              Duración (segundos):
+            </label>
+            <input type="number" step="0.1" min="0.2" max="30" id="anim-duration-input" class="ps1-input" value="1.6" style="width: 100%; font-family: var(--font-mono); font-size: 0.78rem;" />
+          </div>
+          <div>
+            <label for="anim-loop-select" style="font-family: var(--font-mono); font-size: 0.7rem; color: var(--text-muted); display: block; margin-bottom: 0.2rem;">
+              Comportamiento de bucle:
+            </label>
+            <select id="anim-loop-select" class="form-select ps1-input" style="width: 100%; font-family: var(--font-mono); font-size: 0.78rem;">
+              <option value="repeat">Bucle Continuo (Loop)</option>
+              <option value="pingpong" selected>Ping-Pong (Ida y Vuelta)</option>
+              <option value="once">Una Sola Vez (Clamp)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action buttons -->
+      <div style="display: flex; justify-content: flex-end; gap: 0.6rem;">
+        <button type="button" id="btn-cancel-anim-modal" class="btn btn-outline">
+          CANCELAR
+        </button>
+        <button type="button" id="btn-confirm-add-anim" class="btn btn-gold">
+          ⚡ AÑADIR ANIMACIÓN AL MODELO
+        </button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Modal: Compartir Modelo mediante URL -->
+  <dialog id="modal-share-url" class="ps1-window share-modal" style="max-width: 600px; width: 92%;">
+    <div class="ps1-titlebar">
+      <span>🔗 COMPARTIR MODELO · ENLACE DIRECTO</span>
+      <button id="close-share-modal-btn" class="ps1-ctrl-btn" type="button">X</button>
+    </div>
+    <div class="modal-body" style="padding: 1.25rem;">
+      <p style="font-size: 0.85rem; color: var(--text-bright); margin-bottom: 0.8rem; line-height: 1.45;">
+        Copiá este enlace para compartir tu modelo. Quien lo abra en su navegador podrá visualizarlo, rotarlo y continuar editándolo en su propio Studio sin requerir registro ni base de datos:
+      </p>
+      <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+        <input 
+          type="text" 
+          id="share-url-input" 
+          class="ps1-input" 
+          readonly 
+          style="flex: 1; font-size: 0.78rem; padding: 0.5rem;" 
+        />
+        <button type="button" id="btn-copy-share-url" class="btn btn-cyan" style="white-space: nowrap; font-size: 0.78rem;">
+          📋 COPIAR
+        </button>
+      </div>
+      <div class="ps1-inset" style="padding: 0.75rem; font-size: 0.75rem; color: var(--text-dim); border-left: 3px solid var(--ps1-cyan);">
+        💡 La geometría, componentes, materiales PBR y animaciones están codificados directamente en la URL.
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Modal: Código de Integración para Motores de Videojuegos -->
+  <dialog id="modal-gamedev-code" class="ps1-window gamedev-modal" style="max-width: 820px; width: 95%; max-height: 92vh;">
+    <div class="ps1-titlebar">
+      <span>🎮 CÓDIGO DE INTEGRACIÓN PARA MOTORES DE VIDEOJUEGOS</span>
+      <button id="close-gamedev-modal-btn" class="ps1-ctrl-btn" type="button">X</button>
+    </div>
+    <div class="modal-body" style="padding: 1.25rem; display: flex; flex-direction: column; gap: 1rem; max-height: calc(92vh - 60px); overflow-y: auto;">
+      <p style="font-size: 0.82rem; color: var(--text-dim); margin: 0;">
+        Seleccioná tu motor preferido para obtener el script de carga e instanciación con soporte completo para reproducir sus animaciones:
+      </p>
+
+      <!-- Engine Selector Tabs -->
+      <div style="display: flex; gap: 0.5rem; border-bottom: 2px solid var(--ps1-steel); padding-bottom: 0.5rem;">
+        <button type="button" class="btn-gamedev-tab active" data-engine="godot" id="tab-engine-godot" style="padding: 0.4rem 0.85rem; font-family: var(--font-pixel); font-size: 0.72rem; cursor: pointer;">
+          👾 GODOT 4 (GDSCRIPT)
+        </button>
+        <button type="button" class="btn-gamedev-tab" data-engine="unity" id="tab-engine-unity" style="padding: 0.4rem 0.85rem; font-family: var(--font-pixel); font-size: 0.72rem; cursor: pointer;">
+          ⚡ UNITY (C#)
+        </button>
+        <button type="button" class="btn-gamedev-tab" data-engine="threejs" id="tab-engine-threejs" style="padding: 0.4rem 0.85rem; font-family: var(--font-pixel); font-size: 0.72rem; cursor: pointer;">
+          🌐 THREE.JS / WEB (TS)
+        </button>
+      </div>
+
+      <!-- Code Container -->
+      <div class="ps1-inset" style="position: relative; background: #050811; padding: 0.75rem; border: 1px solid var(--ps1-steel); min-height: 280px;">
+        <pre id="gamedev-code-output" style="margin: 0; font-family: var(--font-mono); font-size: 0.76rem; color: #b4d5fe; white-space: pre-wrap; word-break: break-all; max-height: 400px; overflow-y: auto;"></pre>
+      </div>
+
+      <!-- Actions -->
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.6rem;">
+        <span id="gamedev-code-status" style="font-size: 0.75rem; color: var(--ps1-green); display: none;"></span>
+        <div style="display: flex; gap: 0.6rem; margin-left: auto;">
+          <button type="button" id="btn-download-engine-script" class="btn btn-outline" style="font-size: 0.78rem;">
+            💾 DESCARGAR ARCHIVO SCRIPT
+          </button>
+          <button type="button" id="btn-copy-engine-script" class="btn btn-gold" style="font-size: 0.78rem;">
+            📋 COPIAR AL PORTAPAPELES
+          </button>
         </div>
       </div>
     </div>
@@ -934,6 +1142,7 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
   import { GLBExporterService } from '../lib/studio/glb-exporter';
   import { StudioViewport } from '../lib/studio/three-viewport';
   import { TextureLibrary, MATERIAL_CATEGORY_LABELS, type MaterialFamilyCategory } from '../lib/studio/texture-library';
+  import { AnimationEngine } from '../lib/studio/animation-engine';
   import { getCurrentUser, checkUserRole, publishCommunityModel } from '../lib/supabase';
   import {
     saveProjectDraft,
@@ -948,7 +1157,7 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     importProjectFromJSON,
     type UserProjectDraft
   } from '../lib/user-inventory';
-  import type { ModelSpec, ComponentDef, GeometricStats, GenerationResult, ShadingMode, ShapePrimitive, TransformGizmoMode, CameraViewPreset } from '../lib/studio/types';
+  import type { ModelSpec, ComponentDef, GeometricStats, GenerationResult, ShadingMode, ShapePrimitive, TransformGizmoMode, CameraViewPreset, AnimationClipDef, AnimationPresetType } from '../lib/studio/types';
   import {
     drawStoryCard,
     exportStoryToBlob,
@@ -960,6 +1169,8 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     type StoryTheme,
     type SocialFormat
   } from '../lib/studio/story-generator';
+  import { serializeSpecToHash, deserializeSpecFromHash } from '../lib/studio/share-serializer';
+  import { generateAllSnippets } from '../lib/studio/gamedev-exporter';
 
   if (typeof window !== 'undefined') {
     (window as any).__modelcoderStudioReady = true;
@@ -978,7 +1189,8 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     geometry: true,
     uv: true,
     surface: true,
-    textures: true
+    textures: true,
+    animation: true
   };
 
   // History Stack (Undo / Redo)
@@ -1041,6 +1253,38 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
         color: '#edf2f7',
         texturePreset: 'caution_label',
         label: 'CARGO-77'
+      },
+      {
+        name: 'crate_lid',
+        shape: 'box',
+        size: [1.02, 0.08, 1.02],
+        position: [0, 0.89, 0],
+        rotation: [0, 0, 0],
+        scale: [1, 1, 1],
+        color: '#718096',
+        texturePreset: 'worn_metal',
+        roughness: 0.65,
+        metalness: 0.35
+      }
+    ],
+    animations: [
+      {
+        name: 'Abrir_Tapa',
+        duration: 2.0,
+        loop: 'pingpong',
+        tracks: [
+          {
+            targetComponent: 'crate_lid',
+            targetName: 'crate_lid',
+            property: 'rotation',
+            interpolation: 'linear',
+            keyframes: [
+              { time: 0.0, value: [0, 0, 0] },
+              { time: 1.0, value: [-85, 0, 0] },
+              { time: 2.0, value: [0, 0, 0] }
+            ]
+          }
+        ]
       }
     ]
   };
@@ -1124,6 +1368,32 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
   const paramMetalness = document.getElementById('param-metalness') as HTMLInputElement;
   const paramMetalnessVal = document.getElementById('param-metalness-val');
 
+  // Animation System DOM Elements
+  const animationStudioBar = document.getElementById('animation-studio-bar');
+  const animClipSelect = document.getElementById('anim-clip-select') as HTMLSelectElement | null;
+  const btnOpenAnimModal = document.getElementById('btn-open-anim-modal');
+  const btnAnimPlay = document.getElementById('btn-anim-play') as HTMLButtonElement | null;
+  const btnAnimStop = document.getElementById('btn-anim-stop') as HTMLButtonElement | null;
+  const animTimeSlider = document.getElementById('anim-time-slider') as HTMLInputElement | null;
+  const animTimeDisplay = document.getElementById('anim-time-display');
+  const animSpeedSelect = document.getElementById('anim-speed-select') as HTMLSelectElement | null;
+  const btnExportVideo = document.getElementById('btn-export-video') as HTMLButtonElement | null;
+  const btnAnimDelete = document.getElementById('btn-anim-delete');
+
+  // Animation Preset Modal DOM Elements
+  const modalAnimPreset = document.getElementById('modal-anim-preset') as HTMLDialogElement | null;
+  const closeAnimModalBtn = document.getElementById('close-anim-modal-btn');
+  const btnCancelAnimModal = document.getElementById('btn-cancel-anim-modal');
+  const btnConfirmAddAnim = document.getElementById('btn-confirm-add-anim');
+  const animTargetCompSelect = document.getElementById('anim-target-comp-select') as HTMLSelectElement | null;
+  const animPresetsGrid = document.getElementById('anim-presets-grid');
+  const animClipNameInput = document.getElementById('anim-clip-name-input') as HTMLInputElement | null;
+  const animAxisSelect = document.getElementById('anim-axis-select') as HTMLSelectElement | null;
+  const animParamMagnitudeLabel = document.getElementById('anim-param-magnitude-label');
+  const animMagnitudeInput = document.getElementById('anim-magnitude-input') as HTMLInputElement | null;
+  const animDurationInput = document.getElementById('anim-duration-input') as HTMLInputElement | null;
+  const animLoopSelect = document.getElementById('anim-loop-select') as HTMLSelectElement | null;
+
   // Initialize Three.js Viewport safely so any WebGL context issue never aborts UI rendering
   let viewport: StudioViewport | null = null;
   if (threeMountEl) {
@@ -1134,6 +1404,21 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
         handleViewportComponentSelect,
         handleViewportGizmoTransform
       );
+      viewport.setOnAnimationProgressCallback((curTime, dur, isPlaying, clipName) => {
+        if (animTimeSlider) {
+          animTimeSlider.max = String(dur || 1.0);
+          animTimeSlider.value = String(curTime || 0);
+        }
+        if (animTimeDisplay) {
+          animTimeDisplay.textContent = `${(curTime || 0).toFixed(2)}s / ${(dur || 0).toFixed(2)}s`;
+        }
+        if (btnAnimPlay) {
+          btnAnimPlay.textContent = isPlaying ? '⏸ PAUSA' : '▶ PLAY';
+        }
+        if (animClipSelect && clipName && animClipSelect.value !== clipName) {
+          animClipSelect.value = clipName;
+        }
+      });
       document.getElementById('studio-reset-cam')?.addEventListener('click', () => {
         viewport?.resetCameraAndFrame();
       });
@@ -1557,7 +1842,7 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
 
       const { group, stats } = ProceduralEngine.buildModelFromSpec(currentSpec);
       if (viewport) {
-        viewport.displayGeneratedMesh(group, reqId, generationCounter, stats, mode);
+        viewport.displayGeneratedMesh(group, reqId, generationCounter, stats, mode, currentSpec.animations);
       } else {
         handleViewportStatsUpdate(stats, {
           id: reqId,
@@ -1585,7 +1870,7 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
         viewport?.selectComponent(null);
       }
 
-      // Sync outliner, inspector (only when selection/structure changes), code editor
+      // Sync outliner, inspector (only when selection/structure changes), code editor, and animation bar
       renderOutliner();
       if (rebuildInspector) {
         renderInspector();
@@ -1595,6 +1880,7 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
       updateSelectionPill();
       syncEditorFromSpec();
       setLinterValid();
+      updateAnimationTimelineBar();
 
       if (recordHistory) {
         pushHistoryState(currentSpec);
@@ -1933,6 +2219,9 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
         <button type="button" class="insp-tab-pill ${isOpen('textures') ? 'active' : ''}" data-toggle-sec="textures" title="Expandir/contraer Biblioteca de 138 Texturas">
           🧱 Texturas
         </button>
+        <button type="button" class="insp-tab-pill ${isOpen('animation') ? 'active' : ''}" data-toggle-sec="animation" title="Expandir/contraer Pistas de Animación de esta pieza">
+          🎬 Anim.
+        </button>
         <button type="button" id="btn-toggle-all-secs" class="insp-tab-pill insp-tab-all" title="Expandir o contraer todas las pestañas">
           ↕ Todo
         </button>
@@ -2231,6 +2520,24 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
                 <!-- Populated dynamically with lazy WebP thumbnails -->
               </div>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION 6: ANIMACIÓN -->
+      <div class="prop-section collapsible-section ps1-inset ${isOpen('animation') ? 'is-open' : 'is-collapsed'}" data-sec-id="animation">
+        <div class="section-titlebar section-toggle-header" data-sec-target="animation" role="button" tabindex="0" aria-expanded="${isOpen('animation')}">
+          <span class="section-badge">6</span>
+          <span class="section-heading">ANIMACIÓN & MECÁNICAS</span>
+          <button type="button" id="btn-quick-add-anim" class="btn-mini-link" title="Crear nueva pista de animación para esta pieza">
+            + Nueva
+          </button>
+          <span class="sec-chevron">${isOpen('animation') ? '▼' : '▶'}</span>
+        </div>
+
+        <div class="section-body">
+          <div id="inspector-comp-anims-wrap">
+            <!-- Populated dynamically -->
           </div>
         </div>
       </div>
@@ -3272,6 +3579,88 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
       else delete comp.label;
       renderCurrentSpec('visual', true, false);
     });
+
+    // Section 6: Animation & Mechanics logic for this component
+    const animsWrap = document.getElementById('inspector-comp-anims-wrap');
+    const btnQuickAddAnim = document.getElementById('btn-quick-add-anim');
+
+    btnQuickAddAnim?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openAnimationPresetModal(comp.name);
+    });
+
+    if (animsWrap) {
+      const compAnims = (currentSpec.animations || []).filter(
+        (a) => a.tracks && a.tracks.some((t) => t.targetComponent === comp.name)
+      );
+
+      if (compAnims.length > 0) {
+        let html = '<div class="comp-anims-active-list">';
+        compAnims.forEach((anim) => {
+          html += `
+            <div class="comp-anim-item ps1-inset" style="display: flex; justify-content: space-between; align-items: center; padding: 0.4rem 0.6rem; margin-bottom: 0.4rem; background: #080d18; border: 1px solid #1a253a;">
+              <div>
+                <strong style="color: var(--ps1-gold); font-family: var(--font-pixel); font-size: 0.72rem;">🎬 ${escapeHtml(anim.name)}</strong>
+                <span style="display: block; font-family: var(--font-mono); font-size: 0.62rem; color: var(--text-muted);">${anim.duration.toFixed(1)}s · ${anim.loop || 'repeat'}</span>
+              </div>
+              <div style="display: flex; gap: 0.3rem;">
+                <button type="button" class="btn-mini btn-cyan btn-test-comp-anim" data-anim-name="${escapeHtml(anim.name)}" title="Probar esta animación en el visor">
+                  ▶ Probar
+                </button>
+                <button type="button" class="btn-mini btn-danger-link btn-del-comp-anim" data-anim-name="${escapeHtml(anim.name)}" title="Eliminar animación">
+                  🗑️
+                </button>
+              </div>
+            </div>
+          `;
+        });
+        html += '</div>';
+        animsWrap.innerHTML = html;
+
+        animsWrap.querySelectorAll('.btn-test-comp-anim').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            const name = (btn as HTMLElement).dataset.animName;
+            if (name) {
+              if (animClipSelect) animClipSelect.value = name;
+              viewport?.playAnimation(name);
+              showStudioToast(`▶ Reproduciendo: ${name}`);
+            }
+          });
+        });
+
+        animsWrap.querySelectorAll('.btn-del-comp-anim').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            const name = (btn as HTMLElement).dataset.animName;
+            if (name && currentSpec.animations) {
+              currentSpec.animations = currentSpec.animations.filter((a) => a.name !== name);
+              renderCurrentSpec('visual', true, true);
+              showStudioToast(`🗑️ Pista eliminada: ${name}`);
+            }
+          });
+        });
+      } else {
+        animsWrap.innerHTML = `
+          <div style="font-family: var(--font-mono); font-size: 0.7rem; color: var(--text-muted); margin-bottom: 0.5rem; line-height: 1.3;">
+            Esta pieza no tiene animación asignada aún. Elige un comportamiento mecánico rápido:
+          </div>
+          <div class="quick-preset-chips" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.35rem;">
+            <button type="button" class="btn-mini btn-outline btn-chip-preset" data-preset="sliding_door">🚪 Puerta Corrediza</button>
+            <button type="button" class="btn-mini btn-outline btn-chip-preset" data-preset="hinge_lid">🧰 Tapa / Bisagra</button>
+            <button type="button" class="btn-mini btn-outline btn-chip-preset" data-preset="button_press">🔘 Pulsador</button>
+            <button type="button" class="btn-mini btn-outline btn-chip-preset" data-preset="spin_continuous">🔄 Giro 360°</button>
+            <button type="button" class="btn-mini btn-outline btn-chip-preset" data-preset="mechanical_deploy">🚀 Despliegue</button>
+            <button type="button" class="btn-mini btn-outline btn-chip-preset" data-preset="idle_hover">🛸 Flotación Idle</button>
+          </div>
+        `;
+
+        animsWrap.querySelectorAll('.btn-chip-preset').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            const preset = (btn as HTMLElement).dataset.preset as AnimationPresetType;
+            openAnimationPresetModal(comp.name, preset);
+          });
+        });
+      }
+    }
   }
 
   function escapeHtml(str: string): string {
@@ -3405,6 +3794,18 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
       } else if (e.key === 'f' || e.key === 'F') {
         if (selectedComponentIndex !== null) {
           viewport?.focusComponent(selectedComponentIndex);
+        }
+      } else if (e.code === 'Space') {
+        e.preventDefault();
+        const info = viewport?.getActiveClipInfo();
+        if (info && info.clipCount > 0) {
+          if (info.isPlaying) {
+            viewport?.pauseAnimation();
+            if (btnAnimPlay) btnAnimPlay.textContent = '▶ PLAY';
+          } else {
+            viewport?.playAnimation(animClipSelect?.value || undefined);
+            if (btnAnimPlay) btnAnimPlay.textContent = '⏸ PAUSA';
+          }
         }
       }
     }
@@ -3568,14 +3969,148 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     let out = `// ModelCoder Procedural Builder\nbuilder.setName(${JSON.stringify(spec.name)});\n\n`;
     spec.components.forEach((c) => {
       const fn = c.shape === 'cylinder' ? 'addCylinder' : (c.shape === 'sphere' ? 'addSphere' : (c.shape === 'wedge' ? 'addWedge' : 'addBox'));
-      out += `builder.${fn}({\n  name: ${JSON.stringify(c.name)},\n  size: ${JSON.stringify(c.size || [1, 1, 1])},\n  position: ${JSON.stringify(c.position || [0, 0, 0])},\n  color: ${JSON.stringify(c.color || '#4a5568')}\n});\n\n`;
+      const opts: any = {
+        name: c.name,
+        size: c.size || [1, 1, 1],
+        position: c.position || [0, 0, 0],
+        color: c.color || '#4a5568'
+      };
+      if (c.rotation && (c.rotation[0] !== 0 || c.rotation[1] !== 0 || c.rotation[2] !== 0)) {
+        opts.rotation = c.rotation;
+      }
+      if (c.texturePreset) opts.texturePreset = c.texturePreset;
+      if (c.materialType) opts.materialType = c.materialType;
+      if (c.roughness !== undefined) opts.roughness = c.roughness;
+      if (c.metalness !== undefined) opts.metalness = c.metalness;
+      if (c.emissive) opts.emissive = c.emissive;
+      if (c.emissiveIntensity !== undefined) opts.emissiveIntensity = c.emissiveIntensity;
+      if (c.opacity !== undefined && c.opacity < 1.0) opts.opacity = c.opacity;
+      if (c.transparent) opts.transparent = true;
+      if (c.wireframe) opts.wireframe = true;
+      if (c.label) opts.label = c.label;
+
+      out += `builder.${fn}(${JSON.stringify(opts, null, 2)});\n\n`;
     });
+
+    if (spec.animations && spec.animations.length > 0) {
+      out += `// Pistas de Animación Cinemática\n`;
+      spec.animations.forEach((anim) => {
+        out += `builder.addAnimation(${JSON.stringify(anim, null, 2)});\n\n`;
+      });
+    }
+
     return out;
   }
 
   function generatePythonFromSpec(spec: ModelSpec): string {
-    const className = spec.name.replace(/[^a-zA-Z0-9]/g, '') + 'Generator';
-    return `import bpy\nfrom ...core.base_generator import BaseAssetGenerator\nfrom ...core.mesh_builder import MeshBuilder\n\nclass ${className}(BaseAssetGenerator):\n    """Generador procedural 3D para ${spec.name}."""\n    def generate(self) -> bpy.types.Object:\n        obj, bm = self.create_mesh_object("${spec.id}")\n        # ${spec.components.length} componentes definidos\n        self.finalize_mesh(obj, bm)\n        return obj\n`;
+    const className = (spec.name.replace(/[^a-zA-Z0-9]/g, '') || 'Model') + 'Generator';
+    const fps = 30;
+
+    let compCode = '';
+    spec.components.forEach((c, idx) => {
+      const pos = c.position || [0, 0, 0];
+      const rot = c.rotation || [0, 0, 0];
+      const scale = c.scale || [1, 1, 1];
+      const size = c.size || [1, 1, 1];
+
+      let bmeshPrimitive = '';
+      if (c.shape === 'cylinder') {
+        const r1 = size[0] || 0.4;
+        const r2 = size[1] || 0.4;
+        const h = size[2] || 1.0;
+        const segs = size[3] || 16;
+        bmeshPrimitive = `bmesh.ops.create_cone(bm, cap_ends=True, cap_triangles=False, segments=${segs}, radius1=${r1}, radius2=${r2}, depth=${h})`;
+      } else if (c.shape === 'sphere') {
+        const rad = size[0] || 0.5;
+        const uSegs = size[1] || 16;
+        const vSegs = size[2] || 12;
+        bmeshPrimitive = `bmesh.ops.create_uvsphere(bm, u_segments=${uSegs}, v_segments=${vSegs}, radius=${rad})`;
+      } else {
+        bmeshPrimitive = `bmesh.ops.create_cube(bm, size=1.0)\n        bmesh.ops.scale(bm, vec=(${size[0]}, ${size[1]}, ${size[2]}), verts=bm.verts)`;
+      }
+
+      compCode += `        # Componente: ${c.name}\n` +
+        `        mesh_${idx} = bpy.data.meshes.new("${c.name}_mesh")\n` +
+        `        obj_${idx} = bpy.data.objects.new("${c.name}", mesh_${idx})\n` +
+        `        bpy.context.collection.objects.link(obj_${idx})\n` +
+        `        obj_${idx}.parent = root\n` +
+        `        created_objects["${c.name}"] = obj_${idx}\n\n` +
+        `        bm = bmesh.new()\n` +
+        `        ${bmeshPrimitive}\n` +
+        `        bm.to_mesh(mesh_${idx})\n` +
+        `        bm.free()\n\n` +
+        `        obj_${idx}.location = (${pos[0]}, ${pos[1]}, ${pos[2]})\n` +
+        `        obj_${idx}.rotation_euler = (math.radians(${rot[0]}), math.radians(${rot[1]}), math.radians(${rot[2]}))\n` +
+        `        obj_${idx}.scale = (${scale[0]}, ${scale[1]}, ${scale[2]})\n\n`;
+    });
+
+    let animCode = '';
+    if (spec.animations && spec.animations.length > 0) {
+      animCode += `        # 2. Pistas de Animación Cinemática para Blender Timeline\n` +
+        `        scene = bpy.context.scene\n` +
+        `        scene.render.fps = ${fps}\n\n`;
+
+      spec.animations.forEach((clip, clipIdx) => {
+        const endFrame = Math.max(1, Math.round(clip.duration * fps));
+        animCode += `        # Clip: ${clip.name} (duración ${clip.duration}s)\n` +
+          `        scene.frame_start = 0\n` +
+          `        scene.frame_end = ${endFrame}\n`;
+
+        clip.tracks.forEach((track) => {
+          animCode += `        target_obj = created_objects.get("${track.targetName}")\n` +
+            `        if target_obj:\n` +
+            `            if not target_obj.animation_data:\n` +
+            `                target_obj.animation_data_create()\n` +
+            `            action_${clipIdx} = bpy.data.actions.new(name="${clip.name}_${track.targetName}")\n` +
+            `            target_obj.animation_data.action = action_${clipIdx}\n`;
+
+          track.keyframes.forEach((kf) => {
+            const frame = Math.round(kf.time * fps);
+            if (track.property === 'position') {
+              animCode += `            target_obj.location = (${kf.value[0]}, ${kf.value[1]}, ${kf.value[2]})\n` +
+                `            target_obj.keyframe_insert(data_path="location", frame=${frame})\n`;
+            } else if (track.property === 'rotation') {
+              animCode += `            target_obj.rotation_euler = (math.radians(${kf.value[0]}), math.radians(${kf.value[1]}), math.radians(${kf.value[2]}))\n` +
+                `            target_obj.keyframe_insert(data_path="rotation_euler", frame=${frame})\n`;
+            } else if (track.property === 'scale') {
+              animCode += `            target_obj.scale = (${kf.value[0]}, ${kf.value[1]}, ${kf.value[2]})\n` +
+                `            target_obj.keyframe_insert(data_path="scale", frame=${frame})\n`;
+            }
+          });
+          animCode += `\n`;
+        });
+      });
+    }
+
+    return `"""
+Generador procedural 3D para Blender 5.0
+Generado automáticamente por ModelCoder Studio
+Modelo: ${spec.name} (${spec.id})
+"""
+import bpy
+import bmesh
+import math
+
+class ${className}:
+    def __init__(self):
+        self.fps = ${fps}
+
+    def generate(self) -> bpy.types.Object:
+        root = bpy.data.objects.new("${spec.name}", None)
+        root.empty_display_type = 'ARROWS'
+        bpy.context.collection.objects.link(root)
+
+        created_objects = {}
+
+        # 1. Geometría de Componentes
+${compCode}
+${animCode}        return root
+
+# Ejecución directa en Blender Scripting
+if __name__ == "__main__":
+    generator = ${className}()
+    generator.generate()
+`;
   }
 
   runCompileBtn?.addEventListener('click', () => compileCode());
@@ -3662,10 +4197,19 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     exportGlbBtn.textContent = '⏳ VERIFICANDO GLB...';
     try {
       const filename = currentSpec.name.toLowerCase().replace(/[^a-z0-9]/g, '_') || 'modelcoder_asset';
+      let compiledAnims: any[] | undefined = undefined;
+      if (currentSpec.animations && currentSpec.animations.length > 0) {
+        compiledAnims = AnimationEngine.compileClipsToThree(currentSpec.animations, rootObj);
+      }
       const result = await viewport.executeWithOriginalMaterials((cleanRoot) =>
-        GLBExporterService.exportAndVerifyGLB(cleanRoot, filename)
+        GLBExporterService.exportAndVerifyGLB(
+          cleanRoot,
+          filename,
+          compiledAnims && compiledAnims.length > 0 ? { animations: compiledAnims } : undefined
+        )
       );
-      showStudioToast(`✅ Exportado: ${filename}.glb (${(result.sizeBytes / 1024).toFixed(1)} KB · ${result.triangleCount} tris)`);
+      const animInfo = result.animationCount ? ` · 🎬 ${result.animationCount} anim${result.animationCount > 1 ? 's' : ''}` : '';
+      showStudioToast(`✅ Exportado: ${filename}.glb (${(result.sizeBytes / 1024).toFixed(1)} KB · ${result.triangleCount} tris${animInfo})`);
     } catch (err: any) {
       showStudioToast(`⚠️ Fallo de exportación: ${err.message}`, true);
     } finally {
@@ -3701,6 +4245,317 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     } finally {
       exportZipBtn.textContent = '📦 PAQUETE (.ZIP)';
     }
+  });
+
+  // --- ANIMATION SYSTEM (GLTF / GLB EXPORTABLE ANIMATION TRACKS) ---
+
+  let selectedPresetType: AnimationPresetType = 'sliding_door';
+
+  function updateAnimationTimelineBar(): void {
+    if (!animClipSelect) return;
+
+    const anims = currentSpec.animations || [];
+    animClipSelect.innerHTML = '';
+
+    if (anims.length === 0) {
+      const opt = document.createElement('option');
+      opt.value = '';
+      opt.textContent = '(Sin animaciones)';
+      animClipSelect.appendChild(opt);
+      if (btnAnimPlay) { btnAnimPlay.disabled = true; btnAnimPlay.textContent = '▶ PLAY'; }
+      if (btnAnimStop) btnAnimStop.disabled = true;
+      if (animTimeSlider) { animTimeSlider.disabled = true; animTimeSlider.value = '0'; }
+      if (animTimeDisplay) animTimeDisplay.textContent = '0.00s / 0.00s';
+      if (btnExportVideo) btnExportVideo.disabled = false;
+      if (btnAnimDelete) btnAnimDelete.style.display = 'none';
+      return;
+    }
+
+    anims.forEach((clip) => {
+      const opt = document.createElement('option');
+      opt.value = clip.name;
+      const targetName = clip.tracks[0]?.targetComponent || 'pieza';
+      opt.textContent = `🎬 ${clip.name} (${targetName} · ${clip.duration.toFixed(1)}s)`;
+      animClipSelect.appendChild(opt);
+    });
+
+    if (btnAnimPlay) btnAnimPlay.disabled = false;
+    if (btnAnimStop) btnAnimStop.disabled = false;
+    if (animTimeSlider) animTimeSlider.disabled = false;
+    if (btnExportVideo) btnExportVideo.disabled = false;
+    if (btnAnimDelete) btnAnimDelete.style.display = 'inline-block';
+
+    const info = viewport?.getActiveClipInfo();
+    if (info && info.name) {
+      animClipSelect.value = info.name;
+      if (animTimeSlider) {
+        animTimeSlider.max = String(info.duration);
+        animTimeSlider.value = String(info.time);
+      }
+      if (animTimeDisplay) {
+        animTimeDisplay.textContent = `${info.time.toFixed(2)}s / ${info.duration.toFixed(2)}s`;
+      }
+      if (btnAnimPlay) {
+        btnAnimPlay.textContent = info.isPlaying ? '⏸ PAUSA' : '▶ PLAY';
+      }
+    } else {
+      const first = anims[0];
+      if (animTimeSlider) {
+        animTimeSlider.max = String(first.duration);
+        animTimeSlider.value = '0';
+      }
+      if (animTimeDisplay) {
+        animTimeDisplay.textContent = `0.00s / ${first.duration.toFixed(2)}s`;
+      }
+    }
+  }
+
+  function renderPresetCards(): void {
+    if (!animPresetsGrid) return;
+    const presets = AnimationEngine.getAvailablePresets();
+    animPresetsGrid.innerHTML = '';
+
+    presets.forEach((p) => {
+      const card = document.createElement('div');
+      card.className = `anim-preset-card ${p.type === selectedPresetType ? 'active' : ''}`;
+      card.dataset.preset = p.type;
+      card.innerHTML = `
+        <div class="anim-preset-icon">${p.icon}</div>
+        <div class="anim-preset-title">${p.label}</div>
+        <div class="anim-preset-desc">${p.description}</div>
+      `;
+      card.addEventListener('click', () => {
+        selectedPresetType = p.type;
+        renderPresetCards();
+        updatePresetConfigForm();
+      });
+      animPresetsGrid.appendChild(card);
+    });
+  }
+
+  function updatePresetConfigForm(): void {
+    const target = animTargetCompSelect?.value || 'pieza';
+    if (!animClipNameInput || !animParamMagnitudeLabel || !animMagnitudeInput || !animDurationInput || !animLoopSelect) return;
+
+    switch (selectedPresetType) {
+      case 'sliding_door':
+        animClipNameInput.value = `Abrir_${target}`;
+        animParamMagnitudeLabel.textContent = 'Distancia de apertura (m):';
+        animMagnitudeInput.value = '1.0';
+        animDurationInput.value = '1.6';
+        animLoopSelect.value = 'pingpong';
+        break;
+      case 'hinge_lid':
+        animClipNameInput.value = `Tapa_${target}`;
+        animParamMagnitudeLabel.textContent = 'Ángulo de apertura (grados °):';
+        animMagnitudeInput.value = '90';
+        animDurationInput.value = '1.8';
+        animLoopSelect.value = 'pingpong';
+        break;
+      case 'button_press':
+        animClipNameInput.value = `Pulsar_${target}`;
+        animParamMagnitudeLabel.textContent = 'Profundidad de pulsación (m):';
+        animMagnitudeInput.value = '-0.1';
+        animDurationInput.value = '0.8';
+        animLoopSelect.value = 'pingpong';
+        break;
+      case 'spin_continuous':
+        animClipNameInput.value = `Giro_${target}`;
+        animParamMagnitudeLabel.textContent = 'Rotación completa (360°):';
+        animMagnitudeInput.value = '360';
+        animDurationInput.value = '2.0';
+        animLoopSelect.value = 'repeat';
+        break;
+      case 'mechanical_deploy':
+        animClipNameInput.value = `Despliegue_${target}`;
+        animParamMagnitudeLabel.textContent = 'Distancia de extensión (m):';
+        animMagnitudeInput.value = '0.8';
+        animDurationInput.value = '2.2';
+        animLoopSelect.value = 'pingpong';
+        break;
+      case 'idle_hover':
+        animClipNameInput.value = `Hover_${target}`;
+        animParamMagnitudeLabel.textContent = 'Amplitud de flotación (m):';
+        animMagnitudeInput.value = '0.15';
+        animDurationInput.value = '2.5';
+        animLoopSelect.value = 'repeat';
+        break;
+    }
+  }
+
+  function openAnimationPresetModal(preselectedComponent?: string, preselectedPreset?: AnimationPresetType): void {
+    if (!modalAnimPreset) return;
+
+    if (animTargetCompSelect) {
+      animTargetCompSelect.innerHTML = '';
+      currentSpec.components.forEach((c) => {
+        const opt = document.createElement('option');
+        opt.value = c.name;
+        opt.textContent = `${c.name} (${c.shape})`;
+        animTargetCompSelect.appendChild(opt);
+      });
+
+      const currentCompName = preselectedComponent || (selectedComponentIndex !== null ? currentSpec.components[selectedComponentIndex]?.name : null);
+      if (currentCompName && currentSpec.components.some((c) => c.name === currentCompName)) {
+        animTargetCompSelect.value = currentCompName;
+      }
+    }
+
+    if (preselectedPreset) {
+      selectedPresetType = preselectedPreset;
+    }
+
+    renderPresetCards();
+    updatePresetConfigForm();
+    modalAnimPreset.showModal();
+  }
+
+  // Animation timeline buttons
+  btnAnimPlay?.addEventListener('click', () => {
+    const info = viewport?.getActiveClipInfo();
+    if (!info) return;
+    if (info.isPlaying) {
+      viewport?.pauseAnimation();
+      if (btnAnimPlay) btnAnimPlay.textContent = '▶ PLAY';
+    } else {
+      viewport?.playAnimation(animClipSelect?.value || undefined);
+      if (btnAnimPlay) btnAnimPlay.textContent = '⏸ PAUSA';
+    }
+  });
+
+  btnAnimStop?.addEventListener('click', () => {
+    viewport?.stopAnimation();
+    if (btnAnimPlay) btnAnimPlay.textContent = '▶ PLAY';
+    if (animTimeSlider) animTimeSlider.value = '0';
+  });
+
+  animTimeSlider?.addEventListener('input', () => {
+    const t = parseFloat(animTimeSlider.value) || 0;
+    viewport?.seekAnimation(t);
+  });
+
+  animSpeedSelect?.addEventListener('change', () => {
+    const spd = parseFloat(animSpeedSelect.value) || 1.0;
+    viewport?.setAnimationSpeed(spd);
+  });
+
+  animClipSelect?.addEventListener('change', () => {
+    const name = animClipSelect.value;
+    if (name) {
+      viewport?.playAnimation(name);
+      if (btnAnimPlay) btnAnimPlay.textContent = '⏸ PAUSA';
+    }
+  });
+
+  btnAnimDelete?.addEventListener('click', () => {
+    const activeName = animClipSelect?.value;
+    if (!activeName) return;
+    if (confirm(`¿Eliminar la pista de animación "${activeName}"?`)) {
+      currentSpec.animations = (currentSpec.animations || []).filter((a) => a.name !== activeName);
+      renderCurrentSpec('visual', true, true);
+      showStudioToast(`🗑️ Pista eliminada: ${activeName}`);
+    }
+  });
+
+  btnExportVideo?.addEventListener('click', async () => {
+    if (!viewport) return;
+    const clipInfo = viewport.getActiveClipInfo();
+    const clipDuration = clipInfo?.duration || 2.5;
+
+    btnExportVideo.disabled = true;
+    const originalText = btnExportVideo.textContent;
+    btnExportVideo.textContent = '🔴 0%';
+
+    showStudioToast(`🎬 Grabando bucle de video WebM (${clipDuration.toFixed(1)}s)...`);
+
+    try {
+      const blob = await viewport.recordAnimationLoop({
+        duration: clipDuration,
+        fps: 30,
+        onProgress: (p) => {
+          btnExportVideo.textContent = `🔴 ${Math.round(p * 100)}%`;
+        }
+      });
+
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const cleanName = currentSpec.name.toLowerCase().replace(/[^a-z0-9]/g, '_') || 'model';
+      a.href = url;
+      a.download = `${cleanName}_animation.webm`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+
+      showStudioToast(`✅ Video WebM descargado: ${cleanName}_animation.webm`);
+    } catch (err: any) {
+      console.error('[ModelCoder] Error grabando video:', err);
+      showStudioToast(`⚠️ No se pudo grabar el video: ${err.message}`, true);
+    } finally {
+      btnExportVideo.disabled = false;
+      btnExportVideo.textContent = originalText;
+    }
+  });
+
+  btnOpenAnimModal?.addEventListener('click', () => {
+    openAnimationPresetModal();
+  });
+
+  closeAnimModalBtn?.addEventListener('click', () => {
+    modalAnimPreset?.close();
+  });
+
+  btnCancelAnimModal?.addEventListener('click', () => {
+    modalAnimPreset?.close();
+  });
+
+  animTargetCompSelect?.addEventListener('change', () => {
+    updatePresetConfigForm();
+  });
+
+  btnConfirmAddAnim?.addEventListener('click', () => {
+    const targetComp = animTargetCompSelect?.value;
+    if (!targetComp) {
+      showStudioToast('⚠️ Selecciona un componente objetivo para animar.', true);
+      return;
+    }
+
+    const name = animClipNameInput?.value.trim() || `Anim_${targetComp}`;
+    const axis = (animAxisSelect?.value as 'x' | 'y' | 'z') || 'y';
+    const magnitude = parseFloat(animMagnitudeInput?.value || '1.0');
+    const duration = parseFloat(animDurationInput?.value || '1.6');
+    const loop = (animLoopSelect?.value as 'repeat' | 'pingpong' | 'once') || 'pingpong';
+
+    const comp = currentSpec.components.find((c) => c.name === targetComp);
+    const initialPos = comp?.position || [0, 0, 0];
+    const initialRot = comp?.rotation || [0, 0, 0];
+
+    const clip = AnimationEngine.createPresetClip(selectedPresetType, {
+      targetComponent: targetComp,
+      name,
+      axis,
+      distance: magnitude,
+      openAngleDeg: magnitude,
+      pressDepth: magnitude,
+      extendDistance: magnitude,
+      amplitude: magnitude,
+      duration,
+      loop,
+      initialPos,
+      initialRot
+    });
+
+    currentSpec.animations = currentSpec.animations || [];
+    const existingIdx = currentSpec.animations.findIndex((a) => a.name === clip.name);
+    if (existingIdx >= 0) {
+      currentSpec.animations[existingIdx] = clip;
+    } else {
+      currentSpec.animations.push(clip);
+    }
+
+    modalAnimPreset?.close();
+    renderCurrentSpec('visual', true, true);
+    if (animClipSelect) animClipSelect.value = clip.name;
+    viewport?.playAnimation(clip.name);
+    showStudioToast(`⚡ Animación creada: ${clip.name} · Exportable a GLB`);
   });
 
   // Modals & Navigation
@@ -4279,6 +5134,7 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
 
   const btnDownloadStory = document.getElementById('btn-download-story');
   const btnCopyStoryClipboard = document.getElementById('btn-copy-story-clipboard');
+  const btnDownloadStoryVideo = document.getElementById('btn-download-story-video') as HTMLButtonElement | null;
   const btnShareStory = document.getElementById('btn-share-story');
 
   const btnFormatStory = document.getElementById('btn-format-story');
@@ -4501,6 +5357,190 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     }
   });
 
+  btnDownloadStoryVideo?.addEventListener('click', async () => {
+    if (!storyPreviewCanvas || !viewport) return;
+    const originalText = btnDownloadStoryVideo.textContent;
+    btnDownloadStoryVideo.disabled = true;
+    btnDownloadStoryVideo.textContent = '🔴 REEL 0%';
+
+    const cleanName = (storyInputTitle?.value.trim() || currentSpec.name || 'modelo')
+      .toLowerCase().replace(/[^a-z0-9]/g, '_');
+    const suffix = activeSocialFormat === 'post' ? 'post_reel' : 'story_reel';
+    const filename = `${cleanName}_${suffix}.webm`;
+
+    showStudioToast(`🎬 Grabando Reel animado (${activeSocialFormat === 'post' ? '1:1' : '9:16'})...`);
+
+    try {
+      const fps = 30;
+      const targetDuration = 3.0; // 3-second loop
+      const stream = (storyPreviewCanvas as any).captureStream(fps);
+
+      let mimeType = 'video/webm;codecs=vp9';
+      if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = 'video/webm;codecs=vp8';
+      if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = 'video/webm';
+
+      const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 6_000_000 });
+      const chunks: BlobPart[] = [];
+      recorder.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) chunks.push(e.data);
+      };
+
+      await new Promise<void>((resolve, reject) => {
+        recorder.onstop = () => resolve();
+        recorder.onerror = (e) => reject(e);
+
+        recorder.start();
+        const startTime = performance.now();
+        const totalMs = targetDuration * 1000;
+
+        const intervalId = setInterval(async () => {
+          const elapsed = performance.now() - startTime;
+          const prog = Math.min(1.0, elapsed / totalMs);
+          btnDownloadStoryVideo.textContent = `🔴 ${Math.round(prog * 100)}%`;
+
+          cachedModelRenderCanvas = await viewport.captureStoryRender({
+            width: 1080,
+            height: 1080,
+            autoFrame: false
+          });
+          redrawStoryPreview();
+
+          if (elapsed >= totalMs) {
+            clearInterval(intervalId);
+            if (recorder.state === 'recording') recorder.stop();
+          }
+        }, 66);
+      });
+
+      const blob = new Blob(chunks, { type: mimeType });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+
+      showStudioToast(`✅ Video Reel descargado: ${filename}`);
+    } catch (e: any) {
+      console.warn('[ModelCoder] Error grabando reel:', e);
+      showStudioToast(`⚠️ No se pudo grabar el reel: ${e?.message || 'Error en MediaRecorder'}`, true);
+    } finally {
+      btnDownloadStoryVideo.disabled = false;
+      btnDownloadStoryVideo.textContent = originalText;
+    }
+  });
+
+  // --- Share Model via URL ---
+  const btnShareUrl = document.getElementById('btn-share-url');
+  const modalShareUrl = document.getElementById('modal-share-url') as HTMLDialogElement | null;
+  const closeShareModalBtn = document.getElementById('close-share-modal-btn');
+  const shareUrlInput = document.getElementById('share-url-input') as HTMLInputElement | null;
+  const btnCopyShareUrl = document.getElementById('btn-copy-share-url');
+
+  btnShareUrl?.addEventListener('click', () => {
+    const token = serializeSpecToHash(currentSpec);
+    if (!token) {
+      showStudioToast('⚠️ No se pudo generar el enlace del modelo.', true);
+      return;
+    }
+    const fullUrl = `${window.location.origin}/studio#model=${token}`;
+    if (shareUrlInput) {
+      shareUrlInput.value = fullUrl;
+    }
+    if (modalShareUrl) {
+      modalShareUrl.showModal();
+    }
+    try {
+      navigator.clipboard.writeText(fullUrl);
+      showStudioToast('📋 ¡Enlace copiado al portapapeles!');
+    } catch {
+      // safe fallback
+    }
+  });
+
+  btnCopyShareUrl?.addEventListener('click', () => {
+    if (shareUrlInput && shareUrlInput.value) {
+      navigator.clipboard.writeText(shareUrlInput.value);
+      showStudioToast('📋 ¡Enlace copiado al portapapeles!');
+    }
+  });
+
+  closeShareModalBtn?.addEventListener('click', () => {
+    modalShareUrl?.close();
+  });
+
+  // --- Game Engine Integration Code (Godot 4, Unity, Three.js) ---
+  const btnGamedevCode = document.getElementById('btn-gamedev-code');
+  const modalGamedevCode = document.getElementById('modal-gamedev-code') as HTMLDialogElement | null;
+  const closeGamedevModalBtn = document.getElementById('close-gamedev-modal-btn');
+  const gamedevCodeOutput = document.getElementById('gamedev-code-output');
+  const btnCopyEngineScript = document.getElementById('btn-copy-engine-script');
+  const btnDownloadEngineScript = document.getElementById('btn-download-engine-script');
+  const gamedevTabs = document.querySelectorAll('.btn-gamedev-tab');
+
+  let activeEngineTab: 'godot' | 'unity' | 'threejs' = 'godot';
+  let cachedEngineSnippets = { godot: '', unity: '', threejs: '' };
+
+  function updateGameDevModalCode(): void {
+    const cleanId = (currentSpec.id ? currentSpec.id.split('.').pop() : 'model') || 'model';
+    cachedEngineSnippets = generateAllSnippets(currentSpec, `${cleanId}.glb`);
+    if (gamedevCodeOutput) {
+      gamedevCodeOutput.textContent = cachedEngineSnippets[activeEngineTab];
+    }
+  }
+
+  btnGamedevCode?.addEventListener('click', () => {
+    updateGameDevModalCode();
+    modalGamedevCode?.showModal();
+  });
+
+  closeGamedevModalBtn?.addEventListener('click', () => {
+    modalGamedevCode?.close();
+  });
+
+  gamedevTabs.forEach((tab) => {
+    tab.addEventListener('click', (e) => {
+      gamedevTabs.forEach(t => t.classList.remove('active'));
+      const target = e.currentTarget as HTMLElement;
+      target.classList.add('active');
+      activeEngineTab = (target.dataset.engine as any) || 'godot';
+      updateGameDevModalCode();
+    });
+  });
+
+  btnCopyEngineScript?.addEventListener('click', () => {
+    const code = cachedEngineSnippets[activeEngineTab];
+    if (code) {
+      navigator.clipboard.writeText(code);
+      showStudioToast(`📋 Script para ${activeEngineTab.toUpperCase()} copiado.`);
+    }
+  });
+
+  btnDownloadEngineScript?.addEventListener('click', () => {
+    const code = cachedEngineSnippets[activeEngineTab];
+    if (!code) return;
+    const cleanName = (currentSpec.name || 'model').toLowerCase().replace(/[^a-z0-9]/g, '_');
+    const extensions: Record<string, string> = { godot: 'gd', unity: 'cs', threejs: 'ts' };
+    const ext = extensions[activeEngineTab] || 'txt';
+    const blob = new Blob([code], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${cleanName}_controller.${ext}`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+    showStudioToast(`💾 Archivo ${a.download} descargado.`);
+  });
+
+  // Check URL Hash for shared model on initial load
+  if (typeof window !== 'undefined' && window.location.hash) {
+    const hashSpec = deserializeSpecFromHash(window.location.hash);
+    if (hashSpec) {
+      currentSpec = hashSpec;
+      showStudioToast(`📦 ¡Modelo "${currentSpec.name}" cargado desde enlace compartido!`);
+    }
+  }
+
   // Initial Load
   pushHistoryState(currentSpec);
   setStudioWorkspace('layout');
@@ -4660,6 +5700,26 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
   .history-actions-group {
     display: flex;
     gap: 0.3rem;
+  }
+
+  .btn-gamedev-tab {
+    background: #0f1626;
+    border: 1px solid var(--ps1-steel);
+    color: var(--text-dim);
+    transition: all 0.15s ease;
+  }
+
+  .btn-gamedev-tab:hover {
+    background: #192744;
+    color: var(--ps1-gold);
+    border-color: var(--ps1-gold);
+  }
+
+  .btn-gamedev-tab.active {
+    background: #003344;
+    color: var(--ps1-cyan);
+    border-color: var(--ps1-cyan);
+    box-shadow: 0 0 8px rgba(0, 240, 255, 0.3);
   }
 
   .topbar-btn-group {
@@ -6464,5 +7524,135 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
   .btn-mini.btn-magenta:hover {
     border-color: #fbcfe8;
     box-shadow: 0 0 8px rgba(236, 72, 153, 0.4);
+  }
+
+  /* Animation Timeline Studio Bar */
+  .animation-studio-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.35rem 0.6rem;
+    background: #080d18;
+    border-top: 1px solid #1a253a;
+    flex-wrap: wrap;
+    z-index: 10;
+  }
+
+  .anim-bar-left, .anim-bar-center, .anim-bar-right {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .anim-bar-center {
+    flex: 1;
+    min-width: 220px;
+  }
+
+  .anim-title-tag {
+    font-size: 0.68rem;
+    font-family: var(--font-pixel);
+    color: var(--ps1-gold);
+    white-space: nowrap;
+  }
+
+  .anim-clip-select {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    background: #0e1726;
+    color: var(--text-bright);
+    border: 1px solid #233554;
+    padding: 0.2rem 0.4rem;
+    max-width: 220px;
+    border-radius: 2px;
+  }
+
+  .anim-scrubber-wrap {
+    flex: 1;
+    display: flex;
+    align-items: center;
+  }
+
+  .anim-scrubber-slider {
+    width: 100%;
+    accent-color: var(--ps1-cyan);
+    cursor: pointer;
+  }
+
+  .anim-time-display {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--ps1-cyan);
+    white-space: nowrap;
+    min-width: 85px;
+    text-align: right;
+  }
+
+  .anim-speed-select {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    background: #0e1726;
+    color: var(--text-muted);
+    border: 1px solid #233554;
+    padding: 0.2rem 0.35rem;
+    border-radius: 2px;
+  }
+
+  /* Preset Modal Cards Grid */
+  .anim-presets-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(185px, 1fr));
+    gap: 0.5rem;
+  }
+
+  .anim-preset-card {
+    background: #0b121e;
+    border: 1px solid #1f2d45;
+    padding: 0.6rem;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+
+  .anim-preset-card:hover {
+    border-color: var(--ps1-cyan);
+    background: #111b2d;
+  }
+
+  .anim-preset-card.active {
+    border-color: var(--ps1-gold);
+    background: #171d15;
+    box-shadow: 0 0 10px rgba(255, 176, 0, 0.25);
+  }
+
+  .anim-preset-icon {
+    font-size: 1.3rem;
+  }
+
+  .anim-preset-title {
+    font-family: var(--font-pixel);
+    font-size: 0.7rem;
+    color: var(--text-bright);
+  }
+
+  .anim-preset-desc {
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    color: var(--text-muted);
+    line-height: 1.25;
+  }
+
+  .quick-preset-chips .btn-chip-preset {
+    font-size: 0.68rem;
+    padding: 0.3rem 0.4rem;
+    text-align: left;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 </style>

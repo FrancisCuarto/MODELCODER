@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { ProceduralEngine } from './procedural-engine.ts';
+import { AnimationEngine } from './animation-engine.ts';
 import type { ModelSpec } from './types.ts';
 
 export interface ExportVerificationResult {
@@ -9,6 +10,8 @@ export interface ExportVerificationResult {
   sizeBytes: number;
   triangleCount: number;
   vertexCount: number;
+  animationCount?: number;
+  animationNames?: string[];
   error?: string;
 }
 
@@ -91,14 +94,15 @@ export class GLBExporterService {
    */
   public static async exportAndVerifyGLB(
     rootObj: THREE.Object3D,
-    filename = 'modelcoder_asset'
+    filename = 'modelcoder_asset',
+    options?: { animations?: THREE.AnimationClip[] }
   ): Promise<ExportVerificationResult> {
     if (!rootObj) {
       throw new Error('No hay ningún objeto 3D activo para exportar.');
     }
 
-    // 1. Export scene to binary GLB ArrayBuffer
-    const glbBuffer = await this.exportToArrayBuffer(rootObj);
+    // 1. Export scene to binary GLB ArrayBuffer with optional animation tracks
+    const glbBuffer = await this.exportToArrayBuffer(rootObj, options);
 
     // 2. Mandatory Verification Step: Test-import the exported GLB buffer
     const verification = await this.verifyGLBBuffer(glbBuffer);
@@ -125,10 +129,17 @@ export class GLBExporterService {
   /**
    * Generates a Three.js hierarchy from a ModelSpec and exports it to a binary GLB ArrayBuffer.
    */
-  public static async exportSpec(spec: ModelSpec): Promise<ArrayBuffer> {
+  public static async exportSpec(
+    spec: ModelSpec,
+    options?: { animations?: THREE.AnimationClip[] }
+  ): Promise<ArrayBuffer> {
     const { group } = ProceduralEngine.buildModelFromSpec(spec);
     try {
-      return await this.exportToArrayBuffer(group);
+      let anims = options?.animations;
+      if (!anims && spec.animations && spec.animations.length > 0) {
+        anims = AnimationEngine.compileClipsToThree(spec.animations, group);
+      }
+      return await this.exportToArrayBuffer(group, anims && anims.length > 0 ? { animations: anims } : undefined);
     } finally {
       ProceduralEngine.disposeHierarchy(group);
     }
@@ -137,7 +148,10 @@ export class GLBExporterService {
   /**
    * Converts a Three.js hierarchy to an ArrayBuffer using GLTFExporter.
    */
-  public static exportToArrayBuffer(obj: THREE.Object3D): Promise<ArrayBuffer> {
+  public static exportToArrayBuffer(
+    obj: THREE.Object3D,
+    options?: { animations?: THREE.AnimationClip[] }
+  ): Promise<ArrayBuffer> {
     this.ensureNodePolyfills();
     const stashedMaps: Array<{ mat: any; normalMap: any; roughnessMap: any }> = [];
     obj.traverse((node: any) => {
@@ -161,6 +175,15 @@ export class GLBExporterService {
 
     return new Promise((resolve, reject) => {
       const exporter = new GLTFExporter();
+      const exportOptions: any = {
+        binary: true,
+        embedImages: true,
+        includeCustomExtensions: true
+      };
+      if (options?.animations && options.animations.length > 0) {
+        exportOptions.animations = options.animations;
+      }
+
       exporter.parse(
         obj,
         (result) => {
@@ -178,11 +201,7 @@ export class GLBExporterService {
           restoreMaps();
           reject(new Error(`Error durante exportación GLTFExporter: ${error}`));
         },
-        {
-          binary: true,
-          embedImages: true,
-          includeCustomExtensions: true
-        }
+        exportOptions
       );
     });
   }
@@ -253,11 +272,16 @@ export class GLBExporterService {
         };
       }
 
+      const animCount = gltf.animations ? gltf.animations.length : 0;
+      const animNames = gltf.animations ? gltf.animations.map((a: any) => a.name) : [];
+
       return {
         verified: true,
         sizeBytes: buffer.byteLength,
         triangleCount: Math.round(triCount),
-        vertexCount: Math.round(vertCount)
+        vertexCount: Math.round(vertCount),
+        animationCount: animCount,
+        animationNames: animNames
       };
     } catch (err: any) {
       return {

@@ -8,6 +8,17 @@ catalog.forEach((item) => {
   categoryCounts[item.category] = (categoryCounts[item.category] || 0) + 1;
 });
 
+const ANIMATED_FAMILIES = new Set([
+  'antenna_dish',
+  'alarm_siren',
+  'security_camera',
+  'door',
+  'maintenance_hatch',
+  'crate'
+]);
+
+const animatedCount = catalog.filter((item) => ANIMATED_FAMILIES.has(item.family)).length;
+
 const categories = [
   { id: 'all', label: 'TODOS', count: catalog.length },
   { id: 'furniture', label: 'MOBILIARIO', count: categoryCounts['furniture'] || 0 },
@@ -159,6 +170,14 @@ const categories = [
             </button>
           ))}
           <button 
+            class="filter-btn filter-btn-anim"
+            id="btn-filter-animated"
+            data-category="animated"
+            title="Mostrar modelos interactivos con animaciones cinemáticas"
+          >
+            [ 🎬 ANIMADOS: {animatedCount} ]
+          </button>
+          <button 
             class="filter-btn filter-btn-fav"
             id="btn-filter-favorites"
             data-category="favorites"
@@ -173,12 +192,15 @@ const categories = [
 
   <!-- Generator Cards Grid -->
   <div class="generators-grid" id="generators-container">
-    {catalog.map((gen) => (
+    {catalog.map((gen) => {
+      const isAnim = ANIMATED_FAMILIES.has(gen.family);
+      return (
       <article 
-        class="ps1-window generator-card"
+        class={`ps1-window generator-card ${isAnim ? 'card-animated' : ''}`}
         data-family={gen.family}
         data-category={gen.category}
-        data-tags={gen.tags.join(' ')}
+        data-animated={isAnim ? "true" : "false"}
+        data-tags={`${gen.tags.join(' ')}${isAnim ? ' animacion anim animado cinetica movimiento' : ''}`}
         data-name={gen.name.toLowerCase()}
         data-desc={gen.description.toLowerCase()}
       >
@@ -198,6 +220,9 @@ const categories = [
               <span class="fav-star">☆</span>
             </button>
             <span class="card-category-badge">[{gen.category.toUpperCase()}]</span>
+            {isAnim && (
+              <span class="card-anim-tag" title="Modelo 3D con animación cinemática integrada">🎬 ANIMADO</span>
+            )}
           </div>
           <span class="card-license-tag">{gen.license}</span>
         </div>
@@ -225,6 +250,11 @@ const categories = [
             <span class={`category-badge category-${gen.category}`}>
               {gen.category}
             </span>
+            {isAnim && (
+              <span class="category-badge badge-anim-pill" title="Pista de animación lista para motores de juegos">
+                🎬 ANIMACIÓN
+              </span>
+            )}
             <span class="preset-badge">
               {gen.presets.length} PRESET{gen.presets.length === 1 ? '' : 'S'}
             </span>
@@ -260,7 +290,8 @@ const categories = [
           )}
         </div>
       </article>
-    ))}
+      );
+    })}
   </div>
 
   <div id="no-results" class="ps1-window no-results" style="display: none;">
@@ -446,6 +477,8 @@ const categories = [
         matchesCat = true;
       } else if (activeCategory === 'favorites') {
         matchesCat = isFavorite(family);
+      } else if (activeCategory === 'animated') {
+        matchesCat = card.dataset.animated === 'true';
       } else {
         matchesCat = category === activeCategory;
       }
@@ -477,6 +510,8 @@ const categories = [
         if (msgEl) {
           if (activeCategory === 'favorites') {
             msgEl.textContent = 'NO TIENES MODELOS GUARDADOS COMO FAVORITOS AÚN. HAZ CLIC EN LA ESTRELLA ⭐ DE CUALQUIER MODELO PARA GUARDARLO.';
+          } else if (activeCategory === 'animated') {
+            msgEl.textContent = 'NO SE ENCONTRARON MODELOS CON ANIMACIÓN QUE COINCIDAN CON LOS FILTROS.';
           } else {
             msgEl.textContent = 'NO SE ENCONTRARON GENERADORES QUE COINCIDAN CON LOS FILTROS.';
           }
@@ -496,15 +531,21 @@ const categories = [
       .replace(/'/g, '&#39;');
   }
 
-  // Pause auto-rotate on off-screen <model-viewer> instances to save GPU/CPU frames
+  // Pause auto-rotate and animation loops on off-screen <model-viewer> instances to save GPU/CPU frames
   const viewerObserver = typeof IntersectionObserver !== 'undefined'
     ? new IntersectionObserver((entries) => {
         entries.forEach((entry) => {
           const mv = entry.target as any;
           if (entry.isIntersecting) {
             mv.setAttribute('auto-rotate', '');
+            if (mv.availableAnimations && mv.availableAnimations.length > 0 && typeof mv.play === 'function') {
+              try { mv.play({ repetitions: Infinity }); } catch {}
+            }
           } else {
             mv.removeAttribute('auto-rotate');
+            if (typeof mv.pause === 'function') {
+              try { mv.pause(); } catch {}
+            }
           }
         });
       }, { rootMargin: '120px' })
@@ -991,6 +1032,42 @@ const categories = [
     color: #ffffff;
     font-weight: 700;
     box-shadow: inset 1px 1px 0px #000;
+  }
+
+  .filter-btn-anim {
+    color: var(--ps1-cyan);
+    border-color: rgba(0, 240, 255, 0.4);
+  }
+
+  .filter-btn-anim:hover {
+    background: #0d2238;
+    color: #ffffff;
+    border-color: var(--ps1-cyan);
+  }
+
+  .filter-btn-anim.active {
+    background: #004d66;
+    border-color: var(--ps1-cyan);
+    color: #ffffff;
+    box-shadow: inset 1px 1px 0px #000, 0 0 8px rgba(0, 240, 255, 0.4);
+  }
+
+  .card-anim-tag {
+    font-family: var(--font-pixel);
+    font-size: 0.6rem;
+    color: var(--ps1-cyan);
+    background: rgba(0, 240, 255, 0.12);
+    border: 1px solid rgba(0, 240, 255, 0.45);
+    padding: 0.12rem 0.35rem;
+    letter-spacing: 0.5px;
+    box-shadow: 0 0 6px rgba(0, 240, 255, 0.2);
+  }
+
+  .badge-anim-pill {
+    background: #002b36 !important;
+    color: var(--ps1-cyan) !important;
+    border: 1px solid var(--ps1-cyan) !important;
+    box-shadow: 0 0 6px rgba(0, 240, 255, 0.25);
   }
 
   /* Nota: Los estilos de .generators-grid, .generator-card, .card-preview, .card-body y .card-footer
