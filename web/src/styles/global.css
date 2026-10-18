@@ -930,3 +930,8 @@ footer.site-footer {
     opacity: 1 !important;
   }
 }
+
+/* Global Hidden Utility */
+.hidden {
+  display: none !important;
+}

@@ -44,7 +44,7 @@ const pageDescription = "Visor interactivo 3D para inspeccionar, rotar, probar a
         </div>
 
         <!-- Error State Overlay -->
-        <div id="m-error-overlay" class="m-overlay-screen hidden">
+        <div id="m-error-overlay" class="m-overlay-screen hidden" style="display: none;">
           <div class="ps1-window m-status-box" style="border-color: var(--ps1-red);">
             <div class="m-spinner-icon" style="color: var(--ps1-red);">⚠️</div>
             <div class="m-loading-title" style="color: var(--ps1-red);">MODELO NO ENCONTRADO</div>
@@ -79,7 +79,7 @@ const pageDescription = "Visor interactivo 3D para inspeccionar, rotar, probar a
         </div>
 
         <!-- Floating Animation Dock (Bottom Bar - Visible only if model has animations) -->
-        <div id="m-animation-dock" class="m-animation-dock hidden">
+        <div id="m-animation-dock" class="m-animation-dock hidden" style="display: none;">
           <div class="m-anim-inner ps1-inset">
             <button type="button" id="btn-anim-play" class="btn btn-green m-anim-play-btn" title="Reproducir / Pausar">
               <span id="anim-play-icon">▶</span>
@@ -301,6 +301,12 @@ const pageDescription = "Visor interactivo 3D para inspeccionar, rotar, probar a
     justify-content: center;
     z-index: 50;
     padding: 1.5rem;
+  }
+
+  .m-overlay-screen.hidden,
+  .m-animation-dock.hidden,
+  .hidden {
+    display: none !important;
   }
 
   .m-status-box {
@@ -850,8 +856,15 @@ const pageDescription = "Visor interactivo 3D para inspeccionar, rotar, probar a
       // Setup Animations if present
       setupModelAnimations(spec, group);
 
-      // Hide loading overlay
-      if (loadingOverlay) loadingOverlay.classList.add('hidden');
+      // Hide loading overlay and make sure error overlay is hidden
+      if (loadingOverlay) {
+        loadingOverlay.classList.add('hidden');
+        loadingOverlay.style.display = 'none';
+      }
+      if (errorOverlay) {
+        errorOverlay.classList.add('hidden');
+        errorOverlay.style.display = 'none';
+      }
     } catch (err: any) {
       showErrorState(`Fallo al construir la malla procedural: ${err.message || err}`);
     }
@@ -860,14 +873,20 @@ const pageDescription = "Visor interactivo 3D para inspeccionar, rotar, probar a
   // 4. Setup Animation Playback Dock
   function setupModelAnimations(spec: ModelSpec, rootGroup: THREE.Group) {
     if (!spec.animations || spec.animations.length === 0) {
-      if (animDock) animDock.classList.add('hidden');
+      if (animDock) {
+        animDock.classList.add('hidden');
+        animDock.style.display = 'none';
+      }
       return;
     }
 
     try {
       const clips = AnimationEngine.compileAnimations(spec, rootGroup);
       if (!clips || clips.length === 0) {
-        if (animDock) animDock.classList.add('hidden');
+        if (animDock) {
+          animDock.classList.add('hidden');
+          animDock.style.display = 'none';
+        }
         return;
       }
 
@@ -883,17 +902,27 @@ const pageDescription = "Visor interactivo 3D para inspeccionar, rotar, probar a
 
       if (animPlayIcon) animPlayIcon.textContent = '⏸';
       if (animClipTitle) animClipTitle.textContent = firstClip.name.toUpperCase();
-      if (animDock) animDock.classList.remove('hidden');
+      if (animDock) {
+        animDock.classList.remove('hidden');
+        animDock.style.display = 'block';
+      }
     } catch (err) {
       console.warn('[ModelCoder Viewer] Could not compile animations:', err);
-      if (animDock) animDock.classList.add('hidden');
+      if (animDock) {
+        animDock.classList.add('hidden');
+        animDock.style.display = 'none';
+      }
     }
   }
 
   function showErrorState(msg: string) {
-    if (loadingOverlay) loadingOverlay.classList.add('hidden');
+    if (loadingOverlay) {
+      loadingOverlay.classList.add('hidden');
+      loadingOverlay.style.display = 'none';
+    }
     if (errorOverlay) {
       errorOverlay.classList.remove('hidden');
+      errorOverlay.style.display = 'flex';
       if (errorMessage) errorMessage.textContent = msg;
     }
   }
