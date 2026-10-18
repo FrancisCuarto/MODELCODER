@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import type { ModelSpec, ComponentDef, GeometricStats } from './types.ts';
+import type { ModelSpec, ComponentDef, GeometricStats, ShapePrimitive, PivotPresetType } from './types.ts';
 import { TextureLibrary } from './texture-library.ts';
 
 export class ProceduralEngine {
@@ -30,6 +30,116 @@ export class ProceduralEngine {
     }
 
     return false;
+  }
+
+  /**
+   * Calculates the standard pivot offset [ox, oy, oz] in meters for a given shape and dimensions.
+   */
+  public static computePresetPivot(
+    preset: PivotPresetType,
+    shape: ShapePrimitive,
+    size?: number[]
+  ): [number, number, number] {
+    const s = size || [1, 1, 1];
+    let w = 1, h = 1, d = 1;
+    switch (shape) {
+      case 'box':
+      case 'wedge':
+        w = s[0] ?? 1;
+        h = s[1] ?? 1;
+        d = s[2] ?? 1;
+        break;
+      case 'cylinder':
+        w = (s[0] ?? 0.5) * 2;
+        h = s[2] ?? 1;
+        d = (s[1] ?? (s[0] ?? 0.5)) * 2;
+        break;
+      case 'sphere':
+        w = (s[0] ?? 0.5) * 2;
+        h = w;
+        d = w;
+        break;
+      case 'cone':
+        w = (s[0] ?? 0.5) * 2;
+        h = s[1] ?? 1;
+        d = w;
+        break;
+      case 'capsule':
+        w = (s[0] ?? 0.25) * 2;
+        h = (s[1] ?? 0.5) + (s[0] ?? 0.25) * 2;
+        d = w;
+        break;
+      case 'torus':
+        w = ((s[0] ?? 0.5) + (s[1] ?? 0.15)) * 2;
+        h = (s[1] ?? 0.15) * 2;
+        d = w;
+        break;
+      case 'plane':
+        w = s[0] ?? 1;
+        h = s[1] ?? 1;
+        d = 0.01;
+        break;
+      default:
+        w = s[0] ?? 1;
+        h = s[1] ?? 1;
+        d = s[2] ?? 1;
+    }
+
+    switch (preset) {
+      case 'bottom':
+        return [0, -h * 0.5, 0];
+      case 'top':
+        return [0, h * 0.5, 0];
+      case 'left':
+        return [-w * 0.5, 0, 0];
+      case 'right':
+        return [w * 0.5, 0, 0];
+      case 'back':
+        return [0, 0, -d * 0.5];
+      case 'front':
+        return [0, 0, d * 0.5];
+      case 'center':
+      default:
+        return [0, 0, 0];
+    }
+  }
+
+  /**
+   * Creates a mirrored duplicate of a component across a given axis ('x' | 'y' | 'z').
+   */
+  public static createMirroredComponent(
+    comp: ComponentDef,
+    axis: 'x' | 'y' | 'z' = 'x',
+    newName?: string
+  ): ComponentDef {
+    const copy: ComponentDef = JSON.parse(JSON.stringify(comp));
+    const generatedName = newName || `${comp.name}_mirror_${axis}`;
+    copy.name = generatedName;
+
+    // 1. Invert position on axis
+    if (!copy.position) copy.position = [0, 0, 0];
+    const axisIdx = axis === 'x' ? 0 : axis === 'y' ? 1 : 2;
+    copy.position[axisIdx] = -copy.position[axisIdx];
+
+    // 2. Invert complementary rotations for symmetric reflection
+    if (!copy.rotation) copy.rotation = [0, 0, 0];
+    if (axis === 'x') {
+      copy.rotation[1] = -copy.rotation[1];
+      copy.rotation[2] = -copy.rotation[2];
+    } else if (axis === 'y') {
+      copy.rotation[0] = -copy.rotation[0];
+      copy.rotation[2] = -copy.rotation[2];
+    } else if (axis === 'z') {
+      copy.rotation[0] = -copy.rotation[0];
+      copy.rotation[1] = -copy.rotation[1];
+    }
+
+    // 3. Invert pivot on axis
+    if (copy.pivot) {
+      copy.pivot[axisIdx] = -copy.pivot[axisIdx];
+    }
+
+    return copy;
   }
 
   public static buildModelFromSpec(spec: ModelSpec): { group: THREE.Group; stats: GeometricStats } {
@@ -197,6 +307,14 @@ export class ProceduralEngine {
       this.applyUVRotation(geom, comp.uvRotation);
     }
 
+    // Pivot / Hinge / Articulation Offset
+    // If a pivot is specified, translate geometry vertices so the mesh origin (0, 0, 0) is situated at the pivot point
+    if (comp.pivot && (comp.pivot[0] !== 0 || comp.pivot[1] !== 0 || comp.pivot[2] !== 0)) {
+      geom.translate(-comp.pivot[0], -comp.pivot[1], -comp.pivot[2]);
+      geom.computeBoundingBox();
+      geom.computeBoundingSphere();
+    }
+
     // Material and vertex color resolution
     const baseColor = this.resolveColor(comp.color);
     let mat: THREE.MeshStandardMaterial;
@@ -255,10 +373,17 @@ export class ProceduralEngine {
       mesh.scale.set(comp.scale[0], comp.scale[1], comp.scale[2]);
     }
 
-    // Optional text label / decal
+    // Optional text label / decal (respecting pivot offset)
     if (comp.label) {
       const labelBadge = this.createLabelBadge(comp.label, comp.labelColor || '#ffffff');
-      labelBadge.position.set(0, 0, (s[2] ? s[2] * 0.5 : 0.5) + 0.005);
+      const pivX = comp.pivot?.[0] ?? 0;
+      const pivY = comp.pivot?.[1] ?? 0;
+      const pivZ = comp.pivot?.[2] ?? 0;
+      labelBadge.position.set(
+        -pivX,
+        -pivY,
+        (s[2] ? s[2] * 0.5 : 0.5) + 0.005 - pivZ
+      );
       mesh.add(labelBadge);
     }
 

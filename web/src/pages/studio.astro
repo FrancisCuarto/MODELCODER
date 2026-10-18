@@ -2151,6 +2151,35 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     renderCurrentSpec('visual');
   }
 
+  function mirrorComponent(idx: number, axis: 'x' | 'y' | 'z' = 'x'): void {
+    const orig = currentSpec.components[idx];
+    if (!orig) return;
+
+    let baseName = orig.name;
+    let mirroredName: string;
+    if (axis === 'x' && baseName.includes('_izq')) {
+      mirroredName = baseName.replace('_izq', '_der');
+    } else if (axis === 'x' && baseName.includes('_der')) {
+      mirroredName = baseName.replace('_der', '_izq');
+    } else if (axis === 'x' && baseName.includes('_left')) {
+      mirroredName = baseName.replace('_left', '_right');
+    } else if (axis === 'x' && baseName.includes('_right')) {
+      mirroredName = baseName.replace('_right', '_left');
+    } else {
+      mirroredName = `${baseName}_espejo_${axis}`;
+    }
+
+    // Ensure unique name
+    if (currentSpec.components.some((c) => c.name === mirroredName)) {
+      mirroredName = `${mirroredName}_${Date.now().toString().slice(-4)}`;
+    }
+
+    const mirrored = ProceduralEngine.createMirroredComponent(orig, axis, mirroredName);
+    currentSpec.components.splice(idx + 1, 0, mirrored);
+    selectedComponentIndex = idx + 1;
+    renderCurrentSpec('visual');
+  }
+
   function deleteComponent(idx: number): void {
     if (currentSpec.components.length <= 1) {
       alert('El modelo debe contener al menos un componente geométrico.');
@@ -2325,11 +2354,13 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     if (!comp.position) comp.position = [0, 0, 0];
     if (!comp.rotation) comp.rotation = [0, 0, 0];
     if (!comp.scale) comp.scale = [1, 1, 1];
+    if (!comp.pivot) comp.pivot = [0, 0, 0];
     if (!comp.size) comp.size = getDefaultSizeForShape(comp.shape);
 
     const pos = comp.position;
     const rot = comp.rotation;
     const scl = comp.scale;
+    const piv = comp.pivot;
 
     const isOpen = (secId: string) => inspectorSectionsOpen[secId] !== false;
     const activeTexBadge = comp.texturePreset ? escapeHtml(comp.texturePreset) : 'color plano';
@@ -2362,6 +2393,9 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
           </button>
           <button type="button" id="btn-prop-dup" class="btn-mini btn-outline" title="Duplicar">
             📋 Duplicar
+          </button>
+          <button type="button" id="btn-prop-mirror" class="btn-mini btn-outline" title="Duplicar en espejo simétrico (reflejar en X/Y/Z)">
+            🪞 Espejo
           </button>
           <button type="button" id="btn-prop-del" class="btn-mini btn-danger" title="Eliminar pieza seleccionada (Ctrl+X)">
             🗑️ Eliminar
@@ -2472,6 +2506,38 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
                 <span class="axis-tag axis-z">Z</span>
                 <input type="number" step="0.01" min="0.01" id="inp-scl-z" class="coord-num-inp" value="${scl[2]}" />
               </div>
+            </div>
+          </div>
+
+          <!-- Punto de Pivote / Bisagra / Articulación -->
+          <div class="prop-field-block">
+            <div class="field-label-row">
+              <label class="field-label" title="Centro de rotación y articulación de la pieza">Pivote / Bisagra [X, Y, Z]:</label>
+              <button type="button" id="btn-reset-pivot" class="btn-mini-link" title="Restablecer pivote al centro geométrico (0, 0, 0)">
+                ↺ Centro
+              </button>
+            </div>
+            <div class="coord-3-grid">
+              <div class="coord-input-wrap">
+                <span class="axis-tag axis-x">X</span>
+                <input type="number" step="0.01" id="inp-piv-x" class="coord-num-inp" value="${piv[0]}" />
+              </div>
+              <div class="coord-input-wrap">
+                <span class="axis-tag axis-y">Y</span>
+                <input type="number" step="0.01" id="inp-piv-y" class="coord-num-inp" value="${piv[1]}" />
+              </div>
+              <div class="coord-input-wrap">
+                <span class="axis-tag axis-z">Z</span>
+                <input type="number" step="0.01" id="inp-piv-z" class="coord-num-inp" value="${piv[2]}" />
+              </div>
+            </div>
+            <div class="pivot-presets-grid">
+              <button type="button" class="btn-mini btn-outline btn-piv-preset" data-preset="center" title="Centro [0, 0, 0]">Centro</button>
+              <button type="button" class="btn-mini btn-outline btn-piv-preset" data-preset="bottom" title="Base inferior (ruedas, patas, puertas)">Base ↓</button>
+              <button type="button" class="btn-mini btn-outline btn-piv-preset" data-preset="top" title="Tope superior">Tope ↑</button>
+              <button type="button" class="btn-mini btn-outline btn-piv-preset" data-preset="left" title="Bisagra izquierda">Izq. ←</button>
+              <button type="button" class="btn-mini btn-outline btn-piv-preset" data-preset="right" title="Bisagra derecha">Der. →</button>
+              <button type="button" class="btn-mini btn-outline btn-piv-preset" data-preset="back" title="Bisagra trasera (tapa / cofre)">Atrás ↶</button>
             </div>
           </div>
 
@@ -3180,6 +3246,12 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     document.getElementById('btn-prop-dup')?.addEventListener('click', () => {
       duplicateComponent(idx);
     });
+    document.getElementById('btn-prop-mirror')?.addEventListener('click', () => {
+      const axis = prompt('¿En qué eje deseas duplicar en espejo? (X / Y / Z):', 'X')?.trim().toLowerCase();
+      if (axis === 'x' || axis === 'y' || axis === 'z') {
+        mirrorComponent(idx, axis as 'x' | 'y' | 'z');
+      }
+    });
     document.getElementById('btn-prop-del')?.addEventListener('click', () => {
       deleteComponent(idx);
     });
@@ -3280,6 +3352,44 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
         const val = parseTypingNumber(el);
         const safeVal = val !== null && val >= 0.01 ? val : (comp.scale?.[axis] || 1.0);
         applyScaleAxis(axis, safeVal, true);
+      });
+    });
+
+    // Pivot inputs (live update geometry translation offset; commit on change/blur)
+    (['inp-piv-x', 'inp-piv-y', 'inp-piv-z'] as const).forEach((id, axisIdx) => {
+      const el = document.getElementById(id) as HTMLInputElement | null;
+      el?.addEventListener('input', () => {
+        const val = parseTypingNumber(el);
+        if (val === null) return;
+        if (!comp.pivot) comp.pivot = [0, 0, 0];
+        comp.pivot[axisIdx] = val;
+        renderCurrentSpec('visual', false, false);
+      });
+      el?.addEventListener('change', () => {
+        if (!comp.pivot) comp.pivot = [0, 0, 0];
+        const val = parseTypingNumber(el);
+        const finalVal = val !== null ? val : 0;
+        comp.pivot[axisIdx] = finalVal;
+        if (el) el.value = `${finalVal}`;
+        renderCurrentSpec('visual', true, false);
+      });
+    });
+
+    // Reset Pivot to Center
+    document.getElementById('btn-reset-pivot')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      comp.pivot = [0, 0, 0];
+      renderCurrentSpec('visual', true, true);
+    });
+
+    // Pivot Presets (Center, Bottom, Top, Left, Right, Back)
+    inspectorContentMount?.querySelectorAll('.btn-piv-preset').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const preset = (btn as HTMLElement).dataset.preset as any;
+        if (!preset) return;
+        comp.pivot = ProceduralEngine.computePresetPivot(preset, comp.shape, comp.size);
+        renderCurrentSpec('visual', true, true);
       });
     });
 
@@ -7037,6 +7147,29 @@ if __name__ == "__main__":
     background: #04060c;
     border: 1px solid #23314d;
     padding: 0 0.3rem;
+  }
+
+  .pivot-presets-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    margin-top: 0.35rem;
+  }
+
+  .btn-piv-preset {
+    font-size: 0.65rem;
+    padding: 0.12rem 0.35rem;
+    background: #080f1e;
+    border: 1px solid #1e293b;
+    color: #94a3b8;
+    cursor: pointer;
+    transition: all 0.12s ease;
+  }
+
+  .btn-piv-preset:hover {
+    border-color: var(--ps1-cyan);
+    color: var(--ps1-cyan);
+    background: #0d1b33;
   }
 
   .axis-tag {

@@ -1,5 +1,6 @@
-import type { ModelSpec, ComponentDef, ShapePrimitive, AnimationClipDef, AnimationPresetType } from './types.ts';
+import type { ModelSpec, ComponentDef, ShapePrimitive, AnimationClipDef, AnimationPresetType, PivotPresetType } from './types.ts';
 import { AnimationEngine } from './animation-engine.ts';
+import { ProceduralEngine } from './procedural-engine.ts';
 
 export class ProceduralBuilderContext {
   public spec: ModelSpec;
@@ -45,10 +46,32 @@ export class ProceduralBuilderContext {
     return this;
   }
 
+  public setPivot(childName: string, pivot: [number, number, number] | PivotPresetType): this {
+    const comp = this.spec.components.find((c) => c.name === childName);
+    if (comp) {
+      if (typeof pivot === 'string') {
+        comp.pivot = ProceduralEngine.computePresetPivot(pivot, comp.shape, comp.size);
+      } else {
+        comp.pivot = pivot;
+      }
+    }
+    return this;
+  }
+
+  public mirror(componentName: string, axis: 'x' | 'y' | 'z' = 'x', newName?: string): this {
+    const comp = this.spec.components.find((c) => c.name === componentName);
+    if (comp) {
+      const copy = ProceduralEngine.createMirroredComponent(comp, axis, newName);
+      this.spec.components.push(copy);
+    }
+    return this;
+  }
+
   public addBox(opts: {
     name?: string;
     parentId?: string;
     parent?: string;
+    pivot?: [number, number, number];
     size?: [number, number, number];
     position?: [number, number, number];
     rotation?: [number, number, number];
@@ -67,6 +90,7 @@ export class ProceduralBuilderContext {
       name: opts.name || `box_${this.spec.components.length + 1}`,
       shape: 'box',
       parentId: opts.parentId || opts.parent,
+      pivot: opts.pivot,
       size: opts.size || [1, 1, 1],
       position: opts.position || [0, 0, 0],
       rotation: opts.rotation || [0, 0, 0],
@@ -87,6 +111,7 @@ export class ProceduralBuilderContext {
     name?: string;
     parentId?: string;
     parent?: string;
+    pivot?: [number, number, number];
     radius?: number;
     height?: number;
     segments?: number;
@@ -107,6 +132,7 @@ export class ProceduralBuilderContext {
       name: opts.name || `cylinder_${this.spec.components.length + 1}`,
       shape: 'cylinder',
       parentId: opts.parentId || opts.parent,
+      pivot: opts.pivot,
       size: s,
       position: opts.position || [0, 0, 0],
       rotation: opts.rotation || [0, 0, 0],
@@ -125,6 +151,7 @@ export class ProceduralBuilderContext {
     name?: string;
     parentId?: string;
     parent?: string;
+    pivot?: [number, number, number];
     radius?: number;
     segments?: number;
     size?: [number, number, number];
@@ -144,6 +171,7 @@ export class ProceduralBuilderContext {
       name: opts.name || `sphere_${this.spec.components.length + 1}`,
       shape: 'sphere',
       parentId: opts.parentId || opts.parent,
+      pivot: opts.pivot,
       size: s,
       position: opts.position || [0, 0, 0],
       rotation: opts.rotation || [0, 0, 0],
@@ -162,6 +190,7 @@ export class ProceduralBuilderContext {
     name?: string;
     parentId?: string;
     parent?: string;
+    pivot?: [number, number, number];
     size?: [number, number, number];
     position?: [number, number, number];
     rotation?: [number, number, number];
@@ -178,6 +207,7 @@ export class ProceduralBuilderContext {
       name: opts.name || `wedge_${this.spec.components.length + 1}`,
       shape: 'wedge',
       parentId: opts.parentId || opts.parent,
+      pivot: opts.pivot,
       size: opts.size || [1, 1, 1],
       position: opts.position || [0, 0, 0],
       rotation: opts.rotation || [0, 0, 0],

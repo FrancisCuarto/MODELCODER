@@ -158,10 +158,13 @@ export type MaterialCategoryType =
   | 'rubber'
   | 'ceramic';
 
+export type PivotPresetType = 'center' | 'bottom' | 'top' | 'left' | 'right' | 'front' | 'back';
+
 export interface ComponentDef {
   name: string;
   shape: ShapePrimitive;
   parentId?: string; // Optional parent component name (for hierarchical transform parenting)
+  pivot?: [number, number, number]; // [offsetX, offsetY, offsetZ] in meters relative to shape center (pivot / hinge / articulation origin)
   /**
    * Primary dimensions:
    * - box: [width, height, depth]

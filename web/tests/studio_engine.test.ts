@@ -1779,6 +1779,157 @@ test('Component Hierarchy 4: Exportación e importación GLB preserva la estruct
   ProceduralEngine.disposeHierarchy(group);
 });
 
+test('Pivot & Articulation 1: computePresetPivot calcula offsets precisos para bordes y bisagras', () => {
+  // Box: width=2, height=1, depth=0.8
+  const boxBottom = ProceduralEngine.computePresetPivot('bottom', 'box', [2, 1, 0.8]);
+  assert.deepEqual(boxBottom, [0, -0.5, 0]);
+
+  const boxTop = ProceduralEngine.computePresetPivot('top', 'box', [2, 1, 0.8]);
+  assert.deepEqual(boxTop, [0, 0.5, 0]);
+
+  const boxLeft = ProceduralEngine.computePresetPivot('left', 'box', [2, 1, 0.8]);
+  assert.deepEqual(boxLeft, [-1.0, 0, 0]);
+
+  const boxRight = ProceduralEngine.computePresetPivot('right', 'box', [2, 1, 0.8]);
+  assert.deepEqual(boxRight, [1.0, 0, 0]);
+
+  const boxBack = ProceduralEngine.computePresetPivot('back', 'box', [2, 1, 0.8]);
+  assert.deepEqual(boxBack, [0, 0, -0.4]);
+
+  const boxCenter = ProceduralEngine.computePresetPivot('center', 'box', [2, 1, 0.8]);
+  assert.deepEqual(boxCenter, [0, 0, 0]);
+});
+
+test('Pivot & Articulation 2: createComponentMesh traslada la geometría al pivote de bisagra', () => {
+  // Puerta de 1m de ancho x 2m de alto x 0.1m de fondo con bisagra en el borde izquierdo (-0.5m en X)
+  const doorComp: ComponentDef = {
+    name: 'puerta_lateral',
+    shape: 'box',
+    size: [1.0, 2.0, 0.1],
+    position: [0, 0, 0],
+    pivot: [-0.5, 0, 0] // Bisagra en el borde izquierdo
+  };
+
+  const mesh = ProceduralEngine.createComponentMesh(doorComp) as THREE.Mesh;
+  const geom = mesh.geometry;
+  geom.computeBoundingBox();
+  const bb = geom.boundingBox!;
+
+  // El borde izquierdo de la caja estaba en -0.5. Al trasladar por -pivot (+0.5):
+  // Ahora el borde izquierdo debe estar exactamente en x = 0 (el origen / bisagra de la mesh)!
+  // Y el borde derecho debe estar en x = 1.0!
+  assert.ok(Math.abs(bb.min.x - 0.0) < 0.001, `Min X debe ser 0.0 (la bisagra), recibido: ${bb.min.x}`);
+  assert.ok(Math.abs(bb.max.x - 1.0) < 0.001, `Max X debe ser 1.0, recibido: ${bb.max.x}`);
+
+  geom.dispose();
+});
+
+test('Pivot & Articulation 3: Rotar una pieza con pivote rota alrededor de su bisagra', () => {
+  const spec: ModelSpec = {
+    id: 'test.pivot.rotation',
+    name: 'Tapa de Baúl Articulada',
+    category: 'furniture',
+    description: 'Tapa con bisagra trasera que rota hacia arriba',
+    units: 'meters',
+    dimensions: { width: 1, depth: 1, height: 0.1 },
+    palette: 'industrial_hazard',
+    components: [
+      {
+        name: 'tapa',
+        shape: 'box',
+        size: [1.0, 0.1, 1.0],
+        position: [0, 1.0, 0], // En Y=1
+        pivot: [0, 0, -0.5], // Bisagra en el borde trasero (Z = -0.5)
+        rotation: [-90, 0, 0] // Abierta 90 grados hacia arriba
+      }
+    ]
+  };
+
+  const { group } = ProceduralEngine.buildModelFromSpec(spec);
+  const mesh = group.children[0] as THREE.Mesh;
+  group.updateMatrixWorld(true);
+
+  // El origen de la mesh (la bisagra) permanece en [0, 1.0, 0] en World Space
+  const worldPos = new THREE.Vector3();
+  mesh.getWorldPosition(worldPos);
+  assert.equal(worldPos.x, 0);
+  assert.equal(worldPos.y, 1.0);
+  assert.equal(worldPos.z, 0);
+
+  ProceduralEngine.disposeHierarchy(group);
+});
+
+test('Mirror Tool: createMirroredComponent refleja simétricamente posición, rotación y pivote', () => {
+  const comp: ComponentDef = {
+    name: 'aleron_izq',
+    shape: 'wedge',
+    size: [0.8, 0.2, 0.4],
+    position: [-1.5, 0.8, 0.5],
+    rotation: [10, -20, 15],
+    pivot: [-0.4, 0, 0]
+  };
+
+  const mirrored = ProceduralEngine.createMirroredComponent(comp, 'x', 'aleron_der');
+  assert.equal(mirrored.name, 'aleron_der');
+
+  // En eje X: la posición X se invierte (-(-1.5) = 1.5), Y y Z se mantienen
+  assert.equal(mirrored.position![0], 1.5);
+  assert.equal(mirrored.position![1], 0.8);
+  assert.equal(mirrored.position![2], 0.5);
+
+  // Rotaciones complementarias en X invertidas para simetría:
+  // rot[0] (Pitch) se conserva: 10
+  // rot[1] (Yaw) invertido: -(-20) = 20
+  // rot[2] (Roll) invertido: -(15) = -15
+  assert.equal(mirrored.rotation![0], 10);
+  assert.equal(mirrored.rotation![1], 20);
+  assert.equal(mirrored.rotation![2], -15);
+
+  // El pivote en X también se invierte
+  assert.equal(mirrored.pivot![0], 0.4);
+});
+
+test('Pivot & Mirror: Exportación GLB preserva geometrías con pivote y piezas reflejadas', async () => {
+  const spec: ModelSpec = {
+    id: 'test.pivot.glb',
+    name: 'Robot con Articulación y Espejo',
+    category: 'robots',
+    description: 'Prueba de exportación con pivotes y simetría',
+    units: 'meters',
+    dimensions: { width: 2, depth: 1, height: 2 },
+    palette: 'industrial_hazard',
+    components: [
+      {
+        name: 'hombro_izq',
+        shape: 'cylinder',
+        size: [0.1, 0.1, 0.8, 8],
+        position: [-0.6, 1.2, 0],
+        pivot: [0, 0.4, 0] // Articulación en el extremo superior
+      },
+      ProceduralEngine.createMirroredComponent({
+        name: 'hombro_izq',
+        shape: 'cylinder',
+        size: [0.1, 0.1, 0.8, 8],
+        position: [-0.6, 1.2, 0],
+        pivot: [0, 0.4, 0]
+      }, 'x', 'hombro_der')
+    ]
+  };
+
+  const { group } = ProceduralEngine.buildModelFromSpec(spec);
+  assert.equal(group.children.length, 2);
+
+  const glbBuffer = await GLBExporterService.exportToArrayBuffer(group);
+  assert.ok(glbBuffer instanceof ArrayBuffer);
+  assert.ok(glbBuffer.byteLength > 1000);
+
+  const verification = await GLBExporterService.verifyGLBBuffer(glbBuffer);
+  assert.equal(verification.verified, true);
+  assert.ok(verification.triangleCount > 0);
+
+  ProceduralEngine.disposeHierarchy(group);
+});
+
 // Teardown: ensure Node exits cleanly after tests
 test('Teardown: Exit cleanly', () => {
   setTimeout(() => process.exit(0), 100);
