@@ -2608,12 +2608,14 @@ export const MODULAR_MODELS_LOTE_1: ModularModelEntry[] = [
 ];
 
 import { MODULAR_MODELS_LOTE_2 } from './modular-catalog-lote2.ts';
+import { MODULAR_MODELS_LOTE_3 } from './modular-catalog-lote3.ts';
 
-export { MODULAR_MODELS_LOTE_2 };
+export { MODULAR_MODELS_LOTE_2, MODULAR_MODELS_LOTE_3 };
 
 export const ALL_MODULAR_MODELS: ModularModelEntry[] = [
   ...MODULAR_MODELS_LOTE_1,
-  ...MODULAR_MODELS_LOTE_2
+  ...MODULAR_MODELS_LOTE_2,
+  ...MODULAR_MODELS_LOTE_3
 ];
 
 export function getModularModelByFamily(family: string): ModularModelEntry | undefined {
