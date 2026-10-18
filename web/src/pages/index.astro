@@ -791,7 +791,8 @@ const categories = [
       });
 
       // Actualizar contadores globales y métricas dinámicas
-      const totalCount = 101 + communityModelsList.length;
+      const allCards = getCards();
+      const totalCount = allCards.length;
 
       const headerCountEl = document.getElementById('header-models-count');
       if (headerCountEl) headerCountEl.textContent = `${totalCount} MODELOS DISPONIBLES`;
@@ -807,6 +808,24 @@ const categories = [
 
       const allBtn = document.querySelector('.filter-btn[data-category="all"]');
       if (allBtn) allBtn.textContent = `[TODOS: ${totalCount}]`;
+
+      // Actualizar conteos por categoría en los botones de filtro
+      const catCounts: Record<string, number> = {};
+      allCards.forEach((c) => {
+        const cat = c.dataset.category;
+        if (cat) catCounts[cat] = (catCounts[cat] || 0) + 1;
+      });
+
+      document.querySelectorAll('.filter-btn').forEach((btn) => {
+        const cat = (btn as HTMLElement).dataset.category;
+        if (!cat || cat === 'all' || cat === 'modular' || cat === 'animated' || cat === 'favorites') return;
+        const currentCount = catCounts[cat] || 0;
+        const text = btn.textContent || '';
+        const match = text.match(/\[(.*?):\s*\d+\]/);
+        if (match) {
+          btn.textContent = `[${match[1]}: ${currentCount}]`;
+        }
+      });
 
       wireFavoriteButtons();
       observeModelViewers();

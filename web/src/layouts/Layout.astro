@@ -20,7 +20,10 @@ const {
 } = Astro.props;
 
 import catalog from '../data/catalog.json';
+import { getAllModularModels } from '../data/modular-catalog.ts';
 import '../styles/global.css';
+
+const baseModelsCount = catalog.length + getAllModularModels().length;
 
 const siteOrigin = Astro.site ? Astro.site.toString().replace(/\/$/, '') : 'https://modelcoder.vercel.app';
 const canonicalURL = new URL(Astro.url.pathname, siteOrigin).href;
@@ -127,7 +130,7 @@ const globalJsonLd = {
 
         <div class="system-status-indicator" title="Modelos 3D disponibles para personalizar y descargar">
           <span class="status-dot"></span>
-          <span id="header-models-count" class="status-text">{catalog.length} MODELOS DISPONIBLES</span>
+          <span id="header-models-count" class="status-text" data-base-count={baseModelsCount}>{baseModelsCount} MODELOS DISPONIBLES</span>
         </div>
 
         <nav class="nav-links">
@@ -465,8 +468,9 @@ const globalJsonLd = {
       async function syncHeaderModelCount() {
         try {
           const commModels = await getCommunityModels({ onlyPublic: true });
-          const totalCount = 101 + (commModels ? commModels.length : 0);
           const el = document.getElementById('header-models-count');
+          const baseCount = Number(el?.dataset?.baseCount) || 201;
+          const totalCount = baseCount + (commModels ? commModels.length : 0);
           if (el) {
             el.textContent = `${totalCount} MODELOS DISPONIBLES`;
           }
