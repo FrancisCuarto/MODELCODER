@@ -10,7 +10,8 @@ export type ShapePrimitive =
   | 'cone' 
   | 'torus' 
   | 'capsule' 
-  | 'wedge';
+  | 'wedge'
+  | 'mesh';
 
 export type TexturePreset = 
   // Original 18 canonical presets (preserved for 100% backward compatibility)
@@ -163,6 +164,8 @@ export type PivotPresetType = 'center' | 'bottom' | 'top' | 'left' | 'right' | '
 export interface ComponentDef {
   name: string;
   shape: ShapePrimitive;
+  meshId?: string; // Cache key in ProceduralEngine for custom / imported GLB geometries
+  sourceGlbUrl?: string; // Optional origin URL/family for custom mesh
   parentId?: string; // Optional parent component name (for hierarchical transform parenting)
   pivot?: [number, number, number]; // [offsetX, offsetY, offsetZ] in meters relative to shape center (pivot / hinge / articulation origin)
   /**

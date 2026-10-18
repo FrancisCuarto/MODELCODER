@@ -2275,6 +2275,29 @@ test('Catalog Bridge: Deconstructs catalog models into editable ModelSpec with r
   assert.ok(stats.triangles > 0, 'Debe tener triángulos válidos');
 });
 
+test('Catalog Bridge: loadCatalogModelAsSpec loads genuine 3D meshes from real catalog GLBs', async () => {
+  // Test with bunk_bed
+  const bunkBedSpec = await CatalogBridge.loadCatalogModelAsSpec('bunk_bed');
+  assert.ok(bunkBedSpec.components.length >= 1, 'Debe contener las mallas reales del GLB');
+  assert.ok(bunkBedSpec.components.some((c) => c.shape === 'mesh'), 'Debe contener componentes con forma mesh');
+  assert.ok(bunkBedSpec.id.startsWith('remix.bunk_bed.'), 'ID con prefijo remix');
+
+  // Verify compilation in ProceduralEngine
+  const { group, stats } = ProceduralEngine.buildModelFromSpec(bunkBedSpec);
+  assert.ok(group, 'Debe generar Three.js Group con mallas registradas');
+  assert.ok(stats.triangles >= 300, `Debe contener los triángulos reales del modelo GLB (actual: ${stats.triangles})`);
+  assert.ok(stats.vertices >= 500, `Debe contener los vértices reales del modelo GLB (actual: ${stats.vertices})`);
+
+  // Test GLB export round-trip fidelity
+  const glbBuffer = await GLBExporterService.exportToArrayBuffer(group);
+  assert.ok(glbBuffer.byteLength > 1000);
+  const verify = await GLBExporterService.verifyGLBBuffer(glbBuffer);
+  assert.equal(verify.verified, true);
+  assert.ok(verify.triangleCount >= 300);
+
+  ProceduralEngine.disposeHierarchy(group);
+});
+
 // Teardown: ensure Node exits cleanly after tests
 test('Teardown: Exit cleanly', () => {
   setTimeout(() => process.exit(0), 100);

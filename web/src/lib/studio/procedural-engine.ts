@@ -3,6 +3,30 @@ import type { ModelSpec, ComponentDef, GeometricStats, ShapePrimitive, PivotPres
 import { TextureLibrary } from './texture-library.ts';
 
 export class ProceduralEngine {
+  private static geometryRegistry = new Map<string, THREE.BufferGeometry>();
+  private static materialRegistry = new Map<string, THREE.Material>();
+
+  public static registerGeometry(id: string, geom: THREE.BufferGeometry): void {
+    this.geometryRegistry.set(id, geom);
+  }
+
+  public static getRegisteredGeometry(id: string): THREE.BufferGeometry | undefined {
+    return this.geometryRegistry.get(id);
+  }
+
+  public static registerMaterial(id: string, mat: THREE.Material): void {
+    this.materialRegistry.set(id, mat);
+  }
+
+  public static getRegisteredMaterial(id: string): THREE.Material | undefined {
+    return this.materialRegistry.get(id);
+  }
+
+  public static clearRegistries(): void {
+    this.geometryRegistry.clear();
+    this.materialRegistry.clear();
+  }
+
   /**
    * Translates a ModelSpec into a real Three.js Group with proper transforms,
    * vertex colors, flat-shaded materials, and PSX low-poly geometry.
@@ -186,6 +210,22 @@ export class ProceduralEngine {
         h = s[1] ?? 1;
         d = 0.01;
         break;
+      case 'mesh': {
+        const cachedGeom = (comp as any)?.meshId ? this.getRegisteredGeometry((comp as any).meshId) : null;
+        if (cachedGeom) {
+          if (!cachedGeom.boundingBox) cachedGeom.computeBoundingBox();
+          if (cachedGeom.boundingBox) {
+            w = cachedGeom.boundingBox.max.x - cachedGeom.boundingBox.min.x;
+            h = cachedGeom.boundingBox.max.y - cachedGeom.boundingBox.min.y;
+            d = cachedGeom.boundingBox.max.z - cachedGeom.boundingBox.min.z;
+            break;
+          }
+        }
+        w = s[0] ?? 1;
+        h = s[1] ?? 1;
+        d = s[2] ?? 1;
+        break;
+      }
       default:
         w = s[0] ?? 1;
         h = s[1] ?? 1;
@@ -404,6 +444,15 @@ export class ProceduralEngine {
         geom = this.createWedgeGeometry(w, h, d, comp.uvScale, [sx, sy, sz]);
         break;
       }
+      case 'mesh': {
+        const cachedGeom = comp.meshId ? this.getRegisteredGeometry(comp.meshId) : null;
+        if (cachedGeom) {
+          geom = cachedGeom.clone();
+        } else {
+          geom = new THREE.BoxGeometry(1, 1, 1);
+        }
+        break;
+      }
       default: {
         geom = new THREE.BoxGeometry(1, 1, 1);
         break;
@@ -429,6 +478,16 @@ export class ProceduralEngine {
     if (comp.texturePreset) {
       // Procedural surface texture from unified TextureLibrary
       mat = TextureLibrary.getMaterial(comp, baseColor);
+    } else if (comp.shape === 'mesh' && comp.meshId && this.getRegisteredMaterial(comp.meshId)) {
+      // Native material preserved from the original catalog GLB model
+      const origMat = this.getRegisteredMaterial(comp.meshId) as THREE.MeshStandardMaterial;
+      mat = origMat.clone ? (origMat.clone() as THREE.MeshStandardMaterial) : origMat;
+      if (comp.color && comp.color !== '#ffffff' && comp.color !== 'casing') {
+        mat.color = baseColor;
+      }
+      if (comp.roughness !== undefined) mat.roughness = comp.roughness;
+      if (comp.metalness !== undefined) mat.metalness = comp.metalness;
+      if (comp.wireframe !== undefined) mat.wireframe = Boolean(comp.wireframe);
     } else {
       // Legacy untextured / flat-colored component
       this.bakeVertexColors(geom, baseColor);

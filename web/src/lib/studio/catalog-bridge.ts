@@ -1,3 +1,6 @@
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { ProceduralEngine } from './procedural-engine.ts';
 import type { ModelSpec, ComponentDef } from './types.ts';
 import { AIGenerator } from './ai-generator.ts';
 import catalog from '../../data/catalog.json' with { type: 'json' };
@@ -29,9 +32,177 @@ export class CatalogBridge {
   }
 
   /**
-   * Builds an authentic, fully editable procedural ModelSpec for any catalog family.
-   * If custom parameter values are supplied (e.g. from the configurator sliders),
-   * they are seamlessly injected and applied to the component hierarchy.
+   * Loads the authentic 3D GLB model from the catalog and deconstructs it
+   * into genuine editable components in Studio (preserving meshes, positions, rotations, scales and materials).
+   */
+  public static async loadCatalogModelAsSpec(
+    family: string,
+    userParams?: Record<string, any>
+  ): Promise<ModelSpec> {
+    const entry = (catalog as any[]).find((c: any) => c.family === family) || {
+      family,
+      name: family.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase()),
+      category: 'props',
+      description: 'Modelo original desglosado para edición modular.'
+    };
+
+    // Safe polyfills for GLTFLoader when running in headless Node.js tests
+    if (typeof (globalThis as any).self === 'undefined') {
+      (globalThis as any).self = globalThis;
+    }
+
+    try {
+      let arrayBuffer: ArrayBuffer | null = null;
+      let modelUrl = entry.model_url || `/models/${family}.glb`;
+
+      // Check if a specific palette variant is requested
+      if (userParams?.palette && userParams.palette !== 'industrial_hazard') {
+        modelUrl = `/models/${family}_${userParams.palette}.glb`;
+      }
+
+      const isBrowser = typeof window !== 'undefined' && typeof window.location !== 'undefined' && Boolean(window.location.origin) && window.location.origin !== 'null';
+
+      if (!isBrowser) {
+        // Node.js environment (e.g. running unit tests)
+        const fs = await import('node:fs');
+        const path = await import('node:path');
+        const candidatePaths = [
+          path.resolve(`public/models/${family}.glb`),
+          path.resolve(`web/public/models/${family}.glb`),
+          path.resolve(`../web/public/models/${family}.glb`),
+          path.resolve(`public${modelUrl}`),
+          path.resolve(`web/public${modelUrl}`)
+        ];
+
+        let foundPath: string | null = null;
+        for (const p of candidatePaths) {
+          if (fs.existsSync(p)) {
+            foundPath = p;
+            break;
+          }
+        }
+
+        if (foundPath) {
+          const buf = fs.readFileSync(foundPath);
+          arrayBuffer = buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength);
+        }
+      } else {
+        // Browser environment
+        try {
+          const res = await fetch(modelUrl);
+          if (res.ok) {
+            arrayBuffer = await res.arrayBuffer();
+          } else if (modelUrl !== `/models/${family}.glb`) {
+            // Fallback to base model if palette model 404s
+            modelUrl = `/models/${family}.glb`;
+            const baseRes = await fetch(modelUrl);
+            if (baseRes.ok) {
+              arrayBuffer = await baseRes.arrayBuffer();
+            }
+          }
+        } catch (e) {
+          console.warn(`[CatalogBridge] Error fetching ${modelUrl}:`, e);
+        }
+      }
+
+      if (!arrayBuffer) {
+        throw new Error(`No se pudo obtener el archivo GLB para ${family}`);
+      }
+
+      const loader = new GLTFLoader();
+      const gltf = await loader.parseAsync(arrayBuffer, '');
+
+      const scene = gltf.scene;
+      scene.updateMatrixWorld(true);
+
+      const bbox = new THREE.Box3().setFromObject(scene);
+      const sizeVec = new THREE.Vector3();
+      bbox.getSize(sizeVec);
+
+      const components: ComponentDef[] = [];
+      let meshIdx = 0;
+
+      scene.traverse((node: any) => {
+        if (node.isMesh && node.geometry) {
+          meshIdx++;
+          const meshName = node.name && !node.name.startsWith('Mesh') ? node.name : `parte_${meshIdx}`;
+          const meshId = `catalog_${family}_${meshName}_${meshIdx}`;
+
+          // Register geometry and material in ProceduralEngine
+          ProceduralEngine.registerGeometry(meshId, node.geometry.clone());
+          if (node.material) {
+            ProceduralEngine.registerMaterial(meshId, node.material.clone ? node.material.clone() : node.material);
+          }
+
+          const worldPos = new THREE.Vector3();
+          const worldQuat = new THREE.Quaternion();
+          const worldScale = new THREE.Vector3();
+          node.matrixWorld.decompose(worldPos, worldQuat, worldScale);
+          const euler = new THREE.Euler().setFromQuaternion(worldQuat, 'XYZ');
+
+          const comp: ComponentDef = {
+            name: meshName,
+            shape: 'mesh',
+            meshId,
+            sourceGlbUrl: modelUrl,
+            position: [
+              parseFloat(worldPos.x.toFixed(3)),
+              parseFloat(worldPos.y.toFixed(3)),
+              parseFloat(worldPos.z.toFixed(3))
+            ],
+            rotation: [
+              parseFloat(THREE.MathUtils.radToDeg(euler.x).toFixed(1)),
+              parseFloat(THREE.MathUtils.radToDeg(euler.y).toFixed(1)),
+              parseFloat(THREE.MathUtils.radToDeg(euler.z).toFixed(1))
+            ],
+            scale: [
+              parseFloat(worldScale.x.toFixed(3)),
+              parseFloat(worldScale.y.toFixed(3)),
+              parseFloat(worldScale.z.toFixed(3))
+            ],
+            color: node.material && node.material.color ? '#' + node.material.color.getHexString() : '#ffffff',
+            roughness: node.material && typeof node.material.roughness === 'number' ? node.material.roughness : 0.7,
+            metalness: node.material && typeof node.material.metalness === 'number' ? node.material.metalness : 0.2,
+            visible: node.visible !== false
+          };
+
+          components.push(comp);
+        }
+      });
+
+      if (components.length === 0) {
+        throw new Error(`El modelo GLB de ${family} no contiene mallas.`);
+      }
+
+      const remixSpec: ModelSpec = {
+        id: `remix.${family}.${Date.now().toString(36)}`,
+        name: `${entry.name} (Remix)`,
+        category: entry.category || 'props',
+        description: `Versión editable y modular de ${entry.name}. Desarmada con sus mallas 3D originales para personalización en Studio.`,
+        units: 'meters',
+        dimensions: {
+          width: parseFloat((sizeVec.x || 1.0).toFixed(3)),
+          height: parseFloat((sizeVec.y || 1.0).toFixed(3)),
+          depth: parseFloat((sizeVec.z || 1.0).toFixed(3))
+        },
+        palette: userParams?.palette || 'industrial_hazard',
+        components
+      };
+
+      // Apply proportional scale adjustments if user supplied custom dimensions
+      if (userParams && Object.keys(userParams).length > 0) {
+        this.applyParametersToSpec(remixSpec, userParams, entry);
+      }
+
+      return remixSpec;
+    } catch (err) {
+      console.warn(`[CatalogBridge] Fallback a especificación procedural para ${family}:`, err);
+      return this.buildSpecFromCatalog(family, userParams);
+    }
+  }
+
+  /**
+   * Builds an authentic, fully editable procedural ModelSpec for any catalog family (synchronous fallback).
    */
   public static buildSpecFromCatalog(
     family: string,
@@ -95,7 +266,12 @@ export class CatalogBridge {
     // Apply scale to components if dimensions changed noticeably
     if (Math.abs(scaleX - 1) > 0.01 || Math.abs(scaleY - 1) > 0.01 || Math.abs(scaleZ - 1) > 0.01) {
       spec.components.forEach((comp) => {
-        if (comp.size && comp.size.length >= 2) {
+        if (comp.shape === 'mesh') {
+          if (!comp.scale) comp.scale = [1, 1, 1];
+          comp.scale[0] = parseFloat((comp.scale[0] * scaleX).toFixed(3));
+          comp.scale[1] = parseFloat((comp.scale[1] * scaleY).toFixed(3));
+          comp.scale[2] = parseFloat((comp.scale[2] * scaleZ).toFixed(3));
+        } else if (comp.size && comp.size.length >= 2) {
           if (comp.shape === 'box' || comp.shape === 'wedge') {
             comp.size[0] = parseFloat((comp.size[0] * scaleX).toFixed(3));
             comp.size[1] = parseFloat((comp.size[1] * scaleY).toFixed(3));

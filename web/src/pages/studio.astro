@@ -3245,6 +3245,18 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
             </div>
           </div>
         `;
+      case 'mesh':
+        return `
+          <div class="ps1-inset" style="padding: 0.6rem; font-size: 0.72rem; color: #cbd5e0; background: #050811; border: 1px inset var(--ps1-steel); display: flex; flex-direction: column; gap: 0.4rem;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <strong style="color:var(--ps1-cyan); font-family:var(--font-pixel); font-size:0.68rem;">MALLA 3D ORIGINAL DEL CATÁLOGO</strong>
+              <span class="meta-pill-ver" style="font-size:0.6rem;">GLB NATIVO</span>
+            </div>
+            <div style="font-size:0.68rem; color:#a0aec0; line-height:1.4;">
+              Esta pieza corresponde a la geometría 3D real del modelo oficial. Podés transformar su posición, rotación y escala con los controles superiores o el gizmo 3D, aplicarle texturas PBR, articularla o emparentarla con nuevas piezas.
+            </div>
+          </div>
+        `;
       default:
         return `<p style="font-size: 0.72rem; color: var(--text-dim);">Parámetros estándar de cubo aplicados.</p>`;
     }
@@ -3260,6 +3272,7 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
       case 'torus': return [0.5, 0.15, 6, 12];
       case 'capsule': return [0.25, 0.5, 4, 8];
       case 'plane': return [1.0, 1.0];
+      case 'mesh': return [1.0, 1.0, 1.0];
       default: return [1.0, 1.0, 1.0];
     }
   }
@@ -3274,6 +3287,7 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
       case 'torus': return '🍩';
       case 'capsule': return '💊';
       case 'plane': return '📄';
+      case 'mesh': return '🧩';
       default: return '🔹';
     }
   }
@@ -6984,15 +6998,16 @@ if __name__ == "__main__":
     `).join('');
 
     catalogTemplatesContainer.querySelectorAll('.btn-load-template').forEach((btn) => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', async () => {
         const fam = (btn as HTMLElement).dataset.family;
         if (!fam) return;
-        const spec = CatalogBridge.buildSpecFromCatalog(fam);
+        modalCatalogTemplates?.close();
+        showStudioToast(`📦 Cargando modelo original "${fam}"...`);
+        const spec = await CatalogBridge.loadCatalogModelAsSpec(fam);
         currentSpec = spec;
         pushHistoryState(currentSpec);
         renderCurrentSpec('visual', false);
-        modalCatalogTemplates?.close();
-        showStudioToast(`📦 ¡Modelo "${spec.name}" desarmado en piezas en el Outliner!`);
+        showStudioToast(`📦 ¡Modelo "${spec.name}" cargado con sus mallas originales!`);
       });
     });
   }
@@ -7044,11 +7059,12 @@ if __name__ == "__main__":
             userParams = JSON.parse(decodeURIComponent(paramsStr));
           } catch (e) {}
         }
-        const remixSpec = CatalogBridge.buildSpecFromCatalog(remixFamily, userParams);
+        showStudioToast(`📦 Cargando modelo original "${remixFamily}"...`);
+        const remixSpec = await CatalogBridge.loadCatalogModelAsSpec(remixFamily, userParams);
         currentSpec = remixSpec;
         pushHistoryState(currentSpec);
         renderCurrentSpec('visual', false);
-        showStudioToast(`📦 ¡Plantilla "${remixSpec.name}" desarmada y lista para editar!`);
+        showStudioToast(`📦 ¡Modelo "${remixSpec.name}" cargado con sus mallas originales!`);
         return;
       } catch (err) {
         console.warn('[ModelCoder Studio] Error cargando plantilla de catálogo:', err);
