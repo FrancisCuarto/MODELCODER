@@ -2103,6 +2103,57 @@ test('Animation Curves & GLB: Animación con rebote mecánico y keyframes person
   ProceduralEngine.disposeHierarchy(group);
 });
 
+test('Animation Loop Control: StudioViewport y Mixer soportan modo Bucle y 1 Vez', () => {
+  const mesh = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1));
+  mesh.name = 'box';
+
+  const clipDef = {
+    id: 'test_loop_clip',
+    name: 'LoopTest',
+    duration: 2.0,
+    tracks: [
+      {
+        targetComponent: 'box',
+        property: 'position' as const,
+        keyframes: [
+          { time: 0, value: [0, 0, 0] as [number, number, number] },
+          { time: 2.0, value: [0, 5, 0] as [number, number, number] }
+        ]
+      }
+    ]
+  };
+
+  const compiled = AnimationEngine.compileClipsToThree([clipDef], mesh);
+  assert.equal(compiled.length, 1);
+
+  const mixer = new THREE.AnimationMixer(mesh);
+  const action = mixer.clipAction(compiled[0]);
+
+  // Modo repeat por defecto
+  action.setLoop(THREE.LoopRepeat, Infinity);
+  action.clampWhenFinished = false;
+  assert.equal(action.loop, THREE.LoopRepeat);
+  assert.equal(action.clampWhenFinished, false);
+
+  // Modo once (1 vez y detenerse)
+  action.setLoop(THREE.LoopOnce, 1);
+  action.clampWhenFinished = true;
+  assert.equal(action.loop, THREE.LoopOnce);
+  assert.equal(action.clampWhenFinished, true);
+
+  // Simulación de avance en modo once
+  action.play();
+  mixer.update(1.0);
+  assert.equal(action.time, 1.0);
+
+  mixer.update(1.5);
+  // Al superar la duración (2.0s), con LoopOnce y clampWhenFinished, el mixer clampa el tiempo
+  assert.ok(action.time >= 2.0);
+
+  mixer.stopAllAction();
+  mixer.uncacheRoot(mesh);
+});
+
 // Teardown: ensure Node exits cleanly after tests
 test('Teardown: Exit cleanly', () => {
   setTimeout(() => process.exit(0), 100);

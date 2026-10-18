@@ -45,6 +45,7 @@ export class StudioViewport {
   private activeClipName: string | null = null;
   private isAnimationPlaying = false;
   private animationSpeed = 1.0;
+  private playbackLoopMode: 'repeat' | 'once' | 'pingpong' = 'repeat';
   private onAnimationProgress?: (time: number, duration: number, isPlaying: boolean, clipName: string) => void;
 
   // Callbacks
@@ -277,13 +278,39 @@ export class StudioViewport {
       }
       if (this.onAnimationProgress) {
         const dur = this.activeAction.getClip().duration || 1.0;
-        const curTime = this.activeAction.time % dur;
-        this.onAnimationProgress(curTime, dur, true, this.activeClipName || '');
+        let curTime: number;
+        if (this.playbackLoopMode === 'once') {
+          curTime = Math.min(dur, Math.max(0, this.activeAction.time));
+          if (curTime >= dur && !this.activeAction.isRunning()) {
+            this.isAnimationPlaying = false;
+          }
+        } else {
+          curTime = this.activeAction.time % dur;
+        }
+        this.onAnimationProgress(curTime, dur, this.isAnimationPlaying, this.activeClipName || '');
       }
     }
     this.controls.update();
     this.renderer.render(this.scene, this.camera);
   };
+
+  private createMixer(root: THREE.Object3D): THREE.AnimationMixer {
+    if (this.mixer) {
+      this.mixer.stopAllAction();
+      if (this.currentMesh) {
+        this.mixer.uncacheRoot(this.currentMesh);
+      }
+    }
+    const mixer = new THREE.AnimationMixer(root);
+    mixer.addEventListener('finished', () => {
+      this.isAnimationPlaying = false;
+      if (this.activeAction && this.onAnimationProgress) {
+        const dur = this.activeAction.getClip().duration || 1.0;
+        this.onAnimationProgress(dur, dur, false, this.activeClipName || '');
+      }
+    });
+    return mixer;
+  }
 
   /**
    * Updates the viewport with a genuine new generated 3D object.
@@ -339,7 +366,7 @@ export class StudioViewport {
     this.scene.add(obj);
 
     // Initialize mixer and load animations if present
-    this.mixer = new THREE.AnimationMixer(obj);
+    this.mixer = this.createMixer(obj);
     if (animations && animations.length > 0) {
       this.loadAnimations(animations);
     }
@@ -396,7 +423,7 @@ export class StudioViewport {
 
     if (!this.currentMesh) return;
     if (!this.mixer) {
-      this.mixer = new THREE.AnimationMixer(this.currentMesh);
+      this.mixer = this.createMixer(this.currentMesh);
     }
 
     if (!animations || animations.length === 0) return;
@@ -404,14 +431,20 @@ export class StudioViewport {
     this.compiledClips = AnimationEngine.compileClipsToThree(animations, this.currentMesh);
     for (const clip of this.compiledClips) {
       const action = this.mixer.clipAction(clip);
-      const loopType = clip.userData.loop || 'repeat';
+      const loopType = this.playbackLoopMode === 'once'
+        ? 'once'
+        : this.playbackLoopMode === 'pingpong'
+          ? 'pingpong'
+          : (clip.userData.loop || 'repeat');
       if (loopType === 'pingpong') {
         action.setLoop(THREE.LoopPingPong, Infinity);
+        action.clampWhenFinished = false;
       } else if (loopType === 'once') {
         action.setLoop(THREE.LoopOnce, 1);
         action.clampWhenFinished = true;
       } else {
         action.setLoop(THREE.LoopRepeat, Infinity);
+        action.clampWhenFinished = false;
       }
       this.animationActions.set(clip.name, action);
     }
@@ -425,6 +458,26 @@ export class StudioViewport {
         this.mixer.update(0);
       }
     }
+  }
+
+  public setPlaybackLoopMode(mode: 'repeat' | 'once' | 'pingpong'): void {
+    this.playbackLoopMode = mode;
+    for (const action of this.animationActions.values()) {
+      if (mode === 'once') {
+        action.setLoop(THREE.LoopOnce, 1);
+        action.clampWhenFinished = true;
+      } else if (mode === 'pingpong') {
+        action.setLoop(THREE.LoopPingPong, Infinity);
+        action.clampWhenFinished = false;
+      } else {
+        action.setLoop(THREE.LoopRepeat, Infinity);
+        action.clampWhenFinished = false;
+      }
+    }
+  }
+
+  public getPlaybackLoopMode(): 'repeat' | 'once' | 'pingpong' {
+    return this.playbackLoopMode;
   }
 
   public playAnimation(clipName?: string): void {
@@ -443,6 +496,14 @@ export class StudioViewport {
 
     this.activeClipName = targetName;
     this.activeAction = nextAction;
+
+    // Reset to start if already at the end or if LoopOnce has completed
+    const dur = this.activeAction.getClip().duration || 1.0;
+    if (this.activeAction.time >= dur - 0.03 || !this.activeAction.isRunning()) {
+      this.activeAction.reset();
+      this.activeAction.time = 0;
+    }
+
     this.activeAction.paused = false;
     this.activeAction.play();
     this.isAnimationPlaying = true;

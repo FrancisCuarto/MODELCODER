@@ -443,6 +443,9 @@ import catalog from '../data/catalog.json';
               <button type="button" id="btn-anim-stop" class="btn-mini ps1-ctrl-btn" title="Detener y volver al inicio" disabled>
                 ⏹ STOP
               </button>
+              <button type="button" id="btn-anim-loop-toggle" class="btn-mini ps1-ctrl-btn" title="Alternar modo de repetición: Bucle continuo o Reproducir 1 vez" disabled>
+                🔁 BUCLE
+              </button>
               <div class="anim-scrubber-wrap">
                 <input type="range" id="anim-time-slider" min="0" max="1" step="0.01" value="0" class="anim-scrubber-slider" title="Línea de tiempo de la animación" disabled />
               </div>
@@ -1541,6 +1544,8 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
   const btnTimelineEditAnim = document.getElementById('btn-timeline-edit-anim');
   const btnAnimPlay = document.getElementById('btn-anim-play') as HTMLButtonElement | null;
   const btnAnimStop = document.getElementById('btn-anim-stop') as HTMLButtonElement | null;
+  const btnAnimLoopToggle = document.getElementById('btn-anim-loop-toggle') as HTMLButtonElement | null;
+  let currentPlaybackLoopMode: 'repeat' | 'once' = 'repeat';
   const animTimeSlider = document.getElementById('anim-time-slider') as HTMLInputElement | null;
   const animTimeDisplay = document.getElementById('anim-time-display');
   const btnCaptureTimelinePose = document.getElementById('btn-capture-timeline-pose') as HTMLButtonElement | null;
@@ -4670,6 +4675,7 @@ if __name__ == "__main__":
       animClipSelect.appendChild(opt);
       if (btnAnimPlay) { btnAnimPlay.disabled = true; btnAnimPlay.textContent = '▶ PLAY'; }
       if (btnAnimStop) btnAnimStop.disabled = true;
+      if (btnAnimLoopToggle) btnAnimLoopToggle.disabled = true;
       if (animTimeSlider) { animTimeSlider.disabled = true; animTimeSlider.value = '0'; }
       if (animTimeDisplay) animTimeDisplay.textContent = '0.00s / 0.00s';
       if (btnExportVideo) btnExportVideo.disabled = false;
@@ -4689,6 +4695,7 @@ if __name__ == "__main__":
 
     if (btnAnimPlay) btnAnimPlay.disabled = false;
     if (btnAnimStop) btnAnimStop.disabled = false;
+    if (btnAnimLoopToggle) btnAnimLoopToggle.disabled = false;
     if (animTimeSlider) animTimeSlider.disabled = false;
     if (btnExportVideo) btnExportVideo.disabled = false;
     if (btnAnimDelete) btnAnimDelete.style.display = 'inline-block';
@@ -5240,6 +5247,24 @@ if __name__ == "__main__":
     if (btnAnimPlay) btnAnimPlay.textContent = '▶ PLAY';
     if (animTimeSlider) animTimeSlider.value = '0';
     renderAnimationCurveCanvas();
+  });
+
+  btnAnimLoopToggle?.addEventListener('click', () => {
+    currentPlaybackLoopMode = currentPlaybackLoopMode === 'repeat' ? 'once' : 'repeat';
+    viewport?.setPlaybackLoopMode(currentPlaybackLoopMode);
+    if (currentPlaybackLoopMode === 'once') {
+      btnAnimLoopToggle.textContent = '🔂 1 VEZ';
+      btnAnimLoopToggle.title = 'Modo actual: Reproducir 1 vez y detenerse. Haz clic para cambiar a bucle continuo.';
+      btnAnimLoopToggle.classList.add('btn-cyan');
+      btnAnimLoopToggle.classList.remove('ps1-ctrl-btn');
+      showStudioToast('🔂 Modo 1 VEZ: la animación se reproducirá una sola vez y se detendrá.');
+    } else {
+      btnAnimLoopToggle.textContent = '🔁 BUCLE';
+      btnAnimLoopToggle.title = 'Modo actual: Bucle continuo. Haz clic para cambiar a reproducir 1 sola vez.';
+      btnAnimLoopToggle.classList.remove('btn-cyan');
+      btnAnimLoopToggle.classList.add('ps1-ctrl-btn');
+      showStudioToast('🔁 Modo BUCLE: la animación se repetirá continuamente.');
+    }
   });
 
   animTimeSlider?.addEventListener('input', () => {
@@ -6445,9 +6470,15 @@ if __name__ == "__main__":
 
     showStudioToast(`🎬 Grabando Reel animado (${activeSocialFormat === 'post' ? '1:1' : '9:16'})...`);
 
+    const activeObj = viewport.getVisibleObject();
+    const clipInfo = viewport.getActiveClipInfo();
+    const hasAnimation = Boolean(clipInfo && clipInfo.duration > 0 && clipInfo.name);
+    const targetDuration = hasAnimation ? Math.max(1.0, clipInfo!.duration) : 3.0; // Duración del clip o 3s de rotación 360°
+    const initialRotY = activeObj ? activeObj.rotation.y : 0;
+    const initialAnimTime = clipInfo ? clipInfo.time : 0;
+
     try {
       const fps = 30;
-      const targetDuration = 3.0; // 3-second loop
       const stream = (storyPreviewCanvas as any).captureStream(fps);
 
       let mimeType = 'video/webm;codecs=vp9';
@@ -6473,6 +6504,13 @@ if __name__ == "__main__":
           const prog = Math.min(1.0, elapsed / totalMs);
           btnDownloadStoryVideo.textContent = `🔴 ${Math.round(prog * 100)}%`;
 
+          // Avanzar la animación o rotar en 360° en cada frame
+          if (hasAnimation) {
+            viewport.seekAnimation(prog * targetDuration);
+          } else if (activeObj) {
+            activeObj.rotation.y = initialRotY + prog * Math.PI * 2;
+          }
+
           cachedModelRenderCanvas = await viewport.captureStoryRender({
             width: 1080,
             height: 1080,
@@ -6484,7 +6522,7 @@ if __name__ == "__main__":
             clearInterval(intervalId);
             if (recorder.state === 'recording') recorder.stop();
           }
-        }, 66);
+        }, 33);
       });
 
       const blob = new Blob(chunks, { type: mimeType });
@@ -6500,6 +6538,12 @@ if __name__ == "__main__":
       console.warn('[ModelCoder] Error grabando reel:', e);
       showStudioToast(`⚠️ No se pudo grabar el reel: ${e?.message || 'Error en MediaRecorder'}`, true);
     } finally {
+      // Restaurar estado inicial del modelo
+      if (hasAnimation) {
+        viewport.seekAnimation(initialAnimTime);
+      } else if (activeObj) {
+        activeObj.rotation.y = initialRotY;
+      }
       btnDownloadStoryVideo.disabled = false;
       btnDownloadStoryVideo.textContent = originalText;
     }
@@ -6627,11 +6671,13 @@ if __name__ == "__main__":
   .studio-container {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
-    padding: 0.75rem;
-    max-width: 1750px;
+    gap: 0.5rem;
+    padding: 0.35rem 0.5rem;
+    max-width: 100%;
+    width: 100%;
     margin: 0 auto;
     min-height: calc(100vh - 80px);
+    box-sizing: border-box;
   }
 
   /* Topbar */
@@ -6815,7 +6861,14 @@ if __name__ == "__main__":
   .studio-workspace.mode-visual-active,
   .studio-workspace.workspace-layout,
   .studio-workspace.workspace-modeling {
-    grid-template-columns: 310px 1fr 350px;
+    grid-template-columns: minmax(290px, 320px) 1fr minmax(330px, 380px);
+  }
+  @media (min-width: 1800px) {
+    .studio-workspace.mode-visual-active,
+    .studio-workspace.workspace-layout,
+    .studio-workspace.workspace-modeling {
+      grid-template-columns: 340px 1fr 410px;
+    }
   }
   .studio-workspace.workspace-layout .creation-column,
   .studio-workspace.workspace-modeling .creation-column {
@@ -6974,6 +7027,12 @@ if __name__ == "__main__":
   .studio-container.fullscreen-active .inspector-column {
     height: 100% !important;
     min-height: 0 !important;
+  }
+
+  .studio-container.fullscreen-active .studio-workspace.mode-visual-active,
+  .studio-container.fullscreen-active .studio-workspace.workspace-layout,
+  .studio-container.fullscreen-active .studio-workspace.workspace-modeling {
+    grid-template-columns: minmax(300px, 340px) 1fr minmax(340px, 420px);
   }
 
   @media (max-width: 1300px) {

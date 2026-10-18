@@ -340,6 +340,20 @@ main.site-content {
   padding: 1.5rem 1.25rem;
 }
 
+/* Studio Workspace full-width fluid override */
+main.site-content:has(.studio-container),
+body:has(.studio-container) main.site-content,
+body.studio-fullscreen-active main.site-content {
+  max-width: 100% !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 0.35rem 0.5rem !important;
+}
+
+body.studio-fullscreen-active main.site-content {
+  padding: 0 !important;
+}
+
 /* ==========================================================================
    PS1 BUTTONS (3D OUTSET RECTANGULAR HARDWARE STYLE)
    ========================================================================== */
