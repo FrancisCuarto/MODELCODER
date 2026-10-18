@@ -1,0 +1,1233 @@
+---
+import Layout from '../../layouts/Layout.astro';
+
+const pageTitle = "Documentación Técnica y Manual de Referencia | ModelCoder 3D";
+const pageDescription = "Enciclopedia técnica completa, manual de modelado procedural 3D, guías de cinemática, jerarquías, animación, y tutoriales de integración para Godot 4, Unity y Three.js.";
+const pageKeywords = "documentación modelcoder, manual modelado procedural 3d, tutorial godot 4 glb, unity animacion 3d, jerarquias threejs, texturas pbr procedurales, low poly modeler";
+---
+
+<Layout 
+  title={pageTitle}
+  description={pageDescription}
+  keywords={pageKeywords}
+>
+  <div class="docs-portal-wrapper">
+    <!-- Barra Superior de Navegación Rápida -->
+    <header class="ps1-window docs-header-banner">
+      <div class="ps1-titlebar">
+        <span>MANUAL DE REFERENCIA TÉCNICA · MODELCODER 3D</span>
+        <span class="ps1-telemetry-tag">VERSIÓN 2.4.0 · ESTÁNDAR ABIERTO</span>
+      </div>
+      <div class="docs-header-inner">
+        <div>
+          <h1 class="docs-main-heading">ENCICLOPEDIA Y GUÍA DE USUARIO</h1>
+          <p class="docs-sub-heading">
+            Documentación técnica oficial para el diseño procedural de modelos 3D low-poly, cinemática de articulaciones, materiales PBR e integración en motores de videojuegos.
+          </p>
+        </div>
+        <div class="docs-header-actions">
+          <a href="/studio" class="btn btn-gold" style="font-size: 0.82rem; padding: 0.6rem 1.2rem; text-decoration: none;">
+            ⚡ Abrir Studio 3D
+          </a>
+          <a href="/" class="btn btn-outline" style="font-size: 0.82rem; padding: 0.6rem 1.2rem; text-decoration: none;">
+            📦 Explorar Catálogo
+          </a>
+        </div>
+      </div>
+    </header>
+
+    <div class="docs-layout-grid">
+      <!-- SIDEBAR LATERAL: ÍNDICE Y BUSCADOR -->
+      <aside class="docs-sidebar ps1-window">
+        <div class="ps1-titlebar">
+          <span>ÍNDICE DE CONTENIDOS</span>
+          <span class="ps1-telemetry-tag">NAVEGACIÓN</span>
+        </div>
+        <div class="docs-sidebar-inner">
+          <div class="docs-search-box">
+            <input 
+              type="text" 
+              id="docs-search-input" 
+              class="ps1-input" 
+              placeholder="🔍 Filtrar temas o tutoriales..." 
+              aria-label="Buscar en la documentación"
+            />
+          </div>
+
+          <nav class="docs-nav-menu" id="docs-nav-tree">
+            <!-- Grupo 1: Fundamentos -->
+            <div class="nav-group">
+              <span class="nav-group-title">1. FUNDAMENTOS</span>
+              <a href="#introduccion" class="docs-nav-item active">Introducción y Conceptos</a>
+              <a href="#interfaz-studio" class="docs-nav-item">Estructura del Studio 3D</a>
+              <a href="#flujo-trabajo" class="docs-nav-item">Flujo de Trabajo Recomendado</a>
+            </div>
+
+            <!-- Grupo 2: Geometría -->
+            <div class="nav-group">
+              <span class="nav-group-title">2. GEOMETRÍA PROCEDURAL</span>
+              <a href="#primitivas" class="docs-nav-item">Las 8 Primitivas Geométricas</a>
+              <a href="#dimensiones-uv" class="docs-nav-item">Dimensiones y Mapeo UV</a>
+              <a href="#presupuesto-poligonos" class="docs-nav-item">Optimización y Polígonos</a>
+            </div>
+
+            <!-- Grupo 3: Materiales -->
+            <div class="nav-group">
+              <span class="nav-group-title">3. MATERIALES Y TEXTURAS</span>
+              <a href="#sistema-pbr" class="docs-nav-item">Motor de Texturizado PBR</a>
+              <a href="#familias-texturas" class="docs-nav-item">Familias de Materiales</a>
+              <a href="#parametros-material" class="docs-nav-item">Desgaste, Relieve y Rotación</a>
+            </div>
+
+            <!-- Grupo 4: Jerarquías y Pivotes -->
+            <div class="nav-group">
+              <span class="nav-group-title">4. JERARQUÍAS Y ARTICULACIONES</span>
+              <a href="#jerarquias-nodos" class="docs-nav-item">Jerarquías Padre e Hijo</a>
+              <a href="#pivotes-bisagras" class="docs-nav-item">Puntos de Pivote y Bisagras</a>
+              <a href="#herramienta-espejo" class="docs-nav-item">Herramienta de Simetría (Espejo)</a>
+            </div>
+
+            <!-- Grupo 5: Animación -->
+            <div class="nav-group">
+              <span class="nav-group-title">5. SISTEMA DE ANIMACIÓN</span>
+              <a href="#linea-tiempo" class="docs-nav-item">Línea de Tiempo y Pistas</a>
+              <a href="#curvas-aceleracion" class="docs-nav-item">Curvas de Aceleración (Easing)</a>
+              <a href="#modos-reproduccion" class="docs-nav-item">Modos Bucle y Reproducción Única</a>
+            </div>
+
+            <!-- Grupo 6: Integración en Motores -->
+            <div class="nav-group">
+              <span class="nav-group-title">6. INTEGRACIÓN EN MOTORES</span>
+              <a href="#motor-godot4" class="docs-nav-item">Integración en Godot 4</a>
+              <a href="#motor-unity" class="docs-nav-item">Integración en Unity</a>
+              <a href="#motor-threejs" class="docs-nav-item">Integración en Three.js / Web</a>
+              <a href="#motor-blender" class="docs-nav-item">Importación en Blender</a>
+            </div>
+
+            <!-- Grupo 7: Tutoriales Prácticos -->
+            <div class="nav-group highlight-group">
+              <span class="nav-group-title">7. TUTORIALES PASO A PASO</span>
+              <a href="#tutorial-puerta-bisagra" class="docs-nav-item">Tutorial: Puerta con Bisagra Animada</a>
+              <a href="#tutorial-torreta-dos-ejes" class="docs-nav-item">Tutorial: Torreta de Dos Ejes</a>
+              <a href="#tutorial-mueble-pbr" class="docs-nav-item">Tutorial: Mueble Técnico con Desgaste</a>
+              <a href="#tutorial-godot-script" class="docs-nav-item">Tutorial: Animación Interactiva en Godot 4</a>
+              <a href="#tutorial-unity-prefab" class="docs-nav-item">Tutorial: Configuración de Prefab en Unity</a>
+            </div>
+
+            <!-- Grupo 8: Especificación Técnica -->
+            <div class="nav-group">
+              <span class="nav-group-title">8. ESPECIFICACIÓN TÉCNICA</span>
+              <a href="#especificacion-modelspec" class="docs-nav-item">Esquema JSON (ModelSpec)</a>
+              <a href="#api-scripting" class="docs-nav-item">API del CodeSandbox</a>
+            </div>
+          </nav>
+        </div>
+      </aside>
+
+      <!-- CONTENIDO PRINCIPAL DE LA DOCUMENTACIÓN -->
+      <main class="docs-content ps1-window">
+        <div class="ps1-titlebar">
+          <span id="current-section-breadcrumb">DOCUMENTACIÓN TÉCNICA / INICIO</span>
+          <span class="ps1-telemetry-tag">FORMATO: ESTÁNDAR GLTF 2.0</span>
+        </div>
+
+        <div class="docs-article-body">
+          <!-- ======================================================== -->
+          <!-- SECCIÓN 1: FUNDAMENTOS -->
+          <!-- ======================================================== -->
+          <section id="introduccion" class="doc-block">
+            <h2 class="doc-h2">1. Introducción y Conceptos Fundamentales</h2>
+            <p class="doc-p">
+              <strong>ModelCoder</strong> es un entorno web especializado en el diseño, ensamble y parametrización de modelos 3D procedurales de bajo conteo poligonal (low-poly), optimizados directamente para motores de videojuegos y aplicaciones en tiempo real.
+            </p>
+            <p class="doc-p">
+              A diferencia de las herramientas de modelado de malla destructivo tradicionales (como esculpido poligonal o modelado por vértices libres), ModelCoder opera mediante una <strong>arquitectura declarativa de componentes geométricos</strong>. Cada modelo se describe mediante una especificación formal denominada <code class="doc-code">ModelSpec</code>, que combina primitivas matemáticas paramétricas, jerarquías de transformación espacial, materiales basados en física (PBR) y pistas de animación por cuadros clave.
+            </p>
+
+            <div class="doc-callout doc-callout-info">
+              <strong>Ventajas de la Arquitectura Procedural:</strong>
+              <ul style="margin: 0.5rem 0 0 1.25rem; font-size: 0.82rem; line-height: 1.5;">
+                <li><strong>Portabilidad absoluta:</strong> Los modelos se describen en estructuras JSON compactas de pocos kilobytes.</li>
+                <li><strong>No destructivo:</strong> Modificar el ancho, la textura o el pivote de un componente no deforma la geometría adyacente.</li>
+                <li><strong>Interoperabilidad nativa:</strong> Exportación a formato binario estándar GLTF 2.0 (<code class="doc-code">.glb</code>), garantizando compatibilidad con Godot 4, Unity, Unreal Engine, Blender y Three.js.</li>
+              </ul>
+            </div>
+          </section>
+
+          <section id="interfaz-studio" class="doc-block">
+            <h2 class="doc-h2">Estructura del Studio 3D</h2>
+            <p class="doc-p">
+              El entorno de trabajo del Studio 3D se organiza en cinco áreas funcionales principales:
+            </p>
+            <div class="doc-table-wrap">
+              <table class="doc-table">
+                <thead>
+                  <tr>
+                    <th>Área</th>
+                    <th>Ubicación</th>
+                    <th>Función Principal</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>Visor 3D (Viewport)</strong></td>
+                    <td>Centro</td>
+                    <td>Renderizado en tiempo real con Three.js, controles orbitales (rotar, desplazar, zoom), iluminación PBR y rejilla métrica de referencia.</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Árbol de Componentes (Outliner)</strong></td>
+                    <td>Panel Izquierdo</td>
+                    <td>Visualización de la lista de piezas, relaciones jerárquicas padre/hijo, visibilidad, duplicación y eliminación de componentes.</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Inspector de Propiedades</strong></td>
+                    <td>Panel Derecho</td>
+                    <td>Ajuste numérico de transformaciones (posición, rotación, escala), dimensiones de primitivas, selección de pivote y configuración de materiales.</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Línea de Tiempo y Animación</strong></td>
+                    <td>Panel Inferior</td>
+                    <td>Creación y edición de cuadros clave (keyframes), selección de perfiles de aceleración (easing) y controles de reproducción (Play, Pausa, Bucle).</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Terminal de Código / IA</strong></td>
+                    <td>Pestaña Superior</td>
+                    <td>Edición directa mediante scripts en TypeScript/JavaScript o generación asistida por lenguaje natural mediante la API de IA.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section id="flujo-trabajo" class="doc-block">
+            <h2 class="doc-h2">Flujo de Trabajo Recomendado</h2>
+            <ol class="doc-ordered-list">
+              <li><strong>Estructuración base:</strong> Agregar las primitivas principales que definen la forma general del objeto (por ejemplo, el chasis de un vehículo o el marco de una puerta).</li>
+              <li><strong>Ajuste de jerarquías y pivotes:</strong> Si el modelo posee partes móviles (puertas, ruedas, cañones), configurar sus puntos de pivote específicos y emparentarlas a sus componentes padre.</li>
+              <li><strong>Asignación de materiales y texturas:</strong> Aplicar presets de la biblioteca PBR, calibrando los valores de desgaste superficial (<code class="doc-code">wear</code>) y orientación de mapeo.</li>
+              <li><strong>Animación (opcional):</strong> Definir pistas de rotación o traslación en la línea de tiempo si el modelo requiere movimiento funcional.</li>
+              <li><strong>Exportación:</strong> Generar el archivo <code class="doc-code">.glb</code> o exportar el script nativo para Godot 4, Unity o Three.js.</li>
+            </ol>
+          </section>
+
+          <!-- ======================================================== -->
+          <!-- SECCIÓN 2: GEOMETRÍA PROCEDURAL -->
+          <!-- ======================================================== -->
+          <section id="primitivas" class="doc-block">
+            <h2 class="doc-h2">2. Las 8 Primitivas Geométricas</h2>
+            <p class="doc-p">
+              ModelCoder proporciona 8 primitivas volumétricas optimizadas. Cada primitiva calcula automáticamente sus coordenadas cartesianas, normales de superficie y coordenadas de textura UV sin requerir paquetes de mallas externos:
+            </p>
+
+            <div class="doc-table-wrap">
+              <table class="doc-table">
+                <thead>
+                  <tr>
+                    <th>Identificador</th>
+                    <th>Nombre</th>
+                    <th>Parámetros Principales</th>
+                    <th>Uso Recomendado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><code class="doc-code">box</code></td>
+                    <td>Caja / Prisma Rectangular</td>
+                    <td><code class="doc-code">width</code>, <code class="doc-code">height</code>, <code class="doc-code">depth</code></td>
+                    <td>Estructuras modulares, paneles, marcos, paredes y muebles.</td>
+                  </tr>
+                  <tr>
+                    <td><code class="doc-code">cylinder</code></td>
+                    <td>Cilindro Paramétrico</td>
+                    <td><code class="doc-code">radiusTop</code>, <code class="doc-code">radiusBottom</code>, <code class="doc-code">height</code>, <code class="doc-code">radialSegments</code></td>
+                    <td>Tuberías, postes, columnas, ejes, cañones y tanques de presión.</td>
+                  </tr>
+                  <tr>
+                    <td><code class="doc-code">sphere</code></td>
+                    <td>Esfera Segmentada</td>
+                    <td><code class="doc-code">radius</code>, <code class="doc-code">widthSegments</code>, <code class="doc-code">heightSegments</code></td>
+                    <td>Dromos, cúpulas, articulaciones esféricas y balizas luminosas.</td>
+                  </tr>
+                  <tr>
+                    <td><code class="doc-code">wedge</code></td>
+                    <td>Cuña Triangular</td>
+                    <td><code class="doc-code">width</code>, <code class="doc-code">height</code>, <code class="doc-code">depth</code></td>
+                    <td>Rampas, biseles, refuerzos angulares estructurales y techos.</td>
+                  </tr>
+                  <tr>
+                    <td><code class="doc-code">cone</code></td>
+                    <td>Cono</td>
+                    <td><code class="doc-code">radius</code>, <code class="doc-code">height</code>, <code class="doc-code">radialSegments</code></td>
+                    <td>Puntas de proyectil, toberas de propulsión y antenas direccionales.</td>
+                  </tr>
+                  <tr>
+                    <td><code class="doc-code">torus</code></td>
+                    <td>Toroide / Anillo</td>
+                    <td><code class="doc-code">radius</code>, <code class="doc-code">tube</code>, <code class="doc-code">radialSegments</code>, <code class="doc-code">tubularSegments</code></td>
+                    <td>Juntas tóricas, volantes, manijas circulares y bridas de acople.</td>
+                  </tr>
+                  <tr>
+                    <td><code class="doc-code">prism</code></td>
+                    <td>Prisma Poligonal</td>
+                    <td><code class="doc-code">sides</code>, <code class="doc-code">radius</code>, <code class="doc-code">height</code></td>
+                    <td>Tuercas hexagonales, columnas octogonales y soportes técnicos.</td>
+                  </tr>
+                  <tr>
+                    <td><code class="doc-code">capsule</code></td>
+                    <td>Cápsula</td>
+                    <td><code class="doc-code">radius</code>, <code class="doc-code">length</code>, <code class="doc-code">capSegments</code>, <code class="doc-code">radialSegments</code></td>
+                    <td>Tanques criogénicos, contenedores presurizados y manijas ergonómicas.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section id="dimensiones-uv" class="doc-block">
+            <h2 class="doc-h2">Dimensiones y Mapeo UV Anti-Estiramiento</h2>
+            <p class="doc-p">
+              Uno de los problemas más frecuentes en el modelado por cajas y cuñas es la distorsión del mapa de textura cuando las caras poseen proporciones desbalanceadas (por ejemplo, una viga de 0.1m x 4.0m x 0.1m).
+            </p>
+            <p class="doc-p">
+              El motor geométrico de ModelCoder implementa una <strong>generación de coordenadas UV proporcionales al tamaño real</strong>. Cada cara calcula su ratio de aspecto físico en metros y distribuye las coordenadas de textura sin estiramiento, asegurando que las texturas de metales, maderas o rejillas conserven su densidad de texels constante en todas las superficies.
+            </p>
+          </section>
+
+          <section id="presupuesto-poligonos" class="doc-block">
+            <h2 class="doc-h2">Optimización y Presupuesto de Triángulos (Poly Budget)</h2>
+            <p class="doc-p">
+              Para garantizar que los modelos funcionen con fluidez en dispositivos móviles, navegadores web y videojuegos independientes, el sistema monitorea en tiempo real el contador geométrico:
+            </p>
+            <ul class="doc-list">
+              <li><strong>Props pequeños y objetos simples:</strong> 50 a 350 triángulos (ejemplo: cajas de suministros, sillas, lámparas).</li>
+              <li><strong>Maquinaria y mobiliario interactivo:</strong> 350 a 1,200 triángulos (ejemplo: consolas de control, puertas articuladas, torretas).</li>
+              <li><strong>Estructuras complejas y vehículos:</strong> 1,200 a 3,500 triángulos (ejemplo: pasillos de estación completos, naves de transporte).</li>
+            </ul>
+          </section>
+
+          <!-- ======================================================== -->
+          <!-- SECCIÓN 3: MATERIALES Y TEXTURAS -->
+          <!-- ======================================================== -->
+          <section id="sistema-pbr" class="doc-block">
+            <h2 class="doc-h2">3. Sistema de Materiales y Texturas PBR</h2>
+            <p class="doc-p">
+              ModelCoder incluye una biblioteca de más de <strong>118 presets de texturas PBR procedurales</strong> generadas matemáticamente en memoria mediante canvas sintéticos. Cada material genera dos canales fundamentales:
+            </p>
+            <ul class="doc-list">
+              <li><strong>Canal Albedo (Color / Difuso):</strong> Define los patrones de pigmentación, vetas, juntas y microvariaciones cromáticas.</li>
+              <li><strong>Canal Normal (Relieve de Superficie):</strong> Mapa de normales tangente que simula la interacción de la luz con remaches, hendiduras y rugosidades sin incrementar el conteo de polígonos de la malla.</li>
+            </ul>
+          </section>
+
+          <section id="familias-texturas" class="doc-block">
+            <h2 class="doc-h2">Familias de Materiales</h2>
+            <div class="doc-table-wrap">
+              <table class="doc-table">
+                <thead>
+                  <tr>
+                    <th>Familia</th>
+                    <th>Ejemplos de Presets</th>
+                    <th>Características Físicas</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>Metales e Industriales</strong></td>
+                    <td><code class="doc-code">brushed_metal</code>, <code class="doc-code">reinforced_plating</code>, <code class="doc-code">galvanized_steel</code></td>
+                    <td>Alta reflectividad metálica (<code class="doc-code">metalness: 0.85</code>), rugosidad media-baja.</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Gomas y Polímeros</strong></td>
+                    <td><code class="doc-code">rubber_tread</code>, <code class="doc-code">carbon_fiber</code>, <code class="doc-code">high_density_poly</code></td>
+                    <td>Cero componente metálico (<code class="doc-code">metalness: 0.0</code>), alta absorción lumínica y relieves antideslizantes.</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Pantallas e Interfaces</strong></td>
+                    <td><code class="doc-code">crt_scanlines</code>, <code class="doc-code">radar_sweep</code>, <code class="doc-code">matrix_terminal</code></td>
+                    <td>Propiedades autoemisivas calculadas para simular monitores retro.</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Pétreos y Hormigón</strong></td>
+                    <td><code class="doc-code">reinforced_concrete</code>, <code class="doc-code">industrial_marble</code>, <code class="doc-code">rough_granite</code></td>
+                    <td>Relieve táctil profundo con rugosidad difusa elevada (<code class="doc-code">roughness: 0.95</code>).</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Vidrio y Transparencias</strong></td>
+                    <td><code class="doc-code">armored_glass</code>, <code class="doc-code">reinforced_acrylic</code>, <code class="doc-code">hazard_visor</code></td>
+                    <td>Canal alfa activado (<code class="doc-code">transparent: true</code>, <code class="doc-code">opacity: 0.35 - 0.70</code>) con reflejos especulares nítidos.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section id="parametros-material" class="doc-block">
+            <h2 class="doc-h2">Parámetros de Desgaste, Relieve y Rotación</h2>
+            <p class="doc-p">
+              Cualquier material puede ajustarse de manera no destructiva con tres parámetros de control avanzados:
+            </p>
+            <ul class="doc-list">
+              <li><strong><code class="doc-code">wear</code> (0.0 a 1.0):</strong> Control de degradación superficial. En valores bajos el material se presenta pulcro de fábrica; en valores altos genera arañazos, pátina de óxido en bordes y desgaste de pintura.</li>
+              <li><strong><code class="doc-code">normalStrength</code> (0.0 a 2.5):</strong> Factor multiplicador del relieve. Permite exagerar la profundidad visual de rejillas y remaches para acentuar el estilo visual retro.</li>
+              <li><strong><code class="doc-code">uvRotation</code> (0°, 90°, 180°, 270°):</strong> Gira la orientación del mapa de textura sobre la superficie del componente, ideal para alinear vetas de madera o patrones de rejilla metálica.</li>
+            </ul>
+          </section>
+
+          <!-- ======================================================== -->
+          <!-- SECCIÓN 4: JERARQUÍAS Y ARTICULACIONES -->
+          <!-- ======================================================== -->
+          <section id="jerarquias-nodos" class="doc-block">
+            <h2 class="doc-h2">4. Jerarquías Padre e Hijo y Transformaciones</h2>
+            <p class="doc-p">
+              En el diseño de objetos complejos, las piezas no deben flotar de manera aislada en el espacio. Mediante la propiedad <code class="doc-code">parentId</code>, cualquier componente puede subordinarse a otro componente padre.
+            </p>
+            <p class="doc-p">
+              <strong>Preservación de Transformación Mundial (World Transform Preservation):</strong> Al vincular un objeto a un padre en ModelCoder (ya sea arrastrándolo en el árbol o por código), el sistema calcula la matriz inversa del padre para que el componente hijo <strong>mantenga exactamente su posición y orientación en el mundo</strong>, evitando saltos bruscos o desplazamientos indeseados.
+            </p>
+          </section>
+
+          <section id="pivotes-bisagras" class="doc-block">
+            <h2 class="doc-h2">Puntos de Pivote y Bisagras Mecánicas</h2>
+            <p class="doc-p">
+              Por defecto, todas las mallas rotan alrededor de su centro geométrico (<code class="doc-code">center</code>). Sin embargo, una puerta o una palanca no giran en su centro, sino en su borde de sujeción.
+            </p>
+            <p class="doc-p">
+              ModelCoder permite seleccionar el punto de pivote exacto mediante la propiedad <code class="doc-code">pivot</code>:
+            </p>
+            <div class="doc-table-wrap">
+              <table class="doc-table">
+                <thead>
+                  <tr>
+                    <th>Preset de Pivote</th>
+                    <th>Punto de Giro Resultante</th>
+                    <th>Aplicación Mecánica</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><code class="doc-code">center</code></td>
+                    <td>Centro volumétrico del objeto (0, 0, 0 local).</td>
+                    <td>Ruedas, rotores, esferas giratorias, hélices.</td>
+                  </tr>
+                  <tr>
+                    <td><code class="doc-code">edge_left</code></td>
+                    <td>Borde lateral izquierdo en el eje X (-ancho/2).</td>
+                    <td>Puertas batientes con bisagra a la izquierda.</td>
+                  </tr>
+                  <tr>
+                    <td><code class="doc-code">edge_right</code></td>
+                    <td>Borde lateral derecho en el eje X (+ancho/2).</td>
+                    <td>Puertas batientes con bisagra a la derecha.</td>
+                  </tr>
+                  <tr>
+                    <td><code class="doc-code">edge_bottom</code></td>
+                    <td>Borde inferior en el eje Y (-alto/2).</td>
+                    <td>Rampas de acceso, compuertas de carga levadizas.</td>
+                  </tr>
+                  <tr>
+                    <td><code class="doc-code">edge_top</code></td>
+                    <td>Borde superior en el eje Y (+alto/2).</td>
+                    <td>Tapas de escotilla elevables, visores basculantes.</td>
+                  </tr>
+                  <tr>
+                    <td><code class="doc-code">back_center</code></td>
+                    <td>Extremo posterior en el eje Z (-profundidad/2).</td>
+                    <td>Cañones de artillería, brazos mecánicos de grúas.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section id="herramienta-espejo" class="doc-block">
+            <h2 class="doc-h2">Herramienta de Simetría (Espejo)</h2>
+            <p class="doc-p">
+              Para modelos simétricos (vehículos, robots, alas de naves), el Studio dispone de la función de duplicación en espejo. Al duplicar un componente con simetría en el eje X, el sistema invierte la posición lateral (<code class="doc-code">pos.x = -pos.x</code>), invierte el ángulo de rotación correspondiente y adapta automáticamente el pivote opuesto (por ejemplo, de <code class="doc-code">edge_left</code> a <code class="doc-code">edge_right</code>).
+            </p>
+          </section>
+
+          <!-- ======================================================== -->
+          <!-- SECCIÓN 5: SISTEMA DE ANIMACIÓN -->
+          <!-- ======================================================== -->
+          <section id="linea-tiempo" class="doc-block">
+            <h2 class="doc-h2">5. Sistema de Animación y Pistas</h2>
+            <p class="doc-p">
+              ModelCoder incorpora un motor de animación por cuadros clave integrado. Las animaciones se almacenan dentro de la estructura <code class="doc-code">spec.animations</code> y se compilan automáticamente como <code class="doc-code">AnimationClips</code> estándar en Three.js y en el archivo <code class="doc-code">.glb</code>.
+            </p>
+            <p class="doc-p">
+              Cada pista define qué componente se anima, la propiedad afectada (<code class="doc-code">position</code>, <code class="doc-code">rotation</code> o <code class="doc-code">scale</code>) y los valores temporales en segundos:
+            </p>
+            <div class="doc-code-block">
+              <div class="code-block-header">
+                <span>Ejemplo de Estructura de Animación (ModelSpec JSON)</span>
+                <button class="btn-copy-code" type="button" data-target="code-anim-spec">Copiar</button>
+              </div>
+              <pre is:raw><code id="code-anim-spec">{
+  "animations": [
+    {
+      "name": "abrir_puerta",
+      "duration": 1.5,
+      "loop": false,
+      "tracks": [
+        {
+          "componentId": "hoja_puerta",
+          "property": "rotation",
+          "keyframes": [
+            { "time": 0.0, "value": [0, 0, 0], "easing": "linear" },
+            { "time": 1.5, "value": [0, 90, 0], "easing": "ease_out" }
+          ]
+        }
+      ]
+    }
+  ]
+}</code></pre>
+            </div>
+          </section>
+
+          <section id="curvas-aceleracion" class="doc-block">
+            <h2 class="doc-h2">Curvas de Aceleración (Easing Curves)</h2>
+            <p class="doc-p">
+              La aceleración y desaceleración del movimiento determinan la naturalidad del objeto. Se admiten los siguientes perfiles de interpolación:
+            </p>
+            <ul class="doc-list">
+              <li><strong><code class="doc-code">linear</code>:</strong> Velocidad constante sin variación. Indicado para rotaciones continuas de radares, rotores y bandas transportadoras.</li>
+              <li><strong><code class="doc-code">ease_out</code>:</strong> El movimiento inicia con velocidad normal y desacelera progresivamente hasta detenerse. Ideal para compuertas neumáticas que frenan al llegar al tope.</li>
+              <li><strong><code class="doc-code">ease_in_out</code>:</strong> Aceleración progresiva al inicio y desaceleración suave al final. Ideal para movimientos mecánicos pesados como brazos robóticos o grúas.</li>
+              <li><strong><code class="doc-code">bounce</code>:</strong> El componente sobrepasa ligeramente el objetivo y efectúa un rebote elástico antes de asentarse. Excelente para palancas mecánicas, cierres de pestillos o interruptores con resorte.</li>
+              <li><strong><code class="doc-code">step</code>:</strong> Cambio abrupto e instantáneo en el cuadro clave sin interpolación intermedia. Diseñado para efectos de parpadeo de luces, indicadores de advertencia o pasos mecánicos rígidos.</li>
+            </ul>
+          </section>
+
+          <!-- ======================================================== -->
+          <!-- SECCIÓN 6: INTEGRACIÓN EN MOTORES DE VIDEOJUEGOS -->
+          <!-- ======================================================== -->
+          <section id="motor-godot4" class="doc-block">
+            <h2 class="doc-h2">6. Integración en Godot 4</h2>
+            <p class="doc-p">
+              Godot 4 cuenta con soporte nativo de primera clase para el formato <code class="doc-code">.glb</code> exportado por ModelCoder. Los nodos de malla, materiales PBR y pistas de animación se importan sin conversiones adicionales.
+            </p>
+            <div class="doc-code-block">
+              <div class="code-block-header">
+                <span>Control de Animación e Interacción en Godot 4 (GDScript)</span>
+                <button class="btn-copy-code" type="button" data-target="code-godot-script">Copiar</button>
+              </div>
+              <pre is:raw><code id="code-godot-script"># script adjunto a la escena instanciada del modelo (ej: PuertaOrbital.gd)
+extends Node3D
+
+@onready var animation_player: AnimationPlayer = $AnimationPlayer
+var esta_abierta: bool = false
+
+func interactuar() -> void:
+    if esta_abierta:
+        # Reproducir la animación en reversa para cerrar
+        animation_player.play_backwards("abrir_puerta")
+        esta_abierta = false
+    else:
+        # Reproducir la animación hacia adelante para abrir
+        animation_player.play("abrir_puerta")
+        esta_abierta = true
+
+func _on_area_interaccion_body_entered(body: Node3D) -> void:
+    if body.is_in_group("jugador") and not esta_abierta:
+        interactuar()</code></pre>
+            </div>
+
+            <div class="doc-callout doc-callout-tip">
+              <strong>Sufijos de Colisión Automática en Godot:</strong>
+              <p style="margin: 0.35rem 0 0 0; font-size: 0.8rem; line-height: 1.45;">
+                Si al nombrar un componente en ModelCoder añades el sufijo <code class="doc-code">-col</code> o <code class="doc-code">-convcol</code>, Godot 4 creará automáticamente un cuerpo estático (<code class="doc-code">StaticBody3D</code>) con una forma de colisión convexa al importar el modelo.
+              </p>
+            </div>
+          </section>
+
+          <section id="motor-unity" class="doc-block">
+            <h2 class="doc-h2">Integración en Unity (URP / Built-in)</h2>
+            <p class="doc-p">
+              En Unity (versiones 2022 LTS o superiores), los archivos <code class="doc-code">.glb</code> pueden importarse arrastrándolos directamente a la carpeta <code class="doc-code">Assets/</code>. Para proyectos que utilicen UnityGLTF o glTFast, el modelo genera un Prefab listo para instanciar en escena.
+            </p>
+            <div class="doc-code-block">
+              <div class="code-block-header">
+                <span>Control de Animación en Unity (C#)</span>
+                <button class="btn-copy-code" type="button" data-target="code-unity-script">Copiar</button>
+              </div>
+              <pre is:raw><code id="code-unity-script">using UnityEngine;
+
+public class ControladorModelo : MonoBehaviour
+{
+    private Animation animComponent;
+    private bool estaAbierto = false;
+
+    void Start()
+    {
+        animComponent = GetComponent<Animation>();
+    }
+
+    public void AlternarEstado()
+    {
+        if (animComponent == null) return;
+
+        estaAbierto = !estaAbierto;
+        if (estaAbierto)
+        {
+            animComponent["abrir_puerta"].speed = 1.0f;
+            animComponent.Play("abrir_puerta");
+        }
+        else
+        {
+            animComponent["abrir_puerta"].speed = -1.0f;
+            animComponent["abrir_puerta"].time = animComponent["abrir_puerta"].length;
+            animComponent.Play("abrir_puerta");
+        }
+    }
+}</code></pre>
+            </div>
+          </section>
+
+          <section id="motor-threejs" class="doc-block">
+            <h2 class="doc-h2">Integración en Three.js / WebGL</h2>
+            <p class="doc-p">
+              Para aplicaciones web interactivas desarrolladas con Three.js, la carga se realiza mediante el cargador estándar <code class="doc-code">GLTFLoader</code>:
+            </p>
+            <div class="doc-code-block">
+              <div class="code-block-header">
+                <span>Carga y Reproducción con Three.js (JavaScript / TypeScript)</span>
+                <button class="btn-copy-code" type="button" data-target="code-three-script">Copiar</button>
+              </div>
+              <pre is:raw><code id="code-three-script">import * as THREE from 'three';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+
+const scene = new THREE.Scene();
+const loader = new GLTFLoader();
+let mixer = null;
+
+loader.load('/modelos/puerta_orbital.glb', (gltf) => {
+    const model = gltf.scene;
+    scene.add(model);
+
+    // Configurar el reproductor de animaciones si contiene clips
+    if (gltf.animations && gltf.animations.length > 0) {
+        mixer = new THREE.AnimationMixer(model);
+        const action = mixer.clipAction(gltf.animations[0]);
+        action.play();
+    }
+});
+
+// En el bucle de renderizado:
+const clock = new THREE.Clock();
+function animate() {
+    requestAnimationFrame(animate);
+    const delta = clock.getDelta();
+    if (mixer) mixer.update(delta);
+    renderer.render(scene, camera);
+}</code></pre>
+            </div>
+          </section>
+
+          <!-- ======================================================== -->
+          <!-- SECCIÓN 7: TUTORIALES PASO A PASO -->
+          <!-- ======================================================== -->
+          <section id="tutorial-puerta-bisagra" class="doc-block">
+            <h2 class="doc-h2">7. Tutorial Paso a Paso: Puerta con Bisagra Animada</h2>
+            <p class="doc-p">
+              En este tutorial aprenderás a construir una puerta con marco fijo y hoja batiente articulada que se abre 90 grados al reproducir su animación.
+            </p>
+
+            <div class="doc-step-box">
+              <h3 class="step-title">Paso 1: Construcción del Marco Fijo</h3>
+              <p class="doc-p">
+                Añade una caja para el poste izquierdo del marco y otra para el poste derecho:
+              </p>
+              <ul class="doc-list">
+                <li><strong>Poste Izquierdo:</strong> Primitiva <code class="doc-code">box</code>, dimensiones <code class="doc-code">0.2 x 2.4 x 0.3</code> m, posición <code class="doc-code">[-0.7, 1.2, 0]</code>. Material: <code class="doc-code">brushed_metal</code>.</li>
+                <li><strong>Poste Derecho:</strong> Primitiva <code class="doc-code">box</code>, dimensiones <code class="doc-code">0.2 x 2.4 x 0.3</code> m, posición <code class="doc-code">[0.7, 1.2, 0]</code>. Material: <code class="doc-code">brushed_metal</code>.</li>
+                <li><strong>Dintel Superior:</strong> Primitiva <code class="doc-code">box</code>, dimensiones <code class="doc-code">1.6 x 0.2 x 0.3</code> m, posición <code class="doc-code">[0, 2.3, 0]</code>.</li>
+              </ul>
+            </div>
+
+            <div class="doc-step-box">
+              <h3 class="step-title">Paso 2: Creación de la Hoja con Pivote Lateral</h3>
+              <p class="doc-p">
+                Crea una nueva caja para la hoja de la puerta:
+              </p>
+              <ul class="doc-list">
+                <li><strong>Nombre del componente:</strong> <code class="doc-code">hoja_puerta</code>.</li>
+                <li><strong>Dimensiones:</strong> <code class="doc-code">width: 1.2</code>, <code class="doc-code">height: 2.2</code>, <code class="doc-code">depth: 0.08</code> m.</li>
+                <li><strong>Posición:</strong> <code class="doc-code">[0, 1.1, 0]</code>.</li>
+                <li><strong>Configuración crítica de Pivote:</strong> En el inspector de propiedades, selecciona <strong>Pivote: <code class="doc-code">edge_left</code></strong> (borde izquierdo).</li>
+              </ul>
+              <p class="doc-p" style="font-size: 0.8rem; color: var(--ps1-cyan); margin-top: 0.5rem;">
+                ℹ️ Al asignar el pivote en <code class="doc-code">edge_left</code>, el punto de rotación se desplaza exactamente a la unión con el poste izquierdo.
+              </p>
+            </div>
+
+            <div class="doc-step-box">
+              <h3 class="step-title">Paso 3: Configuración de la Animación en la Línea de Tiempo</h3>
+              <ol class="doc-ordered-list">
+                <li>En la barra inferior del Studio, activa la pestaña <strong>Animación</strong> y presiona <strong>+ Nueva Pista</strong>.</li>
+                <li>Selecciona el componente <code class="doc-code">hoja_puerta</code> y la propiedad <code class="doc-code">Rotación Y</code>.</li>
+                <li>Establece el cuadro inicial en el segundo <code class="doc-code">0.0</code> con valor <code class="doc-code">0°</code>.</li>
+                <li>Establece el cuadro final en el segundo <code class="doc-code">1.2</code> con valor <code class="doc-code">90°</code>.</li>
+                <li>Selecciona la curva de aceleración <strong><code class="doc-code">ease_out</code></strong> para que el movimiento frene suavemente.</li>
+                <li>Presiona <strong>▶ Reproducir</strong>: la puerta se abrirá limpiamente sobre su bisagra.</li>
+              </ol>
+            </div>
+          </section>
+
+          <section id="tutorial-torreta-dos-ejes" class="doc-block">
+            <h2 class="doc-h2">Tutorial Paso a Paso: Torreta de Dos Ejes con Jerarquía</h2>
+            <p class="doc-p">
+              En este ejercicio construirás un sistema de torreta de defensa compuesto por una base estática fija al suelo, un cabezal que gira 360 grados en el plano horizontal (eje Y) y dos cañones que basculan verticalmente (eje X) como hijos del cabezal.
+            </p>
+
+            <div class="doc-step-box">
+              <h3 class="step-title">Arquitectura del Grafo de Nodos:</h3>
+              <pre is:raw class="doc-diagram">
+[ base_anclaje ] (Fijo al suelo, posición: [0, 0, 0])
+       │
+       └── [ cabezal_giratorio ] (Rotación libre en Y, posición: [0, 0.4, 0])
+                 │
+                 └── [ soporte_artilleria ] (Pivote posterior, basculación en X)
+                           ├── [ canon_izquierdo ]
+                           └── [ canon_derecho ]
+              </pre>
+            </div>
+
+            <div class="doc-step-box">
+              <h3 class="step-title">Instrucciones de Montaje:</h3>
+              <ol class="doc-ordered-list">
+                <li><strong>Base:</strong> Cilindro de radio 0.8m, altura 0.3m. Nómbralo <code class="doc-code">base_anclaje</code>.</li>
+                <li><strong>Cabezal:</strong> Caja de 0.6 x 0.5 x 0.6m ubicada a una altura de 0.5m. Nómbralo <code class="doc-code">cabezal_giratorio</code> y asígnale como padre a <code class="doc-code">base_anclaje</code>.</li>
+                <li><strong>Cañones:</strong> Dos cilindros alargados (radio 0.08m, largo 1.4m) orientados horizontalmente. Nómbralos <code class="doc-code">canon_izq</code> y <code class="doc-code">canon_der</code>, y emparéntalos al <code class="doc-code">cabezal_giratorio</code> con pivote <code class="doc-code">back_center</code>.</li>
+              </ol>
+              <p class="doc-p" style="margin-top: 0.5rem; font-size: 0.8rem; color: var(--text-dim);">
+                Resultado: Al rotar el <code class="doc-code">cabezal_giratorio</code> en el eje Y, los cañones giran solidariamente con él. Al rotar los cañones en el eje X, apuntan hacia arriba o hacia abajo sin desalinearse.
+              </p>
+            </div>
+          </section>
+
+          <section id="tutorial-mueble-pbr" class="doc-block">
+            <h2 class="doc-h2">Tutorial Paso a Paso: Mueble Técnico con Desgaste PBR</h2>
+            <p class="doc-p">
+              Aprende a combinar distintas familias de materiales (acero cepillado, goma aislante y pantallas CRT) en un casillero o terminal modular técnico:
+            </p>
+            <ol class="doc-ordered-list">
+              <li><strong>Cuerpo principal:</strong> Caja de dimensiones <code class="doc-code">0.9 x 1.8 x 0.6</code> m. Asigna material <code class="doc-code">galvanized_steel</code> con <code class="doc-code">wear: 0.65</code> para simular el uso intensivo en el sector industrial.</li>
+              <li><strong>Protecciones perimetrales:</strong> Añade cilindros de radio fino en las cuatro aristas verticales con material <code class="doc-code">rubber_tread</code> (<code class="doc-code">wear: 0.1</code>) para crear paragolpes de goma antideslizante.</li>
+              <li><strong>Panel interactivo:</strong> Inserta una caja muy delgada (<code class="doc-code">depth: 0.01</code> m) sobre la cara frontal con el preset <code class="doc-code">crt_scanlines</code> y empaquetado UV orientado a <code class="doc-code">0°</code>.</li>
+            </ol>
+          </section>
+
+          <section id="tutorial-godot-script" class="doc-block">
+            <h2 class="doc-h2">Tutorial: Animación Interactiva en Godot 4</h2>
+            <p class="doc-p">
+              Guía completa para descargar el archivo <code class="doc-code">.glb</code> desde ModelCoder y programar su apertura cuando el jugador se acerca e interactúa:
+            </p>
+            <ol class="doc-ordered-list">
+              <li>Exporta el modelo desde el Studio haciendo clic en <strong>Descargar .GLB</strong>.</li>
+              <li>Copia el archivo descargado a la carpeta <code class="doc-code">res://modelos/</code> de tu proyecto en Godot 4.</li>
+              <li>Haz doble clic sobre el archivo en el panel de archivos de Godot y selecciona <strong>Nueva Escena Heredada (New Inherited Scene)</strong>.</li>
+              <li>Observarás que el nodo raíz contiene automáticamente un nodo hijo <code class="doc-code">AnimationPlayer</code> con todas las pistas creadas en ModelCoder.</li>
+              <li>Añade un nodo <code class="doc-code">Area3D</code> con una forma de colisión de proximidad y adjunta el script GDScript mostrado en la sección 6.</li>
+            </ol>
+          </section>
+
+          <section id="tutorial-unity-prefab" class="doc-block">
+            <h2 class="doc-h2">Tutorial: Configuración de Prefab en Unity</h2>
+            <ol class="doc-ordered-list">
+              <li>Arrastra el archivo <code class="doc-code">.glb</code> a tu carpeta de Assets en Unity.</li>
+              <li>En el inspector de importación de Unity, verifica en la pestaña <strong>Animation</strong> que la animación <code class="doc-code">abrir_puerta</code> esté listada y tenga la casilla <em>Loop Time</em> desmarcada si es un evento único.</li>
+              <li>Arrastra el modelo a tu jerarquía de escena.</li>
+              <li>Agrega el componente <code class="doc-code">Animation</code> o <code class="doc-code">Animator</code> y enlaza el script de control en C# provisto en la sección de integración de Unity.</li>
+            </ol>
+          </section>
+
+          <!-- ======================================================== -->
+          <!-- SECCIÓN 8: ESPECIFICACIÓN TÉCNICA -->
+          <!-- ======================================================== -->
+          <section id="especificacion-modelspec" class="doc-block">
+            <h2 class="doc-h2">8. Especificación Técnica (ModelSpec JSON)</h2>
+            <p class="doc-p">
+              A continuación se detalla el esquema JSON completo que define un modelo en ModelCoder:
+            </p>
+            <div class="doc-code-block">
+              <div class="code-block-header">
+                <span>Esquema Completo de ModelSpec</span>
+                <button class="btn-copy-code" type="button" data-target="code-modelspec-schema">Copiar</button>
+              </div>
+              <pre is:raw><code id="code-modelspec-schema">{
+  "$schema": "https://modelcoder.vercel.app/schemas/modelspec-v2.json",
+  "id": "puerta_reforzada_01",
+  "name": "Puerta Reforzada Industrial",
+  "category": "fixtures",
+  "description": "Compuerta modular con marco fijo y hoja batiente con bisagra.",
+  "components": [
+    {
+      "id": "marco_principal",
+      "name": "Marco de Acero",
+      "primitive": "box",
+      "position": [0, 1.2, 0],
+      "rotation": [0, 0, 0],
+      "scale": [1, 1, 1],
+      "dimensions": { "width": 1.6, "height": 2.4, "depth": 0.3 },
+      "pivot": "center",
+      "material": {
+        "color": "#4a5568",
+        "texturePreset": "brushed_metal",
+        "roughness": 0.45,
+        "metalness": 0.85,
+        "wear": 0.4,
+        "normalStrength": 1.2
+      }
+    },
+    {
+      "id": "hoja_movil",
+      "name": "Hoja Articulada",
+      "primitive": "box",
+      "parentId": "marco_principal",
+      "position": [0, 0, 0],
+      "rotation": [0, 0, 0],
+      "scale": [1, 1, 1],
+      "dimensions": { "width": 1.2, "height": 2.2, "depth": 0.08 },
+      "pivot": "edge_left",
+      "material": {
+        "color": "#718096",
+        "texturePreset": "reinforced_plating",
+        "roughness": 0.35,
+        "metalness": 0.9,
+        "wear": 0.5
+      }
+    }
+  ],
+  "animations": [
+    {
+      "name": "abrir_puerta",
+      "duration": 1.5,
+      "loop": false,
+      "tracks": [
+        {
+          "componentId": "hoja_movil",
+          "property": "rotation",
+          "keyframes": [
+            { "time": 0.0, "value": [0, 0, 0], "easing": "linear" },
+            { "time": 1.5, "value": [0, 90, 0], "easing": "ease_out" }
+          ]
+        }
+      ]
+    }
+  ]
+}</code></pre>
+            </div>
+          </section>
+
+          <section id="api-scripting" class="doc-block">
+            <h2 class="doc-h2">API del CodeSandbox y Automatización</h2>
+            <p class="doc-p">
+              Dentro de la pestaña de código del Studio 3D, los usuarios avanzados pueden generar o transformar modelos mediante funciones de conveniencia disponibles en el entorno de ejecución:
+            </p>
+            <ul class="doc-list">
+              <li><code class="doc-code">addComponent(componentData)</code>: Inserta un nuevo componente con validación inmediata de parámetros.</li>
+              <li><code class="doc-code">setParent(childId, parentId)</code>: Establece una relación jerárquica preservando las coordenadas globales en el espacio tridimensional.</li>
+              <li><code class="doc-code">setPivot(componentId, pivotMode)</code>: Reubica el punto de articulación recalculando el offset relativo de la malla.</li>
+              <li><code class="doc-code">addKeyframe(animName, compId, property, time, value, easing)</code>: Agrega un cuadro clave a la pista indicada.</li>
+            </ul>
+          </section>
+        </div>
+      </main>
+    </div>
+  </div>
+</Layout>
+
+<style>
+  .docs-portal-wrapper {
+    max-width: 1400px;
+    margin: 1.5rem auto 4rem auto;
+    padding: 0 1rem;
+  }
+
+  .docs-header-banner {
+    margin-bottom: 1.5rem;
+  }
+
+  .docs-header-inner {
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    background: #090e1a;
+  }
+
+  .docs-main-heading {
+    font-family: var(--font-pixel);
+    font-size: 1.35rem;
+    color: var(--ps1-gold);
+    margin: 0 0 0.35rem 0;
+    letter-spacing: 0.04em;
+  }
+
+  .docs-sub-heading {
+    font-size: 0.85rem;
+    color: #c0d0e8;
+    margin: 0;
+    max-width: 780px;
+    line-height: 1.45;
+  }
+
+  .docs-header-actions {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  /* Distribución en Grid: Sidebar Fijo + Contenido */
+  .docs-layout-grid {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 1.5rem;
+    align-items: start;
+  }
+
+  /* Sidebar de Navegación */
+  .docs-sidebar {
+    position: sticky;
+    top: 1rem;
+    max-height: calc(100vh - 2rem);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .docs-sidebar-inner {
+    padding: 1rem;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .docs-search-box input {
+    width: 100%;
+    font-size: 0.8rem;
+    padding: 0.5rem 0.65rem;
+  }
+
+  .docs-nav-menu {
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+  }
+
+  .nav-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+
+  .nav-group-title {
+    font-family: var(--font-pixel);
+    font-size: 0.65rem;
+    color: var(--ps1-cyan);
+    letter-spacing: 0.05em;
+    padding-bottom: 0.25rem;
+    border-bottom: 1px solid rgba(0, 240, 255, 0.2);
+    margin-bottom: 0.2rem;
+  }
+
+  .docs-nav-item {
+    font-size: 0.78rem;
+    color: #9cb2cc;
+    text-decoration: none;
+    padding: 0.25rem 0.4rem;
+    border-left: 2px solid transparent;
+    transition: all 0.12s ease;
+  }
+
+  .docs-nav-item:hover {
+    color: var(--ps1-gold);
+    border-left-color: var(--ps1-gold);
+    background: rgba(255, 204, 0, 0.06);
+    text-decoration: none;
+  }
+
+  .docs-nav-item.active {
+    color: var(--ps1-gold);
+    border-left-color: var(--ps1-gold);
+    background: rgba(255, 204, 0, 0.08);
+    font-weight: bold;
+  }
+
+  .highlight-group .nav-group-title {
+    color: var(--ps1-gold);
+    border-bottom-color: rgba(255, 204, 0, 0.3);
+  }
+
+  /* Contenido del Artículo */
+  .docs-content {
+    min-width: 0;
+  }
+
+  .docs-article-body {
+    padding: 1.5rem 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2.5rem;
+  }
+
+  .doc-block {
+    scroll-margin-top: 1.5rem;
+    border-bottom: 1px solid #142036;
+    padding-bottom: 2rem;
+  }
+
+  .doc-block:last-of-type {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+
+  .doc-h2 {
+    font-family: var(--font-pixel);
+    font-size: 1.15rem;
+    color: var(--ps1-gold);
+    margin: 0 0 1rem 0;
+    letter-spacing: 0.03em;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .doc-p {
+    font-size: 0.88rem;
+    color: #c8d8ec;
+    line-height: 1.65;
+    margin: 0 0 1rem 0;
+  }
+
+  .doc-code {
+    font-family: var(--font-mono);
+    font-size: 0.85em;
+    background: #090e1a;
+    border: 1px solid #203254;
+    color: var(--ps1-cyan);
+    padding: 0.15rem 0.35rem;
+  }
+
+  .doc-list, .doc-ordered-list {
+    font-size: 0.85rem;
+    color: #b8cde6;
+    line-height: 1.6;
+    margin: 0 0 1.25rem 1.5rem;
+  }
+
+  .doc-list li, .doc-ordered-list li {
+    margin-bottom: 0.4rem;
+  }
+
+  /* Tablas de Documentación */
+  .doc-table-wrap {
+    overflow-x: auto;
+    margin: 1rem 0 1.5rem 0;
+    border: 2px inset var(--ps1-steel);
+    background: #070c18;
+  }
+
+  .doc-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+    text-align: left;
+  }
+
+  .doc-table th {
+    background: #111a2d;
+    color: var(--ps1-gold);
+    font-family: var(--font-pixel);
+    font-size: 0.65rem;
+    padding: 0.65rem 0.85rem;
+    border-bottom: 2px solid var(--ps1-gold-border);
+  }
+
+  .doc-table td {
+    padding: 0.65rem 0.85rem;
+    border-bottom: 1px solid #162440;
+    color: #c4d4eb;
+    vertical-align: top;
+  }
+
+  .doc-table tr:hover td {
+    background: rgba(0, 240, 255, 0.04);
+  }
+
+  /* Bloques de Código */
+  .doc-code-block {
+    margin: 1.25rem 0;
+    border: 2px inset var(--ps1-steel);
+    background: #060a14;
+  }
+
+  .code-block-header {
+    background: #10192b;
+    border-bottom: 1px solid #1a2a47;
+    padding: 0.4rem 0.75rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: var(--font-pixel);
+    font-size: 0.62rem;
+    color: var(--ps1-cyan);
+  }
+
+  .btn-copy-code {
+    background: #1a263d;
+    border: 1px solid var(--ps1-cyan);
+    color: var(--ps1-cyan);
+    font-family: var(--font-pixel);
+    font-size: 0.58rem;
+    padding: 0.2rem 0.55rem;
+    cursor: pointer;
+  }
+
+  .btn-copy-code:hover {
+    background: var(--ps1-cyan);
+    color: #000;
+  }
+
+  .doc-code-block pre {
+    padding: 1rem;
+    margin: 0;
+    overflow-x: auto;
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    line-height: 1.5;
+    color: #e2ecfc;
+  }
+
+  /* Callouts informativos */
+  .doc-callout {
+    padding: 1rem 1.25rem;
+    margin: 1.25rem 0;
+    border-left: 4px solid var(--ps1-cyan);
+    background: #08101f;
+    font-size: 0.85rem;
+    color: #c4d4ec;
+    box-shadow: inset 1px 1px 0px rgba(0, 240, 255, 0.1);
+  }
+
+  .doc-callout-tip {
+    border-left-color: var(--ps1-gold);
+    background: #121008;
+  }
+
+  /* Cajas de pasos de tutoriales */
+  .doc-step-box {
+    margin: 1rem 0;
+    padding: 1.2rem;
+    background: #080d1a;
+    border: 1px solid #182845;
+  }
+
+  .step-title {
+    font-family: var(--font-pixel);
+    font-size: 0.8rem;
+    color: var(--ps1-gold);
+    margin: 0 0 0.6rem 0;
+  }
+
+  .doc-diagram {
+    background: #050811;
+    border: 1px dashed var(--ps1-cyan-dim);
+    padding: 0.85rem;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--ps1-cyan);
+    margin: 0.5rem 0;
+    line-height: 1.4;
+    overflow-x: auto;
+  }
+
+  /* Responsivo */
+  @media (max-width: 960px) {
+    .docs-layout-grid {
+      grid-template-columns: 1fr;
+    }
+    .docs-sidebar {
+      position: static;
+      max-height: none;
+    }
+    .docs-article-body {
+      padding: 1.25rem 1rem;
+    }
+  }
+</style>
+
+<script>
+  // Manejo de Copiado de Código
+  document.querySelectorAll('.btn-copy-code').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const targetId = (btn as HTMLElement).dataset.target;
+      if (!targetId) return;
+      const codeElem = document.getElementById(targetId);
+      if (!codeElem) return;
+
+      const codeText = codeElem.textContent || '';
+      navigator.clipboard.writeText(codeText).then(() => {
+        const originalText = btn.textContent;
+        btn.textContent = '¡Copiado!';
+        btn.style.background = 'var(--ps1-green)';
+        btn.style.color = '#000000';
+        setTimeout(() => {
+          btn.textContent = originalText;
+          btn.style.background = '';
+          btn.style.color = '';
+        }, 2000);
+      });
+    });
+  });
+
+  // Buscador / Filtro Rápido en Sidebar
+  const searchInput = document.getElementById('docs-search-input') as HTMLInputElement;
+  const navItems = document.querySelectorAll('.docs-nav-item');
+  const navGroups = document.querySelectorAll('.nav-group');
+
+  searchInput?.addEventListener('input', (e) => {
+    const query = (e.target as HTMLInputElement).value.toLowerCase().trim();
+
+    navItems.forEach((item) => {
+      const text = item.textContent?.toLowerCase() || '';
+      const href = item.getAttribute('href')?.toLowerCase() || '';
+      const match = text.includes(query) || href.includes(query);
+      (item as HTMLElement).style.display = match ? 'block' : 'none';
+    });
+
+    navGroups.forEach((group) => {
+      const visibleItems = group.querySelectorAll('.docs-nav-item[style*="display: block"], .docs-nav-item:not([style*="display: none"])');
+      const shouldShowGroup = !query || visibleItems.length > 0;
+      (group as HTMLElement).style.display = shouldShowGroup ? 'flex' : 'none';
+    });
+  });
+
+  // Resaltado de sección activa mediante IntersectionObserver
+  const sections = document.querySelectorAll('.doc-block');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        const id = entry.target.getAttribute('id');
+        if (!id) return;
+
+        navItems.forEach((nav) => {
+          if (nav.getAttribute('href') === `#${id}`) {
+            nav.classList.add('active');
+            const breadcrumb = document.getElementById('current-section-breadcrumb');
+            if (breadcrumb) {
+              breadcrumb.textContent = `DOCUMENTACIÓN TÉCNICA / ${nav.textContent?.toUpperCase()}`;
+            }
+          } else {
+            nav.classList.remove('active');
+          }
+        });
+      }
+    });
+  }, { rootMargin: '-10% 0px -75% 0px' });
+
+  sections.forEach((sec) => observer.observe(sec));
+</script>
