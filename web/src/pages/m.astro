@@ -747,15 +747,37 @@ const pageDescription = "Visor interactivo 3D para inspeccionar, rotar, probar a
 
       // Strategy B: Slug or ID from Supabase Community Models
       if (slugParam) {
-        activeSlugOrId = slugParam;
+        const decodedParam = decodeURIComponent(slugParam).trim();
+        const normalizedParam = decodedParam.toLowerCase();
+        activeSlugOrId = decodedParam;
         const communityModels = await getCommunityModels({ onlyPublic: false });
-        const found = communityModels.find((m) => m.slug === slugParam || m.id === slugParam);
+        const found = communityModels.find(
+          (m) =>
+            m.slug === decodedParam ||
+            m.id === decodedParam ||
+            (m.slug && m.slug.toLowerCase() === normalizedParam) ||
+            (m.id && m.id.toLowerCase() === normalizedParam)
+        );
 
         if (found && found.spec) {
-          activeSpec = found.spec;
+          let modelSpec = found.spec;
+          if (typeof modelSpec === 'string') {
+            try {
+              modelSpec = JSON.parse(modelSpec);
+            } catch (pErr) {
+              console.warn('[ModelCoder Viewer] Could not parse found.spec string:', pErr);
+            }
+          }
+          activeSpec = modelSpec;
           activeAuthor = found.author_name || 'Piloto de la Comunidad';
-          activeCategory = found.category || found.spec.category || 'fixtures';
-          renderLoadedModel(found.spec, found);
+          activeCategory = found.category || modelSpec.category || 'fixtures';
+          renderLoadedModel(modelSpec, found);
+          return;
+        } else if (found && found.name) {
+          showErrorState(`El modelo "${found.name}" existe en la base de datos pero no contiene especificación 3D válida.`);
+          return;
+        } else {
+          showErrorState(`No se encontró ningún modelo con el identificador "${decodedParam}".`);
           return;
         }
       }
@@ -813,10 +835,16 @@ const pageDescription = "Visor interactivo 3D para inspeccionar, rotar, probar a
       if (displayDesc) displayDesc.textContent = metadata?.description || spec.description || 'Modelo procedural 3D optimizado con materiales PBR.';
       if (modelCategoryTag) modelCategoryTag.textContent = (metadata?.category || spec.category || activeCategory).toUpperCase();
 
-      if (metricTris) metricTris.textContent = String(stats.triangles || 0);
-      if (metricParts) metricParts.textContent = String(stats.componentCount || spec.components?.length || 0);
-      if (metricDims && stats.dimensions) {
-        metricDims.textContent = `${stats.dimensions.width.toFixed(2)} × ${stats.dimensions.height.toFixed(2)} × ${stats.dimensions.depth.toFixed(2)} m`;
+      if (metricTris) metricTris.textContent = String(stats?.triangles ?? 0);
+      if (metricParts) {
+        const partsCount = (stats as any)?.componentCount ?? spec.components?.length ?? 0;
+        metricParts.textContent = String(partsCount);
+      }
+      if (metricDims) {
+        const dimX = Number(stats?.dimensions?.x ?? (spec.dimensions as any)?.width ?? size.x ?? 0).toFixed(2);
+        const dimY = Number(stats?.dimensions?.y ?? (spec.dimensions as any)?.height ?? size.y ?? 0).toFixed(2);
+        const dimZ = Number(stats?.dimensions?.z ?? (spec.dimensions as any)?.depth ?? size.z ?? 0).toFixed(2);
+        metricDims.textContent = `${dimX} × ${dimY} × ${dimZ} m`;
       }
 
       // Setup Animations if present
