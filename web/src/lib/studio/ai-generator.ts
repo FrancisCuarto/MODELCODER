@@ -416,10 +416,13 @@ Return ONLY valid JSON matching this schema:
 }`;
 
     const payload = {
+      system_instruction: {
+        parts: [{ text: systemInstruction }]
+      },
       contents: [{
         role: 'user',
         parts: [{
-          text: `${systemInstruction}\n\nUSER PROMPT: ${prompt}\nCREATION_ID: ${uniqueNonce}\nINSTRUCTION: Synthesize a brand-new, mechanically coherent, grounded 3D model with ZERO floating geometry.`
+          text: `USER PROMPT: ${prompt}\nCREATION_ID: ${uniqueNonce}\nINSTRUCTION: Synthesize a brand-new, mechanically coherent, grounded 3D model with ZERO floating geometry.`
         }]
       }],
       generationConfig: {
@@ -428,15 +431,19 @@ Return ONLY valid JSON matching this schema:
       }
     };
 
-    // Google API requires gemini-3.0-flash for new keys, with fallback to 3.8-flash and 2.5-flash
-    const candidateModels = ['gemini-3.0-flash', 'gemini-3.8-flash', 'gemini-2.5-flash'];
+    // Google Gemini API production models in priority order: 2.0-flash (fastest), 1.5-flash (universal), 2.5-flash
+    const candidateModels = [
+      'gemini-2.0-flash',
+      'gemini-1.5-flash',
+      'gemini-2.5-flash'
+    ];
     let lastError: Error | null = null;
 
     for (const modelName of candidateModels) {
       try {
         const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
         const signal = typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function'
-          ? AbortSignal.timeout(30000)
+          ? AbortSignal.timeout(45000)
           : undefined;
         const res = await fetch(url, {
           method: 'POST',
@@ -447,11 +454,12 @@ Return ONLY valid JSON matching this schema:
 
         if (!res.ok) {
           const errText = await res.text();
-          if (res.status === 404 || errText.includes('NOT_FOUND') || errText.includes('no longer available')) {
-            lastError = new Error(`Gemini API error (${res.status}): ${errText}`);
+          lastError = new Error(`Gemini API error (${res.status}): ${errText}`);
+          if (res.status === 404 || res.status === 400 || res.status === 429 || res.status >= 500 || errText.includes('NOT_FOUND') || errText.includes('no longer available')) {
+            console.warn(`[AIGenerator] Intento con ${modelName} devolvió HTTP ${res.status}. Probando siguiente modelo de respaldo...`);
             continue;
           }
-          throw new Error(`Gemini API error (${res.status}): ${errText}`);
+          throw lastError;
         }
 
         const data = await res.json();
@@ -474,15 +482,17 @@ Return ONLY valid JSON matching this schema:
         const normalized = this.normalizeSpecGeometry(parsed);
         return { spec: normalized, rawResponse: cleanedJsonText };
       } catch (err: any) {
-        if (err?.name === 'TimeoutError' || err?.name === 'AbortError') {
-          throw new Error('Tiempo de espera agotado (30s) al conectar con Gemini API. Verifica tu conexión o usa el Motor Procedural Local.');
-        }
         lastError = err;
-        if (err.message && (err.message.includes('404') || err.message.includes('NOT_FOUND') || err.message.includes('no longer available'))) {
+        console.warn(`[AIGenerator] Intento con ${modelName} falló:`, err);
+        if (err?.name === 'TimeoutError' || err?.name === 'AbortError' || err?.message?.includes('404') || err?.message?.includes('NOT_FOUND') || err?.message?.includes('no longer available')) {
           continue;
         }
         throw err;
       }
+    }
+
+    if (lastError?.name === 'TimeoutError' || lastError?.name === 'AbortError') {
+      throw new Error('Tiempo de espera agotado al conectar con Gemini API. Verifica tu conexión a internet o genera con el Motor Procedural Local.');
     }
 
     throw lastError || new Error('No se pudo conectar con ningún modelo de Gemini disponible.');

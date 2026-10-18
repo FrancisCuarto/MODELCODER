@@ -1,0 +1,599 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { DEVLOG_ENTRIES } from '../data/devlog.ts';
+
+const title = "Devlog · Bitácora de Desarrollo y Registro de Actualizaciones";
+const description = "Consulta la cronología completa de actualizaciones, nuevas características, motor procedural y mejoras de ModelCoder.";
+---
+
+<Layout title={title} description={description} useModelViewer={false}>
+  <div class="devlog-page">
+    <!-- Breadcrumb & Top Telemetry -->
+    <div class="devlog-top-bar">
+      <div class="breadcrumbs">
+        <a href="/">&gt; INICIO</a> / <span class="current">DEVLOG & ACTUALIZACIONES</span>
+      </div>
+      <div class="telemetry-badge">
+        <span class="status-dot"></span>
+        <span>REGISTRO DE VUELO: {DEVLOG_ENTRIES.length} HITOS DOCUMENTADOS</span>
+      </div>
+    </div>
+
+    <!-- Hero Header -->
+    <header class="devlog-header ps1-window">
+      <div class="ps1-titlebar">
+        <div class="titlebar-title">
+          <span class="title-glyph">▲</span>
+          <span>FLIGHT LOG · REGISTRO PÚBLICO DE ACTUALIZACIONES</span>
+        </div>
+        <div class="titlebar-version">SYS_VER: v2.5.0</div>
+      </div>
+      <div class="header-body">
+        <div class="header-main">
+          <h1 class="header-title">
+            <span class="bracket">[</span> MODELCODER DEVLOG <span class="bracket">]</span>
+          </h1>
+          <p class="header-desc">
+            Bitácora cronológica con cada versión, refactor geométrico, optimización del motor procedural
+            y nuevas capacidades para desarrollo de videojuegos independientes.
+          </p>
+        </div>
+
+        <!-- System Stats Quick Strip -->
+        <div class="devlog-stats-grid">
+          <div class="stat-card">
+            <span class="stat-label">&gt; VERSIÓN ACTUAL</span>
+            <span class="stat-value gold">v2.5.0</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">&gt; HITOS DOCUMENTADOS</span>
+            <span class="stat-value cyan">{DEVLOG_ENTRIES.length} VERSIONES</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">&gt; TEXTURAS PBR</span>
+            <span class="stat-value green">118 MATS</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">&gt; MOTOR IA</span>
+            <span class="stat-value gold">GROUNDING Y=0</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">&gt; EXPORTACIÓN GAMEDEV</span>
+            <span class="stat-value cyan">GODOT 4 · UNITY</span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Filter Buttons Bar -->
+    <div class="devlog-filter-bar">
+      <span class="filter-label">&gt; FILTRAR POR CATEGORÍA:</span>
+      <div class="filter-buttons">
+        <button type="button" class="devlog-filter-btn active" data-filter="all">[ TODOS ({DEVLOG_ENTRIES.length}) ]</button>
+        <button type="button" class="devlog-filter-btn" data-filter="IA Generativa">[ IA & PROCEDURAL ]</button>
+        <button type="button" class="devlog-filter-btn" data-filter="Godot 4">[ GAMEDEV & GODOT ]</button>
+        <button type="button" class="devlog-filter-btn" data-filter="Catálogo">[ CATÁLOGO & MODELOS ]</button>
+        <button type="button" class="devlog-filter-btn" data-filter="Studio 3D">[ STUDIO & EDITOR ]</button>
+      </div>
+    </div>
+
+    <!-- Timeline Entries -->
+    <section class="devlog-timeline" id="devlog-timeline">
+      {DEVLOG_ENTRIES.map((entry, index) => (
+        <article 
+          class="timeline-entry" 
+          data-version={entry.version}
+          data-tags={JSON.stringify(entry.tags)}
+        >
+          <!-- Timeline Marker & Line -->
+          <div class="timeline-marker">
+            <div class={`marker-dot ${index === 0 ? 'current' : ''}`}>
+              {index === 0 ? '★' : '◆'}
+            </div>
+            {index < DEVLOG_ENTRIES.length - 1 && <div class="marker-line"></div>}
+          </div>
+
+          <!-- Entry Card -->
+          <div class="timeline-card ps1-window">
+            <div class="ps1-titlebar card-titlebar">
+              <div class="titlebar-left">
+                <span class="title-glyph">▲</span>
+                <span class="entry-version-tag">{entry.version}</span>
+                <span class="entry-date-tag">[{entry.date}]</span>
+                <span class="entry-badge" style={`color: ${entry.badgeColor || 'var(--ps1-gold)'}; border-color: ${entry.badgeColor || 'var(--ps1-gold)'}`}>
+                  {entry.badge}
+                </span>
+                {index === 0 && <span class="badge-latest">ACTUAL</span>}
+              </div>
+              {entry.author && <div class="titlebar-author">👤 {entry.author}</div>}
+            </div>
+
+            <div class="card-body">
+              <h2 class="entry-title">{entry.title}</h2>
+              <p class="entry-summary">{entry.summary}</p>
+
+              {entry.highlights && entry.highlights.length > 0 && (
+                <div class="entry-highlights-box">
+                  <div class="highlights-title">&gt; PUNTOS DESTACADOS:</div>
+                  <ul class="highlights-list">
+                    {entry.highlights.map((item) => (
+                      <li>
+                        <span class="highlight-bullet">➜</span>
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              <!-- Tags list -->
+              <div class="entry-tags-row">
+                <span class="tags-prefix">TAGS:</span>
+                {entry.tags.map((tag) => (
+                  <span class="entry-tag">#{tag}</span>
+                ))}
+              </div>
+            </div>
+          </div>
+        </article>
+      ))}
+    </section>
+
+    <!-- Bottom Actions Strip -->
+    <div class="devlog-bottom-cta ps1-inset">
+      <div class="cta-text">
+        <span class="cta-glyph">⚡</span>
+        <span>¿Quieres probar todas estas características en vivo? Accede directamente al Studio o explora los modelos del catálogo.</span>
+      </div>
+      <div class="cta-actions">
+        <a href="/studio" class="btn btn-gold">&gt; ABRIR STUDIO 3D</a>
+        <a href="/" class="btn">&gt; VER CATÁLOGO</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Category Filtering
+    const filterButtons = document.querySelectorAll<HTMLButtonElement>('.devlog-filter-btn');
+    const timelineEntries = document.querySelectorAll<HTMLElement>('.timeline-entry');
+
+    filterButtons.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        filterButtons.forEach((b) => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        const filter = btn.dataset.filter || 'all';
+
+        timelineEntries.forEach((entry) => {
+          if (filter === 'all') {
+            entry.style.display = 'flex';
+          } else {
+            const tags = JSON.parse(entry.dataset.tags || '[]');
+            const matches = tags.some((t: string) => t.toLowerCase().includes(filter.toLowerCase()));
+            entry.style.display = matches ? 'flex' : 'none';
+          }
+        });
+      });
+    });
+  </script>
+
+  <style>
+    .devlog-page {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      padding-bottom: 3rem;
+    }
+
+    .devlog-top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      font-family: var(--font-pixel);
+      font-size: 0.72rem;
+    }
+
+    .breadcrumbs a {
+      color: var(--ps1-steel-light);
+      text-decoration: none;
+    }
+
+    .breadcrumbs a:hover {
+      color: var(--ps1-gold);
+    }
+
+    .breadcrumbs .current {
+      color: var(--ps1-cyan);
+    }
+
+    .telemetry-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: #090c14;
+      border: 1px inset var(--ps1-steel);
+      padding: 0.2rem 0.6rem;
+      color: var(--ps1-green);
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+    }
+
+    /* Hero Header */
+    .devlog-header {
+      background: var(--ps1-panel-dark);
+      border: 2px outset var(--ps1-steel-light);
+    }
+
+    .titlebar-version {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      color: var(--ps1-gold);
+    }
+
+    .header-body {
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    .header-title {
+      font-family: var(--font-pixel);
+      font-size: 1.35rem;
+      color: #ffffff;
+      margin: 0 0 0.5rem 0;
+      letter-spacing: 0.05em;
+    }
+
+    .header-title .bracket {
+      color: var(--ps1-gold);
+    }
+
+    .header-desc {
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      color: var(--ps1-steel-light);
+      max-width: 900px;
+      margin: 0;
+      line-height: 1.45;
+    }
+
+    /* Stats Grid */
+    .devlog-stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 0.75rem;
+      padding-top: 0.5rem;
+      border-top: 1px inset var(--ps1-steel);
+    }
+
+    .stat-card {
+      background: #090d18;
+      border: 1px inset var(--ps1-steel);
+      padding: 0.5rem 0.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+
+    .stat-label {
+      font-family: var(--font-pixel);
+      font-size: 0.62rem;
+      color: var(--ps1-steel-light);
+    }
+
+    .stat-value {
+      font-family: var(--font-telemetry);
+      font-size: 1.1rem;
+      font-weight: bold;
+    }
+
+    .stat-value.gold { color: var(--ps1-gold); }
+    .stat-value.cyan { color: var(--ps1-cyan); }
+    .stat-value.green { color: var(--ps1-green); }
+
+    /* Filter Bar */
+    .devlog-filter-bar {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      background: #0c111e;
+      border: 1px inset var(--ps1-steel);
+      padding: 0.6rem 0.85rem;
+      font-family: var(--font-pixel);
+      font-size: 0.72rem;
+    }
+
+    .filter-label {
+      color: var(--ps1-steel-light);
+    }
+
+    .filter-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+
+    .devlog-filter-btn {
+      background: #141b2d;
+      border: 1px outset var(--ps1-steel-light);
+      color: #cbd5e1;
+      padding: 0.3rem 0.65rem;
+      font-family: var(--font-pixel);
+      font-size: 0.68rem;
+      cursor: pointer;
+      box-shadow: 1px 1px 0px #000;
+      transition: all 0.1s ease;
+    }
+
+    .devlog-filter-btn:hover {
+      background: #1e293b;
+      color: var(--ps1-gold);
+      border-color: var(--ps1-gold);
+    }
+
+    .devlog-filter-btn.active {
+      background: var(--ps1-gold);
+      color: #000000;
+      border-color: #ffffff;
+      font-weight: bold;
+    }
+
+    /* Timeline */
+    .devlog-timeline {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      position: relative;
+    }
+
+    .timeline-entry {
+      display: flex;
+      gap: 1.25rem;
+      align-items: stretch;
+    }
+
+    .timeline-marker {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 32px;
+      flex-shrink: 0;
+    }
+
+    .marker-dot {
+      width: 28px;
+      height: 28px;
+      background: #101625;
+      border: 2px outset var(--ps1-steel-light);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--ps1-cyan);
+      font-size: 0.8rem;
+      box-shadow: 2px 2px 0px #000;
+      z-index: 2;
+    }
+
+    .marker-dot.current {
+      background: #272210;
+      border-color: var(--ps1-gold);
+      color: var(--ps1-gold);
+      animation: ps1Pulse 1.5s infinite steps(2, start);
+    }
+
+    .marker-line {
+      flex: 1;
+      width: 2px;
+      background: linear-gradient(180deg, var(--ps1-steel) 0%, rgba(71, 85, 105, 0.2) 100%);
+      margin-top: 4px;
+    }
+
+    .timeline-card {
+      flex: 1;
+      background: var(--ps1-panel-dark);
+      border: 2px outset var(--ps1-steel-light);
+    }
+
+    .card-titlebar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      background: #090c14;
+      padding: 0.4rem 0.75rem;
+    }
+
+    .titlebar-left {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .entry-version-tag {
+      font-family: var(--font-pixel);
+      font-size: 0.78rem;
+      font-weight: bold;
+      color: var(--ps1-gold);
+    }
+
+    .entry-date-tag {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      color: var(--ps1-steel-light);
+    }
+
+    .entry-badge {
+      font-family: var(--font-pixel);
+      font-size: 0.58rem;
+      padding: 0.12rem 0.4rem;
+      border: 1px solid currentColor;
+      background: rgba(0, 0, 0, 0.4);
+      letter-spacing: 0.05em;
+    }
+
+    .badge-latest {
+      font-family: var(--font-pixel);
+      font-size: 0.58rem;
+      background: var(--ps1-green);
+      color: #000000;
+      padding: 0.12rem 0.4rem;
+      font-weight: bold;
+    }
+
+    .titlebar-author {
+      font-family: var(--font-mono);
+      font-size: 0.68rem;
+      color: var(--ps1-steel-light);
+    }
+
+    .card-body {
+      padding: 1.1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+    }
+
+    .entry-title {
+      font-family: var(--font-pixel);
+      font-size: 0.95rem;
+      color: #ffffff;
+      margin: 0;
+      line-height: 1.4;
+    }
+
+    .entry-summary {
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      color: #cbd5e1;
+      margin: 0;
+      line-height: 1.5;
+    }
+
+    /* Highlights Box */
+    .entry-highlights-box {
+      background: #070a12;
+      border: 1px inset var(--ps1-steel);
+      padding: 0.85rem 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .highlights-title {
+      font-family: var(--font-pixel);
+      font-size: 0.65rem;
+      color: var(--ps1-gold);
+      letter-spacing: 0.05em;
+    }
+
+    .highlights-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .highlights-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.5rem;
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      color: #e2e8f0;
+      line-height: 1.45;
+    }
+
+    .highlight-bullet {
+      color: var(--ps1-cyan);
+      font-weight: bold;
+      flex-shrink: 0;
+    }
+
+    /* Tags Row */
+    .entry-tags-row {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+      padding-top: 0.3rem;
+    }
+
+    .tags-prefix {
+      font-family: var(--font-pixel);
+      font-size: 0.6rem;
+      color: var(--ps1-steel-light);
+      margin-right: 0.2rem;
+    }
+
+    .entry-tag {
+      font-family: var(--font-mono);
+      font-size: 0.68rem;
+      color: var(--ps1-cyan);
+      background: #111827;
+      border: 1px solid #1e293b;
+      padding: 0.15rem 0.4rem;
+    }
+
+    /* Bottom CTA Strip */
+    .devlog-bottom-cta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+      padding: 1rem 1.25rem;
+      background: #080d1a;
+      border: 2px inset var(--ps1-steel);
+    }
+
+    .cta-text {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      color: var(--ps1-steel-light);
+      max-width: 700px;
+    }
+
+    .cta-glyph {
+      font-size: 1.2rem;
+      color: var(--ps1-gold);
+    }
+
+    .cta-actions {
+      display: flex;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+    }
+
+    @media (max-width: 768px) {
+      .timeline-marker {
+        display: none;
+      }
+      .card-titlebar {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .devlog-bottom-cta {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .cta-actions {
+        width: 100%;
+      }
+      .cta-actions .btn {
+        flex: 1;
+        text-align: center;
+      }
+    }
+  </style>
+</Layout>

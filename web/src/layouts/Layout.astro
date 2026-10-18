@@ -136,20 +136,46 @@ const globalJsonLd = {
         <nav class="nav-links">
           <a href="/" class="nav-link">&gt; Catálogo</a>
           <a href="/studio" class="nav-link nav-link-studio" style="color: var(--ps1-gold); border-color: var(--ps1-gold);">&gt; Studio 3D (Crear)</a>
-          <a href="/docs" class="nav-link nav-link-docs" style="color: var(--ps1-cyan); border-color: var(--ps1-cyan);">&gt; Documentación</a>
-          <button id="btn-open-global-inventory" class="nav-link nav-link-inventory" type="button" title="Mi Inventario: Borradores, Favoritos y Colecciones">
-            🎒 Inventario (<span id="global-inv-count">0</span>)
-          </button>
-          <a href="/contribute" class="nav-link">&gt; Cómo funciona</a>
-          <a href="/colaboradores" id="nav-collab-link" class="nav-link nav-link-collab" style="display: none; color: var(--ps1-gold); border-color: var(--ps1-gold);" title="Portal privado de colaboradores">
-            👑 Colaboradores
-          </a>
-          <a href="https://ivorbitgames.online" target="_blank" rel="noopener noreferrer" class="nav-link nav-link-creator" title="Estudio Creador: IV Orbit Games (Argentina)">
-            🪐 IV Orbit
-          </a>
-          <a href="https://github.com/FrancisCuarto/MODELCODER" target="_blank" rel="noopener noreferrer" class="nav-link nav-link-gh" title="Ver código fuente en GitHub">
-            &gt; GitHub
-          </a>
+
+          <!-- Menú Desplegable Retro PS1: Más Opciones / Explorar -->
+          <div id="nav-more-container" class="nav-more-container">
+            <button id="btn-toggle-nav-more" class="nav-link nav-more-trigger" type="button" aria-haspopup="menu" aria-expanded="false" title="Más herramientas y enlaces">
+              <span>⋯ MÁS</span>
+              <span class="nav-caret">▼</span>
+            </button>
+            <div id="nav-more-menu" class="nav-more-menu-ps1 hidden" role="menu">
+              <a href="/devlog" class="more-dropdown-item" role="menuitem">
+                <span class="item-icon">📰</span>
+                <span>&gt; Devlog & Actualizaciones</span>
+                <span class="badge-new">NEW</span>
+              </a>
+              <a href="/docs" class="more-dropdown-item" role="menuitem">
+                <span class="item-icon">📖</span>
+                <span>&gt; Documentación</span>
+              </a>
+              <button id="btn-open-global-inventory" class="more-dropdown-item" type="button" role="menuitem" title="Mi Inventario: Borradores, Favoritos y Colecciones">
+                <span class="item-icon">🎒</span>
+                <span>&gt; Mi Inventario (<span id="global-inv-count">0</span>)</span>
+              </button>
+              <a href="/contribute" class="more-dropdown-item" role="menuitem">
+                <span class="item-icon">ℹ️</span>
+                <span>&gt; Cómo funciona</span>
+              </a>
+              <a href="/colaboradores" id="nav-collab-link" class="more-dropdown-item" style="display: none; color: var(--ps1-gold);" role="menuitem">
+                <span class="item-icon">👑</span>
+                <span>&gt; Portal Colaboradores</span>
+              </a>
+              <div class="more-dropdown-divider"></div>
+              <a href="https://ivorbitgames.online" target="_blank" rel="noopener noreferrer" class="more-dropdown-item item-external" role="menuitem" title="Estudio Creador: IV Orbit Games (Argentina)">
+                <span class="item-icon">🪐</span>
+                <span>IV Orbit Games ↗</span>
+              </a>
+              <a href="https://github.com/FrancisCuarto/MODELCODER" target="_blank" rel="noopener noreferrer" class="more-dropdown-item item-external" role="menuitem" title="Ver código fuente en GitHub">
+                <span class="item-icon">🐱</span>
+                <span>GitHub ↗</span>
+              </a>
+            </div>
+          </div>
 
           <!-- User Authentication Widget -->
           <div id="user-auth-root" class="user-auth-container">
@@ -549,11 +575,30 @@ const globalJsonLd = {
       // Toggle user profile dropdown
       userProfileBtn?.addEventListener('click', (e) => {
         e.stopPropagation();
+        navMoreMenu?.classList.add('hidden');
+        navMoreContainer?.classList.remove('open');
         userDropdownMenu?.classList.toggle('hidden');
+      });
+
+      // Toggle "⋯ MÁS" dropdown
+      const btnToggleNavMore = document.getElementById('btn-toggle-nav-more');
+      const navMoreMenu = document.getElementById('nav-more-menu');
+      const navMoreContainer = document.getElementById('nav-more-container');
+
+      btnToggleNavMore?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        userDropdownMenu?.classList.add('hidden');
+        navMoreMenu?.classList.toggle('hidden');
+        const isOpen = !navMoreMenu?.classList.contains('hidden');
+        btnToggleNavMore.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        navMoreContainer?.classList.toggle('open', isOpen);
       });
 
       document.addEventListener('click', () => {
         userDropdownMenu?.classList.add('hidden');
+        navMoreMenu?.classList.add('hidden');
+        navMoreContainer?.classList.remove('open');
+        btnToggleNavMore?.setAttribute('aria-expanded', 'false');
       });
 
       // GitHub OAuth button
@@ -1134,6 +1179,100 @@ const globalJsonLd = {
 
       .user-caret {
         font-size: 0.6rem;
+      }
+
+      /* ==========================================================================
+         NAV MORE DROPDOWN MENU
+         ========================================================================== */
+      .nav-more-container {
+        position: relative;
+        display: inline-block;
+      }
+
+      .nav-more-trigger {
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        cursor: pointer;
+        font-family: inherit;
+        font-size: inherit;
+      }
+
+      .nav-caret {
+        font-size: 0.55rem;
+        transition: transform 0.15s ease;
+      }
+
+      .nav-more-container.open .nav-caret {
+        transform: rotate(180deg);
+      }
+
+      .nav-more-menu-ps1 {
+        position: absolute;
+        top: calc(100% + 4px);
+        left: 0;
+        min-width: 250px;
+        background: var(--ps1-panel-dark, #0d131f);
+        border: 2px outset var(--ps1-steel-light, #94a3b8);
+        box-shadow: 3px 3px 0px #000;
+        z-index: 1000;
+        display: flex;
+        flex-direction: column;
+        padding: 0.3rem 0;
+      }
+
+      .nav-more-menu-ps1.hidden {
+        display: none !important;
+      }
+
+      .more-dropdown-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 0.85rem;
+        color: #ffffff;
+        text-decoration: none;
+        font-family: var(--font-pixel);
+        font-size: 0.72rem;
+        background: transparent;
+        border: none;
+        width: 100%;
+        text-align: left;
+        cursor: pointer;
+        transition: background 0.1s ease;
+        white-space: nowrap;
+      }
+
+      .more-dropdown-item:hover, .more-dropdown-item:focus {
+        background: #1e293b;
+        color: var(--ps1-gold);
+        text-decoration: none;
+      }
+
+      .more-dropdown-item .item-icon {
+        font-size: 0.85rem;
+      }
+
+      .more-dropdown-item .badge-new {
+        margin-left: auto;
+        font-size: 0.55rem;
+        background: var(--ps1-red, #e53e3e);
+        color: #fff;
+        padding: 0.1rem 0.35rem;
+        border: 1px inset #000;
+        letter-spacing: 0.05em;
+      }
+
+      .more-dropdown-divider {
+        height: 1px;
+        background: var(--ps1-steel, #475569);
+        margin: 0.35rem 0;
+        border-bottom: 1px inset #000;
+      }
+
+      .item-external {
+        color: var(--ps1-cyan, #38bdf8);
+        font-size: 0.68rem;
       }
 
       .user-dropdown-ps1 {
