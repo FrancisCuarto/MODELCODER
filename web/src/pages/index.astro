@@ -1,12 +1,19 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import catalog from '../data/catalog.json';
+import { MODULAR_MODELS_LOTE_1 } from '../data/modular-catalog.ts';
 
 // Calculate category counts
 const categoryCounts: Record<string, number> = {};
 catalog.forEach((item) => {
   categoryCounts[item.category] = (categoryCounts[item.category] || 0) + 1;
 });
+MODULAR_MODELS_LOTE_1.forEach((item) => {
+  categoryCounts[item.category] = (categoryCounts[item.category] || 0) + 1;
+});
+
+const totalModelsCount = catalog.length + MODULAR_MODELS_LOTE_1.length;
+const modularCount = MODULAR_MODELS_LOTE_1.length;
 
 const ANIMATED_FAMILIES = new Set([
   'antenna_dish',
@@ -20,7 +27,7 @@ const ANIMATED_FAMILIES = new Set([
 const animatedCount = catalog.filter((item) => ANIMATED_FAMILIES.has(item.family)).length;
 
 const categories = [
-  { id: 'all', label: 'TODOS', count: catalog.length },
+  { id: 'all', label: 'TODOS', count: totalModelsCount },
   { id: 'furniture', label: 'MOBILIARIO', count: categoryCounts['furniture'] || 0 },
   { id: 'fixtures', label: 'LUCES & DISPOSITIVOS', count: categoryCounts['fixtures'] || 0 },
   { id: 'infrastructure', label: 'INFRAESTRUCTURA', count: categoryCounts['infrastructure'] || 0 },
@@ -74,7 +81,7 @@ const categories = [
             Elegí un objeto del catálogo, ajustá sus dimensiones o colores con controles visuales y descargá tu archivo <strong>.GLB</strong> listo para tu motor o escena. No necesitás conocimientos técnicos.
           </p>
           <a href="#catalog-controls" class="btn btn-primary journey-btn">
-            <span id="hero-explore-btn-text">[ EXPLORAR EL CATÁLOGO ({catalog.length}) ↓ ]</span>
+            <span id="hero-explore-btn-text">[ EXPLORAR EL CATÁLOGO ({totalModelsCount}) ↓ ]</span>
           </a>
         </div>
 
@@ -102,7 +109,7 @@ const categories = [
         <div class="step-card ps1-inset">
           <div class="step-badge">PASO 01</div>
           <h3 class="step-title">Elegí un objeto</h3>
-          <p class="step-desc">Explorá los <span id="step-models-count">{catalog.length}</span> modelos low-poly organizados por categorías según lo que necesite tu escena.</p>
+          <p class="step-desc">Explorá los <span id="step-models-count">{totalModelsCount}</span> modelos low-poly organizados por categorías según lo que necesite tu escena.</p>
         </div>
         <div class="step-card ps1-inset">
           <div class="step-badge">PASO 02</div>
@@ -120,7 +127,7 @@ const categories = [
       <div class="metrics-grid">
         <div class="ps1-inset metric-card">
           <span class="metric-lbl">TOTAL MODELOS</span>
-          <span id="metric-total-models" class="metric-val text-gold">{catalog.length}</span>
+          <span id="metric-total-models" class="metric-val text-gold">{totalModelsCount}</span>
         </div>
         <div class="ps1-inset metric-card">
           <span class="metric-lbl">PALETAS RETRO</span>
@@ -142,7 +149,7 @@ const categories = [
   <section class="ps1-window catalog-controls-window" id="catalog-controls">
     <div class="ps1-titlebar">
       <span>BÚSQUEDA Y FILTRADO DEL CATÁLOGO</span>
-      <span id="results-count" class="results-telemetry">{catalog.length} MODELOS ENCONTRADOS</span>
+      <span id="results-count" class="results-telemetry">{totalModelsCount} MODELOS ENCONTRADOS</span>
     </div>
 
     <div class="controls-body">
@@ -170,6 +177,14 @@ const categories = [
             </button>
           ))}
           <button 
+            class="filter-btn filter-btn-modular"
+            id="btn-filter-modular"
+            data-category="modular"
+            title="Mostrar modelos modulares construidos en la web con piezas 100% editables"
+          >
+            [ ✨ MODULARES: {modularCount} ]
+          </button>
+          <button 
             class="filter-btn filter-btn-anim"
             id="btn-filter-animated"
             data-category="animated"
@@ -192,6 +207,95 @@ const categories = [
 
   <!-- Generator Cards Grid -->
   <div class="generators-grid" id="generators-container">
+    {/* Modelos Modulares Procedurales 100% Editables */}
+    {MODULAR_MODELS_LOTE_1.map((mod) => (
+      <article 
+        class="ps1-window generator-card card-modular"
+        data-family={mod.family}
+        data-category={mod.category}
+        data-modular="true"
+        data-animated="false"
+        data-tags={`${mod.tags.join(' ')} modular editable studio 3d capas piezas componentes ${mod.name.toLowerCase()} ${mod.description.toLowerCase()}`}
+        data-name={mod.name.toLowerCase()}
+        data-desc={mod.description.toLowerCase()}
+      >
+        <div class="ps1-titlebar card-titlebar card-titlebar-modular">
+          <div style="display: flex; align-items: center; gap: 0.4rem;">
+            <button 
+              type="button"
+              class="btn-card-fav"
+              data-id={mod.family}
+              data-name={mod.name}
+              data-category={mod.category}
+              data-type="modular"
+              data-url={mod.glbUrl}
+              title="Guardar en favoritos"
+              aria-label="Guardar en favoritos"
+            >
+              <span class="fav-star">☆</span>
+            </button>
+            <span class="card-category-badge">[{mod.category.toUpperCase()}]</span>
+            <span class="card-modular-tag" title="Modelo paramétrico 100% editable por capas individuales en Studio 3D">✨ 100% EDITABLE</span>
+          </div>
+          <span class="card-batch-tag">LOTE {mod.batch}</span>
+        </div>
+
+        <div class="ps1-inset card-preview">
+          <model-viewer
+            src={mod.glbUrl}
+            alt={mod.name}
+            auto-rotate
+            rotation-per-second="25deg"
+            camera-controls
+            interaction-prompt="none"
+            shadow-intensity="1.0"
+            loading="lazy"
+            class="model-preview"
+          ></model-viewer>
+
+          <div class="preview-badges">
+            <span class={`category-badge category-${mod.category}`}>
+              {mod.category}
+            </span>
+            <span class="category-badge badge-modular-pill" title="Modelo procedural con piezas separadas y modificables">
+              ✨ MODULAR
+            </span>
+            <span class="preset-badge">
+              {mod.spec.components.length} PIEZAS
+            </span>
+          </div>
+        </div>
+
+        <div class="card-body">
+          <h2 class="card-title">
+            <a href={`/m?modular=${mod.family}`}>{mod.name}</a>
+          </h2>
+          <p class="card-description">{mod.description}</p>
+
+          <div class="card-meta">
+            <span class="ps1-inset meta-tag tag-modular" title="Cada pieza se puede mover, cambiar textura, duplicar o editar su código">✨ 100% EDITABLE</span>
+            <span class="ps1-inset meta-tag">🧩 {mod.spec.components.length} PIEZAS</span>
+            <span class="ps1-inset meta-tag">~{mod.triBudget} TRIS</span>
+            <span class="ps1-inset meta-tag">📦 LOTE {mod.batch}</span>
+          </div>
+        </div>
+
+        <div class="card-footer">
+          <a href={`/studio?modular=${mod.family}`} class="btn btn-gold" title="Abrir en Studio 3D para editar cada pieza por separado">
+            ⚡ EDITAR EN STUDIO
+          </a>
+          <a 
+            href={mod.glbUrl} 
+            download={`${mod.family}.glb`}
+            class="btn btn-outline btn-download" 
+            title="Descargar archivo GLB directamente"
+          >
+            BAJAR .GLB
+          </a>
+        </div>
+      </article>
+    ))}
+
     {catalog.map((gen) => {
       const isAnim = ANIMATED_FAMILIES.has(gen.family);
       return (
@@ -483,6 +587,8 @@ const categories = [
         matchesCat = isFavorite(family);
       } else if (activeCategory === 'animated') {
         matchesCat = card.dataset.animated === 'true';
+      } else if (activeCategory === 'modular') {
+        matchesCat = card.dataset.modular === 'true';
       } else {
         matchesCat = category === activeCategory;
       }
@@ -516,6 +622,8 @@ const categories = [
             msgEl.textContent = 'NO TIENES MODELOS GUARDADOS COMO FAVORITOS AÚN. HAZ CLIC EN LA ESTRELLA ⭐ DE CUALQUIER MODELO PARA GUARDARLO.';
           } else if (activeCategory === 'animated') {
             msgEl.textContent = 'NO SE ENCONTRARON MODELOS CON ANIMACIÓN QUE COINCIDAN CON LOS FILTROS.';
+          } else if (activeCategory === 'modular') {
+            msgEl.textContent = 'NO SE ENCONTRARON MODELOS MODULARES QUE COINCIDAN CON LOS FILTROS.';
           } else {
             msgEl.textContent = 'NO SE ENCONTRARON GENERADORES QUE COINCIDAN CON LOS FILTROS.';
           }
@@ -1090,6 +1198,53 @@ const categories = [
     color: #94a3b8 !important;
     border-color: #334155 !important;
     background: #0b1120 !important;
+  }
+
+  /* Modular Models Badge & Styling */
+  .card-modular {
+    border-color: var(--ps1-steel);
+  }
+  .card-titlebar-modular {
+    background: linear-gradient(90deg, #182535, #0d1624) !important;
+    border-bottom: 1px solid rgba(255, 176, 0, 0.4) !important;
+  }
+  .card-modular-tag {
+    font-family: var(--font-pixel);
+    font-size: 0.58rem;
+    color: var(--ps1-gold);
+    text-shadow: 0 0 6px rgba(255, 176, 0, 0.5);
+    background: rgba(255, 176, 0, 0.12);
+    border: 1px solid var(--ps1-gold);
+    padding: 0.1rem 0.35rem;
+    border-radius: 2px;
+    letter-spacing: 0.5px;
+  }
+  .card-batch-tag {
+    font-family: var(--font-pixel);
+    font-size: 0.58rem;
+    color: var(--ps1-cyan);
+    letter-spacing: 0.5px;
+  }
+  .badge-modular-pill {
+    background: #1c1806 !important;
+    color: var(--ps1-gold) !important;
+    border: 1px solid var(--ps1-gold) !important;
+    box-shadow: 0 0 6px rgba(255, 176, 0, 0.25);
+    font-size: 0.58rem !important;
+    letter-spacing: 0.5px;
+  }
+  .tag-modular {
+    color: var(--ps1-gold) !important;
+    border-color: rgba(255, 176, 0, 0.5) !important;
+    background: rgba(255, 176, 0, 0.08) !important;
+  }
+  .filter-btn-modular {
+    border-color: var(--ps1-gold) !important;
+    color: var(--ps1-gold) !important;
+  }
+  .filter-btn-modular.active {
+    background: var(--ps1-gold) !important;
+    color: #000 !important;
   }
 
   /* Nota: Los estilos de .generators-grid, .generator-card, .card-preview, .card-body y .card-footer

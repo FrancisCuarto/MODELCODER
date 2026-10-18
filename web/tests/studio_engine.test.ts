@@ -2299,6 +2299,57 @@ test('Catalog Bridge: loadCatalogModelAsSpec loads genuine 3D meshes from real c
   }
 });
 
+test('Modular Catalog (Lote 1): 20 modelos modulares procedurales 100% editables', async () => {
+  const { MODULAR_MODELS_LOTE_1, getModularModelByFamily } = await import('../src/data/modular-catalog.ts');
+  assert.equal(MODULAR_MODELS_LOTE_1.length, 20, 'Lote 1 debe contener exactamente 20 modelos');
+
+  for (const entry of MODULAR_MODELS_LOTE_1) {
+    // 1. Metadata checks
+    assert.ok(entry.id.startsWith('modular.'), `ID debe iniciar con modular.: ${entry.id}`);
+    assert.ok(entry.family.length > 0, 'Family name cannot be empty');
+    assert.ok(entry.name.length > 0, 'Model name cannot be empty');
+    assert.equal(entry.batch, 1, 'Batch debe ser 1');
+    assert.equal(entry.isModular, true, 'isModular flag must be true');
+
+    // 2. Spec & Components checks
+    const spec = entry.spec;
+    assert.ok(spec.components.length >= 3, `${entry.name} debe tener al menos 3 piezas modulares`);
+    
+    // Check that each component has individual non-empty name and valid geometry
+    const compNames = new Set<string>();
+    for (const comp of spec.components) {
+      assert.ok(comp.name.length > 0, 'Component name cannot be empty');
+      assert.ok(!compNames.has(comp.name), `Nombre de componente duplicado en ${entry.name}: ${comp.name}`);
+      compNames.add(comp.name);
+
+      assert.ok(['box', 'cylinder', 'sphere', 'cone', 'wedge', 'torus', 'ring'].includes(comp.shape), `Forma inválida ${comp.shape} en ${comp.name}`);
+      assert.ok(Array.isArray(comp.position) && comp.position.length === 3, 'Position must be [x, y, z]');
+      assert.ok(Array.isArray(comp.size) && comp.size.length >= 3, 'Size must have at least 3 dimensions');
+      assert.ok(comp.size.every((s: number) => s > 0), `Todas las dimensiones deben ser positivas en ${comp.name}`);
+    }
+
+    // 3. ProceduralEngine compilation
+    const { group, stats } = ProceduralEngine.buildModelFromSpec(spec);
+    assert.ok(group, `Group Three.js debe construirse para ${entry.name}`);
+    assert.ok(stats.triangles >= 50, `${entry.name} debe tener presupuesto de triángulos consistente (actual: ${stats.triangles})`);
+
+    // 4. Verification that baked GLB exists on disk
+    const glbDir = fs.existsSync(path.resolve('public/models/modular'))
+      ? path.resolve('public/models/modular')
+      : path.resolve('web/public/models/modular');
+    const glbPath = path.join(glbDir, `${entry.family}.glb`);
+    assert.ok(fs.existsSync(glbPath), `El archivo GLB debe existir en disco: ${glbPath}`);
+    const stat = fs.statSync(glbPath);
+    assert.ok(stat.size > 1024, `El archivo GLB debe ser > 1KB (actual: ${stat.size} bytes)`);
+
+    // 5. Lookup function check
+    const lookup = getModularModelByFamily(entry.family);
+    assert.equal(lookup?.id, entry.id, `getModularModelByFamily debe encontrar ${entry.family}`);
+
+    ProceduralEngine.disposeHierarchy(group);
+  }
+});
+
 // Teardown: ensure Node exits cleanly after tests
 test('Teardown: Exit cleanly', () => {
   setTimeout(() => process.exit(0), 100);

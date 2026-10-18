@@ -782,13 +782,35 @@ const pageDescription = "Visor interactivo 3D para inspeccionar, rotar, probar a
         } else if (found && found.name) {
           showErrorState(`El modelo "${found.name}" existe en la base de datos pero no contiene especificación 3D válida.`);
           return;
+        }
+      }
+
+      // Strategy C: Modular Model from native procedural catalog (?modular=family)
+      const modularParam = urlParams.get('modular');
+      if (modularParam) {
+        const decodedMod = decodeURIComponent(modularParam).trim();
+        const { getModularModelByFamily } = await import('../data/modular-catalog.ts');
+        const modEntry = getModularModelByFamily(decodedMod);
+        if (modEntry && modEntry.spec) {
+          activeSpec = modEntry.spec;
+          activeAuthor = 'ModelCoder Modular System';
+          activeCategory = modEntry.category || 'furniture';
+          activeSlugOrId = modEntry.family;
+          renderLoadedModel(modEntry.spec, {
+            name: modEntry.name,
+            description: modEntry.description,
+            author_name: 'ModelCoder Modular System',
+            category: modEntry.category,
+            created_at: new Date().toISOString()
+          });
+          return;
         } else {
-          showErrorState(`No se encontró ningún modelo con el identificador "${decodedParam}".`);
+          showErrorState(`No se encontró el modelo modular "${decodedMod}".`);
           return;
         }
       }
 
-      // Strategy C: Built-in catalog sample fallback if no params provided
+      // Strategy D: Fallback if no params provided
       showErrorState('No se especificó ningún modelo para visualizar. Abre un modelo desde el catálogo o desde el Studio 3D.');
     } catch (err: any) {
       showErrorState(err.message || 'Error al decodificar la geometría 3D.');

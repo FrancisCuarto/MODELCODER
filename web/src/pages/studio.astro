@@ -7048,9 +7048,27 @@ if __name__ == "__main__":
     if (typeof window === 'undefined') return;
 
     const urlParams = new URLSearchParams(window.location.search);
+    const modularFamily = urlParams.get('modular');
     const remixFamily = urlParams.get('remix');
     const slugParam = urlParams.get('slug') || urlParams.get('id');
     const hash = window.location.hash;
+
+    // 0. Native Modular Model (?modular=family)
+    if (modularFamily) {
+      try {
+        const { getModularModelByFamily } = await import('../data/modular-catalog.ts');
+        const foundMod = getModularModelByFamily(modularFamily);
+        if (foundMod && foundMod.spec) {
+          currentSpec = JSON.parse(JSON.stringify(foundMod.spec));
+          pushHistoryState(currentSpec);
+          renderCurrentSpec('visual', false);
+          showStudioToast(`✨ ¡Modelo modular "${currentSpec.name}" cargado! ${currentSpec.components.length} piezas listas para editar.`);
+          return;
+        }
+      } catch (err) {
+        console.warn('[ModelCoder Studio] Error cargando modelo modular:', err);
+      }
+    }
 
     // 1. Remix from Catalog Generator page
     if (remixFamily) {
