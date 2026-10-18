@@ -130,6 +130,9 @@ const modelSchema = {
             <button id="fullscreen-viewer-btn" class="ps1-ctrl-btn" title="Pantalla Completa (F11 / ESC)">
               ⛶ PANTALLA COMPLETA
             </button>
+            <button id="btn-viewport-studio" class="ps1-ctrl-btn" style="color: var(--ps1-gold); font-weight: bold;" title="Desarmar piezas y personalizar en el Studio 3D">
+              ⚡ EDITAR EN STUDIO
+            </button>
             <button 
               id="btn-family-fav" 
               class="ps1-ctrl-btn" 
@@ -427,6 +430,11 @@ const modelSchema = {
 
           <!-- Sección de Descarga Inequívoca y Asistencia -->
           <div class="download-section-box">
+            <!-- Acción de Remix / Edición en Studio 3D -->
+            <button type="button" id="btn-edit-in-studio" class="btn btn-gold btn-download-hero" style="margin-bottom: 0.65rem; border: 2px outset var(--ps1-gold); text-shadow: 1px 1px 0px #000;" title="Desarmar este modelo en piezas y modificarlo a fondo en el Studio 3D">
+              ⚡ ABRIR Y EDITAR EN STUDIO 3D
+            </button>
+
             <!-- Acción Principal Única -->
             <button type="button" id="download-custom-glb-btn" class="btn btn-primary btn-download-hero">
               💾 DESCARGAR MODELO PERSONALIZADO (.GLB)
@@ -619,6 +627,39 @@ const modelSchema = {
   const btnCloseCollPopover = document.getElementById('btn-close-coll-popover');
   const familyNewCollInput = document.getElementById('family-new-coll-input') as HTMLInputElement | null;
   const btnFamilyCreateColl = document.getElementById('btn-family-create-coll');
+  const btnEditInStudio = document.getElementById('btn-edit-in-studio');
+  const btnViewportStudio = document.getElementById('btn-viewport-studio');
+
+  function openModelInStudio() {
+    const params: Record<string, any> = {};
+    if (form) {
+      form.querySelectorAll('.input-row').forEach((rowEl) => {
+        const row = rowEl as HTMLElement;
+        const key = row.dataset.paramKey;
+        const type = row.dataset.paramType;
+        if (!key) return;
+
+        const input = form.elements.namedItem(key) as HTMLInputElement | HTMLSelectElement;
+        if (!input) return;
+
+        if (type === 'boolean') {
+          params[key] = (input as HTMLInputElement).checked;
+        } else if (type === 'float') {
+          params[key] = parseFloat(input.value);
+        } else if (type === 'int' || type === 'seed') {
+          params[key] = parseInt(input.value, 10);
+        } else {
+          params[key] = input.value;
+        }
+      });
+    }
+
+    const encodedParams = encodeURIComponent(JSON.stringify(params));
+    window.location.href = `/studio?remix=${encodeURIComponent(familyName)}&params=${encodedParams}`;
+  }
+
+  btnEditInStudio?.addEventListener('click', openModelInStudio);
+  btnViewportStudio?.addEventListener('click', openModelInStudio);
 
   function updateFamilyFavUI() {
     if (!btnFamilyFav) return;

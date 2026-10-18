@@ -278,6 +278,9 @@ const categories = [
           <a href={`/generators/${gen.family}`} class="btn btn-primary" title="Abrir generador para personalizar en 3D">
             PERSONALIZAR 3D
           </a>
+          <a href={`/studio?remix=${gen.family}`} class="btn btn-gold btn-sm" title="Desarmar piezas y remixar en Studio 3D" style="font-size: 0.68rem; padding: 0.35rem 0.55rem; text-decoration: none;">
+            ⚡ REMIXAR
+          </a>
           {gen.has_model && (
             <a 
               href={gen.model_url} 

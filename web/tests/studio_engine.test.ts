@@ -107,6 +107,7 @@ import { AnimationEngine } from '../src/lib/studio/animation-engine.ts';
 import { StudioViewport } from '../src/lib/studio/three-viewport.ts';
 import { serializeSpecToHash, deserializeSpecFromHash, compressSpecToHash, deserializeSpec } from '../src/lib/studio/share-serializer.ts';
 import { generateAllSnippets, generateGodotScript, generateUnityScript, generateThreeJsScript } from '../src/lib/studio/gamedev-exporter.ts';
+import { CatalogBridge } from '../src/lib/studio/catalog-bridge.ts';
 import type { ModelSpec } from '../src/lib/studio/types.ts';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -2251,6 +2252,27 @@ test('Hierarchy Reparenting: reparentComponentPreservingWorldTransform preserva 
   assert.equal(brazoComp.position[0], 2);
   assert.equal(brazoComp.position[1], 5);
   assert.equal(brazoComp.position[2], 1);
+});
+
+test('Catalog Bridge: Deconstructs catalog models into editable ModelSpec with real pieces', () => {
+  const templates = CatalogBridge.getCatalogTemplates();
+  assert.ok(templates.length >= 100, 'Debe incluir al menos 100 plantillas del catálogo');
+
+  // Deconstruct a crate
+  const crateSpec = CatalogBridge.buildSpecFromCatalog('crate');
+  assert.ok(crateSpec.components.length >= 1, 'Debe contener componentes individuales');
+  assert.ok(crateSpec.id.startsWith('remix.crate.'), 'Debe tener ID prefijado con remix');
+  assert.ok(crateSpec.name.includes('Remix'), 'El nombre debe indicar que es un remix');
+
+  // Apply custom parameters (e.g. width = 2.5)
+  const customSpec = CatalogBridge.buildSpecFromCatalog('crate', { width: 2.5, height: 1.8 });
+  assert.equal(customSpec.dimensions.width, 2.5, 'Debe respetar el ancho personalizado');
+  assert.equal(customSpec.dimensions.height, 1.8, 'Debe respetar el alto personalizado');
+
+  // Verify it compiles in ProceduralEngine without errors
+  const { group, stats } = ProceduralEngine.buildModelFromSpec(customSpec);
+  assert.ok(group, 'Three.js group debe construirse');
+  assert.ok(stats.triangles > 0, 'Debe tener triángulos válidos');
 });
 
 // Teardown: ensure Node exits cleanly after tests

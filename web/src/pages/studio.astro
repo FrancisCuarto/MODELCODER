@@ -42,6 +42,9 @@ import catalog from '../data/catalog.json';
         <button id="btn-my-projects" class="btn-mini ps1-ctrl-btn" title="Ver y retomar mis proyectos y borradores en curso">
           📂 PROYECTOS (<span id="studio-drafts-badge">0</span>)
         </button>
+        <button id="btn-open-catalog-templates" class="btn-mini ps1-ctrl-btn" title="Cargar y desarmar cualquier modelo del catálogo para editarlo">
+          📦 PLANTILLAS
+        </button>
         <button id="run-compile-btn" class="btn-mini btn-cyan" title="Compilar código actual y actualizar visor 3D">
           ⚡ COMPILAR 3D
         </button>
@@ -55,6 +58,9 @@ import catalog from '../data/catalog.json';
             ⋯ MÁS ▼
           </button>
           <div id="topbar-more-menu" class="topbar-dropdown-menu hidden">
+            <button id="btn-menu-catalog-templates" type="button" class="topbar-menu-item" style="color: var(--ps1-gold);">
+              📦 PLANTILLAS DEL CATÁLOGO (100+ MODELOS)
+            </button>
             <button id="btn-header-story" type="button" class="topbar-menu-item">
               📱 HISTORIA IG / REEL (9:16 o 1:1)
             </button>
@@ -841,6 +847,44 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     </div>
   </dialog>
 
+  <!-- Modal: Catálogo de Plantillas y Modelos Base para Remixar -->
+  <dialog id="modal-catalog-templates" class="ps1-window project-modal" style="max-width: 880px; width: 95%;">
+    <div class="ps1-titlebar">
+      <span>PLANTILLAS DEL CATÁLOGO PROCEDURAL (100+ OBJETOS PARA REMIXAR)</span>
+      <button id="close-catalog-templates-btn" class="ps1-ctrl-btn" type="button">X</button>
+    </div>
+    <div class="modal-body" style="padding: 1.25rem;">
+      <div style="margin-bottom: 1rem; display: flex; flex-direction: column; gap: 0.75rem;">
+        <div style="display: flex; gap: 0.5rem; align-items: center;">
+          <input 
+            type="text" 
+            id="filter-catalog-templates-input" 
+            class="ps1-input" 
+            placeholder="🔍 Buscar plantilla por nombre (ej. caja, consola, puerta, antena, cama, auto)..." 
+            style="flex: 1; font-size: 0.8rem; padding: 0.45rem;" 
+          />
+        </div>
+        <div style="display: flex; gap: 0.35rem; flex-wrap: wrap;" id="catalog-category-pills-bar">
+          <button type="button" class="btn-mini btn-catalog-cat-pill active" data-cat="all">TODOS</button>
+          <button type="button" class="btn-mini btn-catalog-cat-pill" data-cat="furniture">MOBILIARIO</button>
+          <button type="button" class="btn-mini btn-catalog-cat-pill" data-cat="fixtures">FIXTURES</button>
+          <button type="button" class="btn-mini btn-catalog-cat-pill" data-cat="security">SEGURIDAD</button>
+          <button type="button" class="btn-mini btn-catalog-cat-pill" data-cat="infrastructure">INFRAESTRUCTURA</button>
+          <button type="button" class="btn-mini btn-catalog-cat-pill" data-cat="medical">MÉDICO</button>
+          <button type="button" class="btn-mini btn-catalog-cat-pill" data-cat="weapons">ARMAS</button>
+          <button type="button" class="btn-mini btn-catalog-cat-pill" data-cat="vehicles">VEHÍCULOS</button>
+        </div>
+      </div>
+
+      <div 
+        id="catalog-templates-container" 
+        style="max-height: 480px; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 0.75rem; padding-right: 0.25rem;"
+      >
+        <!-- Populated dynamically via CatalogBridge -->
+      </div>
+    </div>
+  </dialog>
+
   <!-- Modal: Generador de Historias y Posts de Instagram -->
   <dialog id="modal-ig-story" class="ps1-window ig-story-modal" style="max-width: 980px; width: 95%; max-height: 94vh;">
     <div class="ps1-titlebar">
@@ -1355,7 +1399,7 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
   import { StudioViewport } from '../lib/studio/three-viewport';
   import { TextureLibrary, MATERIAL_CATEGORY_LABELS, type MaterialFamilyCategory } from '../lib/studio/texture-library';
   import { AnimationEngine, type EasingProfileType } from '../lib/studio/animation-engine';
-  import { getCurrentUser, checkUserRole, publishCommunityModel } from '../lib/supabase';
+  import { getCurrentUser, checkUserRole, publishCommunityModel, getCommunityModels } from '../lib/supabase';
   import {
     saveProjectDraft,
     getProjectDrafts,
@@ -1383,6 +1427,7 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
   } from '../lib/studio/story-generator';
   import { serializeSpecToHash, deserializeSpecFromHash, compressSpecToHash, deserializeSpec } from '../lib/studio/share-serializer';
   import { generateAllSnippets } from '../lib/studio/gamedev-exporter';
+  import { CatalogBridge } from '../lib/studio/catalog-bridge';
 
   if (typeof window !== 'undefined') {
     (window as any).__modelcoderStudioReady = true;
@@ -6881,12 +6926,179 @@ if __name__ == "__main__":
     showStudioToast(`💾 Archivo ${a.download} descargado.`);
   });
 
-  // Check URL Hash for shared model on initial load
-  if (typeof window !== 'undefined' && window.location.hash) {
-    const hashSpec = deserializeSpecFromHash(window.location.hash);
-    if (hashSpec) {
-      currentSpec = hashSpec;
-      showStudioToast(`📦 ¡Modelo "${currentSpec.name}" cargado desde enlace compartido!`);
+  // Catalog Templates Modal Handler
+  const modalCatalogTemplates = document.getElementById('modal-catalog-templates') as HTMLDialogElement | null;
+  const btnOpenCatalogTemplates = document.getElementById('btn-open-catalog-templates');
+  const btnMenuCatalogTemplates = document.getElementById('btn-menu-catalog-templates');
+  const btnCloseCatalogTemplates = document.getElementById('close-catalog-templates-btn');
+  const catalogTemplatesContainer = document.getElementById('catalog-templates-container');
+  const filterCatalogTemplatesInput = document.getElementById('filter-catalog-templates-input') as HTMLInputElement | null;
+  const catalogCategoryPills = document.querySelectorAll('.btn-catalog-cat-pill');
+
+  let activeCatalogCategory = 'all';
+
+  function renderCatalogTemplates(searchQuery = '') {
+    if (!catalogTemplatesContainer) return;
+    const templates = CatalogBridge.getCatalogTemplates();
+    const query = searchQuery.trim().toLowerCase();
+
+    const filtered = templates.filter((tpl) => {
+      const matchCat = activeCatalogCategory === 'all' || tpl.category.toLowerCase() === activeCatalogCategory.toLowerCase();
+      const matchText = !query || 
+        tpl.name.toLowerCase().includes(query) || 
+        tpl.family.toLowerCase().includes(query) || 
+        tpl.description.toLowerCase().includes(query) ||
+        (tpl.tags && tpl.tags.some(t => t.toLowerCase().includes(query)));
+      return matchCat && matchText;
+    });
+
+    if (filtered.length === 0) {
+      catalogTemplatesContainer.innerHTML = `
+        <div style="grid-column: 1 / -1; text-align: center; padding: 2rem; color: var(--text-dim); font-size: 0.85rem;">
+          No se encontraron plantillas que coincidan con "${searchQuery}".
+        </div>
+      `;
+      return;
+    }
+
+    catalogTemplatesContainer.innerHTML = filtered.map((tpl) => `
+      <div class="ps1-window template-card" style="background: #090e1c; padding: 0.75rem; display: flex; flex-direction: column; justify-content: space-between; gap: 0.5rem; border: 1px solid var(--ps1-steel);">
+        <div>
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; margin-bottom: 0.25rem;">
+            <strong style="font-family: var(--font-pixel); font-size: 0.72rem; color: var(--ps1-gold);">${tpl.name}</strong>
+            <span class="category-badge category-${tpl.category}" style="font-size: 0.58rem; padding: 0.15rem 0.35rem;">${tpl.category.toUpperCase()}</span>
+          </div>
+          <p style="font-size: 0.72rem; color: #a4b8d4; line-height: 1.35; margin: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+            ${tpl.description}
+          </p>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed var(--ps1-steel); padding-top: 0.45rem; margin-top: 0.25rem;">
+          <span style="font-size: 0.65rem; color: var(--text-dim); font-family: var(--font-mono);">
+            📦 ${tpl.defaultTriBudget} TRIS
+          </span>
+          <button type="button" class="btn btn-gold btn-mini btn-load-template" data-family="${tpl.family}" style="font-size: 0.65rem; padding: 0.25rem 0.55rem;">
+            ⚡ DESARMAR Y EDITAR
+          </button>
+        </div>
+      </div>
+    `).join('');
+
+    catalogTemplatesContainer.querySelectorAll('.btn-load-template').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const fam = (btn as HTMLElement).dataset.family;
+        if (!fam) return;
+        const spec = CatalogBridge.buildSpecFromCatalog(fam);
+        currentSpec = spec;
+        pushHistoryState(currentSpec);
+        renderCurrentSpec('visual', false);
+        modalCatalogTemplates?.close();
+        showStudioToast(`📦 ¡Modelo "${spec.name}" desarmado en piezas en el Outliner!`);
+      });
+    });
+  }
+
+  btnOpenCatalogTemplates?.addEventListener('click', () => {
+    renderCatalogTemplates(filterCatalogTemplatesInput?.value || '');
+    modalCatalogTemplates?.showModal();
+  });
+
+  btnMenuCatalogTemplates?.addEventListener('click', () => {
+    topbarMoreMenu?.classList.add('hidden');
+    renderCatalogTemplates(filterCatalogTemplatesInput?.value || '');
+    modalCatalogTemplates?.showModal();
+  });
+
+  btnCloseCatalogTemplates?.addEventListener('click', () => {
+    modalCatalogTemplates?.close();
+  });
+
+  filterCatalogTemplatesInput?.addEventListener('input', (e) => {
+    renderCatalogTemplates((e.target as HTMLInputElement).value);
+  });
+
+  catalogCategoryPills.forEach((pill) => {
+    pill.addEventListener('click', () => {
+      catalogCategoryPills.forEach((p) => p.classList.remove('active'));
+      pill.classList.add('active');
+      activeCatalogCategory = (pill as HTMLElement).dataset.cat || 'all';
+      renderCatalogTemplates(filterCatalogTemplatesInput?.value || '');
+    });
+  });
+
+  // Handle URL parameters (?remix=family or ?slug=...) and hash (#model=...)
+  async function handleInitialUrlSpec() {
+    if (typeof window === 'undefined') return;
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const remixFamily = urlParams.get('remix');
+    const slugParam = urlParams.get('slug') || urlParams.get('id');
+    const hash = window.location.hash;
+
+    // 1. Remix from Catalog Generator page
+    if (remixFamily) {
+      try {
+        let userParams: Record<string, any> = {};
+        const paramsStr = urlParams.get('params');
+        if (paramsStr) {
+          try {
+            userParams = JSON.parse(decodeURIComponent(paramsStr));
+          } catch (e) {}
+        }
+        const remixSpec = CatalogBridge.buildSpecFromCatalog(remixFamily, userParams);
+        currentSpec = remixSpec;
+        pushHistoryState(currentSpec);
+        renderCurrentSpec('visual', false);
+        showStudioToast(`📦 ¡Plantilla "${remixSpec.name}" desarmada y lista para editar!`);
+        return;
+      } catch (err) {
+        console.warn('[ModelCoder Studio] Error cargando plantilla de catálogo:', err);
+      }
+    }
+
+    // 2. Remix from Community Model slug
+    if (slugParam) {
+      try {
+        const communityModels = await getCommunityModels({ onlyPublic: false });
+        const decodedParam = decodeURIComponent(slugParam).trim();
+        const found = communityModels.find(
+          (m) =>
+            m.slug === decodedParam ||
+            m.id === decodedParam ||
+            (m.slug && m.slug.toLowerCase() === decodedParam.toLowerCase())
+        );
+        if (found && found.spec) {
+          let specData = found.spec;
+          if (typeof specData === 'string') {
+            try { specData = JSON.parse(specData); } catch {}
+          }
+          const remixSpec: ModelSpec = JSON.parse(JSON.stringify(specData));
+          remixSpec.id = `remix.${found.slug || 'community'}.${Date.now().toString(36)}`;
+          remixSpec.name = `${found.name || specData.name} (Remix)`;
+          currentSpec = remixSpec;
+          pushHistoryState(currentSpec);
+          renderCurrentSpec('visual', false);
+          showStudioToast(`📦 ¡Modelo de la comunidad "${remixSpec.name}" clonado para editar!`);
+          return;
+        }
+      } catch (err) {
+        console.warn('[ModelCoder Studio] Error cargando modelo de comunidad:', err);
+      }
+    }
+
+    // 3. Hash model token (supports both Deflate z: and legacy base64)
+    if (hash && (hash.includes('model=') || hash.length > 20)) {
+      try {
+        const decoded = await deserializeSpec(hash);
+        if (decoded) {
+          currentSpec = decoded;
+          pushHistoryState(currentSpec);
+          renderCurrentSpec('visual', false);
+          showStudioToast(`📦 ¡Modelo "${currentSpec.name}" cargado desde enlace compartido!`);
+          return;
+        }
+      } catch (err) {
+        console.warn('[ModelCoder Studio] Error deserializando modelo desde hash:', err);
+      }
     }
   }
 
@@ -6894,10 +7106,38 @@ if __name__ == "__main__":
   pushHistoryState(currentSpec);
   setStudioWorkspace('layout');
   renderCurrentSpec('visual', false);
+  handleInitialUrlSpec();
 </script>
 </Layout>
 
 <style is:global>
+  .btn-catalog-cat-pill {
+    background: #141c2c;
+    border: 1px solid var(--ps1-steel);
+    color: var(--text-dim);
+    font-family: var(--font-pixel);
+    font-size: 0.65rem;
+    padding: 0.35rem 0.6rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .btn-catalog-cat-pill:hover {
+    color: var(--text-bright);
+    border-color: var(--ps1-cyan);
+  }
+  .btn-catalog-cat-pill.active {
+    background: var(--ps1-gold);
+    color: #000;
+    border-color: var(--ps1-gold);
+    font-weight: bold;
+  }
+  .template-card {
+    transition: transform 0.15s ease, border-color 0.15s ease;
+  }
+  .template-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--ps1-cyan) !important;
+  }
   .studio-container {
     display: flex;
     flex-direction: column;
