@@ -1,5 +1,7 @@
+import * as THREE from 'three';
 import type { ModelSpec, ComponentDef } from './types.ts';
 import { ProceduralMemory } from './procedural-memory.ts';
+import { ProceduralEngine } from './procedural-engine.ts';
 
 export interface GenerationConfig {
   engine?: 'ai' | 'local';
@@ -48,7 +50,8 @@ export class AIGenerator {
 
       // Llamada directa a Gemini sin consultar memoria ni presets existentes
       const geminiRes = await this.callGeminiAPI(cleanPrompt, apiKey.trim());
-      return { ...geminiRes, source: 'gemini' };
+      const normalizedSpec = this.normalizeSpecGeometry(geminiRes.spec);
+      return { spec: normalizedSpec, rawResponse: geminiRes.rawResponse, source: 'gemini' };
     }
 
     // =========================================================================
@@ -57,18 +60,125 @@ export class AIGenerator {
     if (!forceFresh) {
       const learned = await ProceduralMemory.findLearnedModel(cleanPrompt);
       if (learned) {
-        return { spec: learned.spec, source: learned.source };
+        return { spec: this.normalizeSpecGeometry(learned.spec), source: learned.source };
       }
     }
 
-    const spec = this.synthesizeProceduralSpec(cleanPrompt);
+    const rawSpec = this.synthesizeProceduralSpec(cleanPrompt);
+    const spec = this.normalizeSpecGeometry(rawSpec);
     // Guarda en memoria local para acceso rápido offline
     await ProceduralMemory.recordLearnedModel(cleanPrompt, spec);
     return { spec, source: 'local' };
   }
 
   /**
-   * Calls Google Gemini API with structured JSON output schema and creative variation.
+   * Mathematically normalizes, sanitizes, and ground-aligns a ModelSpec.
+   * Guarantees:
+   * 1. All component names are unique and valid.
+   * 2. Coordinates, sizes, and rotations are valid finite numbers in degrees/meters.
+   * 3. Model is automatically grounded so its lowest contact point touches floor at Y = 0.
+   * 4. Overall bounding box dimensions are verified.
+   */
+  public static normalizeSpecGeometry(spec: ModelSpec): ModelSpec {
+    if (!spec || !Array.isArray(spec.components) || spec.components.length === 0) {
+      return spec;
+    }
+
+    const usedNames = new Set<string>();
+    for (let i = 0; i < spec.components.length; i++) {
+      const comp = spec.components[i];
+      if (!comp.name || typeof comp.name !== 'string' || comp.name.trim() === '') {
+        comp.name = `comp_${i + 1}`;
+      } else {
+        comp.name = comp.name.trim().replace(/\s+/g, '_');
+      }
+
+      if (usedNames.has(comp.name)) {
+        comp.name = `${comp.name}_${i + 1}`;
+      }
+      usedNames.add(comp.name);
+
+      const validShapes = ['box', 'cylinder', 'sphere', 'plane', 'cone', 'torus', 'capsule', 'wedge', 'mesh'];
+      if (!comp.shape || !validShapes.includes(comp.shape)) {
+        comp.shape = 'box';
+      }
+
+      if (!Array.isArray(comp.size) || comp.size.length === 0) {
+        comp.size = [1, 1, 1];
+      } else {
+        comp.size = comp.size.map((v) => (typeof v === 'number' && Number.isFinite(v) && v > 0.001 ? Math.abs(v) : 0.5));
+      }
+
+      if (comp.shape === 'box' || comp.shape === 'wedge') {
+        while (comp.size.length < 3) comp.size.push(1);
+      } else if (comp.shape === 'cylinder') {
+        while (comp.size.length < 3) comp.size.push(comp.size[0] || 0.5);
+      } else if (comp.shape === 'sphere') {
+        if (comp.size.length < 1) comp.size.push(0.5);
+      }
+
+      if (!Array.isArray(comp.position) || comp.position.length < 3) {
+        comp.position = [0, 0, 0];
+      } else {
+        comp.position = [
+          Number.isFinite(comp.position[0]) ? parseFloat(comp.position[0].toFixed(4)) : 0,
+          Number.isFinite(comp.position[1]) ? parseFloat(comp.position[1].toFixed(4)) : 0,
+          Number.isFinite(comp.position[2]) ? parseFloat(comp.position[2].toFixed(4)) : 0
+        ];
+      }
+
+      if (!Array.isArray(comp.rotation) || comp.rotation.length < 3) {
+        comp.rotation = [0, 0, 0];
+      } else {
+        comp.rotation = [
+          Number.isFinite(comp.rotation[0]) ? parseFloat(comp.rotation[0].toFixed(2)) : 0,
+          Number.isFinite(comp.rotation[1]) ? parseFloat(comp.rotation[1].toFixed(2)) : 0,
+          Number.isFinite(comp.rotation[2]) ? parseFloat(comp.rotation[2].toFixed(2)) : 0
+        ];
+      }
+
+      if (!comp.color || typeof comp.color !== 'string') {
+        comp.color = '#718096';
+      }
+    }
+
+    // Auto-Grounding: measure true 3D bounding box to ground lowest contact points at Y = 0
+    try {
+      const { group } = ProceduralEngine.buildModelFromSpec(spec);
+      const bbox = new THREE.Box3().setFromObject(group);
+
+      if (!bbox.isEmpty()) {
+        const minY = bbox.min.y;
+        if (Math.abs(minY) > 0.002) {
+          const shiftY = -minY;
+          for (const comp of spec.components) {
+            // Shift only root components (without parentId or with unparented roots)
+            if (!comp.parentId || !spec.components.some((c) => c.name === comp.parentId)) {
+              if (comp.position) {
+                comp.position[1] = parseFloat((comp.position[1] + shiftY).toFixed(4));
+              }
+            }
+          }
+        }
+
+        const sizeX = Math.max(0.1, bbox.max.x - bbox.min.x);
+        const sizeY = Math.max(0.1, bbox.max.y - bbox.min.y);
+        const sizeZ = Math.max(0.1, bbox.max.z - bbox.min.z);
+        spec.dimensions = {
+          width: parseFloat(sizeX.toFixed(3)),
+          height: parseFloat(sizeY.toFixed(3)),
+          depth: parseFloat(sizeZ.toFixed(3))
+        };
+      }
+    } catch (e) {
+      console.warn('[AIGenerator] Could not compute bounding box for auto-grounding:', e);
+    }
+
+    return spec;
+  }
+
+  /**
+   * Calls Google Gemini API with structured JSON output schema and high spatial precision.
    */
   private static async callGeminiAPI(
     prompt: string,
@@ -76,37 +186,229 @@ export class AIGenerator {
   ): Promise<{ spec: ModelSpec; rawResponse: string }> {
     const uniqueNonce = `${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
 
-    const systemInstruction = `You are ModelCoder 3D Architect, an expert procedural 3D modeler for retro PS1 sci-fi games.
-CRITICAL DIRECTIVE: You must invent a completely ORIGINAL, UNIQUE, and UNCONVENTIONAL 3D procedural composition for this request.
-Do NOT reuse standard repetitive box templates or previously seen presets.
-Design fresh component proportions, creative shapes (using combinations of box, cylinder, sphere, wedge, cone, torus, capsule), intricate details, and authentic retro vertex colors (casing, metal, metal_light, hazard, accent, screen, glass, red, blue, green, dark, rust, gold).
-Assign realistic texturePreset values where appropriate across our 8 PBR material families:
+    const systemInstruction = `You are ModelCoder 3D Master Architect, an expert procedural 3D modeler for retro PS1 sci-fi, industrial, and cybernetic games.
+Your mission is to construct realistic, physically coherent, and mechanically solid 3D models with ZERO floating geometry, perfect ground alignment, and authentic retro materials.
+
+### 5 ABSOLUTE LAWS OF 3D CONSTRUCTION (MANDATORY)
+
+1. LAW OF SOLID GROUNDING (Ground Level Y = 0):
+- The model must rest firmly on the floor at Y = 0.
+- In Three.js, primitive positions are centered at their CENTROIDS (center of mass).
+- If the lowest base/chassis/leg has height H, its Y position MUST be H/2 (e.g. height 0.20m -> position Y = 0.10m).
+- NEVER place the lowest piece with bottom above Y = 0 (no hovering or floating machines).
+
+2. LAW OF ZERO FLOATING GEOMETRY (Physical Stacking & Surface Contact):
+- EVERY component must physically touch, connect to, or rest on another component or the floor.
+- VERTICAL STACKING FORMULA:
+  If Component A extends vertically from Y_bottom to Y_top (height H_A),
+  and Component B (height H_B) sits ON TOP of Component A:
+  -> Component B's center Y position = Y_top + (H_B / 2).
+  -> Example: Base box from Y=0 to Y=0.60. A monitor of height 0.40m resting on it MUST have position Y = 0.60 + (0.40 / 2) = 0.80m.
+- WALL & FACE MOUNTING FORMULA:
+  If Component A has depth D centered at Z=0 (front face at Z = +D/2),
+  and a control panel/dial/gauge of thickness T attaches to its front:
+  -> The attached piece MUST have position Z = (D/2) + (T/2).
+  -> NEVER let panels float 20cm away in mid-air from the machine body!
+
+3. LAW OF ORTHOGONAL & PURPOSEFUL ROTATIONS (DEGREES):
+- All rotations are in DEGREES: [rotX_deg, rotY_deg, rotZ_deg].
+- 95% of components MUST have rotation: [0, 0, 0].
+- NEVER use random, chaotic, or diagonal rotations (like [17, -33, 48]).
+- Only use standard intentional rotations when mechanically required:
+  * Horizontal cylinder/wheel/axle: [0, 0, 90] or [90, 0, 0]
+  * Ergonomic display tilt / control wedge: [-15, 0, 0] or [15, 0, 0]
+  * Door or solar panel swing: [0, 45, 0]
+
+4. LAW OF MECHANICAL HIERARCHY & FUNCTIONAL ANATOMY:
+- Design objects like real machines and structures:
+  a) HEAVY FOUNDATION / CHASSIS / WHEELS: Heavy base at Y=0 (diamond plate, cast iron, rubber feet).
+  b) MAIN HOUSING / BODY: Enclosed structural core (worn metal, beige plastic, painted metal).
+  c) MECHANICAL & ELECTRICAL PARTS: Tanks, vents, heat sinks, cables, hydraulic cylinders, pipes.
+  d) INTERFACE & CONTROLS: Flush control panels, switches, CRT screens, gauges, dials, emergency stop buttons.
+  e) ACCENTS: Warning decals, hazard stripes, LED indicators.
+
+5. LAW OF SYMMETRY & COHESIVE PROPORTIONS:
+- Center main structures at X = 0.
+- Bilateral parts (wheels, dual tanks, side handles, thrusters, legs) MUST be placed in symmetric pairs (+X and -X) with identical Y and Z.
+
+### PRIMITIVE SHAPE PARAMETERS (METERS)
+- "box": size [width_X, height_Y, depth_Z]
+- "cylinder": size [radiusTop, radiusBottom, height_Y, radialSegments] (height is along Y! Use radius, not diameter. e.g. [0.12, 0.12, 0.60, 12])
+- "wedge": size [width_X, height_Y, depth_Z] (sloped triangular prism for consoles/ramps)
+- "sphere": size [radius, widthSegments, heightSegments] (e.g. [0.20, 12, 8])
+- "capsule": size [radius, length_Y, capSegments, radSegments] (e.g. [0.08, 0.30, 4, 8])
+- "torus": size [radius, tubeRadius, radSegs, tubSegs] (e.g. [0.15, 0.03, 8, 12])
+
+### TEXTURE PRESETS & PALETTES
+Assign authentic retro PBR textures from our 8 families:
 - Metals: "worn_metal", "metal_light_brushed", "steel_polished", "steel_galvanized", "iron_cast", "copper_polished", "copper_oxidized", "bronze_antique", "brass_burnished", "titanium_aerospace", "diamond_plate", "metal_perforated", "gold_contacts", "chrome_mirror", "painted_metal_white", "red_paint_worn"
-- Construction: "concrete_smooth", "concrete_rough", "concrete_cracked", "brick_red", "brick_industrial", "cinder_block", "asphalt_road", "ceramic_tile_white", "corrugated_metal", "hazard_stripes"
-- Woods: "wood_oak", "wood_pine", "wood_walnut", "wood_plywood", "wood_rustic_planks", "wood_varnished", "wood_parquet"
-- Stones & Minerals: "granite_grey", "marble_white", "marble_black_gold", "slate_layered", "basalt_lunar", "sand_compacted", "quartz_crystal", "energy_mineral", "obsidian_volcanic"
-- Plastics & Rubbers: "beige_plastic_worn", "plastic_abs_matte", "plastic_acrylic_gloss", "rubber_black", "rubber_ribbed_mat", "acoustic_foam", "polymer_tactical"
-- Tech & Screens: "pcb_green_gold", "pcb_black_hd", "carbon_fiber", "hex_composite", "solar_panel_blue", "thermal_tile_white", "vent_grill", "crt_screen_green", "crt_screen_amber", "crt_screen_blue", "crt_data_matrix", "caution_label", "radiation_label", "biohazard_label", "plasma_core_glow"
-- Glass & Fabrics: "clean_glass", "tinted_glass", "reinforced_glass", "frosted_glass", "cryo_glass_ice", "hologram_cyan", "forcefield_hex", "kevlar_ballistic", "canvas_military", "quilted_padding_white", "leather_black_worn", "leather_brown_aged", "cardboard_corrugated", "kapton_gold_foil", "rust_heavy".
-Keep triangle budgets low (100 to 500 tris). All coordinates (position, size) must be real numbers in meters.
+- Construction: "concrete_smooth", "concrete_rough", "brick_industrial", "asphalt_road", "corrugated_metal", "hazard_stripes"
+- Plastics/Rubbers: "beige_plastic_worn", "plastic_abs_matte", "plastic_acrylic_gloss", "rubber_black", "rubber_ribbed_mat", "polymer_tactical"
+- Tech/Screens: "pcb_green_gold", "pcb_black_hd", "carbon_fiber", "vent_grill", "crt_screen_green", "crt_screen_amber", "crt_screen_blue", "crt_data_matrix", "caution_label", "radiation_label", "biohazard_label", "plasma_core_glow"
+- Glass/Fabrics: "clean_glass", "tinted_glass", "reinforced_glass", "hologram_cyan", "rust_heavy"
+
+### FEW-SHOT REFERENCE: INDUSTRIAL WELDING MACHINE ("máquina de soldar")
+Notice how every piece connects with exact mathematical contact:
+{
+  "id": "below_nominal.generated.welder_reference",
+  "name": "Estación de Soldadura Inverter Pro-Arc 300",
+  "category": "infrastructure",
+  "description": "Unidad de soldadura de arco industrial compacta con chasis de acero, panel de control frontal flush, terminales de latón y asa ergonómica.",
+  "units": "meters",
+  "dimensions": { "width": 0.85, "height": 0.72, "depth": 0.65 },
+  "palette": "industrial_hazard",
+  "components": [
+    {
+      "name": "rubber_feet_fl",
+      "shape": "cylinder",
+      "size": [0.03, 0.03, 0.04, 8],
+      "position": [-0.25, 0.02, 0.22],
+      "rotation": [0, 0, 0],
+      "color": "#1a202c",
+      "texturePreset": "rubber_black"
+    },
+    {
+      "name": "rubber_feet_fr",
+      "shape": "cylinder",
+      "size": [0.03, 0.03, 0.04, 8],
+      "position": [0.25, 0.02, 0.22],
+      "rotation": [0, 0, 0],
+      "color": "#1a202c",
+      "texturePreset": "rubber_black"
+    },
+    {
+      "name": "rubber_feet_bl",
+      "shape": "cylinder",
+      "size": [0.03, 0.03, 0.04, 8],
+      "position": [-0.25, 0.02, -0.22],
+      "rotation": [0, 0, 0],
+      "color": "#1a202c",
+      "texturePreset": "rubber_black"
+    },
+    {
+      "name": "rubber_feet_br",
+      "shape": "cylinder",
+      "size": [0.03, 0.03, 0.04, 8],
+      "position": [0.25, 0.02, -0.22],
+      "rotation": [0, 0, 0],
+      "color": "#1a202c",
+      "texturePreset": "rubber_black"
+    },
+    {
+      "name": "main_chassis",
+      "shape": "box",
+      "size": [0.60, 0.42, 0.50],
+      "position": [0, 0.25, 0],
+      "rotation": [0, 0, 0],
+      "color": "#dd6b20",
+      "texturePreset": "worn_metal",
+      "roughness": 0.6,
+      "metalness": 0.4
+    },
+    {
+      "name": "front_control_panel",
+      "shape": "box",
+      "size": [0.52, 0.34, 0.02],
+      "position": [0, 0.25, 0.26],
+      "rotation": [0, 0, 0],
+      "color": "#2d3748",
+      "texturePreset": "plastic_abs_matte",
+      "roughness": 0.8,
+      "metalness": 0.1
+    },
+    {
+      "name": "digital_amp_display",
+      "shape": "box",
+      "size": [0.18, 0.09, 0.01],
+      "position": [-0.12, 0.32, 0.275],
+      "rotation": [0, 0, 0],
+      "color": "#38a169",
+      "texturePreset": "crt_screen_green"
+    },
+    {
+      "name": "amperage_dial",
+      "shape": "cylinder",
+      "size": [0.04, 0.04, 0.03, 12],
+      "position": [0.12, 0.32, 0.28],
+      "rotation": [90, 0, 0],
+      "color": "#ecc94b",
+      "texturePreset": "brass_burnished"
+    },
+    {
+      "name": "terminal_negative",
+      "shape": "cylinder",
+      "size": [0.025, 0.025, 0.04, 10],
+      "position": [-0.15, 0.15, 0.285],
+      "rotation": [90, 0, 0],
+      "color": "#1a202c",
+      "texturePreset": "rubber_black"
+    },
+    {
+      "name": "terminal_positive",
+      "shape": "cylinder",
+      "size": [0.025, 0.025, 0.04, 10],
+      "position": [0.15, 0.15, 0.285],
+      "rotation": [90, 0, 0],
+      "color": "#e53e3e",
+      "texturePreset": "red_paint_worn"
+    },
+    {
+      "name": "top_handle_grip",
+      "shape": "box",
+      "size": [0.32, 0.05, 0.04],
+      "position": [0, 0.52, 0],
+      "rotation": [0, 0, 0],
+      "color": "#1a202c",
+      "texturePreset": "rubber_ribbed_mat"
+    },
+    {
+      "name": "handle_post_front",
+      "shape": "box",
+      "size": [0.04, 0.06, 0.04],
+      "position": [0, 0.49, 0.14],
+      "rotation": [0, 0, 0],
+      "color": "#718096",
+      "texturePreset": "steel_polished"
+    },
+    {
+      "name": "handle_post_back",
+      "shape": "box",
+      "size": [0.04, 0.06, 0.04],
+      "position": [0, 0.49, -0.14],
+      "rotation": [0, 0, 0],
+      "color": "#718096",
+      "texturePreset": "steel_polished"
+    },
+    {
+      "name": "side_cooling_vent",
+      "shape": "box",
+      "size": [0.01, 0.22, 0.32],
+      "position": [0.305, 0.25, 0],
+      "rotation": [0, 0, 0],
+      "color": "#1a202c",
+      "texturePreset": "vent_grill"
+    }
+  ]
+}
+
 Return ONLY valid JSON matching this schema:
 {
   "id": "below_nominal.generated.${uniqueNonce}",
-  "name": "<Creative Human Readable Name in Spanish>",
+  "name": "<Human Readable Name in Spanish>",
   "category": "vehicles" | "furniture" | "infrastructure" | "command" | "medical" | "security" | "weapons",
-  "description": "<Creative descriptive sentence in Spanish>",
+  "description": "<Descriptive sentence in Spanish>",
   "units": "meters",
   "dimensions": { "width": <float>, "depth": <float>, "height": <float> },
   "palette": "industrial_hazard",
   "components": [
     {
-      "name": "<component_name>",
+      "name": "<unique_component_name>",
       "shape": "box" | "cylinder" | "sphere" | "wedge" | "cone" | "torus" | "capsule",
       "size": [<numbers>],
       "position": [<x>, <y>, <z>],
       "rotation": [<deg_x>, <deg_y>, <deg_z>],
       "color": "<hex_or_palette_name>",
-      "texturePreset": "<any valid texturePreset from the list above>",
+      "texturePreset": "<valid texturePreset>",
       "roughness": 0.7,
       "metalness": 0.2
     }
@@ -117,12 +419,12 @@ Return ONLY valid JSON matching this schema:
       contents: [{
         role: 'user',
         parts: [{
-          text: `${systemInstruction}\n\nUSER PROMPT: ${prompt}\nCREATION_ID: ${uniqueNonce}\nINSTRUCTION: Synthesize a brand-new, unique 3D model variation.`
+          text: `${systemInstruction}\n\nUSER PROMPT: ${prompt}\nCREATION_ID: ${uniqueNonce}\nINSTRUCTION: Synthesize a brand-new, mechanically coherent, grounded 3D model with ZERO floating geometry.`
         }]
       }],
       generationConfig: {
         responseMimeType: 'application/json',
-        temperature: 0.75
+        temperature: 0.2
       }
     };
 
@@ -169,7 +471,8 @@ Return ONLY valid JSON matching this schema:
           throw new Error('La respuesta de Gemini no incluye componentes geométricos.');
         }
 
-        return { spec: parsed, rawResponse: cleanedJsonText };
+        const normalized = this.normalizeSpecGeometry(parsed);
+        return { spec: normalized, rawResponse: cleanedJsonText };
       } catch (err: any) {
         if (err?.name === 'TimeoutError' || err?.name === 'AbortError') {
           throw new Error('Tiempo de espera agotado (30s) al conectar con Gemini API. Verifica tu conexión o usa el Motor Procedural Local.');
@@ -1202,6 +1505,173 @@ Return ONLY valid JSON matching this schema:
             position: [br * 0.45, bh + 0.02, 0],
             color: '#d69e2e',
             metalness: 0.7
+          }
+        ]
+      };
+    }
+
+    // -------------------------------------------------------------
+    // 11B. WELDING MACHINE / SOLDADORA / GENERADOR / INVERTER
+    // -------------------------------------------------------------
+    if (/soldar|soldadora|soldadura|generador|soldador|maquina de soldar|planta electrica|inverter|compresor/.test(lower)) {
+      const sw = 0.72 * baseDim;
+      const sh = 0.54 * baseDim;
+      const sd = 0.52 * baseDim;
+
+      return {
+        id: 'below_nominal.infrastructure.industrial_welder',
+        name: 'Unidad de Soldadura Industrial Inverter ARC-400',
+        category: 'infrastructure',
+        description: 'Estación de soldadura industrial pesada con panel de control digital, tanque de argón y asa de transporte.',
+        units: 'meters',
+        dimensions: { width: sw * 1.15, depth: sd * 1.1, height: sh * 1.3 },
+        palette: 'industrial_hazard',
+        components: [
+          // Lower Chassis Base Plinth
+          {
+            name: 'chassis_plinth',
+            shape: 'box',
+            size: [sw, 0.06 * baseDim, sd],
+            position: [0, 0.03 * baseDim, 0],
+            color: '#1a202c',
+            texturePreset: 'diamond_plate',
+            metalness: 0.7,
+            roughness: 0.5
+          },
+          // 4 Ground Dampeners (Rubber Feet)
+          {
+            name: 'rubber_foot_fl',
+            shape: 'cylinder',
+            size: [0.035 * baseDim, 0.035 * baseDim, 0.04 * baseDim, 8],
+            position: [-sw * 0.42, 0.02 * baseDim, sd * 0.40],
+            color: '#1a202c',
+            texturePreset: 'rubber_black'
+          },
+          {
+            name: 'rubber_foot_fr',
+            shape: 'cylinder',
+            size: [0.035 * baseDim, 0.035 * baseDim, 0.04 * baseDim, 8],
+            position: [sw * 0.42, 0.02 * baseDim, sd * 0.40],
+            color: '#1a202c',
+            texturePreset: 'rubber_black'
+          },
+          {
+            name: 'rubber_foot_bl',
+            shape: 'cylinder',
+            size: [0.035 * baseDim, 0.035 * baseDim, 0.04 * baseDim, 8],
+            position: [-sw * 0.42, 0.02 * baseDim, -sd * 0.40],
+            color: '#1a202c',
+            texturePreset: 'rubber_black'
+          },
+          {
+            name: 'rubber_foot_br',
+            shape: 'cylinder',
+            size: [0.035 * baseDim, 0.035 * baseDim, 0.04 * baseDim, 8],
+            position: [sw * 0.42, 0.02 * baseDim, -sd * 0.40],
+            color: '#1a202c',
+            texturePreset: 'rubber_black'
+          },
+          // Main Transformer Housing
+          {
+            name: 'inverter_housing',
+            shape: 'box',
+            size: [sw * 0.92, sh * 0.85, sd * 0.88],
+            position: [0, (0.06 + sh * 0.425) * baseDim, 0],
+            color: mainColor || '#dd6b20',
+            texturePreset: 'worn_metal',
+            metalness: 0.4,
+            roughness: 0.6
+          },
+          // Front Control Panel Plate (Flush mounted)
+          {
+            name: 'front_control_plate',
+            shape: 'box',
+            size: [sw * 0.80, sh * 0.70, 0.02 * baseDim],
+            position: [0, (0.06 + sh * 0.425) * baseDim, (sd * 0.44 + 0.01) * baseDim],
+            color: '#2d3748',
+            texturePreset: 'plastic_abs_matte',
+            roughness: 0.8
+          },
+          // Digital Amperage Display Screen
+          {
+            name: 'digital_screen',
+            shape: 'box',
+            size: [0.20 * baseDim, 0.10 * baseDim, 0.01 * baseDim],
+            position: [-0.14 * baseDim, (0.06 + sh * 0.55) * baseDim, (sd * 0.44 + 0.025) * baseDim],
+            color: '#38a169',
+            texturePreset: 'crt_screen_green'
+          },
+          // Rotary Control Dial
+          {
+            name: 'amperage_rotary_dial',
+            shape: 'cylinder',
+            size: [0.045 * baseDim, 0.045 * baseDim, 0.03 * baseDim, 12],
+            position: [0.14 * baseDim, (0.06 + sh * 0.55) * baseDim, (sd * 0.44 + 0.035) * baseDim],
+            rotation: [90, 0, 0],
+            color: '#ecc94b',
+            texturePreset: 'brass_burnished'
+          },
+          // Negative Ground Dinse Connector
+          {
+            name: 'terminal_ground_dinse',
+            shape: 'cylinder',
+            size: [0.03 * baseDim, 0.03 * baseDim, 0.04 * baseDim, 10],
+            position: [-0.16 * baseDim, (0.06 + sh * 0.22) * baseDim, (sd * 0.44 + 0.04) * baseDim],
+            rotation: [90, 0, 0],
+            color: '#1a202c',
+            texturePreset: 'rubber_black'
+          },
+          // Positive Electrode Dinse Connector
+          {
+            name: 'terminal_electrode_dinse',
+            shape: 'cylinder',
+            size: [0.03 * baseDim, 0.03 * baseDim, 0.04 * baseDim, 10],
+            position: [0.16 * baseDim, (0.06 + sh * 0.22) * baseDim, (sd * 0.44 + 0.04) * baseDim],
+            rotation: [90, 0, 0],
+            color: '#e53e3e',
+            texturePreset: 'red_paint_worn'
+          },
+          // Top Ergonomic Carry Handle
+          {
+            name: 'top_handle_grip',
+            shape: 'box',
+            size: [0.38 * baseDim, 0.045 * baseDim, 0.04 * baseDim],
+            position: [0, (0.06 + sh * 0.85 + 0.08) * baseDim, 0],
+            color: '#1a202c',
+            texturePreset: 'rubber_ribbed_mat'
+          },
+          {
+            name: 'handle_riser_front',
+            shape: 'box',
+            size: [0.04 * baseDim, 0.08 * baseDim, 0.04 * baseDim],
+            position: [0, (0.06 + sh * 0.85 + 0.04) * baseDim, 0.16 * baseDim],
+            color: '#718096',
+            texturePreset: 'steel_polished'
+          },
+          {
+            name: 'handle_riser_back',
+            shape: 'box',
+            size: [0.04 * baseDim, 0.08 * baseDim, 0.04 * baseDim],
+            position: [0, (0.06 + sh * 0.85 + 0.04) * baseDim, -0.16 * baseDim],
+            color: '#718096',
+            texturePreset: 'steel_polished'
+          },
+          // Side Exhaust Vent Grill
+          {
+            name: 'side_cooling_vent_left',
+            shape: 'box',
+            size: [0.01 * baseDim, sh * 0.50, sd * 0.60],
+            position: [-sw * 0.465 * baseDim, (0.06 + sh * 0.425) * baseDim, 0],
+            color: '#1a202c',
+            texturePreset: 'vent_grill'
+          },
+          {
+            name: 'side_cooling_vent_right',
+            shape: 'box',
+            size: [0.01 * baseDim, sh * 0.50, sd * 0.60],
+            position: [sw * 0.465 * baseDim, (0.06 + sh * 0.425) * baseDim, 0],
+            color: '#1a202c',
+            texturePreset: 'vent_grill'
           }
         ]
       };

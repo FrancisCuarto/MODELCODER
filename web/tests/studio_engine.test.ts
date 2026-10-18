@@ -390,6 +390,64 @@ test('Engine Selector: modo "local" funciona de forma autónoma sin clave y con 
   ProceduralMemory.clearLocalMemory();
 });
 
+test('AIGenerator: normalizeSpecGeometry auto-grounds floating geometry to Y = 0', () => {
+  const floatingSpec: ModelSpec = {
+    id: 'test.floating.device',
+    name: 'Dispositivo Flotante',
+    category: 'infrastructure',
+    description: 'Prueba de anclaje de suelo',
+    units: 'meters',
+    dimensions: { width: 1, depth: 1, height: 1 },
+    palette: 'industrial_hazard',
+    components: [
+      {
+        name: 'floating_base',
+        shape: 'box',
+        size: [1.0, 0.4, 1.0],
+        position: [0, 1.2, 0], // Center at 1.2, height 0.4 -> bottom is at 1.0 (floating 1m in air!)
+        color: '#4a5568'
+      },
+      {
+        name: 'floating_top',
+        shape: 'cylinder',
+        size: [0.3, 0.3, 0.6, 8],
+        position: [0, 1.7, 0], // Center at 1.7, height 0.6 -> bottom is at 1.4
+        color: '#e53e3e'
+      }
+    ]
+  };
+
+  const normalized = AIGenerator.normalizeSpecGeometry(floatingSpec);
+
+  // Lowest point of floating_base was at Y = 1.0. Shift must be -1.0.
+  // After normalization, floating_base center should be 1.2 - 1.0 = 0.20!
+  assert.equal(normalized.components[0].position[1], 0.2);
+  // floating_top center should be 1.7 - 1.0 = 0.70!
+  assert.equal(normalized.components[1].position[1], 0.7);
+
+  // Dimensions must be correctly computed
+  assert.ok(normalized.dimensions.height > 0.8 && normalized.dimensions.height < 1.2);
+});
+
+test('AIGenerator: Synthesizer genera estación de soldadura industrial detallada y conectada', () => {
+  const welderSpec = AIGenerator.synthesizeProceduralSpec('máquina de soldar');
+  assert.equal(welderSpec.id, 'below_nominal.infrastructure.industrial_welder');
+  assert.ok(welderSpec.components.length >= 12, 'Debe tener al menos 12 componentes detallados');
+
+  const compNames = welderSpec.components.map(c => c.name);
+  assert.ok(compNames.includes('chassis_plinth'), 'Debe incluir base plinto');
+  assert.ok(compNames.includes('rubber_foot_fl'), 'Debe incluir patas de goma');
+  assert.ok(compNames.includes('front_control_plate'), 'Debe incluir panel de control flush');
+  assert.ok(compNames.includes('digital_screen'), 'Debe incluir pantalla digital');
+  assert.ok(compNames.includes('amperage_rotary_dial'), 'Debe incluir dial');
+  assert.ok(compNames.includes('terminal_ground_dinse'), 'Debe incluir conector de masa');
+  assert.ok(compNames.includes('terminal_electrode_dinse'), 'Debe incluir conector de electrodo');
+
+  // Verify that the normalized lowest Y touches Y = 0
+  const normalized = AIGenerator.normalizeSpecGeometry(welderSpec);
+  assert.ok(normalized.components[1].position[1] >= 0, 'Las patas deben descansar en el suelo');
+});
+
 test('Material System Test 1: Un componente antiguo que solo tenga color sigue funcionando (compatibilidad retroactiva)', () => {
   const legacySpec = {
     id: 'test.legacy.box',

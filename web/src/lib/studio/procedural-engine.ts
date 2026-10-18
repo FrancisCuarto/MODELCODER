@@ -722,6 +722,9 @@ export class ProceduralEngine {
    * Creates a canvas-based text badge decal for labeling models.
    */
   private static createLabelBadge(text: string, textColor: string): THREE.Mesh {
+    if (typeof document === 'undefined') {
+      return new THREE.Mesh();
+    }
     const canvas = document.createElement('canvas');
     canvas.width = 256;
     canvas.height = 64;
