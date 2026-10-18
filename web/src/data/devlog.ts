@@ -28,7 +28,7 @@ export const DEVLOG_ENTRIES: DevlogEntry[] = [
       'Inauguración de la sección oficial de Devlog y Registro de Vuelo.'
     ],
     tags: ['IA Generativa', 'Godot 4', 'Modelado 3D', 'Colisiones', 'UI/UX'],
-    author: 'Franciscuarto & Antigravity AI'
+    author: 'Franciscuarto'
   },
   {
     version: 'v2.4.0',
