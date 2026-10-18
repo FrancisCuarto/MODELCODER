@@ -1231,29 +1231,59 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
   </dialog>
 
   <!-- Modal: Compartir Modelo mediante URL -->
-  <dialog id="modal-share-url" class="ps1-window share-modal" style="max-width: 600px; width: 92%;">
+  <dialog id="modal-share-url" class="ps1-window share-modal" style="max-width: 620px; width: 92%;">
     <div class="ps1-titlebar">
-      <span>🔗 COMPARTIR MODELO · ENLACE DIRECTO</span>
+      <span>🔗 COMPARTIR MODELO 3D</span>
       <button id="close-share-modal-btn" class="ps1-ctrl-btn" type="button">X</button>
     </div>
     <div class="modal-body" style="padding: 1.25rem;">
-      <p style="font-size: 0.85rem; color: var(--text-bright); margin-bottom: 0.8rem; line-height: 1.45;">
-        Copiá este enlace para compartir tu modelo. Quien lo abra en su navegador podrá visualizarlo, rotarlo y continuar editándolo en su propio Studio sin requerir registro ni base de datos:
+      <p style="font-size: 0.82rem; color: #c4d4ec; margin-bottom: 0.8rem; line-height: 1.45;">
+        Elige cómo deseas compartir este modelo. El visor público permite rotarlo e inspeccionarlo en 3D desde cualquier navegador o celular sin abrir todo el editor:
       </p>
-      <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
-        <input 
-          type="text" 
-          id="share-url-input" 
-          class="ps1-input" 
-          readonly 
-          style="flex: 1; font-size: 0.78rem; padding: 0.5rem;" 
-        />
-        <button type="button" id="btn-copy-share-url" class="btn btn-cyan" style="white-space: nowrap; font-size: 0.78rem;">
-          📋 COPIAR
-        </button>
+
+      <!-- Opción 1: Visor 3D Público (Recomendado) -->
+      <div class="ps1-inset" style="padding: 0.85rem; margin-bottom: 0.85rem; background: #070f20; border-left: 3px solid var(--ps1-gold);">
+        <label style="font-family: var(--font-pixel); font-size: 0.65rem; color: var(--ps1-gold); display: block; margin-bottom: 0.35rem;">
+          🌐 1. ENLACE DEL VISOR PÚBLICO (RECOMENDADO PARA REDES / DISCORD)
+        </label>
+        <div style="display: flex; gap: 0.5rem; align-items: center;">
+          <input 
+            type="text" 
+            id="share-viewer-url-input" 
+            class="ps1-input" 
+            readonly 
+            style="flex: 1; font-size: 0.75rem; padding: 0.45rem;" 
+          />
+          <button type="button" id="btn-copy-viewer-url" class="btn btn-gold" style="white-space: nowrap; font-size: 0.72rem; padding: 0.45rem 0.75rem;">
+            📋 COPIAR
+          </button>
+          <a id="btn-preview-viewer-url" href="#" target="_blank" rel="noopener noreferrer" class="btn btn-outline" style="white-space: nowrap; font-size: 0.72rem; padding: 0.45rem 0.65rem; text-decoration: none;">
+            ↗ PROBAR
+          </a>
+        </div>
       </div>
-      <div class="ps1-inset" style="padding: 0.75rem; font-size: 0.75rem; color: var(--text-dim); border-left: 3px solid var(--ps1-cyan);">
-        💡 La geometría, componentes, materiales PBR y animaciones están codificados directamente en la URL.
+
+      <!-- Opción 2: Enlace Directo al Editor Studio -->
+      <div class="ps1-inset" style="padding: 0.85rem; margin-bottom: 0.85rem; background: #070c18; border-left: 3px solid var(--ps1-cyan);">
+        <label style="font-family: var(--font-pixel); font-size: 0.65rem; color: var(--ps1-cyan); display: block; margin-bottom: 0.35rem;">
+          ⚡ 2. ENLACE DIRECTO AL EDITOR STUDIO (PARA SEGUIR EDITANDO)
+        </label>
+        <div style="display: flex; gap: 0.5rem; align-items: center;">
+          <input 
+            type="text" 
+            id="share-url-input" 
+            class="ps1-input" 
+            readonly 
+            style="flex: 1; font-size: 0.75rem; padding: 0.45rem;" 
+          />
+          <button type="button" id="btn-copy-share-url" class="btn btn-cyan" style="white-space: nowrap; font-size: 0.72rem; padding: 0.45rem 0.75rem;">
+            📋 COPIAR
+          </button>
+        </div>
+      </div>
+
+      <div class="ps1-inset" style="padding: 0.75rem; font-size: 0.72rem; color: var(--text-dim); line-height: 1.45;">
+        💡 <strong>¿Por qué este enlace?</strong> Toda la geometría, texturas PBR y animaciones viajan comprimidas con Deflate en la URL de forma 100% privada sin requerir base de datos. Si subes tu modelo al catálogo comunitario, obtendrás además un enlace corto permanente (<code style="color:var(--ps1-gold);">/m?slug=...</code>).
       </div>
     </div>
   </dialog>
@@ -1351,7 +1381,7 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     type StoryTheme,
     type SocialFormat
   } from '../lib/studio/story-generator';
-  import { serializeSpecToHash, deserializeSpecFromHash } from '../lib/studio/share-serializer';
+  import { serializeSpecToHash, deserializeSpecFromHash, compressSpecToHash, deserializeSpec } from '../lib/studio/share-serializer';
   import { generateAllSnippets } from '../lib/studio/gamedev-exporter';
 
   if (typeof window !== 'undefined') {
@@ -6731,34 +6761,56 @@ if __name__ == "__main__":
   const btnShareUrl = document.getElementById('btn-share-url');
   const modalShareUrl = document.getElementById('modal-share-url') as HTMLDialogElement | null;
   const closeShareModalBtn = document.getElementById('close-share-modal-btn');
+  const shareViewerUrlInput = document.getElementById('share-viewer-url-input') as HTMLInputElement | null;
+  const btnCopyViewerUrl = document.getElementById('btn-copy-viewer-url');
+  const btnPreviewViewerUrl = document.getElementById('btn-preview-viewer-url') as HTMLAnchorElement | null;
   const shareUrlInput = document.getElementById('share-url-input') as HTMLInputElement | null;
   const btnCopyShareUrl = document.getElementById('btn-copy-share-url');
 
-  btnShareUrl?.addEventListener('click', () => {
-    const token = serializeSpecToHash(currentSpec);
+  btnShareUrl?.addEventListener('click', async () => {
+    let token = '';
+    try {
+      token = await compressSpecToHash(currentSpec);
+    } catch {
+      token = serializeSpecToHash(currentSpec);
+    }
+
     if (!token) {
       showStudioToast('⚠️ No se pudo generar el enlace del modelo.', true);
       return;
     }
-    const fullUrl = `${window.location.origin}/studio#model=${token}`;
-    if (shareUrlInput) {
-      shareUrlInput.value = fullUrl;
-    }
+
+    const origin = window.location.origin;
+    const viewerUrl = `${origin}/m#model=${token}`;
+    const studioUrl = `${origin}/studio#model=${token}`;
+
+    if (shareViewerUrlInput) shareViewerUrlInput.value = viewerUrl;
+    if (btnPreviewViewerUrl) btnPreviewViewerUrl.href = viewerUrl;
+    if (shareUrlInput) shareUrlInput.value = studioUrl;
+
     if (modalShareUrl) {
       modalShareUrl.showModal();
     }
+
     try {
-      navigator.clipboard.writeText(fullUrl);
-      showStudioToast('📋 ¡Enlace copiado al portapapeles!');
+      navigator.clipboard.writeText(viewerUrl);
+      showStudioToast('📋 ¡Enlace del visor 3D copiado al portapapeles!');
     } catch {
       // safe fallback
+    }
+  });
+
+  btnCopyViewerUrl?.addEventListener('click', () => {
+    if (shareViewerUrlInput && shareViewerUrlInput.value) {
+      navigator.clipboard.writeText(shareViewerUrlInput.value);
+      showStudioToast('📋 ¡Enlace del visor público copiado!');
     }
   });
 
   btnCopyShareUrl?.addEventListener('click', () => {
     if (shareUrlInput && shareUrlInput.value) {
       navigator.clipboard.writeText(shareUrlInput.value);
-      showStudioToast('📋 ¡Enlace copiado al portapapeles!');
+      showStudioToast('📋 ¡Enlace del Studio copiado!');
     }
   });
 

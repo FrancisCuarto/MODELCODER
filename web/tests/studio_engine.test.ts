@@ -105,7 +105,7 @@ import { ProceduralMemory } from '../src/lib/studio/procedural-memory.ts';
 import { TextureLibrary } from '../src/lib/studio/texture-library.ts';
 import { AnimationEngine } from '../src/lib/studio/animation-engine.ts';
 import { StudioViewport } from '../src/lib/studio/three-viewport.ts';
-import { serializeSpecToHash, deserializeSpecFromHash } from '../src/lib/studio/share-serializer.ts';
+import { serializeSpecToHash, deserializeSpecFromHash, compressSpecToHash, deserializeSpec } from '../src/lib/studio/share-serializer.ts';
 import { generateAllSnippets, generateGodotScript, generateUnityScript, generateThreeJsScript } from '../src/lib/studio/gamedev-exporter.ts';
 import type { ModelSpec } from '../src/lib/studio/types.ts';
 import fs from 'node:fs';
@@ -1554,6 +1554,34 @@ test('URL Share Serializer: Serializar y deserializar un ModelSpec preserva su e
   // Manejo de tokens corruptos
   const invalid = deserializeSpecFromHash('token_invalido_corrupto_!!!');
   assert.equal(invalid, null, 'Tokens corruptos deben devolver null de forma segura');
+});
+
+test('URL Share Serializer (Compressed): Comprime con Deflate y restaura ModelSpec reduciendo tamaño', async () => {
+  const sampleSpec: ModelSpec = {
+    id: 'test.compressed.unit',
+    name: 'Sensor Espacial',
+    category: 'security',
+    description: 'Sensor de prueba para enlaces comprimidos',
+    components: [
+      { name: 'base', shape: 'box', size: [1, 0.2, 1], position: [0, 0, 0] },
+      { name: 'lente', shape: 'cylinder', size: [0.5, 0.5, 0.4, 12], position: [0, 0.5, 0] }
+    ]
+  };
+
+  const rawToken = serializeSpecToHash(sampleSpec);
+  const compressedToken = await compressSpecToHash(sampleSpec);
+
+  assert.ok(compressedToken.startsWith('z:'), 'Debe incluir prefijo z:');
+  assert.ok(compressedToken.length < rawToken.length, 'Token comprimido debe ser significativamente más corto que el original');
+
+  const restored = await deserializeSpec(compressedToken);
+  assert.ok(restored, 'Debe descomprimir y deserializar correctamente');
+  assert.equal(restored?.name, sampleSpec.name);
+  assert.equal(restored?.components.length, 2);
+
+  // También debe deserializar tokens sin comprimir
+  const restoredRaw = await deserializeSpec(rawToken);
+  assert.equal(restoredRaw?.name, sampleSpec.name);
 });
 
 test('GameDev Code Exporter: Genera scripts válidos para Godot 4, Unity y Three.js con soporte de animaciones', () => {

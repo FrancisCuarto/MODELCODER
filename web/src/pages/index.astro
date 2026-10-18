@@ -639,7 +639,7 @@ const categories = [
 
           <div class="card-body">
             <h2 class="card-title">
-              <a href="#" class="comm-open-link" data-slug="${safeSlug}">${safeName}</a>
+              <a href="/m?slug=${safeSlug}" class="comm-open-link" data-slug="${safeSlug}" title="Inspeccionar en visor 3D público">${safeName}</a>
             </h2>
             <p class="card-description">${safeDesc}</p>
 
@@ -650,11 +650,14 @@ const categories = [
             </div>
           </div>
 
-          <div class="card-footer">
-            <button type="button" class="btn btn-primary btn-open-comm-studio" data-slug="${safeSlug}" title="Abrir en Studio 3D para editar">
-              ABRIR EN STUDIO
+          <div class="card-footer" style="display: flex; gap: 0.35rem; flex-wrap: wrap;">
+            <a href="/m?slug=${safeSlug}" class="btn btn-outline" style="flex: 1; text-align: center; text-decoration: none; font-size: 0.72rem; padding: 0.4rem 0.5rem;" title="Ver e interactuar en el visor 3D">
+              👁️ VER 3D
+            </a>
+            <button type="button" class="btn btn-primary btn-open-comm-studio" data-slug="${safeSlug}" style="flex: 1.2; font-size: 0.72rem; padding: 0.4rem 0.5rem;" title="Abrir en Studio 3D para editar">
+              ⚡ STUDIO
             </button>
-            ${m.glb_data ? `<a href="${safeGlb}" download="${safeSlug}.glb" class="btn btn-outline btn-download" title="Descargar archivo GLB directamente">BAJAR .GLB</a>` : ''}
+            ${m.glb_data ? `<a href="${safeGlb}" download="${safeSlug}.glb" class="btn btn-outline btn-download" style="font-size: 0.72rem; padding: 0.4rem 0.5rem;" title="Descargar archivo GLB directamente">.GLB</a>` : ''}
           </div>
         `;
 
