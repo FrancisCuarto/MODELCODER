@@ -203,11 +203,44 @@ export async function ${fnName}(
 }
 
 /**
- * Generates snippets for all 3 game engine platforms.
+ * Generates an idiomatic Godot 4 Scene (.tscn) with StaticBody3D and CollisionShape3D.
+ */
+export function generateGodotScene(spec: ModelSpec, filename?: string): string {
+  const modelName = spec.name || 'ModelCoder Asset';
+  const cleanId = (spec.id ? spec.id.split('.').pop() : 'model') || 'model';
+  const glbFile = filename || `${cleanId}.glb`;
+  const pascalName = toPascalCase(modelName);
+
+  const dims = spec.dimensions || { width: 1.0, height: 1.0, depth: 1.0 };
+  const w = Number(dims.width) || 1.0;
+  const h = Number(dims.height) || 1.0;
+  const d = Number(dims.depth) || 1.0;
+  const centerY = (h / 2).toFixed(4);
+
+  return `[gd_scene load_steps=3 format=3 uid="uid://modelcoder_${cleanId}"]
+
+[ext_resource type="PackedScene" uid="uid://mesh_${cleanId}" path="res://assets/${glbFile}" id="1_mesh"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_root"]
+size = Vector3(${w.toFixed(4)}, ${h.toFixed(4)}, ${d.toFixed(4)})
+
+[node name="${pascalName}" type="StaticBody3D"]
+
+[node name="${pascalName}Mesh" parent="." instance=ExtResource("1_mesh")]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, ${centerY}, 0)
+shape = SubResource("BoxShape3D_root")
+`;
+}
+
+/**
+ * Generates snippets for all game engine platforms and scene configurations.
  */
 export function generateAllSnippets(spec: ModelSpec, filename?: string) {
   return {
     godot: generateGodotScript(spec, filename),
+    godotScene: generateGodotScene(spec, filename),
     unity: generateUnityScript(spec, filename),
     threejs: generateThreeJsScript(spec, filename)
   };

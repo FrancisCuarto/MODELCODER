@@ -51,6 +51,9 @@ import catalog from '../data/catalog.json';
         <button id="export-glb-btn" class="btn-mini btn-gold" title="Exportar modelo a formato universal GLB">
           💾 EXPORTAR GLB
         </button>
+        <button id="export-godot-btn" class="btn-mini" style="background: #172a45; color: #6ee7b7; border: 1px solid #2563eb;" title="Exportar modelo con colisiones nativas para Godot 4 (-convcol / StaticBody3D)">
+          🤖 GLB GODOT
+        </button>
 
         <!-- Dropdown for Secondary Tools & Exports -->
         <div class="topbar-dropdown-wrap">
@@ -60,6 +63,12 @@ import catalog from '../data/catalog.json';
           <div id="topbar-more-menu" class="topbar-dropdown-menu hidden">
             <button id="btn-menu-catalog-templates" type="button" class="topbar-menu-item" style="color: var(--ps1-gold);">
               📦 PLANTILLAS DEL CATÁLOGO (100+ MODELOS)
+            </button>
+            <button id="btn-export-godot-glb" type="button" class="topbar-menu-item" style="color: #6ee7b7;">
+              🤖 EXPORTAR GLB CON COLISIÓN GODOT (-convcol)
+            </button>
+            <button id="btn-export-godot-tscn" type="button" class="topbar-menu-item" style="color: #6ee7b7;">
+              🎬 EXPORTAR ESCENA GODOT 4 (.TSCN + COLLIDERS)
             </button>
             <button id="btn-header-story" type="button" class="topbar-menu-item">
               📱 HISTORIA IG / REEL (9:16 o 1:1)
@@ -1348,6 +1357,9 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
         <button type="button" class="btn-gamedev-tab active" data-engine="godot" id="tab-engine-godot" style="padding: 0.4rem 0.85rem; font-family: var(--font-pixel); font-size: 0.72rem; cursor: pointer;">
           👾 GODOT 4 (GDSCRIPT)
         </button>
+        <button type="button" class="btn-gamedev-tab" data-engine="godotScene" id="tab-engine-godot-scene" style="padding: 0.4rem 0.85rem; font-family: var(--font-pixel); font-size: 0.72rem; cursor: pointer; color: #6ee7b7;">
+          🎬 ESCENA GODOT (.TSCN + COLLIDERS)
+        </button>
         <button type="button" class="btn-gamedev-tab" data-engine="unity" id="tab-engine-unity" style="padding: 0.4rem 0.85rem; font-family: var(--font-pixel); font-size: 0.72rem; cursor: pointer;">
           ⚡ UNITY (C#)
         </button>
@@ -1426,7 +1438,7 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     type SocialFormat
   } from '../lib/studio/story-generator';
   import { serializeSpecToHash, deserializeSpecFromHash, compressSpecToHash, deserializeSpec } from '../lib/studio/share-serializer';
-  import { generateAllSnippets } from '../lib/studio/gamedev-exporter';
+  import { generateAllSnippets, generateGodotScene } from '../lib/studio/gamedev-exporter';
   import { CatalogBridge } from '../lib/studio/catalog-bridge';
 
   if (typeof window !== 'undefined') {
@@ -1572,6 +1584,9 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
 
   const runCompileBtn = document.getElementById('run-compile-btn');
   const exportGlbBtn = document.getElementById('export-glb-btn');
+  const exportGodotBtn = document.getElementById('export-godot-btn');
+  const btnExportGodotGlb = document.getElementById('btn-export-godot-glb');
+  const btnExportGodotTscn = document.getElementById('btn-export-godot-tscn');
   const exportZipBtn = document.getElementById('export-zip-btn');
   const openDocsBtn = document.getElementById('open-docs-btn');
   const githubPrBtn = document.getElementById('github-pr-btn');
@@ -4813,8 +4828,8 @@ if __name__ == "__main__":
     });
   });
 
-  // --- GLB & ZIP EXPORT ---
-  exportGlbBtn?.addEventListener('click', async () => {
+  // --- GLB & ZIP EXPORT (Standard & Godot 4 Collisions) ---
+  async function triggerExportGLB(options?: { godotColliders?: 'convex' | 'trimesh' | 'box' }) {
     if (!viewport) return;
     const rootObj = viewport.getVisibleObject();
     if (!rootObj) {
@@ -4822,9 +4837,13 @@ if __name__ == "__main__":
       return;
     }
 
-    exportGlbBtn.textContent = '⏳ VERIFICANDO GLB...';
+    const isGodot = !!options?.godotColliders;
+    if (isGodot && exportGodotBtn) exportGodotBtn.textContent = '⏳ VERIFICANDO...';
+    if (!isGodot && exportGlbBtn) exportGlbBtn.textContent = '⏳ VERIFICANDO...';
+
     try {
-      const filename = currentSpec.name.toLowerCase().replace(/[^a-z0-9]/g, '_') || 'modelcoder_asset';
+      const baseName = currentSpec.name.toLowerCase().replace(/[^a-z0-9]/g, '_') || 'modelcoder_asset';
+      const filename = isGodot ? `${baseName}_godot` : baseName;
       let compiledAnims: any[] | undefined = undefined;
       if (currentSpec.animations && currentSpec.animations.length > 0) {
         compiledAnims = AnimationEngine.compileClipsToThree(currentSpec.animations, rootObj);
@@ -4833,16 +4852,38 @@ if __name__ == "__main__":
         GLBExporterService.exportAndVerifyGLB(
           cleanRoot,
           filename,
-          compiledAnims && compiledAnims.length > 0 ? { animations: compiledAnims } : undefined
+          {
+            animations: compiledAnims && compiledAnims.length > 0 ? compiledAnims : undefined,
+            godotColliders: options?.godotColliders
+          }
         )
       );
       const animInfo = result.animationCount ? ` · 🎬 ${result.animationCount} anim${result.animationCount > 1 ? 's' : ''}` : '';
-      showStudioToast(`✅ Exportado: ${filename}.glb (${(result.sizeBytes / 1024).toFixed(1)} KB · ${result.triangleCount} tris${animInfo})`);
+      const colInfo = isGodot ? ' · 🤖 StaticBody3D (-convcol)' : '';
+      showStudioToast(`✅ Exportado: ${filename}.glb (${(result.sizeBytes / 1024).toFixed(1)} KB · ${result.triangleCount} tris${colInfo}${animInfo})`);
     } catch (err: any) {
       showStudioToast(`⚠️ Fallo de exportación: ${err.message}`, true);
     } finally {
-      exportGlbBtn.textContent = '💾 EXPORTAR GLB';
+      if (exportGlbBtn) exportGlbBtn.textContent = '💾 EXPORTAR GLB';
+      if (exportGodotBtn) exportGodotBtn.textContent = '🤖 GLB GODOT';
     }
+  }
+
+  exportGlbBtn?.addEventListener('click', () => triggerExportGLB());
+  exportGodotBtn?.addEventListener('click', () => triggerExportGLB({ godotColliders: 'convex' }));
+  btnExportGodotGlb?.addEventListener('click', () => triggerExportGLB({ godotColliders: 'convex' }));
+
+  btnExportGodotTscn?.addEventListener('click', () => {
+    const cleanName = (currentSpec.name || 'model').toLowerCase().replace(/[^a-z0-9]/g, '_');
+    const tscnContent = generateGodotScene(currentSpec, `${cleanName}.glb`);
+    const blob = new Blob([tscnContent], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${cleanName}.tscn`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+    showStudioToast(`🎬 Escena Godot 4 descargada: ${cleanName}.tscn`);
   });
 
   exportZipBtn?.addEventListener('click', async () => {
@@ -6886,14 +6927,14 @@ if __name__ == "__main__":
   const btnDownloadEngineScript = document.getElementById('btn-download-engine-script');
   const gamedevTabs = document.querySelectorAll('.btn-gamedev-tab');
 
-  let activeEngineTab: 'godot' | 'unity' | 'threejs' = 'godot';
-  let cachedEngineSnippets = { godot: '', unity: '', threejs: '' };
+  let activeEngineTab: 'godot' | 'godotScene' | 'unity' | 'threejs' = 'godot';
+  let cachedEngineSnippets: any = { godot: '', godotScene: '', unity: '', threejs: '' };
 
   function updateGameDevModalCode(): void {
     const cleanId = (currentSpec.id ? currentSpec.id.split('.').pop() : 'model') || 'model';
     cachedEngineSnippets = generateAllSnippets(currentSpec, `${cleanId}.glb`);
     if (gamedevCodeOutput) {
-      gamedevCodeOutput.textContent = cachedEngineSnippets[activeEngineTab];
+      gamedevCodeOutput.textContent = cachedEngineSnippets[activeEngineTab] || '';
     }
   }
 
@@ -6920,7 +6961,7 @@ if __name__ == "__main__":
     const code = cachedEngineSnippets[activeEngineTab];
     if (code) {
       navigator.clipboard.writeText(code);
-      showStudioToast(`📋 Script para ${activeEngineTab.toUpperCase()} copiado.`);
+      showStudioToast(`📋 Script/Escena para ${activeEngineTab.toUpperCase()} copiado.`);
     }
   });
 
@@ -6928,13 +6969,14 @@ if __name__ == "__main__":
     const code = cachedEngineSnippets[activeEngineTab];
     if (!code) return;
     const cleanName = (currentSpec.name || 'model').toLowerCase().replace(/[^a-z0-9]/g, '_');
-    const extensions: Record<string, string> = { godot: 'gd', unity: 'cs', threejs: 'ts' };
+    const extensions: Record<string, string> = { godot: 'gd', godotScene: 'tscn', unity: 'cs', threejs: 'ts' };
     const ext = extensions[activeEngineTab] || 'txt';
+    const isScene = activeEngineTab === 'godotScene';
     const blob = new Blob([code], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${cleanName}_controller.${ext}`;
+    a.download = isScene ? `${cleanName}.${ext}` : `${cleanName}_controller.${ext}`;
     a.click();
     setTimeout(() => URL.revokeObjectURL(url), 2000);
     showStudioToast(`💾 Archivo ${a.download} descargado.`);

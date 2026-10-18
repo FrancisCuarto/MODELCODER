@@ -1691,6 +1691,35 @@ test('GameDev Code Exporter: Genera scripts válidos para Godot 4, Unity y Three
   assert.ok(snippets.threejs.includes('loadAntenaParabolica'), 'Debe generar función de carga con nombre sanitizado');
 });
 
+test('Godot 4 Integration & Collisions: exportSpec genera sufijos -convcol y escena .tscn válida', async () => {
+  const testSpec: ModelSpec = {
+    id: 'test.godot.barrier',
+    name: 'Barrera de Seguridad',
+    category: 'fixtures',
+    description: 'Barrera de contención con colisionador',
+    units: 'meters',
+    dimensions: { width: 2.0, height: 1.0, depth: 0.5 },
+    palette: 'industrial_hazard',
+    components: [
+      { name: 'poste_izq', shape: 'cylinder', size: [0.1, 0.1, 1.0, 8], position: [-0.9, 0.5, 0] },
+      { name: 'poste_der', shape: 'cylinder', size: [0.1, 0.1, 1.0, 8], position: [0.9, 0.5, 0] },
+      { name: 'travesano', shape: 'box', size: [1.8, 0.2, 0.05], position: [0, 0.7, 0] }
+    ]
+  };
+
+  // 1. Exportación GLB con sufijos de colisión convexos para Godot
+  const buffer = await GLBExporterService.exportSpec(testSpec, { godotColliders: 'convex' });
+  assert.ok(buffer.byteLength > 0, 'Buffer GLB debe generarse');
+  const verification = await GLBExporterService.verifyGLBBuffer(buffer);
+  assert.equal(verification.verified, true, 'El GLB con colisiones debe verificarse');
+
+  // 2. Generación de escena Godot 4 (.tscn)
+  const snippets = generateAllSnippets(testSpec, 'barrera_seguridad.glb');
+  assert.ok(snippets.godotScene.includes('[node name="BarreraDeSeguridad" type="StaticBody3D"]'), 'Debe definir StaticBody3D');
+  assert.ok(snippets.godotScene.includes('CollisionShape3D'), 'Debe incluir CollisionShape3D');
+  assert.ok(snippets.godotScene.includes('BoxShape3D_root'), 'Debe definir BoxShape3D');
+});
+
 test('Component Hierarchy 1: wouldCreateCycle detecta ciclos directos e indirectos', () => {
   const components: ComponentDef[] = [
     { name: 'base', shape: 'box' },

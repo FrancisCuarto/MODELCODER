@@ -15,6 +15,11 @@ export interface ExportVerificationResult {
   error?: string;
 }
 
+export interface GLBExportOptions {
+  animations?: THREE.AnimationClip[];
+  godotColliders?: 'convex' | 'trimesh' | 'box' | 'none';
+}
+
 export class GLBExporterService {
   /**
    * Safe polyfills for GLTFExporter/GLTFLoader when running in headless Node.js tests.
@@ -165,13 +170,13 @@ export class GLBExporterService {
   public static async exportAndVerifyGLB(
     rootObj: THREE.Object3D,
     filename = 'modelcoder_asset',
-    options?: { animations?: THREE.AnimationClip[] }
+    options?: GLBExportOptions
   ): Promise<ExportVerificationResult> {
     if (!rootObj) {
       throw new Error('No hay ningún objeto 3D activo para exportar.');
     }
 
-    // 1. Export scene to binary GLB ArrayBuffer with optional animation tracks
+    // 1. Export scene to binary GLB ArrayBuffer with optional animation tracks and colliders
     const glbBuffer = await this.exportToArrayBuffer(rootObj, options);
 
     // 2. Mandatory Verification Step: Test-import the exported GLB buffer
@@ -201,7 +206,7 @@ export class GLBExporterService {
    */
   public static async exportSpec(
     spec: ModelSpec,
-    options?: { animations?: THREE.AnimationClip[] }
+    options?: GLBExportOptions
   ): Promise<ArrayBuffer> {
     const { group } = ProceduralEngine.buildModelFromSpec(spec);
     try {
@@ -209,7 +214,10 @@ export class GLBExporterService {
       if (!anims && spec.animations && spec.animations.length > 0) {
         anims = AnimationEngine.compileClipsToThree(spec.animations, group);
       }
-      return await this.exportToArrayBuffer(group, anims && anims.length > 0 ? { animations: anims } : undefined);
+      return await this.exportToArrayBuffer(group, {
+        ...options,
+        animations: anims && anims.length > 0 ? anims : undefined
+      });
     } finally {
       ProceduralEngine.disposeHierarchy(group);
     }
@@ -220,7 +228,7 @@ export class GLBExporterService {
    */
   public static exportToArrayBuffer(
     obj: THREE.Object3D,
-    options?: { animations?: THREE.AnimationClip[] }
+    options?: GLBExportOptions
   ): Promise<ArrayBuffer> {
     this.ensureNodePolyfills();
     const stashedMaps: Array<{ mat: any; normalMap: any; roughnessMap: any }> = [];
@@ -243,6 +251,55 @@ export class GLBExporterService {
       }
     };
 
+    // Handle Godot collider suffixes or bounding collider
+    const originalNames: Array<{ node: THREE.Object3D; name: string }> = [];
+    let addedColliderMesh: THREE.Mesh | null = null;
+
+    if (options?.godotColliders && options.godotColliders !== 'none') {
+      if (options.godotColliders === 'convex' || options.godotColliders === 'trimesh') {
+        const suffix = options.godotColliders === 'convex' ? '-convcol' : '-col';
+        obj.traverse((node: any) => {
+          if (node.isMesh) {
+            originalNames.push({ node, name: node.name });
+            const baseName = node.name || 'piece';
+            if (!baseName.endsWith('-convcol') && !baseName.endsWith('-col')) {
+              node.name = `${baseName}${suffix}`;
+            }
+          }
+        });
+      } else if (options.godotColliders === 'box') {
+        const box = new THREE.Box3().setFromObject(obj);
+        if (!box.isEmpty()) {
+          const size = new THREE.Vector3();
+          const center = new THREE.Vector3();
+          box.getSize(size);
+          box.getCenter(center);
+          const boxGeom = new THREE.BoxGeometry(size.x, size.y, size.z);
+          const boxMat = new THREE.MeshBasicMaterial({ visible: false });
+          addedColliderMesh = new THREE.Mesh(boxGeom, boxMat);
+          addedColliderMesh.position.copy(center);
+          addedColliderMesh.name = 'collider-convcolonly';
+          obj.add(addedColliderMesh);
+        }
+      }
+    }
+
+    const restoreColliders = () => {
+      for (const item of originalNames) {
+        item.node.name = item.name;
+      }
+      if (addedColliderMesh) {
+        obj.remove(addedColliderMesh);
+        addedColliderMesh.geometry.dispose();
+        if (Array.isArray(addedColliderMesh.material)) {
+          addedColliderMesh.material.forEach((m) => m.dispose());
+        } else {
+          addedColliderMesh.material.dispose();
+        }
+        addedColliderMesh = null;
+      }
+    };
+
     return new Promise((resolve, reject) => {
       const exporter = new GLTFExporter();
       const exportOptions: any = {
@@ -257,6 +314,7 @@ export class GLBExporterService {
       exporter.parse(
         obj,
         (result) => {
+          restoreColliders();
           restoreMaps();
           if (result instanceof ArrayBuffer) {
             resolve(result);
@@ -268,6 +326,7 @@ export class GLBExporterService {
           }
         },
         (error) => {
+          restoreColliders();
           restoreMaps();
           reject(new Error(`Error durante exportación GLTFExporter: ${error}`));
         },

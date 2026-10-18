@@ -200,20 +200,80 @@ export const MODULAR_MODELS_LOTE_2: ModularModelEntry[] = [
       palette: 'industrial_hazard',
       components: [
         {
-          name: 'base_pedestal_pesada',
+          name: 'plinto_suelo_reforzado',
           shape: 'box',
-          size: [1.60, 0.50, 0.85],
-          position: [0, 0.25, 0],
+          size: [1.64, 0.06, 0.88],
+          position: [0, 0.03, 0],
+          color: '#1a202c',
+          texturePreset: 'diamond_plate',
+          roughness: 0.8,
+          metalness: 0.7
+        },
+        {
+          name: 'cuerpo_pedestal_central',
+          shape: 'box',
+          size: [1.50, 0.64, 0.78],
+          position: [0, 0.38, 0],
           color: '#171923',
           texturePreset: 'iron_cast',
           roughness: 0.75,
           metalness: 0.8
         },
         {
+          name: 'rejilla_ventilacion_frontal',
+          shape: 'box',
+          size: [0.80, 0.22, 0.02],
+          position: [0, 0.35, 0.40],
+          color: '#2d3748',
+          texturePreset: 'vent_grill',
+          roughness: 0.6,
+          metalness: 0.5
+        },
+        {
+          name: 'panel_mantenimiento_izq',
+          shape: 'box',
+          size: [0.30, 0.28, 0.02],
+          position: [-0.48, 0.35, 0.40],
+          color: '#1a202c',
+          texturePreset: 'metal_dark_grime',
+          roughness: 0.5,
+          metalness: 0.7
+        },
+        {
+          name: 'panel_mantenimiento_der',
+          shape: 'box',
+          size: [0.30, 0.28, 0.02],
+          position: [0.48, 0.35, 0.40],
+          color: '#1a202c',
+          texturePreset: 'metal_dark_grime',
+          roughness: 0.5,
+          metalness: 0.7
+        },
+        {
+          name: 'banda_aviso_pedestal',
+          shape: 'box',
+          size: [1.52, 0.04, 0.02],
+          position: [0, 0.67, 0.40],
+          color: '#d69e2e',
+          texturePreset: 'hazard_stripes',
+          roughness: 0.4,
+          metalness: 0.3
+        },
+        {
+          name: 'viga_soporte_subframe',
+          shape: 'box',
+          size: [1.60, 0.05, 0.74],
+          position: [0, 0.70, 0.02],
+          color: '#4a5568',
+          texturePreset: 'steel_polished',
+          roughness: 0.3,
+          metalness: 0.85
+        },
+        {
           name: 'tablero_central_teclado',
           shape: 'box',
-          size: [0.60, 0.08, 0.65],
-          position: [0, 0.74, 0.05],
+          size: [0.60, 0.06, 0.70],
+          position: [0, 0.73, 0.05],
           color: '#2d3748',
           texturePreset: 'carbon_fiber',
           roughness: 0.35,
@@ -222,8 +282,8 @@ export const MODULAR_MODELS_LOTE_2: ModularModelEntry[] = [
         {
           name: 'ala_izquierda_inclinada',
           shape: 'box',
-          size: [0.60, 0.08, 0.68],
-          position: [-0.60, 0.74, 0.12],
+          size: [0.55, 0.06, 0.70],
+          position: [-0.55, 0.73, 0.12],
           rotation: [0, 0.26, 0],
           color: '#1a202c',
           texturePreset: 'metal_dark_grime',
@@ -233,8 +293,8 @@ export const MODULAR_MODELS_LOTE_2: ModularModelEntry[] = [
         {
           name: 'ala_derecha_inclinada',
           shape: 'box',
-          size: [0.60, 0.08, 0.68],
-          position: [0.60, 0.74, 0.12],
+          size: [0.55, 0.06, 0.70],
+          position: [0.55, 0.73, 0.12],
           rotation: [0, -0.26, 0],
           color: '#1a202c',
           texturePreset: 'metal_dark_grime',
@@ -242,63 +302,220 @@ export const MODULAR_MODELS_LOTE_2: ModularModelEntry[] = [
           metalness: 0.7
         },
         {
+          name: 'borde_ergonomico_goma',
+          shape: 'box',
+          size: [1.70, 0.03, 0.04],
+          position: [0, 0.75, 0.40],
+          color: '#111827',
+          texturePreset: 'rubber_black',
+          roughness: 0.9,
+          metalness: 0.1
+        },
+        {
+          name: 'riel_soporte_monitores',
+          shape: 'box',
+          size: [1.45, 0.04, 0.04],
+          position: [0, 0.77, -0.22],
+          color: '#718096',
+          texturePreset: 'steel_polished',
+          roughness: 0.3,
+          metalness: 0.85
+        },
+        {
+          name: 'soporte_vertical_radar',
+          shape: 'box',
+          size: [0.06, 0.16, 0.04],
+          position: [0, 0.85, -0.22],
+          color: '#4a5568',
+          texturePreset: 'titanium_aerospace',
+          roughness: 0.4,
+          metalness: 0.8
+        },
+        {
+          name: 'chasis_monitor_radar',
+          shape: 'box',
+          size: [0.54, 0.36, 0.06],
+          position: [0, 0.98, -0.20],
+          rotation: [-0.25, 0, 0],
+          color: '#d1d5db',
+          texturePreset: 'beige_plastic_worn',
+          roughness: 0.6,
+          metalness: 0.2
+        },
+        {
           name: 'pantalla_radar_central',
           shape: 'box',
-          size: [0.52, 0.34, 0.03],
-          position: [0, 0.96, -0.20],
-          rotation: [-0.75, 0, 0],
+          size: [0.48, 0.30, 0.01],
+          position: [0, 0.98, -0.165],
+          rotation: [-0.25, 0, 0],
           color: '#0d1b2a',
           texturePreset: 'crt_screen_green',
           roughness: 0.15,
           metalness: 0.05,
           emissive: '#22c55e',
-          emissiveIntensity: 1.4
+          emissiveIntensity: 1.5
+        },
+        {
+          name: 'brazo_monitor_izq',
+          shape: 'box',
+          size: [0.05, 0.16, 0.04],
+          position: [-0.54, 0.85, -0.16],
+          rotation: [0, 0.35, 0],
+          color: '#4a5568',
+          texturePreset: 'titanium_aerospace',
+          roughness: 0.4,
+          metalness: 0.8
+        },
+        {
+          name: 'chasis_monitor_izq',
+          shape: 'box',
+          size: [0.48, 0.30, 0.06],
+          position: [-0.54, 0.98, -0.14],
+          rotation: [-0.22, 0.35, 0],
+          color: '#d1d5db',
+          texturePreset: 'beige_plastic_worn',
+          roughness: 0.6,
+          metalness: 0.2
         },
         {
           name: 'pantalla_telemetria_izq',
           shape: 'box',
-          size: [0.46, 0.28, 0.03],
-          position: [-0.56, 0.96, -0.14],
-          rotation: [-0.65, 0.35, 0],
+          size: [0.42, 0.24, 0.01],
+          position: [-0.54, 0.98, -0.105],
+          rotation: [-0.22, 0.35, 0],
           color: '#1a1405',
           texturePreset: 'crt_screen_amber',
           roughness: 0.15,
           metalness: 0.05,
           emissive: '#f59e0b',
-          emissiveIntensity: 1.4
+          emissiveIntensity: 1.5
+        },
+        {
+          name: 'brazo_monitor_der',
+          shape: 'box',
+          size: [0.05, 0.16, 0.04],
+          position: [0.54, 0.85, -0.16],
+          rotation: [0, -0.35, 0],
+          color: '#4a5568',
+          texturePreset: 'titanium_aerospace',
+          roughness: 0.4,
+          metalness: 0.8
+        },
+        {
+          name: 'chasis_monitor_der',
+          shape: 'box',
+          size: [0.48, 0.30, 0.06],
+          position: [0.54, 0.98, -0.14],
+          rotation: [-0.22, -0.35, 0],
+          color: '#d1d5db',
+          texturePreset: 'beige_plastic_worn',
+          roughness: 0.6,
+          metalness: 0.2
         },
         {
           name: 'pantalla_comms_der',
           shape: 'box',
-          size: [0.46, 0.28, 0.03],
-          position: [0.56, 0.96, -0.14],
-          rotation: [-0.65, -0.35, 0],
+          size: [0.42, 0.24, 0.01],
+          position: [0.54, 0.98, -0.105],
+          rotation: [-0.22, -0.35, 0],
           color: '#051b24',
           texturePreset: 'crt_screen_blue',
           roughness: 0.15,
           metalness: 0.05,
           emissive: '#06b6d4',
-          emissiveIntensity: 1.4
+          emissiveIntensity: 1.5
+        },
+        {
+          name: 'teclado_tactil_central',
+          shape: 'box',
+          size: [0.42, 0.015, 0.18],
+          position: [0, 0.765, 0.16],
+          color: '#111827',
+          texturePreset: 'rubber_black',
+          roughness: 0.9,
+          metalness: 0.1
+        },
+        {
+          name: 'trackball_radar_izq',
+          shape: 'sphere',
+          size: [0.07, 0.07, 0.07],
+          position: [-0.50, 0.775, 0.18],
+          color: '#e2e8f0',
+          texturePreset: 'chrome_mirror',
+          roughness: 0.1,
+          metalness: 0.95
+        },
+        {
+          name: 'base_palanca_propulsor',
+          shape: 'cylinder',
+          size: [0.06, 0.06, 0.02, 12],
+          position: [0.50, 0.765, 0.18],
+          color: '#4a5568',
+          texturePreset: 'steel_polished',
+          roughness: 0.4,
+          metalness: 0.8
+        },
+        {
+          name: 'palanca_propulsor_der',
+          shape: 'cylinder',
+          size: [0.025, 0.025, 0.10, 8],
+          position: [0.50, 0.82, 0.18],
+          color: '#cbd5e1',
+          texturePreset: 'titanium_aerospace',
+          roughness: 0.3,
+          metalness: 0.9
+        },
+        {
+          name: 'empunadura_propulsor',
+          shape: 'box',
+          size: [0.06, 0.03, 0.04],
+          position: [0.50, 0.88, 0.18],
+          color: '#1f2937',
+          texturePreset: 'rubber_black',
+          roughness: 0.9,
+          metalness: 0.1
+        },
+        {
+          name: 'corona_amarilla_seta',
+          shape: 'cylinder',
+          size: [0.07, 0.07, 0.01, 12],
+          position: [0.22, 0.765, 0.28],
+          color: '#d69e2e',
+          texturePreset: 'hazard_stripes',
+          roughness: 0.4,
+          metalness: 0.3
         },
         {
           name: 'seta_parada_emergencia',
           shape: 'cylinder',
-          size: [0.035, 0.035, 0.035, 12],
-          position: [0.22, 0.80, 0.28],
+          size: [0.045, 0.045, 0.035, 12],
+          position: [0.22, 0.785, 0.28],
           color: '#e53e3e',
           texturePreset: 'red_paint_worn',
           roughness: 0.4,
           metalness: 0.2
         },
         {
-          name: 'corona_amarilla_seta',
+          name: 'barra_indicadores_led',
+          shape: 'box',
+          size: [0.36, 0.02, 0.02],
+          position: [0, 0.765, -0.05],
+          color: '#38bdf8',
+          texturePreset: 'gold_contacts',
+          roughness: 0.2,
+          metalness: 0.8,
+          emissive: '#38bdf8',
+          emissiveIntensity: 1.2
+        },
+        {
+          name: 'conector_cables_potencia',
           shape: 'cylinder',
-          size: [0.055, 0.055, 0.01, 12],
-          position: [0.22, 0.785, 0.28],
-          color: '#d69e2e',
-          texturePreset: 'hazard_stripes',
-          roughness: 0.4,
-          metalness: 0.3
+          size: [0.05, 0.05, 0.24, 8],
+          position: [0.30, 0.58, -0.38],
+          color: '#111827',
+          texturePreset: 'rubber_black',
+          roughness: 0.9,
+          metalness: 0.1
         }
       ]
     }
