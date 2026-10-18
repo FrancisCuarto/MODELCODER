@@ -4,6 +4,7 @@ import { ProceduralEngine } from './procedural-engine.ts';
 import type { ModelSpec, ComponentDef } from './types.ts';
 import { AIGenerator } from './ai-generator.ts';
 import catalog from '../../data/catalog.json' with { type: 'json' };
+import { CatalogBlueprintRegistry } from './catalog-blueprints.ts';
 
 export interface CatalogTemplateInfo {
   family: string;
@@ -34,11 +35,20 @@ export class CatalogBridge {
   /**
    * Loads the authentic 3D GLB model from the catalog and deconstructs it
    * into genuine editable components in Studio (preserving meshes, positions, rotations, scales and materials).
+   * If a procedural blueprint exists, it returns a 100% modular, layer-separated ModelSpec with code.
    */
   public static async loadCatalogModelAsSpec(
     family: string,
     userParams?: Record<string, any>
   ): Promise<ModelSpec> {
+    // 1. First priority: native modular procedural blueprint (separated layers + editable code)
+    if (CatalogBlueprintRegistry.has(family)) {
+      const blueprint = CatalogBlueprintRegistry.get(family, userParams);
+      if (blueprint) {
+        return blueprint;
+      }
+    }
+
     const entry = (catalog as any[]).find((c: any) => c.family === family) || {
       family,
       name: family.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase()),
@@ -208,6 +218,14 @@ export class CatalogBridge {
     family: string,
     userParams?: Record<string, any>
   ): ModelSpec {
+    // 1. First priority: native modular procedural blueprint
+    if (CatalogBlueprintRegistry.has(family)) {
+      const blueprint = CatalogBlueprintRegistry.get(family, userParams);
+      if (blueprint) {
+        return blueprint;
+      }
+    }
+
     const entry = (catalog as any[]).find((c: any) => c.family === family) || {
       family,
       name: family.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase()),
