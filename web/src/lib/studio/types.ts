@@ -161,6 +161,7 @@ export type MaterialCategoryType =
 export interface ComponentDef {
   name: string;
   shape: ShapePrimitive;
+  parentId?: string; // Optional parent component name (for hierarchical transform parenting)
   /**
    * Primary dimensions:
    * - box: [width, height, depth]

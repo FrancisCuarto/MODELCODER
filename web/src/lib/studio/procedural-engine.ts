@@ -7,6 +7,31 @@ export class ProceduralEngine {
    * Translates a ModelSpec into a real Three.js Group with proper transforms,
    * vertex colors, flat-shaded materials, and PSX low-poly geometry.
    */
+  /**
+   * Checks whether setting potentialParentName as parent of childName would create a cyclic dependency.
+   */
+  public static wouldCreateCycle(
+    components: ComponentDef[],
+    childName: string,
+    potentialParentName: string | undefined
+  ): boolean {
+    if (!potentialParentName || potentialParentName === '') return false;
+    if (childName === potentialParentName) return true;
+
+    let current: string | undefined = potentialParentName;
+    const visited = new Set<string>();
+
+    while (current) {
+      if (current === childName) return true;
+      if (visited.has(current)) return true;
+      visited.add(current);
+      const parentComp = components.find((c) => c.name === current);
+      current = parentComp?.parentId;
+    }
+
+    return false;
+  }
+
   public static buildModelFromSpec(spec: ModelSpec): { group: THREE.Group; stats: GeometricStats } {
     const group = new THREE.Group();
     group.name = spec.id || 'procedural_root';
@@ -15,14 +40,36 @@ export class ProceduralEngine {
       throw new Error(`La especificación del modelo '${spec.name || 'Sin nombre'}' no contiene componentes geométricos.`);
     }
 
+    const meshMap = new Map<string, THREE.Object3D>();
+    const meshes: THREE.Object3D[] = [];
+
     for (let i = 0; i < spec.components.length; i++) {
       const comp = spec.components[i];
       const mesh = this.createComponentMesh(comp);
+      mesh.name = comp.name;
       mesh.userData = { componentIndex: i, componentDef: comp };
       if (comp.visible === false) {
         mesh.visible = false;
       }
-      group.add(mesh);
+      meshMap.set(comp.name, mesh);
+      meshes.push(mesh);
+    }
+
+    // Attach hierarchy respecting parentId without cyclic loops
+    for (let i = 0; i < spec.components.length; i++) {
+      const comp = spec.components[i];
+      const mesh = meshes[i];
+      if (
+        comp.parentId &&
+        comp.parentId !== comp.name &&
+        meshMap.has(comp.parentId) &&
+        !this.wouldCreateCycle(spec.components, comp.name, comp.parentId)
+      ) {
+        const parentMesh = meshMap.get(comp.parentId)!;
+        parentMesh.add(mesh);
+      } else {
+        group.add(mesh);
+      }
     }
 
     // Measure real geometry statistics

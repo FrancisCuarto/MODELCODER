@@ -2027,6 +2027,14 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     }
   }
 
+  function getComponentDepth(compName: string, visited = new Set<string>()): number {
+    if (visited.has(compName)) return 0;
+    visited.add(compName);
+    const comp = currentSpec.components.find((c) => c.name === compName);
+    if (!comp || !comp.parentId) return 0;
+    return 1 + getComponentDepth(comp.parentId, visited);
+  }
+
   // --- OUTLINER COMPONENT TREE ---
   function renderOutliner(): void {
     if (!outlinerTreeList) return;
@@ -2039,14 +2047,23 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
       item.className = `outliner-item ${idx === selectedComponentIndex ? 'active' : ''} ${comp.visible === false ? 'is-hidden' : ''}`;
       item.dataset.idx = `${idx}`;
 
+      const depth = getComponentDepth(comp.name);
+      const isChild = !!comp.parentId;
+      if (depth > 0) {
+        item.style.paddingLeft = `${0.35 + depth * 0.85}rem`;
+        item.style.borderLeft = `3px solid var(--ps1-cyan)`;
+      }
+
       const shapeIcon = getShapeIcon(comp.shape);
       const isVisible = comp.visible !== false;
 
       item.innerHTML = `
-        <div class="outliner-item-main" data-idx="${idx}" title="Seleccionar componente">
+        <div class="outliner-item-main" data-idx="${idx}" title="Seleccionar componente ${isChild ? `(Hijo de ${escapeHtml(comp.parentId!)})` : ''}">
           <span class="outliner-idx-tag">#${idx + 1}</span>
+          ${isChild ? `<span class="outliner-hierarchy-glyph" title="Hijo de ${escapeHtml(comp.parentId!)}">↳</span>` : ''}
           <span class="outliner-shape-badge" title="Tipo: ${comp.shape}">${shapeIcon} ${comp.shape.toUpperCase()}</span>
           <span class="outliner-name-label">${escapeHtml(comp.name)}</span>
+          ${isChild ? `<span class="outliner-parent-tag" title="Vinculado al padre: ${escapeHtml(comp.parentId!)}">@${escapeHtml(comp.parentId!)}</span>` : ''}
         </div>
         <div class="outliner-item-actions">
           <button type="button" class="btn-outliner-vis ps1-ctrl-btn" data-idx="${idx}" title="${isVisible ? 'Ocultar pieza' : 'Mostrar pieza'}">
@@ -2143,6 +2160,13 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     if (!confirm(`¿Eliminar componente "${name}"?`)) return;
 
     currentSpec.components.splice(idx, 1);
+    // Promote any child components of the deleted component to root level
+    currentSpec.components.forEach((c) => {
+      if (c.parentId === name) {
+        delete c.parentId;
+      }
+    });
+
     if (selectedComponentIndex !== null) {
       if (selectedComponentIndex >= currentSpec.components.length) {
         selectedComponentIndex = currentSpec.components.length - 1;
@@ -2310,12 +2334,27 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     const isOpen = (secId: string) => inspectorSectionsOpen[secId] !== false;
     const activeTexBadge = comp.texturePreset ? escapeHtml(comp.texturePreset) : 'color plano';
 
+    const parentOptionsHtml = currentSpec.components
+      .filter((other) => other.name !== comp.name && !ProceduralEngine.wouldCreateCycle(currentSpec.components, comp.name, other.name))
+      .map((other) => {
+        const isSelected = comp.parentId === other.name ? 'selected' : '';
+        return `<option value="${escapeHtml(other.name)}" ${isSelected}>↳ ${escapeHtml(other.name)} [${other.shape.toUpperCase()}]</option>`;
+      })
+      .join('');
+
     inspectorContentMount.innerHTML = `
       <!-- Component Header / Identifier -->
       <div class="prop-card-header ps1-inset">
         <div class="prop-row-item">
           <label class="field-label" for="inp-comp-name">NOMBRE DE LA PIEZA:</label>
           <input type="text" id="inp-comp-name" class="form-input comp-name-editor" value="${escapeHtml(comp.name)}" />
+        </div>
+        <div class="prop-row-item prop-parent-row">
+          <label class="field-label" for="inp-comp-parent">PIEZA PADRE (JERARQUÍA):</label>
+          <select id="inp-comp-parent" class="form-input comp-parent-selector" title="Vincula esta pieza como hija para heredar transformaciones y animaciones de su padre">
+            <option value="">(Ninguno / Nivel Raíz)</option>
+            ${parentOptionsHtml}
+          </select>
         </div>
         <div class="prop-quick-btns">
           <button type="button" id="btn-prop-vis" class="btn-mini btn-outline" title="Visibilidad">
@@ -3004,21 +3043,67 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
       return Number.isFinite(num) ? num : null;
     };
 
+    // Helper to cascade component rename across children and animation tracks
+    const cascadeComponentRename = (oldName: string, newName: string) => {
+      if (!oldName || !newName || oldName === newName) return;
+      currentSpec.components.forEach((c) => {
+        if (c.parentId === oldName) {
+          c.parentId = newName;
+        }
+      });
+      if (currentSpec.animations) {
+        currentSpec.animations.forEach((clip) => {
+          if (clip.tracks) {
+            clip.tracks.forEach((track) => {
+              if (track.targetComponent === oldName) {
+                track.targetComponent = newName;
+              }
+              if (track.targetName === oldName) {
+                track.targetName = newName;
+              }
+            });
+          }
+        });
+      }
+    };
+
     // Name input
     const inpCompName = document.getElementById('inp-comp-name') as HTMLInputElement | null;
     inpCompName?.addEventListener('input', () => {
       const val = inpCompName.value.trim();
-      if (val) {
+      if (val && val !== comp.name) {
+        const oldName = comp.name;
         comp.name = val;
+        cascadeComponentRename(oldName, val);
         renderOutliner();
         updateSelectionPill();
         syncEditorFromSpec();
       }
     });
     inpCompName?.addEventListener('change', () => {
-      comp.name = inpCompName.value.trim() || `pieza_${idx + 1}`;
+      const oldName = comp.name;
+      const targetName = inpCompName.value.trim() || `pieza_${idx + 1}`;
+      comp.name = targetName;
       inpCompName.value = comp.name;
+      cascadeComponentRename(oldName, targetName);
       renderCurrentSpec('visual', true, false);
+    });
+
+    // Parent selector input (Hierarchy)
+    const inpCompParent = document.getElementById('inp-comp-parent') as HTMLSelectElement | null;
+    inpCompParent?.addEventListener('change', () => {
+      const chosenParent = inpCompParent.value.trim();
+      if (!chosenParent) {
+        delete comp.parentId;
+      } else {
+        if (ProceduralEngine.wouldCreateCycle(currentSpec.components, comp.name, chosenParent)) {
+          alert(`No se puede vincular "${comp.name}" a "${chosenParent}" porque crearía una dependencia circular.`);
+          inpCompParent.value = comp.parentId || '';
+          return;
+        }
+        comp.parentId = chosenParent;
+      }
+      renderCurrentSpec('visual');
     });
 
     // Collapsible Sections / Tabs logic
@@ -6449,6 +6534,28 @@ if __name__ == "__main__":
     border: 1px solid rgba(0, 240, 255, 0.2);
   }
 
+  .outliner-hierarchy-glyph {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--ps1-cyan);
+    margin-right: -0.1rem;
+    user-select: none;
+  }
+
+  .outliner-parent-tag {
+    font-size: 0.60rem;
+    color: #94a3b8;
+    background: #080e18;
+    border: 1px dashed rgba(0, 240, 255, 0.3);
+    padding: 0.05rem 0.25rem;
+    border-radius: 2px;
+    font-family: var(--font-mono);
+    max-width: 90px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
   .outliner-name-label {
     font-family: var(--font-mono);
     font-size: 0.75rem;
@@ -6803,6 +6910,25 @@ if __name__ == "__main__":
     font-weight: bold;
     color: var(--ps1-cyan);
     background: #040710;
+  }
+
+  .prop-parent-row {
+    margin-top: 0.35rem;
+  }
+
+  .comp-parent-selector {
+    font-size: 0.72rem;
+    font-family: var(--font-mono);
+    color: #e2e8f0;
+    background: #040710;
+    border: 1px solid #1e293b;
+    padding: 0.25rem 0.4rem;
+    width: 100%;
+  }
+
+  .comp-parent-selector:focus {
+    border-color: var(--ps1-cyan);
+    outline: none;
   }
 
   .prop-quick-btns {

@@ -1613,6 +1613,172 @@ test('GameDev Code Exporter: Genera scripts válidos para Godot 4, Unity y Three
   assert.ok(snippets.threejs.includes('loadAntenaParabolica'), 'Debe generar función de carga con nombre sanitizado');
 });
 
+test('Component Hierarchy 1: wouldCreateCycle detecta ciclos directos e indirectos', () => {
+  const components: ComponentDef[] = [
+    { name: 'base', shape: 'box' },
+    { name: 'torso', shape: 'box', parentId: 'base' },
+    { name: 'brazo', shape: 'cylinder', parentId: 'torso' },
+    { name: 'mano', shape: 'box', parentId: 'brazo' }
+  ];
+
+  // 1. Auto-parenting no permitido
+  assert.equal(ProceduralEngine.wouldCreateCycle(components, 'base', 'base'), true);
+  assert.equal(ProceduralEngine.wouldCreateCycle(components, 'brazo', 'brazo'), true);
+
+  // 2. Ciclos directos (A -> B -> A)
+  assert.equal(ProceduralEngine.wouldCreateCycle(components, 'base', 'torso'), true);
+
+  // 3. Ciclos indirectos (A -> B -> C -> D -> A)
+  assert.equal(ProceduralEngine.wouldCreateCycle(components, 'base', 'mano'), true);
+  assert.equal(ProceduralEngine.wouldCreateCycle(components, 'torso', 'mano'), true);
+
+  // 4. Asignaciones válidas
+  assert.equal(ProceduralEngine.wouldCreateCycle(components, 'mano', 'base'), false);
+  assert.equal(ProceduralEngine.wouldCreateCycle(components, 'brazo', 'base'), false);
+  assert.equal(ProceduralEngine.wouldCreateCycle(components, 'mano', undefined), false);
+  assert.equal(ProceduralEngine.wouldCreateCycle(components, 'mano', ''), false);
+});
+
+test('Component Hierarchy 2: buildModelFromSpec construye grafo jerárquico Three.js y hereda transformaciones', () => {
+  const hierarchicalSpec: ModelSpec = {
+    id: 'test.hierarchy.robot_arm',
+    name: 'Brazo Robótico Articulado',
+    category: 'fixtures',
+    description: 'Brazo con jerarquía hombro -> antebrazo -> pinza',
+    units: 'meters',
+    dimensions: { width: 1, depth: 1, height: 2 },
+    palette: 'industrial_hazard',
+    components: [
+      {
+        name: 'hombro',
+        shape: 'box',
+        size: [0.5, 0.5, 0.5],
+        position: [1.0, 2.0, 0.0]
+      },
+      {
+        name: 'antebrazo',
+        shape: 'cylinder',
+        size: [0.15, 0.15, 1.0, 8],
+        position: [0.0, 1.0, 0.0],
+        parentId: 'hombro'
+      },
+      {
+        name: 'pinza',
+        shape: 'box',
+        size: [0.2, 0.2, 0.2],
+        position: [0.0, 0.6, 0.0],
+        parentId: 'antebrazo'
+      }
+    ]
+  };
+
+  const { group, stats } = ProceduralEngine.buildModelFromSpec(hierarchicalSpec);
+
+  // 1. En el nivel raíz del grupo sólo debe estar el hombro
+  assert.equal(group.children.length, 1, 'Solo la raíz (hombro) debe pertenecer a group.children');
+  const hombroMesh = group.children[0] as THREE.Mesh;
+  assert.equal(hombroMesh.name, 'hombro');
+
+  // 2. Antebrazo debe ser hijo directo de hombro
+  assert.equal(hombroMesh.children.length, 1, 'Hombro debe contener al antebrazo como hijo');
+  const antebrazoMesh = hombroMesh.children[0] as THREE.Mesh;
+  assert.equal(antebrazoMesh.name, 'antebrazo');
+
+  // 3. Pinza debe ser hija directa de antebrazo
+  assert.equal(antebrazoMesh.children.length, 1, 'Antebrazo debe contener a la pinza como hija');
+  const pinzaMesh = antebrazoMesh.children[0] as THREE.Mesh;
+  assert.equal(pinzaMesh.name, 'pinza');
+
+  // 4. Verificación de transformaciones acumuladas en World Space
+  group.updateMatrixWorld(true);
+
+  const hombroWorldPos = new THREE.Vector3();
+  hombroMesh.getWorldPosition(hombroWorldPos);
+  assert.equal(hombroWorldPos.x, 1.0);
+  assert.equal(hombroWorldPos.y, 2.0);
+  assert.equal(hombroWorldPos.z, 0.0);
+
+  const antebrazoWorldPos = new THREE.Vector3();
+  antebrazoMesh.getWorldPosition(antebrazoWorldPos);
+  assert.equal(antebrazoWorldPos.x, 1.0);
+  assert.equal(antebrazoWorldPos.y, 3.0); // 2.0 (hombro) + 1.0 (antebrazo local)
+
+  const pinzaWorldPos = new THREE.Vector3();
+  pinzaMesh.getWorldPosition(pinzaWorldPos);
+  assert.equal(pinzaWorldPos.x, 1.0);
+  assert.equal(pinzaWorldPos.y, 3.6); // 2.0 + 1.0 + 0.6 = 3.6
+
+  // 5. Estadísticas geométricas incluyen todos los nodos jerárquicos
+  assert.ok(stats.triangles > 0);
+  assert.ok(stats.vertices > 0);
+
+  ProceduralEngine.disposeHierarchy(group);
+});
+
+test('Component Hierarchy 3: CodeSandbox builder permite crear jerarquías con parentId y setParent', () => {
+  const code = `
+    builder.addBox({ name: 'torre_base', size: [1, 0.5, 1], position: [0, 0.25, 0] });
+    builder.addCylinder({ name: 'canon', parentId: 'torre_base', position: [0, 0.4, 0.3] });
+    builder.addSphere({ name: 'sensor_mira', position: [0, 0.2, 0.5] });
+    builder.setParent('sensor_mira', 'canon');
+  `;
+
+  const { spec, error } = CodeSandbox.executeCode(code);
+  assert.equal(error, undefined, `CodeSandbox falló: ${error}`);
+  assert.equal(spec.components.length, 3);
+
+  const canon = spec.components.find((c) => c.name === 'canon');
+  const sensor = spec.components.find((c) => c.name === 'sensor_mira');
+
+  assert.equal(canon?.parentId, 'torre_base');
+  assert.equal(sensor?.parentId, 'canon');
+
+  const { group } = ProceduralEngine.buildModelFromSpec(spec);
+  assert.equal(group.children.length, 1, 'Solo la base debe ser raíz');
+  ProceduralEngine.disposeHierarchy(group);
+});
+
+test('Component Hierarchy 4: Exportación e importación GLB preserva la estructura de nodos jerárquicos', async () => {
+  const hierarchicalSpec: ModelSpec = {
+    id: 'test.hierarchy.export',
+    name: 'Torreta Jerárquica GLB',
+    category: 'defense',
+    description: 'Exportación con nodos anidados',
+    units: 'meters',
+    dimensions: { width: 1, depth: 1, height: 1 },
+    palette: 'industrial_hazard',
+    components: [
+      {
+        name: 'soporte',
+        shape: 'box',
+        size: [1, 0.2, 1],
+        position: [0, 0.1, 0]
+      },
+      {
+        name: 'rotador',
+        shape: 'cylinder',
+        size: [0.4, 0.4, 0.3, 8],
+        position: [0, 0.25, 0],
+        parentId: 'soporte'
+      }
+    ]
+  };
+
+  const { group } = ProceduralEngine.buildModelFromSpec(hierarchicalSpec);
+
+  // Exportar a GLB
+  const glbBuffer = await GLBExporterService.exportToArrayBuffer(group);
+  assert.ok(glbBuffer instanceof ArrayBuffer);
+  assert.ok(glbBuffer.byteLength > 800);
+
+  // Verificación e importación
+  const verification = await GLBExporterService.verifyGLBBuffer(glbBuffer);
+  assert.equal(verification.verified, true);
+  assert.ok(verification.triangleCount > 0);
+
+  ProceduralEngine.disposeHierarchy(group);
+});
+
 // Teardown: ensure Node exits cleanly after tests
 test('Teardown: Exit cleanly', () => {
   setTimeout(() => process.exit(0), 100);

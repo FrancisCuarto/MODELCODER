@@ -37,8 +37,18 @@ export class ProceduralBuilderContext {
     return this;
   }
 
+  public setParent(childName: string, parentName?: string): this {
+    const child = this.spec.components.find((c) => c.name === childName);
+    if (child) {
+      child.parentId = parentName;
+    }
+    return this;
+  }
+
   public addBox(opts: {
     name?: string;
+    parentId?: string;
+    parent?: string;
     size?: [number, number, number];
     position?: [number, number, number];
     rotation?: [number, number, number];
@@ -56,6 +66,7 @@ export class ProceduralBuilderContext {
     return this.addComponent({
       name: opts.name || `box_${this.spec.components.length + 1}`,
       shape: 'box',
+      parentId: opts.parentId || opts.parent,
       size: opts.size || [1, 1, 1],
       position: opts.position || [0, 0, 0],
       rotation: opts.rotation || [0, 0, 0],
@@ -74,6 +85,8 @@ export class ProceduralBuilderContext {
 
   public addCylinder(opts: {
     name?: string;
+    parentId?: string;
+    parent?: string;
     radius?: number;
     height?: number;
     segments?: number;
@@ -93,6 +106,7 @@ export class ProceduralBuilderContext {
     return this.addComponent({
       name: opts.name || `cylinder_${this.spec.components.length + 1}`,
       shape: 'cylinder',
+      parentId: opts.parentId || opts.parent,
       size: s,
       position: opts.position || [0, 0, 0],
       rotation: opts.rotation || [0, 0, 0],
@@ -109,6 +123,8 @@ export class ProceduralBuilderContext {
 
   public addSphere(opts: {
     name?: string;
+    parentId?: string;
+    parent?: string;
     radius?: number;
     segments?: number;
     size?: [number, number, number];
@@ -127,6 +143,7 @@ export class ProceduralBuilderContext {
     return this.addComponent({
       name: opts.name || `sphere_${this.spec.components.length + 1}`,
       shape: 'sphere',
+      parentId: opts.parentId || opts.parent,
       size: s,
       position: opts.position || [0, 0, 0],
       rotation: opts.rotation || [0, 0, 0],
@@ -143,6 +160,8 @@ export class ProceduralBuilderContext {
 
   public addWedge(opts: {
     name?: string;
+    parentId?: string;
+    parent?: string;
     size?: [number, number, number];
     position?: [number, number, number];
     rotation?: [number, number, number];
@@ -158,6 +177,7 @@ export class ProceduralBuilderContext {
     return this.addComponent({
       name: opts.name || `wedge_${this.spec.components.length + 1}`,
       shape: 'wedge',
+      parentId: opts.parentId || opts.parent,
       size: opts.size || [1, 1, 1],
       position: opts.position || [0, 0, 0],
       rotation: opts.rotation || [0, 0, 0],
