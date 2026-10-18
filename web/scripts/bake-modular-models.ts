@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { MODULAR_MODELS_LOTE_1 } from '../src/data/modular-catalog.ts';
+import { getAllModularModels } from '../src/data/modular-catalog.ts';
 import { GLBExporterService } from '../src/lib/studio/glb-exporter.ts';
 import { ProceduralEngine } from '../src/lib/studio/procedural-engine.ts';
 
@@ -15,10 +15,11 @@ async function main() {
     console.log(`📁 Directorio creado: ${outputDir}`);
   }
 
-  console.log(`🚀 Iniciando horneado de ${MODULAR_MODELS_LOTE_1.length} modelos modulares (Lote 1)...`);
+  const allModels = getAllModularModels();
+  console.log(`🚀 Iniciando horneado de ${allModels.length} modelos modulares...`);
   let successCount = 0;
 
-  for (const entry of MODULAR_MODELS_LOTE_1) {
+  for (const entry of allModels) {
     const filename = `${entry.family}.glb`;
     const outputPath = path.join(outputDir, filename);
 
@@ -36,7 +37,7 @@ async function main() {
     }
   }
 
-  console.log(`\n🎉 Horneado finalizado con éxito: ${successCount}/${MODULAR_MODELS_LOTE_1.length} modelos generados en ${outputDir}`);
+  console.log(`\n🎉 Horneado finalizado con éxito: ${successCount}/${allModels.length} modelos generados en ${outputDir}`);
 }
 
 main().catch((err) => {

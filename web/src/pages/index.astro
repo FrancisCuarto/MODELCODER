@@ -1,19 +1,21 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import catalog from '../data/catalog.json';
-import { MODULAR_MODELS_LOTE_1 } from '../data/modular-catalog.ts';
+import { getAllModularModels } from '../data/modular-catalog.ts';
+
+const modularModels = getAllModularModels();
 
 // Calculate category counts
 const categoryCounts: Record<string, number> = {};
 catalog.forEach((item) => {
   categoryCounts[item.category] = (categoryCounts[item.category] || 0) + 1;
 });
-MODULAR_MODELS_LOTE_1.forEach((item) => {
+modularModels.forEach((item) => {
   categoryCounts[item.category] = (categoryCounts[item.category] || 0) + 1;
 });
 
-const totalModelsCount = catalog.length + MODULAR_MODELS_LOTE_1.length;
-const modularCount = MODULAR_MODELS_LOTE_1.length;
+const totalModelsCount = catalog.length + modularModels.length;
+const modularCount = modularModels.length;
 
 const ANIMATED_FAMILIES = new Set([
   'antenna_dish',
@@ -208,7 +210,7 @@ const categories = [
   <!-- Generator Cards Grid -->
   <div class="generators-grid" id="generators-container">
     {/* Modelos Modulares Procedurales 100% Editables */}
-    {MODULAR_MODELS_LOTE_1.map((mod) => (
+    {modularModels.map((mod) => (
       <article 
         class="ps1-window generator-card card-modular"
         data-family={mod.family}
