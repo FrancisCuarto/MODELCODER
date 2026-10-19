@@ -61,6 +61,9 @@ import catalog from '../data/catalog.json';
             ⋯ MÁS ▼
           </button>
           <div id="topbar-more-menu" class="topbar-dropdown-menu hidden">
+            <button id="btn-menu-welcome-splash" type="button" class="topbar-menu-item" style="color: var(--ps1-cyan);">
+              ⚡ PANTALLA DE INICIO (NUEVO / RETOMAR)
+            </button>
             <button id="btn-menu-catalog-templates" type="button" class="topbar-menu-item" style="color: var(--ps1-gold);">
               📦 PLANTILLAS DEL CATÁLOGO (100+ MODELOS)
             </button>
@@ -824,6 +827,93 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
       <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
         <button id="btn-cancel-save-project" type="button" class="btn btn-outline">CANCELAR</button>
         <button id="btn-confirm-save-project" type="button" class="btn btn-gold">💾 GUARDAR PROYECTO</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Modal Splash / Bienvenida de Escritorio: Nuevo Proyecto o Retomar -->
+  <dialog id="modal-welcome-desktop" class="ps1-window welcome-desktop-modal" style="max-width: 760px; width: 95%; box-shadow: 0 0 25px rgba(0, 240, 255, 0.25);">
+    <div class="ps1-titlebar">
+      <div style="display: flex; align-items: center; gap: 0.5rem;">
+        <span style="color: var(--ps1-gold);">⚡</span>
+        <span>MODELCODER 3D STUDIO · WORKSTATION</span>
+      </div>
+      <button id="close-welcome-desktop-btn" class="ps1-ctrl-btn" type="button" title="Cerrar y comenzar a modelar">✕</button>
+    </div>
+    <div class="modal-body" style="padding: 1.25rem;">
+      <!-- Welcome Header Banner -->
+      <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1.25rem; border-bottom: 1px solid var(--ps1-steel); padding-bottom: 0.85rem;">
+        <img src="/logo.png" alt="ModelCoder" style="width: 48px; height: 48px; image-rendering: pixelated; border: 1px solid var(--ps1-gold);" />
+        <div>
+          <h2 style="font-family: var(--font-pixel); font-size: 0.95rem; color: var(--ps1-gold); margin: 0 0 0.25rem 0;">
+            BIENVENIDO A MODELCODER STUDIO
+          </h2>
+          <p style="font-size: 0.78rem; color: var(--text-dim); margin: 0; line-height: 1.3;">
+            Entorno de modelado 3D procedural low-poly y cinemática para motores de videojuegos.
+          </p>
+        </div>
+      </div>
+
+      <!-- Two column grid: New Project (Left) / Recent Drafts (Right) -->
+      <div class="welcome-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-bottom: 1.25rem;">
+        <!-- Left: Acciones Principales / Nuevo -->
+        <div class="ps1-inset" style="padding: 1rem; background: #070d18; display: flex; flex-direction: column; gap: 0.75rem;">
+          <div style="font-family: var(--font-pixel); font-size: 0.72rem; color: var(--ps1-cyan); margin-bottom: 0.25rem; display: flex; align-items: center; gap: 0.4rem;">
+            <span>✨</span> <span>COMENZAR MODELADO</span>
+          </div>
+
+          <button id="btn-welcome-new-blank" class="btn btn-gold" type="button" style="display: flex; align-items: center; justify-content: flex-start; gap: 0.65rem; text-align: left; padding: 0.75rem;">
+            <span style="font-size: 1.25rem;">✨</span>
+            <div>
+              <strong style="display: block; font-family: var(--font-pixel); font-size: 0.75rem;">NUEVO MODELO EN BLANCO</strong>
+              <span style="font-size: 0.7rem; font-weight: normal; opacity: 0.85;">Lienzo limpio con primitivas básicas</span>
+            </div>
+          </button>
+
+          <button id="btn-welcome-open-templates" class="btn btn-outline" type="button" style="display: flex; align-items: center; justify-content: flex-start; gap: 0.65rem; text-align: left; padding: 0.7rem;">
+            <span style="font-size: 1.25rem;">📦</span>
+            <div>
+              <strong style="display: block; font-family: var(--font-pixel); font-size: 0.73rem; color: var(--ps1-gold);">DESDE PLANTILLA (100+)</strong>
+              <span style="font-size: 0.68rem; color: var(--text-dim);">Cajas, puertas, consolas, tubos y robots</span>
+            </div>
+          </button>
+
+          <label class="btn btn-outline" style="display: flex; align-items: center; justify-content: flex-start; gap: 0.65rem; text-align: left; padding: 0.7rem; cursor: pointer; margin: 0;">
+            <span style="font-size: 1.25rem;">📂</span>
+            <div>
+              <strong style="display: block; font-family: var(--font-pixel); font-size: 0.73rem; color: var(--ps1-cyan);">ABRIR ARCHIVO JSON</strong>
+              <span style="font-size: 0.68rem; color: var(--text-dim);">Importar modelo guardado en tu disco</span>
+            </div>
+            <input type="file" id="welcome-import-json" accept=".json" style="display: none;" />
+          </label>
+        </div>
+
+        <!-- Right: Retomar Proyectos Recientes -->
+        <div class="ps1-inset" style="padding: 1rem; background: #070d18; display: flex; flex-direction: column;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.65rem;">
+            <span style="font-family: var(--font-pixel); font-size: 0.72rem; color: var(--ps1-gold); display: flex; align-items: center; gap: 0.4rem;">
+              <span>🕒</span> <span>PROYECTOS RECIENTES (<span id="welcome-drafts-badge">0</span>)</span>
+            </span>
+            <button id="btn-welcome-view-all-projects" type="button" class="btn-mini btn-outline" style="font-size: 0.65rem; padding: 0.2rem 0.4rem;">
+              VER TODOS
+            </button>
+          </div>
+
+          <div id="welcome-recent-projects-list" style="display: flex; flex-direction: column; gap: 0.5rem; max-height: 220px; overflow-y: auto; flex-grow: 1;">
+            <!-- Filled dynamically with recent drafts -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Welcome Dialog Footer -->
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; border-top: 1px solid var(--ps1-steel); padding-top: 0.85rem;">
+        <label style="display: flex; align-items: center; gap: 0.45rem; font-size: 0.72rem; color: var(--text-dim); cursor: pointer;">
+          <input type="checkbox" id="chk-show-welcome-startup" checked style="accent-color: var(--ps1-gold); cursor: pointer;" />
+          <span>Mostrar esta pantalla al iniciar la aplicación</span>
+        </label>
+        <button id="btn-welcome-enter-studio" class="btn btn-cyan" type="button" style="font-size: 0.75rem; padding: 0.5rem 1rem;">
+          ENTRAR AL EDITOR ➔
+        </button>
       </div>
     </div>
   </dialog>
@@ -7178,6 +7268,198 @@ if __name__ == "__main__":
       } catch (err) {
         console.warn('[ModelCoder Studio] Error deserializando modelo desde hash:', err);
       }
+    }
+  }
+
+  // --- MODAL DE BIENVENIDA Y RETORNO (ESCRITORIO / WORKSTATION) ---
+  const modalWelcomeDesktop = document.getElementById('modal-welcome-desktop') as HTMLDialogElement | null;
+  const closeWelcomeDesktopBtn = document.getElementById('close-welcome-desktop-btn');
+  const btnWelcomeEnterStudio = document.getElementById('btn-welcome-enter-studio');
+  const btnWelcomeNewBlank = document.getElementById('btn-welcome-new-blank');
+  const btnWelcomeOpenTemplates = document.getElementById('btn-welcome-open-templates');
+  const btnWelcomeViewAllProjects = document.getElementById('btn-welcome-view-all-projects');
+  const welcomeImportJson = document.getElementById('welcome-import-json') as HTMLInputElement | null;
+  const chkShowWelcomeStartup = document.getElementById('chk-show-welcome-startup') as HTMLInputElement | null;
+  const btnMenuWelcomeSplash = document.getElementById('btn-menu-welcome-splash');
+
+  const BLANK_NEW_SPEC: ModelSpec = {
+    id: `custom.model.${Date.now()}`,
+    name: 'Nuevo Modelo',
+    category: 'custom',
+    description: 'Proyecto creado en ModelCoder Studio.',
+    units: 'meters',
+    dimensions: { width: 1.0, depth: 1.0, height: 1.0 },
+    palette: 'industrial_hazard',
+    components: [
+      {
+        name: 'base_cube',
+        shape: 'box',
+        size: [1.0, 1.0, 1.0],
+        position: [0, 0.5, 0],
+        rotation: [0, 0, 0],
+        scale: [1, 1, 1],
+        color: '#8b9bb4',
+        texturePreset: 'scifi_panel_hull',
+        roughness: 0.5,
+        metalness: 0.3,
+        visible: true
+      }
+    ]
+  };
+
+  function renderWelcomeRecentProjects(): void {
+    const container = document.getElementById('welcome-recent-projects-list');
+    const badge = document.getElementById('welcome-drafts-badge');
+    if (!container) return;
+    const drafts = getProjectDrafts();
+    if (badge) badge.textContent = `${drafts.length}`;
+
+    if (drafts.length === 0) {
+      container.innerHTML = `
+        <div style="padding: 1.25rem 0.5rem; text-align: center; color: var(--text-dim); display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%;">
+          <span style="font-size: 1.6rem; margin-bottom: 0.35rem;">📦</span>
+          <p style="font-family: var(--font-pixel); font-size: 0.68rem; color: var(--ps1-gold); margin: 0 0 0.25rem 0;">
+            SIN BORRADORES RECIENTES
+          </p>
+          <span style="font-size: 0.68rem; line-height: 1.3;">
+            Tus modelos guardados en local aparecerán aquí para retomarlos al instante.
+          </span>
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = '';
+    const recents = drafts.slice(0, 4);
+    recents.forEach(draft => {
+      const row = document.createElement('div');
+      row.style.display = 'flex';
+      row.style.alignItems = 'center';
+      row.style.justifyContent = 'space-between';
+      row.style.gap = '0.5rem';
+      row.style.padding = '0.45rem 0.6rem';
+      row.style.background = '#091122';
+      row.style.border = '1px solid var(--ps1-steel)';
+      row.style.borderRadius = '2px';
+
+      const dStr = new Date(draft.updated_at).toLocaleDateString();
+
+      row.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 0.5rem; min-width: 0; flex-grow: 1;">
+          <div style="width: 34px; height: 34px; background: #050811; border: 1px solid var(--ps1-steel); display: flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden;">
+            ${draft.thumbnail
+              ? `<img src="${draft.thumbnail}" alt="" style="width: 100%; height: 100%; object-fit: contain;" />`
+              : `<span style="font-size: 0.9rem;">📦</span>`
+            }
+          </div>
+          <div style="min-width: 0; flex-grow: 1;">
+            <div style="font-family: var(--font-pixel); font-size: 0.7rem; color: var(--ps1-gold); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+              ${draft.name}
+            </div>
+            <div style="font-size: 0.64rem; color: var(--ps1-cyan); display: flex; gap: 0.4rem;">
+              <span>${draft.components_count} piezas</span>
+              <span>&bull;</span>
+              <span style="color: var(--text-dim);">${dStr}</span>
+            </div>
+          </div>
+        </div>
+        <button type="button" class="btn-mini btn-gold btn-welcome-resume" data-id="${draft.id}" style="font-size: 0.65rem; padding: 0.25rem 0.5rem;" title="Retomar en el editor">
+          ⚡ RETOMAR
+        </button>
+      `;
+
+      container.appendChild(row);
+    });
+
+    container.querySelectorAll('.btn-welcome-resume').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const id = (e.currentTarget as HTMLElement).dataset.id;
+        if (!id) return;
+        const draft = getProjectDraft(id);
+        if (draft && draft.spec) {
+          currentSpec = JSON.parse(JSON.stringify(draft.spec));
+          pushHistoryState(currentSpec);
+          renderCurrentSpec('visual', false);
+          modalWelcomeDesktop?.close();
+          showStudioToast(`⚡ Proyecto '${draft.name}' retomado.`);
+        }
+      });
+    });
+  }
+
+  function openWelcomeModal(): void {
+    if (!modalWelcomeDesktop) return;
+    renderWelcomeRecentProjects();
+    modalWelcomeDesktop.showModal();
+  }
+
+  // Eventos de la ventana de bienvenida
+  closeWelcomeDesktopBtn?.addEventListener('click', () => modalWelcomeDesktop?.close());
+  btnWelcomeEnterStudio?.addEventListener('click', () => modalWelcomeDesktop?.close());
+
+  btnWelcomeNewBlank?.addEventListener('click', () => {
+    currentSpec = JSON.parse(JSON.stringify(BLANK_NEW_SPEC));
+    currentSpec.id = `custom.model.${Date.now()}`;
+    pushHistoryState(currentSpec);
+    renderCurrentSpec('visual', false);
+    modalWelcomeDesktop?.close();
+    showStudioToast('✨ Nuevo proyecto en blanco listo para modelar.');
+  });
+
+  btnWelcomeOpenTemplates?.addEventListener('click', () => {
+    modalWelcomeDesktop?.close();
+    modalCatalogTemplates?.showModal();
+    renderCatalogTemplatesList();
+  });
+
+  btnWelcomeViewAllProjects?.addEventListener('click', () => {
+    modalWelcomeDesktop?.close();
+    modalMyProjects?.showModal();
+    renderProjectsList();
+  });
+
+  btnMenuWelcomeSplash?.addEventListener('click', () => {
+    topbarMoreMenu?.classList.add('hidden');
+    openWelcomeModal();
+  });
+
+  welcomeImportJson?.addEventListener('change', async (e) => {
+    const file = (e.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const imported = JSON.parse(text);
+      if (imported && Array.isArray(imported.components)) {
+        currentSpec = imported;
+        pushHistoryState(currentSpec);
+        renderCurrentSpec('visual', false);
+        modalWelcomeDesktop?.close();
+        showStudioToast(`📂 Proyecto '${imported.name || file.name}' importado.`);
+      } else {
+        showStudioToast('❌ El archivo no contiene un ModelSpec válido.', true);
+      }
+    } catch (err: any) {
+      showStudioToast(`❌ Error al importar JSON: ${err?.message || 'Error'}`, true);
+    }
+  });
+
+  if (chkShowWelcomeStartup) {
+    const savedPref = localStorage.getItem('modelcoder_show_welcome_startup');
+    chkShowWelcomeStartup.checked = savedPref !== 'false';
+    chkShowWelcomeStartup.addEventListener('change', () => {
+      localStorage.setItem('modelcoder_show_welcome_startup', chkShowWelcomeStartup.checked ? 'true' : 'false');
+    });
+  }
+
+  // Detección de entorno de escritorio (Tauri) para apertura automática
+  const isDesktopEnv = typeof window !== 'undefined' && ('__TAURI_INTERNALS__' in window || '__TAURI__' in window);
+  const hasUrlTarget = window.location.search.includes('model=') || window.location.search.includes('draft=') || window.location.hash.length > 20;
+  if (isDesktopEnv && !hasUrlTarget) {
+    const shouldShow = localStorage.getItem('modelcoder_show_welcome_startup') !== 'false';
+    if (shouldShow) {
+      setTimeout(() => {
+        openWelcomeModal();
+      }, 180);
     }
   }
 
