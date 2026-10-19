@@ -13,6 +13,7 @@
     "windows": [
       {
         "title": "ModelCoder 3D Studio",
+        "url": "studio/index.html",
         "width": 1440,
         "height": 900,
         "minWidth": 1024,

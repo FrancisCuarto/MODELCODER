@@ -504,6 +504,68 @@ const globalJsonLd = {
       }
       syncHeaderModelCount();
 
+      // Detección y Adaptación para Modo Escritorio (Tauri v2 Offline Workstation)
+      const isDesktop = typeof window !== 'undefined' && ('__TAURI_INTERNALS__' in window || '__TAURI__' in window);
+      if (isDesktop) {
+        document.documentElement.classList.add('is-desktop-app');
+
+        // 1. Logo conduce al Studio
+        const brandLink = document.querySelector('.brand-logo');
+        if (brandLink) {
+          brandLink.setAttribute('href', '/studio');
+          const badge = brandLink.querySelector('.brand-badge');
+          if (badge) badge.textContent = 'DESKTOP';
+        }
+
+        // 2. Enlace al Catálogo Web Comunitario externo
+        const catalogLinks = document.querySelectorAll('a[href="/"]');
+        catalogLinks.forEach((link) => {
+          if (link.classList.contains('nav-link') || link.textContent?.includes('Catálogo')) {
+            link.textContent = '> Catálogo Web ↗';
+            link.setAttribute('href', 'https://modelcoder.vercel.app');
+            link.setAttribute('target', '_blank');
+            link.setAttribute('rel', 'noopener noreferrer');
+            link.setAttribute('title', 'Explorar catálogo de creaciones comunitarias en tu navegador web');
+          }
+        });
+
+        // 3. Indicador de estado local offline
+        const statusText = document.getElementById('header-models-count');
+        if (statusText) {
+          statusText.textContent = 'ESTUDIO OFFLINE';
+          statusText.style.color = '#39ff14';
+        }
+
+        // 4. Botón de acceso directo a Texturas Locales en disco
+        const navLinks = document.querySelector('.nav-links');
+        if (navLinks && !document.getElementById('btn-desktop-textures')) {
+          const btnTextures = document.createElement('button');
+          btnTextures.id = 'btn-desktop-textures';
+          btnTextures.className = 'nav-link';
+          btnTextures.type = 'button';
+          btnTextures.style.background = 'transparent';
+          btnTextures.style.cursor = 'pointer';
+          btnTextures.style.color = 'var(--ps1-cyan)';
+          btnTextures.style.borderColor = 'var(--ps1-cyan)';
+          btnTextures.textContent = '📂 Texturas';
+          btnTextures.title = 'Abrir carpeta local de texturas personalizadas en disco';
+          btnTextures.addEventListener('click', async () => {
+            try {
+              const invoke = (window as any).__TAURI_INTERNALS__?.invoke || (window as any).__TAURI__?.core?.invoke;
+              if (invoke) {
+                await invoke('open_textures_folder');
+              }
+            } catch (err) {
+              console.warn('No se pudo invocar open_textures_folder:', err);
+            }
+          });
+          const moreContainer = document.getElementById('nav-more-container');
+          if (moreContainer) {
+            navLinks.insertBefore(btnTextures, moreContainer);
+          }
+        }
+      }
+
       const btnOpenAuth = document.getElementById('btn-open-auth');
       const authModal = document.getElementById('ps1-auth-modal');
       const btnCloseAuthModal = document.getElementById('btn-close-auth-modal');
@@ -1092,6 +1154,16 @@ const globalJsonLd = {
     </script>
 
     <style>
+      /* Optimizaciones de interfaz para Modo Escritorio (Tauri v2) */
+      :global(.is-desktop-app) .site-header {
+        padding: 0.25rem 0.75rem;
+        background: #080c16;
+        border-bottom: 1px solid var(--ps1-steel);
+      }
+      :global(.is-desktop-app) .site-footer {
+        display: none;
+      }
+
       .nav-link-inventory {
         background: transparent;
         border: 1px solid var(--ps1-steel);
