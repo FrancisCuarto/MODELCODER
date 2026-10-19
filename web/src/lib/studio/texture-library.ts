@@ -117,6 +117,42 @@ export class TextureLibrary {
   private static roughnessTextures = new Map<string, THREE.DataTexture>();
   private static presetTextures = new Set<THREE.Texture>();
   private static thumbnailCache = new Map<string, string>();
+  private static customTextures = new Map<string, THREE.Texture>();
+  private static customDataUrls = new Map<string, string>();
+
+  public static registerCustomTexture(id: string, dataUrl: string): THREE.Texture {
+    this.customDataUrls.set(id, dataUrl);
+    if (typeof Image !== 'undefined') {
+      const img = new Image();
+      const texture = new THREE.Texture(img);
+      texture.colorSpace = THREE.SRGBColorSpace;
+      texture.wrapS = THREE.RepeatWrapping;
+      texture.wrapT = THREE.RepeatWrapping;
+      img.onload = () => {
+        texture.needsUpdate = true;
+      };
+      img.src = dataUrl;
+      this.customTextures.set(id, texture);
+      return texture;
+    } else {
+      const texture = new THREE.DataTexture(new Uint8Array(4), 1, 1);
+      this.customTextures.set(id, texture);
+      return texture;
+    }
+  }
+
+  public static getCustomTexture(id: string): THREE.Texture | undefined {
+    return this.customTextures.get(id);
+  }
+
+  public static getCustomDataUrl(id: string): string | undefined {
+    return this.customDataUrls.get(id);
+  }
+
+  public static hasCustomTexture(id: string): boolean {
+    return this.customTextures.has(id);
+  }
+
 
   /**
    * 118 Canonical Procedural PBR Profiles across 8 material families.
@@ -2045,6 +2081,26 @@ export class TextureLibrary {
    * Builds an authentic PS1 / PBR Three.js MeshStandardMaterial for a component.
    */
   public static getMaterial(comp: ComponentDef, baseColor: THREE.Color): THREE.MeshStandardMaterial {
+    if (comp.texturePreset && (comp.texturePreset.startsWith('local:') || comp.texturePreset.startsWith('custom:') || this.customTextures.has(comp.texturePreset))) {
+      const texKey = comp.texturePreset.replace(/^(local|custom):/, '');
+      const customTex = this.customTextures.get(texKey) || this.customTextures.get(comp.texturePreset);
+      if (customTex) {
+        if (comp.uvScale) {
+          customTex.repeat.set(comp.uvScale[0], comp.uvScale[1]);
+        }
+        return new THREE.MeshStandardMaterial({
+          color: comp.color && !comp.color.startsWith('default') ? baseColor : new THREE.Color('#ffffff'),
+          roughness: comp.roughness ?? 0.6,
+          metalness: comp.metalness ?? 0.2,
+          flatShading: false,
+          map: customTex,
+          wireframe: Boolean(comp.wireframe),
+          transparent: Boolean(comp.transparent || (comp.opacity !== undefined && comp.opacity < 1.0)),
+          opacity: comp.opacity ?? 1.0
+        });
+      }
+    }
+
     const presetName = this.resolvePresetName(comp.texturePreset);
     if (!presetName) {
       // Legacy color-only material

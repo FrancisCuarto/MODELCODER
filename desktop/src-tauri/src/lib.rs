@@ -1,5 +1,6 @@
 use std::fs;
 use std::path::PathBuf;
+use base64::Engine;
 
 /// Returns the local path where custom user textures are stored:
 /// e.g. `%USERPROFILE%/Documents/ModelCoder/Textures` on Windows
@@ -36,6 +37,44 @@ fn list_local_textures() -> Result<Vec<String>, String> {
     }
     files.sort();
     Ok(files)
+}
+
+/// Reads a texture file from user's Textures directory and returns base64 DataURL
+#[tauri::command]
+fn read_local_texture_data_url(file_name: String) -> Result<String, String> {
+    let dir_str = get_textures_dir()?;
+    let path = PathBuf::from(dir_str).join(&file_name);
+    if !path.exists() {
+        return Err(format!("File not found: {}", file_name));
+    }
+    let ext = path.extension()
+        .and_then(|s| s.to_str())
+        .unwrap_or("png")
+        .to_lowercase();
+    let mime = match ext.as_str() {
+        "jpg" | "jpeg" => "image/jpeg",
+        "webp" => "image/webp",
+        _ => "image/png",
+    };
+    let bytes = fs::read(&path).map_err(|e| e.to_string())?;
+    let b64 = base64::engine::general_purpose::STANDARD.encode(&bytes);
+    Ok(format!("data:{};base64,{}", mime, b64))
+}
+
+/// Imports an image into user's Textures directory from a base64 DataURL or raw base64
+#[tauri::command]
+fn import_texture_to_folder(file_name: String, base64_data: String) -> Result<String, String> {
+    let dir_str = get_textures_dir()?;
+    let path = PathBuf::from(&dir_str).join(&file_name);
+    let pure_b64 = if let Some(idx) = base64_data.find(";base64,") {
+        &base64_data[(idx + 8)..]
+    } else {
+        &base64_data
+    };
+    let bytes = base64::engine::general_purpose::STANDARD.decode(pure_b64.trim())
+        .map_err(|e| e.to_string())?;
+    fs::write(&path, bytes).map_err(|e| e.to_string())?;
+    Ok(file_name)
 }
 
 /// Opens the textures folder in Windows Explorer / OS file manager
@@ -76,6 +115,8 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             get_textures_dir,
             list_local_textures,
+            read_local_texture_data_url,
+            import_texture_to_folder,
             open_textures_folder,
             export_to_disk
         ])

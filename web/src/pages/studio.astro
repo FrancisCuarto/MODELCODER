@@ -1535,6 +1535,69 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     (window as any).__modelcoderStudioReady = true;
   }
 
+  // Detección de entorno de escritorio (Tauri)
+  const isDesktopEnv = typeof window !== 'undefined' && (
+    '__TAURI_INTERNALS__' in window ||
+    '__TAURI__' in window ||
+    window.location.hostname === 'tauri.localhost' ||
+    window.location.protocol === 'tauri:'
+  );
+
+  const getTauriInvoke = (): ((cmd: string, args?: any) => Promise<any>) | null => {
+    if (typeof window === 'undefined') return null;
+    return (window as any).__TAURI_INTERNALS__?.invoke || (window as any).__TAURI__?.core?.invoke || null;
+  };
+
+  let localTexturesList: string[] = [];
+  let currentActiveMatCategory = 'all';
+
+  async function refreshLocalTextures(): Promise<void> {
+    if (!isDesktopEnv) return;
+    const invoke = getTauriInvoke();
+    if (!invoke) return;
+    try {
+      const list = await invoke('list_local_textures') as string[];
+      localTexturesList = Array.isArray(list) ? list : [];
+      const countEl = document.getElementById('local-mat-count');
+      if (countEl) countEl.textContent = String(localTexturesList.length);
+
+      for (const file of localTexturesList) {
+        if (!TextureLibrary.hasCustomTexture('local:' + file)) {
+          try {
+            const dataUrl = await invoke('read_local_texture_data_url', { fileName: file }) as string;
+            if (dataUrl) {
+              TextureLibrary.registerCustomTexture('local:' + file, dataUrl);
+              TextureLibrary.registerCustomTexture(file, dataUrl);
+            }
+          } catch (e) {
+            console.warn('Error reading texture', file, e);
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('Error fetching local textures:', err);
+    }
+  }
+
+  async function ensureLocalTextureLoaded(preset: string): Promise<void> {
+    if (!isDesktopEnv || !preset) return;
+    if (TextureLibrary.hasCustomTexture(preset)) return;
+    const invoke = getTauriInvoke();
+    if (!invoke) return;
+    const fileName = preset.replace(/^(local|custom):/, '');
+    try {
+      const dataUrl = await invoke('read_local_texture_data_url', { fileName }) as string;
+      if (dataUrl) {
+        TextureLibrary.registerCustomTexture(preset, dataUrl);
+        TextureLibrary.registerCustomTexture(fileName, dataUrl);
+        TextureLibrary.registerCustomTexture('local:' + fileName, dataUrl);
+        renderCurrentSpec('visual', false, false);
+      }
+    } catch (e) {
+      console.warn('Could not read local texture:', preset, e);
+    }
+  }
+
   // State Management
   let generationCounter = 1;
   let activeMode: 'ai' | 'visual' | 'code' = 'visual';
@@ -2257,6 +2320,15 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     try {
       const reqId = `GEN-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
       generationCounter++;
+
+      // Carga preventiva de texturas locales en entorno de escritorio
+      if (isDesktopEnv && currentSpec.components) {
+        for (const c of currentSpec.components) {
+          if (c.texturePreset?.startsWith('local:') && !TextureLibrary.hasCustomTexture(c.texturePreset)) {
+            ensureLocalTextureLoaded(c.texturePreset);
+          }
+        }
+      }
 
       const { group, stats } = ProceduralEngine.buildModelFromSpec(currentSpec);
       if (viewport) {
@@ -3141,6 +3213,7 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
                   <button type="button" class="mat-cat-pill" data-mat-cat="glass">🪟 Vidrios</button>
                   <button type="button" class="mat-cat-pill" data-mat-cat="fabrics_organic">🧵 Telas/Otros</button>
                   <button type="button" class="mat-cat-pill" data-mat-cat="variants">🎨 Variantes</button>
+                  <button type="button" class="mat-cat-pill pill-local-pc" data-mat-cat="local_pc" id="pill-local-pc" style="display: none; color: var(--ps1-gold); border-color: var(--ps1-gold); font-weight: bold;" title="Texturas personalizadas de tu disco local (Tauri)">💻 MI PC (<span id="local-mat-count">0</span>)</button>
                 </div>
               </div>
               <div id="mat-browser-grid" class="mat-browser-grid" role="listbox" aria-label="Explorador visual de materiales">
@@ -3177,6 +3250,23 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
   function renderTextureSelectOptionsHTML(selectedPreset?: string): string {
     const categories = Object.keys(MATERIAL_CATEGORY_LABELS) as MaterialFamilyCategory[];
     let html = '';
+
+    if (isDesktopEnv && localTexturesList.length > 0) {
+      html += `<optgroup label="💻 Texturas Locales de PC (${localTexturesList.length})">`;
+      for (const file of localTexturesList) {
+        const val = 'local:' + file;
+        const sel = selectedPreset === val || selectedPreset === file ? 'selected' : '';
+        html += `<option value="${val}" ${sel}>${file}</option>`;
+      }
+      html += `</optgroup>`;
+    }
+
+    if (selectedPreset && selectedPreset.startsWith('local:') && !localTexturesList.includes(selectedPreset.replace(/^local:/, ''))) {
+      const cleanFile = selectedPreset.replace(/^local:/, '');
+      html += `<optgroup label="💻 Textura Local Activa">`;
+      html += `<option value="${selectedPreset}" selected>${cleanFile}</option>`;
+      html += `</optgroup>`;
+    }
 
     for (const cat of categories) {
       const meta = MATERIAL_CATEGORY_LABELS[cat];
@@ -3906,64 +3996,95 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     const matBrowserGrid = document.getElementById('mat-browser-grid');
     const inpMatSearch = document.getElementById('inp-mat-browser-search') as HTMLInputElement | null;
     const matCatPills = document.querySelectorAll('#mat-cat-pills .mat-cat-pill');
-    let activeMatCategory = 'all';
+    let activeMatCategory = currentActiveMatCategory;
+
+    const pillLocalPc = document.getElementById('pill-local-pc') as HTMLButtonElement | null;
+    if (isDesktopEnv && pillLocalPc) {
+      pillLocalPc.style.display = 'inline-flex';
+      const countEl = document.getElementById('local-mat-count');
+      if (countEl) countEl.textContent = String(localTexturesList.length);
+    }
+
+    if (activeMatCategory !== 'all') {
+      matCatPills.forEach((p) => {
+        if ((p as HTMLElement).dataset.matCat === activeMatCategory) {
+          p.classList.add('active');
+        } else {
+          p.classList.remove('active');
+        }
+      });
+    }
 
     const applyPresetToComponent = (val: string) => {
       if (val) {
         comp.texturePreset = val;
-        const variant = TextureLibrary.getParametricVariant(val);
-        const resolvedName = TextureLibrary.resolvePresetName(val);
-        const profile = resolvedName ? TextureLibrary.PROFILES[resolvedName] : undefined;
-
-        const isTransp = Boolean(variant?.transparent || profile?.transparent);
-        const defOpacity = variant?.opacity ?? profile?.opacity ?? 0.55;
-
-        if (isTransp) {
-          comp.transparent = true;
-          comp.opacity = defOpacity;
-          if (chkTransparent) chkTransparent.checked = true;
-          if (inpOpacity) inpOpacity.value = String(comp.opacity);
-          if (dispOpacity) dispOpacity.textContent = comp.opacity.toFixed(2);
-        } else {
-          // Reset transparency when switching from glass/hologram to an opaque material
+        if (val.startsWith('local:') || val.startsWith('custom:')) {
           comp.transparent = false;
           comp.opacity = 1.0;
           if (chkTransparent) chkTransparent.checked = false;
           if (inpOpacity) inpOpacity.value = '1.0';
           if (dispOpacity) dispOpacity.textContent = '1.00';
-        }
+          comp.color = '#ffffff';
+          const inpColor = document.getElementById('inp-mat-color') as HTMLInputElement | null;
+          const inpHex = document.getElementById('inp-mat-color-hex') as HTMLInputElement | null;
+          if (inpColor) inpColor.value = '#ffffff';
+          if (inpHex) inpHex.value = '#ffffff';
+          ensureLocalTextureLoaded(val);
+        } else {
+          const variant = TextureLibrary.getParametricVariant(val);
+          const resolvedName = TextureLibrary.resolvePresetName(val);
+          const profile = resolvedName ? TextureLibrary.PROFILES[resolvedName] : undefined;
 
-        // Update roughness, metalness & normalStrength sliders to reflect selected material's physics defaults
-        const targetRoughness = variant?.roughness ?? profile?.roughness;
-        const targetMetalness = variant?.metalness ?? profile?.metalness;
-        const targetNormal = profile?.normalStrength ?? 0.55;
+          const isTransp = Boolean(variant?.transparent || profile?.transparent);
+          const defOpacity = variant?.opacity ?? profile?.opacity ?? 0.55;
 
-        if (targetRoughness !== undefined) {
-          comp.roughness = targetRoughness;
-          const inpR = document.getElementById('inp-roughness') as HTMLInputElement | null;
-          const dispR = document.getElementById('disp-roughness');
-          if (inpR) inpR.value = String(targetRoughness);
-          if (dispR) dispR.textContent = String(targetRoughness);
-        }
-        if (targetMetalness !== undefined) {
-          comp.metalness = targetMetalness;
-          const inpM = document.getElementById('inp-metalness') as HTMLInputElement | null;
-          const dispM = document.getElementById('disp-metalness');
-          if (inpM) inpM.value = String(targetMetalness);
-          if (dispM) dispM.textContent = String(targetMetalness);
-        }
-        comp.normalStrength = targetNormal;
-        const inpN = document.getElementById('inp-mat-normal') as HTMLInputElement | null;
-        const dispN = document.getElementById('disp-mat-normal');
-        if (inpN) inpN.value = String(targetNormal);
-        if (dispN) dispN.textContent = targetNormal.toFixed(2);
+          if (isTransp) {
+            comp.transparent = true;
+            comp.opacity = defOpacity;
+            if (chkTransparent) chkTransparent.checked = true;
+            if (inpOpacity) inpOpacity.value = String(comp.opacity);
+            if (dispOpacity) dispOpacity.textContent = comp.opacity.toFixed(2);
+          } else {
+            // Reset transparency when switching from glass/hologram to an opaque material
+            comp.transparent = false;
+            comp.opacity = 1.0;
+            if (chkTransparent) chkTransparent.checked = false;
+            if (inpOpacity) inpOpacity.value = '1.0';
+            if (dispOpacity) dispOpacity.textContent = '1.00';
+          }
 
-        const targetWear = variant?.wear ?? 0;
-        comp.wear = targetWear;
-        const inpW = document.getElementById('inp-mat-wear') as HTMLInputElement | null;
-        const dispW = document.getElementById('disp-mat-wear');
-        if (inpW) inpW.value = String(targetWear);
-        if (dispW) dispW.textContent = `${Math.round(targetWear * 100)}%`;
+          // Update roughness, metalness & normalStrength sliders to reflect selected material's physics defaults
+          const targetRoughness = variant?.roughness ?? profile?.roughness;
+          const targetMetalness = variant?.metalness ?? profile?.metalness;
+          const targetNormal = profile?.normalStrength ?? 0.55;
+
+          if (targetRoughness !== undefined) {
+            comp.roughness = targetRoughness;
+            const inpR = document.getElementById('inp-roughness') as HTMLInputElement | null;
+            const dispR = document.getElementById('disp-roughness');
+            if (inpR) inpR.value = String(targetRoughness);
+            if (dispR) dispR.textContent = String(targetRoughness);
+          }
+          if (targetMetalness !== undefined) {
+            comp.metalness = targetMetalness;
+            const inpM = document.getElementById('inp-metalness') as HTMLInputElement | null;
+            const dispM = document.getElementById('disp-metalness');
+            if (inpM) inpM.value = String(targetMetalness);
+            if (dispM) dispM.textContent = String(targetMetalness);
+          }
+          comp.normalStrength = targetNormal;
+          const inpN = document.getElementById('inp-mat-normal') as HTMLInputElement | null;
+          const dispN = document.getElementById('disp-mat-normal');
+          if (inpN) inpN.value = String(targetNormal);
+          if (dispN) dispN.textContent = targetNormal.toFixed(2);
+
+          const targetWear = variant?.wear ?? 0;
+          comp.wear = targetWear;
+          const inpW = document.getElementById('inp-mat-wear') as HTMLInputElement | null;
+          const dispW = document.getElementById('disp-mat-wear');
+          if (inpW) inpW.value = String(targetWear);
+          if (dispW) dispW.textContent = `${Math.round(targetWear * 100)}%`;
+        }
       } else {
         delete comp.texturePreset;
         comp.transparent = false;
@@ -3987,6 +4108,118 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     const renderMaterialBrowserCards = () => {
       if (!matBrowserGrid) return;
       const q = (inpMatSearch?.value || '').toLowerCase().trim();
+
+      const PLACEHOLDER_THUMB = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+
+      if (activeMatCategory === 'local_pc') {
+        const filteredFiles = localTexturesList.filter((f) => !q || f.toLowerCase().includes(q));
+
+        const toolbarHtml = `
+          <div class="local-tex-toolbar" style="grid-column: 1 / -1; display: flex; gap: 0.35rem; margin-bottom: 0.5rem; flex-wrap: wrap; align-items: center; justify-content: space-between; padding: 0.4rem; background: #0c1017; border: 1px dashed var(--ps1-gold); border-radius: 4px;">
+            <div style="display: flex; gap: 0.35rem; align-items: center;">
+              <button type="button" id="btn-open-tex-folder" class="btn-tool-mini" style="background: #1a2233; color: var(--ps1-gold); border: 1px solid var(--ps1-gold); font-size: 0.65rem; padding: 0.25rem 0.5rem; cursor: pointer; border-radius: 3px;" title="Abrir carpeta local de texturas en el explorador de archivos">
+                📂 ABRIR CARPETA
+              </button>
+              <button type="button" id="btn-refresh-local-tex" class="btn-tool-mini" style="background: #1a2233; color: var(--ps1-cyan); border: 1px solid var(--ps1-cyan); font-size: 0.65rem; padding: 0.25rem 0.5rem; cursor: pointer; border-radius: 3px;" title="Volver a escanear archivos en disco">
+                🔄 REFRESCAR
+              </button>
+            </div>
+            <label id="lbl-add-local-tex" class="btn-tool-mini" style="background: var(--ps1-gold); color: #000; font-weight: bold; font-size: 0.65rem; padding: 0.25rem 0.5rem; cursor: pointer; border-radius: 3px; display: inline-flex; align-items: center; gap: 0.25rem;" title="Importar imagen (PNG, JPG, WebP) directamente a la carpeta de texturas">
+              ➕ AÑADIR
+              <input type="file" id="inp-add-local-file" accept="image/png,image/jpeg,image/webp" style="display: none;" />
+            </label>
+          </div>
+        `;
+
+        const wireLocalToolbar = () => {
+          const btnOpen = matBrowserGrid.querySelector('#btn-open-tex-folder');
+          btnOpen?.addEventListener('click', async () => {
+            const invoke = getTauriInvoke();
+            if (invoke) {
+              try {
+                await invoke('open_textures_folder');
+              } catch (err) {
+                showStudioToast('No se pudo abrir la carpeta de texturas', true);
+              }
+            }
+          });
+
+          const btnRef = matBrowserGrid.querySelector('#btn-refresh-local-tex');
+          btnRef?.addEventListener('click', async () => {
+            showStudioToast('🔄 Escaneando texturas...');
+            await refreshLocalTextures();
+            renderMaterialBrowserCards();
+            showStudioToast(`✅ ${localTexturesList.length} texturas listas`);
+          });
+
+          const inpFile = matBrowserGrid.querySelector('#inp-add-local-file') as HTMLInputElement | null;
+          inpFile?.addEventListener('change', async () => {
+            const file = inpFile.files?.[0];
+            if (!file) return;
+            const invoke = getTauriInvoke();
+            if (!invoke) return;
+            try {
+              showStudioToast(`Importando ${file.name}...`);
+              const reader = new FileReader();
+              reader.onload = async () => {
+                const dataUrl = reader.result as string;
+                try {
+                  await invoke('import_texture_to_folder', { fileName: file.name, base64Data: dataUrl });
+                  TextureLibrary.registerCustomTexture('local:' + file.name, dataUrl);
+                  TextureLibrary.registerCustomTexture(file.name, dataUrl);
+                  await refreshLocalTextures();
+                  renderMaterialBrowserCards();
+                  showStudioToast(`✅ Textura guardada: ${file.name}`);
+                } catch (e: any) {
+                  showStudioToast(`Error al guardar textura: ${e}`, true);
+                }
+              };
+              reader.readAsDataURL(file);
+            } catch (err: any) {
+              showStudioToast(`Error al leer archivo: ${err.message}`, true);
+            }
+          });
+        };
+
+        if (filteredFiles.length === 0) {
+          matBrowserGrid.innerHTML = toolbarHtml + `
+            <div class="mat-empty-msg" style="grid-column: 1 / -1; padding: 1.5rem 1rem; text-align: center; color: var(--text-dim); font-size: 0.75rem; background: #0c1017; border-radius: 4px; border: 1px dashed var(--ps1-steel);">
+              ${localTexturesList.length === 0
+                ? 'No hay texturas en <code>Documentos/ModelCoder/Textures/</code>.<br>Haz clic en <b>➕ AÑADIR</b> o <b>📂 ABRIR CARPETA</b> para colocar tus imágenes PNG o JPG.'
+                : `Sin resultados para "${escapeHtml(q)}"`}
+            </div>
+          `;
+          wireLocalToolbar();
+          return;
+        }
+
+        matBrowserGrid.innerHTML = toolbarHtml + filteredFiles.map((file) => {
+          const presetId = 'local:' + file;
+          const isActive = comp.texturePreset === presetId || comp.texturePreset === file;
+          const thumbUrl = TextureLibrary.getCustomDataUrl(presetId) || TextureLibrary.getCustomDataUrl(file) || PLACEHOLDER_THUMB;
+          return `
+            <button type="button" class="mat-card-btn ${isActive ? 'active' : ''}" data-preset-id="${presetId}" title="${escapeHtml(file)}">
+              <img src="${thumbUrl}" alt="${escapeHtml(file)}" class="mat-card-thumb" style="object-fit: cover;" loading="lazy" />
+              <div class="mat-card-meta">
+                <span class="mat-card-title" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(file)}</span>
+                <div class="mat-card-badges">
+                  <span class="mat-pbr-badge" style="background: var(--ps1-gold); color: #000; font-weight: bold;">PC</span>
+                </div>
+              </div>
+            </button>
+          `;
+        }).join('');
+
+        wireLocalToolbar();
+
+        matBrowserGrid.querySelectorAll('.mat-card-btn').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            const presetId = (btn as HTMLElement).dataset.presetId || '';
+            applyPresetToComponent(presetId);
+          });
+        });
+        return;
+      }
 
       interface BrowserItem {
         id: string;
@@ -4031,7 +4264,6 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
         return;
       }
 
-      const PLACEHOLDER_THUMB = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
       const pendingThumbIds: string[] = [];
 
       matBrowserGrid.innerHTML = items
@@ -4103,6 +4335,7 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
         matCatPills.forEach((p) => p.classList.remove('active'));
         pill.classList.add('active');
         activeMatCategory = (pill as HTMLElement).dataset.matCat || 'all';
+        currentActiveMatCategory = activeMatCategory;
         renderMaterialBrowserCards();
       });
     });
@@ -7451,13 +7684,7 @@ if __name__ == "__main__":
     });
   }
 
-  // Detección de entorno de escritorio (Tauri) para apertura automática
-  const isDesktopEnv = typeof window !== 'undefined' && (
-    '__TAURI_INTERNALS__' in window ||
-    '__TAURI__' in window ||
-    window.location.hostname === 'tauri.localhost' ||
-    window.location.protocol === 'tauri:'
-  );
+  // Apertura automática del modal de bienvenida en entorno de escritorio
   const hasUrlTarget = window.location.search.includes('model=') || window.location.search.includes('draft=') || window.location.hash.length > 20;
   if (isDesktopEnv && !hasUrlTarget) {
     const shouldShow = localStorage.getItem('modelcoder_show_welcome_startup') !== 'false';
@@ -7473,6 +7700,13 @@ if __name__ == "__main__":
   setStudioWorkspace('layout');
   renderCurrentSpec('visual', false);
   handleInitialUrlSpec();
+
+  if (isDesktopEnv) {
+    refreshLocalTextures().then(() => {
+      const countEl = document.getElementById('local-mat-count');
+      if (countEl) countEl.textContent = String(localTexturesList.length);
+    });
+  }
 </script>
 </Layout>
 

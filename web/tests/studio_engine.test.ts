@@ -2696,6 +2696,65 @@ test('Modular Catalog (General): 100 modelos modulares integrados en catálogo t
   assert.equal(getAllModularModels().length, 100, 'getAllModularModels debe devolver exactamente 100 modelos');
 });
 
+test('Custom & Local Textures: TextureLibrary permite registrar y consultar texturas de disco/dataUrl', async () => {
+  const { TextureLibrary } = await import('../src/lib/studio/texture-library.ts');
+  const sampleDataUrl = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4////fwAJ+wP9KobjigAAAABJRU5ErkJggg==';
+  
+  TextureLibrary.registerCustomTexture('local:metal_rust.png', sampleDataUrl);
+  assert.equal(TextureLibrary.hasCustomTexture('local:metal_rust.png'), true);
+  assert.equal(TextureLibrary.getCustomDataUrl('local:metal_rust.png'), sampleDataUrl);
+  assert.ok(TextureLibrary.getCustomTexture('local:metal_rust.png'));
+
+  const comp: any = {
+    name: 'test_local_piece',
+    shape: 'box',
+    size: [1, 1, 1],
+    position: [0, 0, 0],
+    rotation: [0, 0, 0],
+    scale: [1, 1, 1],
+    texturePreset: 'local:metal_rust.png'
+  };
+
+  const mat = TextureLibrary.getMaterial(comp, new THREE.Color('#ffffff'));
+  assert.ok(mat);
+  assert.ok(mat.map, 'El material debe tener asignado el mapa de la textura local');
+});
+
+test('Custom & Local Textures: ProceduralEngine y exportSpec soportan componentes con texturas locales', async () => {
+  const { ProceduralEngine } = await import('../src/lib/studio/procedural-engine.ts');
+  const { GLBExporterService } = await import('../src/lib/studio/glb-exporter.ts');
+
+  const spec: any = {
+    id: 'test.custom.tex.model',
+    name: 'Caja Textura Local',
+    description: 'Modelo de prueba con textura local',
+    units: 'meters',
+    dimensions: { width: 1, depth: 1, height: 1 },
+    palette: 'industrial_hazard',
+    components: [
+      {
+        name: 'caja_local',
+        shape: 'box',
+        size: [1, 1, 1],
+        position: [0, 0.5, 0],
+        rotation: [0, 0, 0],
+        scale: [1, 1, 1],
+        texturePreset: 'local:metal_rust.png'
+      }
+    ]
+  };
+
+  const { group, stats } = ProceduralEngine.buildModelFromSpec(spec);
+  assert.ok(group);
+  assert.ok(stats.triangles > 0);
+
+  const buffer = await GLBExporterService.exportSpec(spec);
+  assert.ok(buffer);
+  assert.ok(buffer.byteLength > 100);
+
+  ProceduralEngine.disposeHierarchy(group);
+});
+
 // Teardown: ensure Node exits cleanly after tests
 test('Teardown: Exit cleanly', () => {
   setTimeout(() => process.exit(0), 100);
