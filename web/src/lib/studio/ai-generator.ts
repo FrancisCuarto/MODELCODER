@@ -431,11 +431,12 @@ Return ONLY valid JSON matching this schema:
       }
     };
 
-    // Google Gemini API production models in priority order: 2.0-flash (fastest), 1.5-flash (universal), 2.5-flash
+    // Google Gemini API production models in priority order (los modelos 1.5/2.0/2.5 fueron retirados y devuelven 404).
+    // gemini-3.8-flash es el Flash estable actual; 3.7 y 3.6 quedan como respaldo si el primero no está disponible.
     const candidateModels = [
-      'gemini-2.0-flash',
-      'gemini-1.5-flash',
-      'gemini-2.5-flash'
+      'gemini-3.8-flash',
+      'gemini-3.7-flash',
+      'gemini-3.6-flash'
     ];
     let lastError: Error | null = null;
 
