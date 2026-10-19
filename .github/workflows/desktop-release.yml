@@ -1,0 +1,65 @@
+name: Build & Release Desktop App
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    name: Windows Installer (.exe / .msi)
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+          cache-dependency-path: desktop/package-lock.json
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - name: Build Web Frontend
+        run: |
+          cd web
+          npm ci
+          npm run build
+
+      - name: Install Desktop Dependencies
+        run: |
+          cd desktop
+          npm ci
+
+      - name: Build Desktop Application (Tauri v2)
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          projectPath: './desktop'
+          tagName: ${{ github.ref_name }}
+          releaseName: 'ModelCoder Desktop v${{ github.ref_name }}'
+          releaseBody: 'Versión ejecutable nativa de ModelCoder 3D Studio para Windows.'
+          releaseDraft: false
+          prerelease: false
+
+      - name: Upload Windows Installer Artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ModelCoder-3D-Studio-Windows
+          path: |
+            desktop/src-tauri/target/release/bundle/msi/*.msi
+            desktop/src-tauri/target/release/bundle/nsis/*.exe
+            desktop/src-tauri/target/release/*.exe
+          if-no-files-found: warn
