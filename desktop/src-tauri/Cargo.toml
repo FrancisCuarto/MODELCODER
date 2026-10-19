@@ -1,6 +1,6 @@
 [package]
 name = "modelcoder-desktop"
-version = "2.6.0"
+version = "2.6.1"
 description = "ModelCoder 3D Studio - Native Desktop Application"
 authors = ["Franciscuarto"]
 license = "MIT"
