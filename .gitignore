@@ -38,6 +38,8 @@ yarn-error.log*
 desktop/node_modules/
 desktop/src-tauri/target/
 desktop/src-tauri/gen/
+modelcoder-desktop.exe
+uninstall.exe
 
 # Local personal configs
 .export_config.json

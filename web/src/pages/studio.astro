@@ -7452,7 +7452,12 @@ if __name__ == "__main__":
   }
 
   // Detección de entorno de escritorio (Tauri) para apertura automática
-  const isDesktopEnv = typeof window !== 'undefined' && ('__TAURI_INTERNALS__' in window || '__TAURI__' in window);
+  const isDesktopEnv = typeof window !== 'undefined' && (
+    '__TAURI_INTERNALS__' in window ||
+    '__TAURI__' in window ||
+    window.location.hostname === 'tauri.localhost' ||
+    window.location.protocol === 'tauri:'
+  );
   const hasUrlTarget = window.location.search.includes('model=') || window.location.search.includes('draft=') || window.location.hash.length > 20;
   if (isDesktopEnv && !hasUrlTarget) {
     const shouldShow = localStorage.getItem('modelcoder_show_welcome_startup') !== 'false';

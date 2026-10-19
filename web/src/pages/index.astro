@@ -43,6 +43,18 @@ const categories = [
   description="Biblioteca abierta de modelos 3D low-poly y generadores procedurales en formato universal GLB para Godot 4, Unity y Blender. Personalizá y descargá assets 3D optimizados para videojuegos."
   keywords="modelos 3d gratis, descargar glb, generadores 3d procedurales, low poly 3d, godot 3d assets, unity 3d props, blender assets, ps1 3d, sci fi 3d models"
 >
+  <script is:inline>
+    // En la app de escritorio nativa (Tauri), la portada no se muestra: redirige de inmediato al Studio 3D
+    if (typeof window !== 'undefined' && (
+      '__TAURI_INTERNALS__' in window ||
+      '__TAURI__' in window ||
+      window.location.hostname === 'tauri.localhost' ||
+      window.location.protocol === 'tauri:'
+    )) {
+      window.location.replace('/studio');
+    }
+  </script>
+
   <!-- Hero Window -->
   <section class="ps1-window hero-window">
     <div class="ps1-titlebar">

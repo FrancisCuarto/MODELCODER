@@ -505,7 +505,12 @@ const globalJsonLd = {
       syncHeaderModelCount();
 
       // Detección y Adaptación para Modo Escritorio (Tauri v2 Offline Workstation)
-      const isDesktop = typeof window !== 'undefined' && ('__TAURI_INTERNALS__' in window || '__TAURI__' in window);
+      const isDesktop = typeof window !== 'undefined' && (
+        '__TAURI_INTERNALS__' in window ||
+        '__TAURI__' in window ||
+        window.location.hostname === 'tauri.localhost' ||
+        window.location.protocol === 'tauri:'
+      );
       if (isDesktop) {
         document.documentElement.classList.add('is-desktop-app');
 
