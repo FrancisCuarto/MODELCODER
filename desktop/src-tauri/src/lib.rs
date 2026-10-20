@@ -106,6 +106,33 @@ fn export_to_disk(file_path: String, content: String) -> Result<bool, String> {
     Ok(true)
 }
 
+/// Opens any external URL (http:// or https://) in the user's default system browser
+#[tauri::command]
+fn open_external_url(url: String) -> Result<bool, String> {
+    #[cfg(target_os = "windows")]
+    {
+        let _ = std::process::Command::new("rundll32")
+            .args(["url.dll,FileProtocolHandler", &url])
+            .spawn()
+            .map_err(|e| e.to_string())?;
+    }
+    #[cfg(target_os = "macos")]
+    {
+        let _ = std::process::Command::new("open")
+            .arg(&url)
+            .spawn()
+            .map_err(|e| e.to_string())?;
+    }
+    #[cfg(target_os = "linux")]
+    {
+        let _ = std::process::Command::new("xdg-open")
+            .arg(&url)
+            .spawn()
+            .map_err(|e| e.to_string())?;
+    }
+    Ok(true)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -118,8 +145,10 @@ pub fn run() {
             read_local_texture_data_url,
             import_texture_to_folder,
             open_textures_folder,
-            export_to_disk
+            export_to_disk,
+            open_external_url
         ])
         .run(tauri::generate_context!())
         .expect("error while running ModelCoder desktop application");
 }
+

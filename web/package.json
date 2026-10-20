@@ -8,7 +8,7 @@
     "start": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "test": "node --experimental-strip-types tests/studio_engine.test.ts && node --experimental-strip-types tests/user_inventory.test.ts"
+    "test": "node --experimental-strip-types tests/studio_engine.test.ts && node --experimental-strip-types tests/user_inventory.test.ts && node --experimental-strip-types tests/desktop_bridge.test.ts"
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.7.4",

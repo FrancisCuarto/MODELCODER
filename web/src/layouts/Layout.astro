@@ -202,6 +202,7 @@ const globalJsonLd = {
                   <span id="user-email-text" class="user-email-text"></span>
                 </div>
                 <button id="dropdown-open-inventory" class="dropdown-item" type="button" style="text-align: left; width: 100%; background: transparent; border: none; font-family: inherit; font-size: inherit; cursor: pointer; color: var(--ps1-cyan);">&gt; MI INVENTARIO 🎒</button>
+                <button id="btn-export-session-code" class="dropdown-item" type="button" style="text-align: left; width: 100%; background: transparent; border: none; font-family: inherit; font-size: inherit; cursor: pointer; color: var(--ps1-gold); font-weight: bold;">&gt; COPIAR CÓDIGO PARA APP ESCRITORIO 🔑</button>
                 <a href="/studio" class="dropdown-item">&gt; STUDIO WORKSPACE</a>
                 <a href="/colaboradores" class="dropdown-item" style="color: var(--ps1-gold); font-weight: bold;">&gt; PANEL COLABORADORES 👑</a>
                 <button id="btn-logout" class="dropdown-item dropdown-item-danger" type="button">&gt; CERRAR SESIÓN</button>
@@ -232,15 +233,22 @@ const globalJsonLd = {
             <button type="button" class="auth-tab active" data-tab="oauth">OAUTH GITHUB</button>
             <button type="button" class="auth-tab" data-tab="login">INICIAR SESIÓN</button>
             <button type="button" class="auth-tab" data-tab="signup">REGISTRARSE</button>
+            <button type="button" class="auth-tab" data-tab="desktop-sync" id="tab-btn-desktop-sync" style="color: var(--ps1-gold);">VINCULAR SESIÓN 🔑</button>
           </div>
 
           <!-- TAB 1: GITHUB OAUTH -->
           <div class="auth-tab-panel" id="tab-oauth">
             <p class="auth-desc">Identifícate con tu cuenta de GitHub para guardar tus configuraciones y sincronizar tus modelos procedurales en la nube.</p>
-            <button type="button" class="btn auth-action-btn btn-github-oauth" id="btn-auth-github">
-              <span class="auth-btn-icon">🐱</span>
-              <span>CONTINUAR CON GITHUB</span>
-            </button>
+            <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+              <button type="button" class="btn auth-action-btn btn-github-oauth" id="btn-auth-github">
+                <span class="auth-btn-icon">🐱</span>
+                <span>CONTINUAR CON GITHUB</span>
+              </button>
+              <button type="button" class="btn auth-action-btn btn-outline" id="btn-auth-browser" style="display: none; border-color: var(--ps1-cyan); color: var(--ps1-cyan); justify-content: center;">
+                <span class="auth-btn-icon">🌐</span>
+                <span>INICIAR SESIÓN EN EL NAVEGADOR WEB ↗</span>
+              </button>
+            </div>
             <div class="auth-note-box">
               <span class="note-tag">[SUPABASE AUTH]</span>
               <span>Conexión cifrada sin cookies de rastreo. Compatible con Vercel & Supabase.</span>
@@ -279,6 +287,24 @@ const globalJsonLd = {
                 <span>[ CREAR CUENTA ]</span>
               </button>
             </form>
+          </div>
+
+          <!-- TAB 4: VINCULAR DESDE WEB (DESKTOP SYNC) -->
+          <div class="auth-tab-panel hidden" id="tab-desktop-sync">
+            <p class="auth-desc">
+              Si ya tenés iniciada tu sesión en <strong>modelcoder.vercel.app</strong> en Chrome o tu navegador habitual, podés sincronizarla con esta app en 1 segundo:
+            </p>
+            <ol style="font-size: 0.72rem; color: #a0aec0; margin: 0 0 0.85rem 1.2rem; padding: 0; line-height: 1.6;">
+              <li>En la web, hacé clic en tu avatar y elegí <strong>"🔑 Copiar código para app escritorio"</strong>.</li>
+              <li>Pegá el código aquí abajo y hacé clic en <strong>Vincular Sesión</strong>.</li>
+            </ol>
+            <div class="auth-field">
+              <label for="inp-sync-token">&gt; CÓDIGO DE SESIÓN</label>
+              <textarea id="inp-sync-token" class="ps1-input" rows="3" placeholder="Pegá el código de acceso aquí..." style="font-family: monospace; font-size: 0.68rem; resize: vertical;"></textarea>
+            </div>
+            <button type="button" class="btn auth-action-btn" id="btn-submit-sync" style="border-color: var(--ps1-gold); color: var(--ps1-gold);">
+              <span>[ VINCULAR SESIÓN 🔑 ]</span>
+            </button>
           </div>
 
           <!-- Mensaje de estado dinámico -->
@@ -484,7 +510,8 @@ const globalJsonLd = {
 
     <!-- Script de Inicialización de Autenticación de Supabase -->
     <script>
-      import { getSupabase, signInWithGitHub, signInWithEmail, signUpWithEmail, signOut, onAuthStateChange, checkUserRole, getCommunityModels } from '../lib/supabase';
+      import { getSupabase, signInWithGitHub, signInWithEmail, signUpWithEmail, signOut, onAuthStateChange, checkUserRole, getCommunityModels, getSessionExportCode, importSessionFromCode } from '../lib/supabase';
+      import { isTauriDesktop, initDesktopLinkInterceptor, openInExternalBrowser } from '../lib/tauri-bridge';
       import {
         getProjectDrafts,
         getFavorites,
@@ -495,6 +522,9 @@ const globalJsonLd = {
         saveCollection,
         toggleModelInCollection
       } from '../lib/user-inventory';
+
+      // Interceptar enlaces externos y window.open en la versión de escritorio
+      initDesktopLinkInterceptor();
 
       function escapeHtml(str: unknown): string {
         return String(str ?? '')
@@ -520,14 +550,13 @@ const globalJsonLd = {
       syncHeaderModelCount();
 
       // Detección y Adaptación para Modo Escritorio (Tauri v2 Offline Workstation)
-      const isDesktop = typeof window !== 'undefined' && (
-        '__TAURI_INTERNALS__' in window ||
-        '__TAURI__' in window ||
-        window.location.hostname === 'tauri.localhost' ||
-        window.location.protocol === 'tauri:'
-      );
+      const isDesktop = isTauriDesktop();
       if (isDesktop) {
         document.documentElement.classList.add('is-desktop-app');
+
+        // Mostrar botón de inicio de sesión en navegador externo
+        const btnAuthBrowser = document.getElementById('btn-auth-browser');
+        if (btnAuthBrowser) btnAuthBrowser.style.display = 'inline-flex';
 
         // 1. Logo conduce al Studio
         const brandLink = document.querySelector('.brand-logo');
@@ -597,10 +626,11 @@ const globalJsonLd = {
       const btnLogout = document.getElementById('btn-logout');
 
       const tabs = document.querySelectorAll('.auth-tab');
-      const tabPanels = {
+      const tabPanels: Record<string, HTMLElement | null> = {
         oauth: document.getElementById('tab-oauth'),
         login: document.getElementById('tab-login'),
         signup: document.getElementById('tab-signup'),
+        'desktop-sync': document.getElementById('tab-desktop-sync'),
       };
       const authStatusMsg = document.getElementById('auth-status-msg');
 
@@ -645,9 +675,9 @@ const globalJsonLd = {
           const target = tab.getAttribute('data-tab');
           Object.keys(tabPanels).forEach((key) => {
             if (key === target) {
-              tabPanels[key as keyof typeof tabPanels]?.classList.remove('hidden');
+              tabPanels[key]?.classList.remove('hidden');
             } else {
-              tabPanels[key as keyof typeof tabPanels]?.classList.add('hidden');
+              tabPanels[key]?.classList.add('hidden');
             }
           });
           clearStatus();
@@ -660,6 +690,21 @@ const globalJsonLd = {
         navMoreMenu?.classList.add('hidden');
         navMoreContainer?.classList.remove('open');
         userDropdownMenu?.classList.toggle('hidden');
+      });
+
+      // Exportar código de sesión para la app de escritorio
+      document.getElementById('btn-export-session-code')?.addEventListener('click', async () => {
+        try {
+          const code = await getSessionExportCode();
+          if (!code) {
+            alert('No se pudo generar el código. Asegurate de tener una sesión activa.');
+            return;
+          }
+          await navigator.clipboard.writeText(code);
+          alert('✅ Código de sesión copiado al portapapeles. ¡Abrí tu app de escritorio y pegalo en la pestaña "Vincular Sesión"!');
+        } catch (err: any) {
+          alert(`Error al copiar: ${err?.message || err}`);
+        }
       });
 
       // Toggle "⋯ MÁS" dropdown
@@ -690,6 +735,33 @@ const globalJsonLd = {
           await signInWithGitHub();
         } catch (err: any) {
           showStatus(`Error OAuth: ${err?.message || err}`, true);
+        }
+      });
+
+      // Botón para iniciar sesión en el navegador externo (Desktop)
+      document.getElementById('btn-auth-browser')?.addEventListener('click', () => {
+        openInExternalBrowser('https://modelcoder.vercel.app/studio');
+        showStatus('Abriendo modelcoder.vercel.app en tu navegador web. Iniciá sesión allí y luego copiá tu código de sesión.', false);
+      });
+
+      // Botón para vincular sesión con token/código (Desktop)
+      document.getElementById('btn-submit-sync')?.addEventListener('click', async () => {
+        const inp = document.getElementById('inp-sync-token') as HTMLTextAreaElement | null;
+        const code = inp?.value?.trim();
+        if (!code) {
+          showStatus('Por favor pegá el código de sesión copiado desde la web.', true);
+          return;
+        }
+        try {
+          showStatus('Vinculando sesión de piloto...');
+          await importSessionFromCode(code);
+          showStatus('¡Sesión vinculada con éxito! Cargando inventario...', false);
+          setTimeout(() => {
+            closeModal();
+            window.location.reload();
+          }, 800);
+        } catch (err: any) {
+          showStatus(`Error al vincular: ${err?.message || err}`, true);
         }
       });
 
@@ -1164,6 +1236,17 @@ const globalJsonLd = {
       // Check current session
       const supabase = getSupabase();
       if (supabase) {
+        // Si la URL contiene access_token de OAuth tras una redirección
+        if (typeof window !== 'undefined' && window.location.hash.includes('access_token')) {
+          supabase.auth.getSession().then(({ data }) => {
+            if (data.session?.user) {
+              updateSessionUI(data.session.user);
+              try {
+                history.replaceState(null, '', window.location.pathname + window.location.search);
+              } catch (_) {}
+            }
+          });
+        }
         supabase.auth.getUser().then(({ data }) => {
           updateSessionUI(data.user);
         });

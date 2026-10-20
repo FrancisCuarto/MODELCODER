@@ -38,10 +38,12 @@ export function getSupabase(): SupabaseClient | null {
   }
 }
 
+import { isTauriDesktop } from './tauri-bridge.ts';
+
 export async function signInWithGitHub() {
   const supabase = getSupabase();
   if (!supabase) throw new Error('Supabase no está configurado aún.');
-  const redirectTo = window.location.origin;
+  const redirectTo = `${window.location.origin}/studio`;
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'github',
     options: {
@@ -66,15 +68,50 @@ export async function signInWithEmail(email: string, pass: string) {
 export async function signUpWithEmail(email: string, pass: string) {
   const supabase = getSupabase();
   if (!supabase) throw new Error('Supabase no está disponible.');
+  const emailRedirectTo = isTauriDesktop()
+    ? 'https://modelcoder.vercel.app/studio'
+    : `${window.location.origin}/studio`;
   const { data, error } = await supabase.auth.signUp({
     email,
     password: pass,
     options: {
-      emailRedirectTo: window.location.origin,
+      emailRedirectTo,
     }
   });
   if (error) throw error;
   return data;
+}
+
+export async function getSessionExportCode(): Promise<string | null> {
+  const supabase = getSupabase();
+  if (!supabase) return null;
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.access_token || !session?.refresh_token) return null;
+  const payload = JSON.stringify({
+    a: session.access_token,
+    r: session.refresh_token,
+  });
+  return btoa(payload);
+}
+
+export async function importSessionFromCode(code: string): Promise<User | null> {
+  const supabase = getSupabase();
+  if (!supabase) throw new Error('Supabase no está disponible.');
+  let payload: { a: string; r: string };
+  try {
+    payload = JSON.parse(atob(code.trim()));
+  } catch {
+    throw new Error('Código de sesión inválido o dañado.');
+  }
+  if (!payload.a || !payload.r) {
+    throw new Error('Formato de sesión no reconocido.');
+  }
+  const { data, error } = await supabase.auth.setSession({
+    access_token: payload.a,
+    refresh_token: payload.r,
+  });
+  if (error) throw error;
+  return data.user;
 }
 
 export async function signOut() {

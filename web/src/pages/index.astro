@@ -51,7 +51,9 @@ const categories = [
       window.location.hostname === 'tauri.localhost' ||
       window.location.protocol === 'tauri:'
     )) {
-      window.location.replace('/studio');
+      const search = window.location.search || '';
+      const hash = window.location.hash || '';
+      window.location.replace('/studio' + search + hash);
     }
   </script>
 
