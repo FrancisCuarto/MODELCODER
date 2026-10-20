@@ -430,6 +430,95 @@ const categories = [
     </div>
   </div>
 
+  <!-- SECCIÓN DESTACADA: IV ORBIT TEXTURE STUDIO -->
+  <section class="ps1-window texture-studio-showcase-window" id="texture-studio">
+    <div class="ps1-titlebar">
+      <div style="display: flex; align-items: center; gap: 0.5rem;">
+        <span class="pulse-dot"></span>
+        <span>HERRAMIENTA OFICIAL · IV ORBIT TEXTURE STUDIO v0.1.0</span>
+      </div>
+      <span class="ps1-title-status text-cyan">DESKTOP NATIVO · OPEN SOURCE (MIT)</span>
+    </div>
+    <div class="texture-studio-showcase-body">
+      <div class="texture-studio-hero">
+        <div class="texture-studio-hero-content">
+          <div class="ts-badge-row">
+            <span class="ts-badge-gold">[ COMPLEMENTO OFICIAL MODELCODER ]</span>
+            <span class="ts-badge-cyan">100% GRATIS & OPEN SOURCE</span>
+          </div>
+          <h2 class="ts-title">¿Buscás texturas personalizadas para tus modelos 3D?</h2>
+          <p class="ts-lead">
+            Conocé <strong>IV Orbit Texture Studio</strong>: la suite de escritorio nativa desarrollada por <strong>IV Orbit Games</strong> para extraer texturas desde fotografías oblicuas con <strong>homografías 3×3</strong>, eliminar costuras con <strong>matemáticas suaves</strong> y generar sets completos de <strong>mapas PBR</strong> (Normales OpenGL/DirectX, Rugosidad, Altura, AO y ORM) listos para Godot 4, Unity y Blender.
+          </p>
+          <div class="ts-actions-bar">
+            <a href="https://github.com/FrancisCuarto/IV-Orbit-Texture-Studio/releases/latest/download/IV_Orbit_Texture_Studio_Setup.exe" target="_blank" rel="noopener noreferrer" class="btn btn-gold btn-lg ts-btn-main">
+              ⬇️ DESCARGAR PARA WINDOWS (.EXE)
+            </a>
+            <a href="https://github.com/FrancisCuarto/IV-Orbit-Texture-Studio/releases/download/v0.1.0/IV_Orbit_Texture_Studio_Portable.zip" target="_blank" rel="noopener noreferrer" class="btn btn-outline ts-btn-sub">
+              📦 PORTABLE (.ZIP)
+            </a>
+            <a href="https://ivorbitgames.online/herramientas/texture-studio" target="_blank" rel="noopener noreferrer" class="btn btn-outline ts-btn-sub">
+              🪐 VER EN IV ORBIT GAMES &rarr;
+            </a>
+            <a href="https://github.com/FrancisCuarto/IV-Orbit-Texture-Studio" target="_blank" rel="noopener noreferrer" class="btn btn-outline ts-btn-sub">
+              🐙 GITHUB (MIT)
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4 Pilares de Texture Studio -->
+      <div class="ts-features-grid">
+        <div class="ts-feature-card ps1-inset">
+          <div class="ts-feature-header">
+            <span class="ts-feat-icon">📐</span>
+            <span class="ts-feat-title">Texture Ripper 3×3</span>
+          </div>
+          <p class="ts-feat-desc">
+            Rectificación de perspectiva fotográfica pura usando matrices de homografía 3×3 con 4 esquinas magnéticas interactivas. Enderezá cualquier foto tomada en ángulo y calculá la resolución óptima con interpolación Lanczos4.
+          </p>
+        </div>
+
+        <div class="ts-feature-card ps1-inset">
+          <div class="ts-feature-header">
+            <span class="ts-feat-icon">🔁</span>
+            <span class="ts-feat-title">Seamless & Mosaico</span>
+          </div>
+          <p class="ts-feat-desc">
+            Algoritmo de mezcla cosenoidal suave (smootherstep) en dos pasadas (roll X e Y). Cero costuras visibles y sin artefactos en cruz, con previsualizador interactivo en cuadrícula 2×2 hasta 8×8.
+          </p>
+        </div>
+
+        <div class="ts-feature-card ps1-inset">
+          <div class="ts-feature-header">
+            <span class="ts-feat-icon">⚡</span>
+            <span class="ts-feat-title">Mapas PBR Tangenciales</span>
+          </div>
+          <p class="ts-feat-desc">
+            Generación de Normales en espacio tangente modulables: compatible con <strong>OpenGL (+Y)</strong> para Godot y Blender, y <strong>DirectX (-Y)</strong> para Unreal/Unity. Extracción de Rugosidad, Altura, AO y empaquetado multicanal ORM/RMA.
+          </p>
+        </div>
+
+        <div class="ts-feature-card ps1-inset">
+          <div class="ts-feature-header">
+            <span class="ts-feat-icon">📦</span>
+            <span class="ts-feat-title">Sprites & Atlas 2D</span>
+          </div>
+          <p class="ts-feat-desc">
+            Detección automática de sprites basada en canal alfa y 8-conectividad. Empaquetador MaxRects (BSSF) sin solapamiento, soporte de potencias de 2 (POT), padding anti-sangrado y exportación dual PNG + JSON.
+          </p>
+        </div>
+      </div>
+
+      <div class="ts-footer-specs ps1-inset">
+        <span class="ts-spec-item">💻 <strong>Plataforma:</strong> Windows 10/11 x64</span>
+        <span class="ts-spec-item">🐍 <strong>Tecnología:</strong> Python 3.12 · PySide6 (Qt 6) · OpenCV · NumPy</span>
+        <span class="ts-spec-item">🎮 <strong>Integración:</strong> Godot 4 · Unity · Unreal · Blender</span>
+        <span class="ts-spec-item">📄 <strong>Licencia:</strong> Código abierto MIT (100% libre)</span>
+      </div>
+    </div>
+  </section>
+
   <!-- Sección: Sobre el Creador / IV Orbit Games -->
   <section class="ps1-window creator-showcase-window" id="sobre-el-creador">
     <div class="ps1-titlebar">
@@ -1346,6 +1435,149 @@ const categories = [
   .hero-creator-by a:hover {
     color: #ffffff;
     text-shadow: 0 0 8px rgba(255, 176, 0, 0.8);
+  }
+
+  /* Texture Studio Showcase Window */
+  .texture-studio-showcase-window {
+    margin-top: 2.5rem;
+    margin-bottom: 2rem;
+    border-color: var(--ps1-cyan);
+    box-shadow: 0 4px 24px rgba(0, 240, 255, 0.12);
+  }
+
+  .texture-studio-showcase-body {
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+
+  .texture-studio-hero {
+    background: linear-gradient(135deg, #091122 0%, #0c182f 50%, #050b18 100%);
+    border: 1px solid var(--ps1-steel);
+    padding: 1.5rem;
+    border-radius: 4px;
+    box-shadow: inset 0 0 30px rgba(0, 240, 255, 0.05);
+  }
+
+  .ts-badge-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .ts-badge-gold {
+    font-family: var(--font-pixel);
+    font-size: 0.65rem;
+    color: var(--ps1-gold);
+    letter-spacing: 0.05em;
+  }
+
+  .ts-badge-cyan {
+    font-family: var(--font-pixel);
+    font-size: 0.65rem;
+    color: #000;
+    background: var(--ps1-cyan);
+    padding: 0.1rem 0.45rem;
+    font-weight: bold;
+    border-radius: 2px;
+  }
+
+  .ts-title {
+    font-family: var(--font-title);
+    font-size: 1.45rem;
+    color: #ffffff;
+    margin: 0 0 0.75rem 0;
+    letter-spacing: 0.03em;
+  }
+
+  .ts-lead {
+    font-size: 0.92rem;
+    color: #c0cadb;
+    line-height: 1.6;
+    margin: 0 0 1.25rem 0;
+  }
+
+  .ts-actions-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.65rem;
+  }
+
+  .ts-btn-main {
+    font-size: 0.82rem;
+    padding: 0.55rem 1.1rem;
+    text-shadow: none;
+    box-shadow: 0 2px 12px rgba(255, 176, 0, 0.3);
+  }
+
+  .ts-btn-sub {
+    font-size: 0.78rem;
+    padding: 0.5rem 0.9rem;
+  }
+
+  .ts-features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1rem;
+  }
+
+  .ts-feature-card {
+    padding: 1.1rem;
+    background: #080d1c;
+    border-color: var(--ps1-steel);
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    transition: border-color 0.15s ease, transform 0.15s ease;
+  }
+
+  .ts-feature-card:hover {
+    border-color: var(--ps1-cyan);
+    transform: translateY(-2px);
+  }
+
+  .ts-feature-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .ts-feat-icon {
+    font-size: 1.25rem;
+  }
+
+  .ts-feat-title {
+    font-family: var(--font-pixel);
+    font-size: 0.8rem;
+    color: var(--ps1-cyan);
+    font-weight: bold;
+  }
+
+  .ts-feat-desc {
+    font-size: 0.78rem;
+    color: var(--text-dim);
+    line-height: 1.5;
+    margin: 0;
+  }
+
+  .ts-footer-specs {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    background: #060912;
+    border-color: var(--ps1-steel);
+    font-size: 0.75rem;
+    color: var(--text-dim);
+  }
+
+  .ts-spec-item strong {
+    color: var(--ps1-gold);
   }
 
   /* Creator Showcase Window */

@@ -3220,6 +3220,30 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
                 <!-- Populated dynamically with lazy WebP thumbnails -->
               </div>
             </div>
+
+            <!-- Propaganda oficial: IV Orbit Texture Studio -->
+            <div class="ps1-inset texture-studio-promo-box" style="margin-top: 0.65rem; padding: 0.6rem 0.75rem; background: linear-gradient(135deg, #080f1d 0%, #0d1726 100%); border: 1px solid var(--ps1-cyan); border-radius: 3px;">
+              <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.4rem; margin-bottom: 0.35rem;">
+                <span style="font-family: var(--font-pixel); font-size: 0.68rem; color: var(--ps1-gold); display: flex; align-items: center; gap: 0.35rem;">
+                  🪐 IV ORBIT TEXTURE STUDIO (GRATIS)
+                </span>
+                <span style="font-size: 0.55rem; background: var(--ps1-cyan); color: #000; font-weight: bold; padding: 0.1rem 0.35rem; border-radius: 2px;">NUEVA APP</span>
+              </div>
+              <p style="font-size: 0.64rem; color: var(--text-dim); margin: 0 0 0.5rem 0; line-height: 1.4;">
+                ¿Buscás texturas para tus modelos? Extraé desde fotos con rectificación 3×3, creá mosaicos sin costuras y generá mapas PBR (Normales OpenGL/DirectX, Rugosidad y ORM) en 1 clic.
+              </p>
+              <div style="display: flex; gap: 0.35rem; flex-wrap: wrap;">
+                <a href="https://github.com/FrancisCuarto/IV-Orbit-Texture-Studio/releases/latest/download/IV_Orbit_Texture_Studio_Setup.exe" target="_blank" rel="noopener noreferrer" class="btn btn-gold btn-sm" style="font-size: 0.62rem; padding: 0.25rem 0.55rem; text-decoration: none;" title="Descargar instalador de Windows (.exe)">
+                  ⬇️ Bajar .exe
+                </a>
+                <a href="https://ivorbitgames.online/herramientas/texture-studio" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-sm" style="font-size: 0.62rem; padding: 0.25rem 0.55rem; text-decoration: none;" title="Ver ficha en IV Orbit Games">
+                  Ver Ficha ↗
+                </a>
+                <a href="https://github.com/FrancisCuarto/IV-Orbit-Texture-Studio" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-sm" style="font-size: 0.62rem; padding: 0.25rem 0.55rem; text-decoration: none;" title="Código fuente en GitHub">
+                  GitHub 🐙
+                </a>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -4116,13 +4140,16 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
 
         const toolbarHtml = `
           <div class="local-tex-toolbar" style="grid-column: 1 / -1; display: flex; gap: 0.35rem; margin-bottom: 0.5rem; flex-wrap: wrap; align-items: center; justify-content: space-between; padding: 0.4rem; background: #0c1017; border: 1px dashed var(--ps1-gold); border-radius: 4px;">
-            <div style="display: flex; gap: 0.35rem; align-items: center;">
+            <div style="display: flex; gap: 0.35rem; align-items: center; flex-wrap: wrap;">
               <button type="button" id="btn-open-tex-folder" class="btn-tool-mini" style="background: #1a2233; color: var(--ps1-gold); border: 1px solid var(--ps1-gold); font-size: 0.65rem; padding: 0.25rem 0.5rem; cursor: pointer; border-radius: 3px;" title="Abrir carpeta local de texturas en el explorador de archivos">
                 📂 ABRIR CARPETA
               </button>
               <button type="button" id="btn-refresh-local-tex" class="btn-tool-mini" style="background: #1a2233; color: var(--ps1-cyan); border: 1px solid var(--ps1-cyan); font-size: 0.65rem; padding: 0.25rem 0.5rem; cursor: pointer; border-radius: 3px;" title="Volver a escanear archivos en disco">
                 🔄 REFRESCAR
               </button>
+              <a href="https://ivorbitgames.online/herramientas/texture-studio" target="_blank" rel="noopener noreferrer" class="btn-tool-mini" style="background: #0d1e33; color: var(--ps1-cyan); border: 1px solid var(--ps1-cyan); font-size: 0.65rem; padding: 0.25rem 0.5rem; text-decoration: none; border-radius: 3px; display: inline-flex; align-items: center; gap: 0.25rem;" title="Crear y extraer texturas PBR sin costuras con IV Orbit Texture Studio">
+                🪐 TEXTURE STUDIO
+              </a>
             </div>
             <label id="lbl-add-local-tex" class="btn-tool-mini" style="background: var(--ps1-gold); color: #000; font-weight: bold; font-size: 0.65rem; padding: 0.25rem 0.5rem; cursor: pointer; border-radius: 3px; display: inline-flex; align-items: center; gap: 0.25rem;" title="Importar imagen (PNG, JPG, WebP) directamente a la carpeta de texturas">
               ➕ AÑADIR
