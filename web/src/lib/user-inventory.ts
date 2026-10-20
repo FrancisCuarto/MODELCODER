@@ -1,5 +1,6 @@
 import type { ModelSpec } from './studio/types.ts';
 import { getSupabase, getCurrentUser } from './supabase.ts';
+import { isTauriDesktop, getTauriInvoke } from './tauri-bridge.ts';
 
 export interface UserProjectDraft {
   id: string;
@@ -498,6 +499,72 @@ export function exportProjectAsJSON(draftOrSpec: UserProjectDraft | ModelSpec): 
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
+}
+
+/**
+ * Permite al usuario elegir exactamente la carpeta y nombre de archivo para guardar el proyecto (.json).
+ * En la app de escritorio usa el diálogo nativo del sistema (Tauri).
+ * En navegadores modernos usa la API oficial showSaveFilePicker().
+ * Con fallback transparente a descarga estándar si no están disponibles.
+ */
+export async function saveProjectToFilePicker(
+  draftOrSpec: UserProjectDraft | ModelSpec
+): Promise<{ success: boolean; filePath?: string; cancelled?: boolean }> {
+  const spec = (draftOrSpec as any).spec || draftOrSpec;
+  const name = (draftOrSpec as any).name || spec.name || 'model_spec';
+  const cleanName = `${name.toLowerCase().replace(/[^a-z0-9_-]/g, '_')}_spec.json`;
+  const jsonStr = JSON.stringify(spec, null, 2);
+
+  // 1. Si estamos en la app de escritorio (Tauri)
+  if (isTauriDesktop()) {
+    const invoke = getTauriInvoke();
+    if (invoke) {
+      try {
+        const filePath = (await invoke('save_project_dialog', {
+          defaultName: cleanName,
+          content: jsonStr,
+        })) as string | null;
+
+        if (filePath) {
+          return { success: true, filePath };
+        } else {
+          return { success: false, cancelled: true };
+        }
+      } catch (err) {
+        console.warn('[ModelCoder] Error en diálogo nativo de guardado de Tauri:', err);
+      }
+    }
+  }
+
+  // 2. Si el navegador soporta el selector oficial de archivos (Chrome, Edge, Opera)
+  if (typeof window !== 'undefined' && 'showSaveFilePicker' in window) {
+    try {
+      const handle = await (window as any).showSaveFilePicker({
+        suggestedName: cleanName,
+        types: [
+          {
+            description: 'ModelCoder Spec JSON (*.json)',
+            accept: {
+              'application/json': ['.json'],
+            },
+          },
+        ],
+      });
+      const writable = await handle.createWritable();
+      await writable.write(jsonStr);
+      await writable.close();
+      return { success: true, filePath: handle.name };
+    } catch (err: any) {
+      if (err.name === 'AbortError') {
+        return { success: false, cancelled: true };
+      }
+      console.warn('[ModelCoder] showSaveFilePicker falló o no fue permitido:', err);
+    }
+  }
+
+  // 3. Fallback: descarga directa tradicional
+  exportProjectAsJSON(draftOrSpec);
+  return { success: true, filePath: cleanName };
 }
 
 export function importProjectFromJSON(jsonText: string): UserProjectDraft {

@@ -511,7 +511,7 @@ const globalJsonLd = {
     <!-- Script de Inicialización de Autenticación de Supabase -->
     <script>
       import { getSupabase, signInWithGitHub, signInWithEmail, signUpWithEmail, signOut, onAuthStateChange, checkUserRole, getCommunityModels, getSessionExportCode, importSessionFromCode } from '../lib/supabase';
-      import { isTauriDesktop, initDesktopLinkInterceptor, openInExternalBrowser } from '../lib/tauri-bridge';
+      import { isTauriDesktop, initDesktopLinkInterceptor, openInExternalBrowser, getTauriInvoke } from '../lib/tauri-bridge';
       import {
         getProjectDrafts,
         getFavorites,
@@ -600,7 +600,7 @@ const globalJsonLd = {
           btnTextures.title = 'Abrir carpeta local de texturas personalizadas en disco';
           btnTextures.addEventListener('click', async () => {
             try {
-              const invoke = (window as any).__TAURI_INTERNALS__?.invoke || (window as any).__TAURI__?.core?.invoke;
+              const invoke = getTauriInvoke();
               if (invoke) {
                 await invoke('open_textures_folder');
               }

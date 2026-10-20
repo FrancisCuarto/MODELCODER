@@ -824,9 +824,12 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
         <span>Almacenamiento: <strong style="color: var(--ps1-green);">Local + Nube</strong></span>
       </div>
 
-      <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+      <div style="display: flex; gap: 0.5rem; justify-content: flex-end; flex-wrap: wrap;">
         <button id="btn-cancel-save-project" type="button" class="btn btn-outline">CANCELAR</button>
-        <button id="btn-confirm-save-project" type="button" class="btn btn-gold">💾 GUARDAR PROYECTO</button>
+        <button id="btn-save-project-as-file" type="button" class="btn btn-outline" style="border-color: var(--ps1-cyan); color: var(--ps1-cyan);" title="Elegir carpeta y nombre de archivo para guardar el proyecto .json en tu disco">
+          📂 ELEGIR DÓNDE GUARDAR (.JSON)...
+        </button>
+        <button id="btn-confirm-save-project" type="button" class="btn btn-gold">💾 GUARDAR</button>
       </div>
     </div>
   </dialog>
@@ -1512,6 +1515,7 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     getAutoDraft,
     clearAutoDraft,
     exportProjectAsJSON,
+    saveProjectToFilePicker,
     importProjectFromJSON,
     type UserProjectDraft
   } from '../lib/user-inventory';
@@ -6646,6 +6650,43 @@ if __name__ == "__main__":
     }
   });
 
+  const btnSaveProjectAsFile = document.getElementById('btn-save-project-as-file');
+  btnSaveProjectAsFile?.addEventListener('click', async () => {
+    try {
+      const name = inputSaveName?.value?.trim() || currentSpec.name || 'Sin Nombre';
+      const cat = selectSaveCat?.value || currentSpec.category || 'furniture';
+      const desc = textareaSaveDesc?.value?.trim() || currentSpec.description || '';
+
+      currentSpec.name = name;
+      currentSpec.category = cat;
+      currentSpec.description = desc;
+
+      saveProjectDraft({
+        spec: currentSpec,
+        name,
+        category: cat,
+        description: desc,
+        thumbnail: currentCapturedThumbnail,
+        tri_count: lastGeometricStats?.triangles || 0,
+      });
+
+      const res = await saveProjectToFilePicker(currentSpec);
+      if (res.success) {
+        clearAutoDraft();
+        updateDraftsBadge();
+        modalSaveProject?.close();
+        if (res.filePath) {
+          showStudioToast(`📂 Guardado en: ${res.filePath}`);
+        } else {
+          showStudioToast(`💾 ¡Proyecto guardado como archivo JSON!`);
+        }
+      }
+    } catch (err: any) {
+      console.error('[ModelCoder] Error al elegir dónde guardar archivo:', err);
+      showStudioToast(`❌ Error al guardar archivo: ${err?.message || 'Error inesperado'}`, true);
+    }
+  });
+
   // --- MODAL: GESTOR DE PROYECTOS Y BORRADORES ---
   const modalMyProjects = document.getElementById('modal-my-projects') as HTMLDialogElement | null;
   const btnMyProjects = document.getElementById('btn-my-projects');
@@ -6754,10 +6795,18 @@ if __name__ == "__main__":
     });
 
     projectsListContainer.querySelectorAll('.btn-export-json').forEach(btn => {
-      btn.addEventListener('click', (e) => {
+      btn.addEventListener('click', async (e) => {
         const id = (e.currentTarget as HTMLElement).dataset.id;
         if (!id) return;
-        exportProjectAsJSON(id);
+        const draft = getProjectDraft(id);
+        if (draft) {
+          const res = await saveProjectToFilePicker(draft);
+          if (res.success && res.filePath) {
+            showStudioToast(`📂 Guardado en: ${res.filePath}`);
+          }
+        } else {
+          exportProjectAsJSON(id);
+        }
       });
     });
 

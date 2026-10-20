@@ -77,13 +77,18 @@ fn import_texture_to_folder(file_name: String, base64_data: String) -> Result<St
     Ok(file_name)
 }
 
+use tauri_plugin_dialog::DialogExt;
+
 /// Opens the textures folder in Windows Explorer / OS file manager
 #[tauri::command]
 fn open_textures_folder() -> Result<String, String> {
     let dir = get_textures_dir()?;
     #[cfg(target_os = "windows")]
     {
-        let _ = std::process::Command::new("explorer").arg(&dir).spawn();
+        let _ = std::process::Command::new("rundll32")
+            .args(["url.dll,FileProtocolHandler", &dir])
+            .spawn()
+            .map_err(|e| e.to_string())?;
     }
     #[cfg(target_os = "macos")]
     {
@@ -104,6 +109,24 @@ fn export_to_disk(file_path: String, content: String) -> Result<bool, String> {
     }
     fs::write(&file_path, content).map_err(|e| e.to_string())?;
     Ok(true)
+}
+
+/// Opens native system Save File Dialog and saves the JSON content to the user-chosen location
+#[tauri::command]
+async fn save_project_dialog(app: tauri::AppHandle, default_name: String, content: String) -> Result<Option<String>, String> {
+    let file_path = app.dialog()
+        .file()
+        .set_file_name(&default_name)
+        .add_filter("ModelCoder Spec JSON", &["json"])
+        .blocking_save_file();
+
+    if let Some(path) = file_path {
+        let path_str = path.to_string();
+        fs::write(&path_str, content).map_err(|e| e.to_string())?;
+        Ok(Some(path_str))
+    } else {
+        Ok(None)
+    }
 }
 
 /// Opens any external URL (http:// or https://) in the user's default system browser
@@ -146,7 +169,8 @@ pub fn run() {
             import_texture_to_folder,
             open_textures_folder,
             export_to_disk,
-            open_external_url
+            open_external_url,
+            save_project_dialog
         ])
         .run(tauri::generate_context!())
         .expect("error while running ModelCoder desktop application");
