@@ -3,36 +3,68 @@
    Directly inspired by 90s PlayStation BIOS, Mech Customizers, & Tactical HUDs
    ========================================================================== */
 
+/* ==========================================================================
+   MODELCODER - RETRO PS1 / PSX SCI-FI GAME UI THEME
+   Directly inspired by 90s PlayStation BIOS, Mech Customizers, & Tactical HUDs
+   Supports: dark-professional (default), ps1 (retro), system
+   ========================================================================== */
+
+/* Tema base: Dark Professional (por defecto) */
 :root {
-  /* CRT & Backdrop Gradients */
-  --ps1-blue-top: #00127a;
-  --ps1-blue-mid: #000c4d;
-  --ps1-blue-bot: #000424;
-  --ps1-grid-line: rgba(30, 90, 220, 0.28);
-  --ps1-grid-sub: rgba(16, 50, 140, 0.18);
+  /* Fondos */
+  --bg-primary: #0b0f14;
+  --bg-secondary: #0f141b;
+  --surface-1: #121821;
+  --surface-2: #0b111c;
+  --surface-3: #060b14;
 
-  /* Metallic Bevel Palette (Gold / Steel / Inset) */
-  --ps1-gold: #ffcc00;
-  --ps1-gold-light: #dfc378;
-  --ps1-gold-border: #9e874e;
-  --ps1-gold-shadow: #3b2e0e;
+  /* Bordes */
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --border-strong: rgba(255, 255, 255, 0.12);
 
-  --ps1-steel: #3a4254;
-  --ps1-steel-light: #6a7690;
-  --ps1-steel-dark: #191e2b;
+  /* Texto */
+  --text-primary: #f5f7fa;
+  --text-secondary: #c9d7e6; /* >=4.5:1 recomendado */
+  --text-tertiary: #8f9fb3;
+  --text-dim: #8f9fb3;
+  --text-muted: #b8c5d6;
 
-  --ps1-panel-bg: #0f1422;
-  --ps1-panel-hover: #161d30;
-  --ps1-panel-dark: #070911;
+  /* Acentos profesionalizados (mantienen ADN de marca) */
+  --accent-primary: #3fb9ff; /* Cian más profesional/legible */
+  --accent-warning: #f2b441; /* Dorado suavizado */
+  --accent-success: #4ade80; /* Verde profesional */
 
-  /* Arcade High-Contrast Accents */
-  --ps1-cyan: #00f0ff;
-  --ps1-cyan-dim: #008899;
-  --ps1-green: #39ff14;
-  --ps1-green-dim: #1e8010;
-  --ps1-red: #ff382e;
-  --ps1-orange: #ff8800;
-  --ps1-violet: #d084f7;
+  /* Arcade High-Contrast Accents (compat) */
+  --ps1-cyan: #3fb9ff;
+  --ps1-cyan-dim: #1f7aa3;
+  --ps1-green: #4ade80;
+  --ps1-green-dim: #2f7c4f;
+  --ps1-red: #ff5a52;
+  --ps1-orange: #ff9a40;
+  --ps1-violet: #c89bff;
+
+  /* Paneles (suavizados) */
+  --ps1-panel-bg: var(--surface-1);
+  --ps1-panel-hover: #161f2d;
+  --ps1-panel-dark: var(--surface-3);
+
+  /* Steel/bevel */
+  --ps1-steel: #2f3b4f;
+  --ps1-steel-light: #4f5f7a;
+  --ps1-steel-dark: #141b28;
+
+  /* Gradientes CRT */
+  --ps1-blue-top: #0b121f;
+  --ps1-blue-mid: #0b111c;
+  --ps1-blue-bot: #070b14;
+  --ps1-grid-line: rgba(40, 70, 110, 0.12);
+  --ps1-grid-sub: rgba(20, 40, 70, 0.08);
+
+  /* Metallic Bevel (compat) */
+  --ps1-gold: #f2b441;
+  --ps1-gold-light: #f5cc7a;
+  --ps1-gold-border: #b88f2f;
+  --ps1-gold-shadow: #5a4314;
 
   /* Typography */
   --font-title: 'Press Start 2P', monospace;
@@ -40,12 +72,11 @@
   --font-mono: 'Share Tech Mono', Consolas, "Courier New", monospace;
   --font-telemetry: 'VT323', monospace;
 
-  --text-main: #ffffff;
-  --text-bright: #f0f4fc;
-  --text-muted: #94a3b8;
-  --text-dim: #9aa8be;
-  --text-gold: #ffcc00;
-  --text-cyan: #00f0ff;
+  /* Texto */
+  --text-main: var(--text-primary);
+  --text-bright: var(--text-primary);
+  --text-gold: var(--accent-warning);
+  --text-cyan: var(--accent-primary);
 }
 
 /* Base Reset & CRT Screen */
@@ -929,6 +960,143 @@ footer.site-footer {
     animation: none !important;
     opacity: 1 !important;
   }
+}
+
+/* ==========================================================================
+   THEME: PS1 Retro (explícito)
+   ========================================================================== */
+[data-theme="ps1"] {
+  /* CRT & Backdrop */
+  --ps1-blue-top: #00127a;
+  --ps1-blue-mid: #000c4d;
+  --ps1-blue-bot: #000424;
+  --ps1-grid-line: rgba(30, 90, 220, 0.28);
+  --ps1-grid-sub: rgba(16, 50, 140, 0.18);
+
+  /* Bevel metálico original */
+  --ps1-gold: #ffcc00;
+  --ps1-gold-light: #dfc378;
+  --ps1-gold-border: #9e874e;
+  --ps1-gold-shadow: #3b2e0e;
+
+  --ps1-steel: #3a4254;
+  --ps1-steel-light: #6a7690;
+  --ps1-steel-dark: #191e2b;
+
+  /* Superficies originales */
+  --ps1-panel-bg: #0f1422;
+  --ps1-panel-hover: #161d30;
+  --ps1-panel-dark: #070911;
+
+  /* Acentos originales */
+  --ps1-cyan: #00f0ff;
+  --ps1-cyan-dim: #008899;
+  --ps1-green: #39ff14;
+  --ps1-green-dim: #1e8010;
+  --ps1-red: #ff382e;
+  --ps1-orange: #ff8800;
+  --ps1-violet: #d084f7;
+
+  /* Texto original */
+  --text-main: #ffffff;
+  --text-bright: #f0f4fc;
+  --text-muted: #94a3b8;
+  --text-dim: #9aa8be;
+  --text-gold: #ffcc00;
+  --text-cyan: #00f0ff;
+}
+
+/* ==========================================================================
+   THEME: Ajustes por tema
+   ========================================================================== */
+/* Fondos base usan tokens */
+html, body {
+  background-color: var(--bg-primary, #000424);
+}
+
+/* Scanlines: desactivadas por defecto (dark-professional), activas solo en ps1 */
+.ps1-scanlines {
+  opacity: 0;
+  will-change: opacity;
+  transition: opacity 160ms ease-in-out;
+}
+
+[data-theme="ps1"] .ps1-scanlines {
+  opacity: 0.18;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ps1-scanlines {
+    transition: none;
+  }
+}
+
+/* Ventanas: suavizadas en dark-professional */
+[data-theme="dark-professional"] .ps1-window,
+[data-theme="dark-professional"] dialog.ps1-window,
+[data-theme="dark-professional"] dialog {
+  border-color: var(--border-strong);
+  box-shadow: 
+    inset 1px 1px 0px rgba(255,255,255,0.08), 
+    inset -2px -2px 0px rgba(0,0,0,0.5),
+    2px 2px 0px #000000;
+}
+
+/* Superficies inset */
+[data-theme="dark-professional"] .ps1-inset {
+  border-color: var(--border-subtle);
+  box-shadow: 
+    inset 2px 2px 0px rgba(0,0,0,0.6), 
+    inset -1px -1px 0px rgba(255,255,255,0.05);
+}
+
+/* Titlebar */
+[data-theme="dark-professional"] .ps1-titlebar {
+  background: linear-gradient(90deg, #141b28 0%, #0b111c 100%);
+  border-bottom-color: rgba(242, 180, 65, 0.45);
+}
+
+/* Header/Footer/Cards/Nav suavizados */
+[data-theme="dark-professional"] header.site-header {
+  background: var(--surface-3);
+  border-bottom-color: var(--border-strong);
+}
+
+[data-theme="dark-professional"] footer.site-footer {
+  background-color: var(--surface-3);
+  box-shadow: inset 0 1px 0px rgba(255,255,255,0.05);
+}
+
+[data-theme="dark-professional"] .card-preview {
+  background: radial-gradient(circle at center, #141b28 0%, var(--surface-3) 100%);
+}
+
+[data-theme="dark-professional"] .nav-link {
+  background: var(--surface-1);
+  border-color: var(--border-strong);
+}
+
+[data-theme="dark-professional"] .nav-link:hover,
+[data-theme="dark-professional"] .nav-link.active {
+  background: #1a2435;
+  border-color: var(--accent-warning);
+}
+
+/* Theme dropdown helpers */
+.more-dropdown-group {
+  padding: 0.25rem 0 0.35rem;
+}
+
+.more-dropdown-label {
+  user-select: none;
+  opacity: 0.85;
+}
+
+.theme-check {
+  margin-left: auto;
+  font-size: 0.9rem;
+  color: var(--ps1-gold);
+  text-shadow: 0 0 4px rgba(242, 180, 65, 0.4);
 }
 
 /* Global Hidden Utility */

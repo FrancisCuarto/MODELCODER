@@ -7,6 +7,7 @@ interface Props {
   ogType?: string;
   schemaData?: Record<string, any>;
   useModelViewer?: boolean;
+  forceTheme?: 'ps1' | 'dark-professional';
 }
 
 const {
@@ -16,7 +17,8 @@ const {
   ogImage = "/logo.png",
   ogType = "website",
   schemaData,
-  useModelViewer = true
+  useModelViewer = true,
+  forceTheme
 } = Astro.props;
 
 import catalog from '../data/catalog.json';
@@ -69,6 +71,28 @@ const globalJsonLd = {
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- THEME: Anti-FOUC (must run before render) -->
+    <script is:inline define:vars={{ forceTheme }}>
+      (function () {
+        try {
+          if (forceTheme === 'ps1' || forceTheme === 'dark-professional') {
+            document.documentElement.setAttribute('data-theme', forceTheme);
+            return;
+          }
+          const storageKey = 'modelcoder-theme';
+          const raw = localStorage.getItem(storageKey) || 'dark-professional';
+          let theme = raw;
+          if (theme === 'system') {
+            const prefDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            theme = prefDark ? 'dark-professional' : 'dark-professional';
+          }
+          if (theme !== 'ps1' && theme !== 'dark-professional') {
+            theme = 'dark-professional';
+          }
+          document.documentElement.setAttribute('data-theme', theme);
+        } catch (e) {}
+      })();
+    </script>
     <title>{title} | ModelCoder</title>
     <meta name="description" content={description} />
     <meta name="keywords" content={keywords} />
@@ -171,6 +195,28 @@ const globalJsonLd = {
                 <span class="item-icon">👑</span>
                 <span>&gt; Portal Colaboradores</span>
               </a>
+              <!-- Selector de Tema -->
+              <div class="more-dropdown-divider"></div>
+              <div class="more-dropdown-group" role="group" aria-label="Tema de interfaz">
+                <span class="more-dropdown-label" style="font-size: 0.65rem; color: var(--text-tertiary); padding: 0.25rem 0.65rem 0.15rem; display: block; font-family: var(--font-pixel); letter-spacing: 0.05em;">
+                  &gt; TEMA DE INTERFAZ
+                </span>
+                <button class="more-dropdown-item theme-option" type="button" role="menuitemradio" data-theme-choice="dark-professional" aria-checked="true">
+                  <span class="item-icon">🌙</span>
+                  <span>Oscuro Profesional</span>
+                  <span class="theme-check">●</span>
+                </button>
+                <button class="more-dropdown-item theme-option" type="button" role="menuitemradio" data-theme-choice="ps1" aria-checked="false">
+                  <span class="item-icon">🕹️</span>
+                  <span>PS1 Retro</span>
+                  <span class="theme-check">○</span>
+                </button>
+                <button class="more-dropdown-item theme-option" type="button" role="menuitemradio" data-theme-choice="system" aria-checked="false">
+                  <span class="item-icon">🖥️</span>
+                  <span>Según Sistema</span>
+                  <span class="theme-check">○</span>
+                </button>
+              </div>
               <div class="more-dropdown-divider"></div>
               <a href="https://ivorbitgames.online" target="_blank" rel="noopener noreferrer" class="more-dropdown-item item-external" role="menuitem" title="Estudio Creador: IV Orbit Games (Argentina)">
                 <span class="item-icon">🪐</span>
@@ -720,6 +766,58 @@ const globalJsonLd = {
         btnToggleNavMore.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
         navMoreContainer?.classList.toggle('open', isOpen);
       });
+
+      // THEME MANAGER
+      (function initThemeToggle() {
+        const storageKey = 'modelcoder-theme';
+        const options = document.querySelectorAll('.theme-option');
+        const root = document.documentElement;
+        const mql = window.matchMedia('(prefers-color-scheme: dark)');
+
+        const getStored = () => localStorage.getItem(storageKey) || 'dark-professional';
+
+        function applyTheme(raw: string) {
+          let resolved = raw;
+          if (raw === 'system') {
+            resolved = mql.matches ? 'dark-professional' : 'dark-professional';
+          }
+          if (resolved !== 'ps1' && resolved !== 'dark-professional') {
+            resolved = 'dark-professional';
+          }
+          root.setAttribute('data-theme', resolved);
+          try {
+            localStorage.setItem(storageKey, raw);
+          } catch (e) {}
+          options.forEach((btn) => {
+            const choice = btn.getAttribute('data-theme-choice');
+            const isActive = choice === raw;
+            btn.setAttribute('aria-checked', isActive ? 'true' : 'false');
+            const check = btn.querySelector('.theme-check');
+            if (check) check.textContent = isActive ? '●' : '○';
+          });
+        }
+
+        applyTheme(getStored());
+
+        options.forEach((btn) => {
+          btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const choice = btn.getAttribute('data-theme-choice');
+            if (choice) {
+              applyTheme(choice);
+              navMoreMenu?.classList.add('hidden');
+              navMoreContainer?.classList.remove('open');
+              btnToggleNavMore?.setAttribute('aria-expanded', 'false');
+            }
+          });
+        });
+
+        mql.addEventListener('change', () => {
+          if (getStored() === 'system') {
+            applyTheme('system');
+          }
+        });
+      })();
 
       document.addEventListener('click', () => {
         userDropdownMenu?.classList.add('hidden');
