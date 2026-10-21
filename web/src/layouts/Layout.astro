@@ -76,6 +76,7 @@ const globalJsonLd = {
       (function () {
         try {
           if (forceTheme === 'ps1' || forceTheme === 'dark-professional') {
+            window.__MODELCODER_FORCE_THEME__ = forceTheme;
             document.documentElement.setAttribute('data-theme', forceTheme);
             return;
           }
@@ -773,6 +774,9 @@ const globalJsonLd = {
         const options = document.querySelectorAll('.theme-option');
         const root = document.documentElement;
         const mql = window.matchMedia('(prefers-color-scheme: dark)');
+        // Tema forzado por la pagina (ej. Studio 3D mantiene siempre estetica PS1).
+        // La preferencia global si se guarda y se aplica en el resto del sitio.
+        const forcedTheme = (window as any).__MODELCODER_FORCE_THEME__ as string | undefined;
 
         const getStored = () => localStorage.getItem(storageKey) || 'dark-professional';
 
@@ -784,7 +788,9 @@ const globalJsonLd = {
           if (resolved !== 'ps1' && resolved !== 'dark-professional') {
             resolved = 'dark-professional';
           }
-          root.setAttribute('data-theme', resolved);
+          if (!forcedTheme) {
+            root.setAttribute('data-theme', resolved);
+          }
           try {
             localStorage.setItem(storageKey, raw);
           } catch (e) {}
