@@ -762,6 +762,59 @@ test('AIGenerator: normalizeSpecGeometry elimina referencias cíclicas de parent
   assert.equal(hasDirectCycle, false, 'No deben existir ciclos directos');
 });
 
+test('AIGenerator: normalizeSpecGeometry converts world coordinates to parent-local coordinates to prevent double-offset floating', () => {
+  const worldHierarchicalSpec: ModelSpec = {
+    id: 'test.hierarchy.world',
+    name: 'Estación con Jerarquía',
+    category: 'infrastructure',
+    description: 'Prueba de conversión world-to-local en normalización',
+    units: 'meters',
+    dimensions: { width: 1, depth: 1, height: 2 },
+    palette: 'industrial_hazard',
+    components: [
+      {
+        name: 'heavy_base',
+        shape: 'box',
+        size: [1.0, 0.4, 1.0],
+        position: [0, 0.2, 0]
+      },
+      {
+        name: 'main_chassis',
+        shape: 'box',
+        size: [0.8, 0.8, 0.8],
+        position: [0, 0.8, 0],
+        parentId: 'heavy_base'
+      },
+      {
+        name: 'crt_display',
+        shape: 'box',
+        size: [0.4, 0.3, 0.2],
+        position: [0, 1.35, 0.3],
+        parentId: 'main_chassis'
+      }
+    ]
+  };
+
+  const normalized = AIGenerator.normalizeSpecGeometry(worldHierarchicalSpec);
+
+  // In local space:
+  // heavy_base is root at [0, 0.2, 0]
+  // main_chassis is relative to heavy_base: local Y should be 0.8 - 0.2 = 0.60
+  // crt_display is relative to main_chassis: local Y should be 1.35 - 0.8 = 0.55
+  assert.equal(normalized.components[0].position[1], 0.2);
+  assert.equal(normalized.components[1].position[1], 0.6);
+  assert.equal(normalized.components[2].position[1], 0.55);
+
+  // When built in Three.js scene graph, crt_display world position matches exact 1.35m
+  const { group } = ProceduralEngine.buildModelFromSpec(normalized);
+  group.updateMatrixWorld(true);
+  const crtMesh = group.getObjectByName('crt_display');
+  assert.ok(crtMesh, 'crt_display mesh debe existir');
+  const worldPos = new THREE.Vector3();
+  crtMesh.getWorldPosition(worldPos);
+  assert.ok(Math.abs(worldPos.y - 1.35) < 0.001, `World Y debe ser 1.35m, dio ${worldPos.y}`);
+});
+
 test('Material System Test 1: Un componente antiguo que solo tenga color sigue funcionando (compatibilidad retroactiva)', () => {
   const legacySpec = {
     id: 'test.legacy.box',

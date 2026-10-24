@@ -438,6 +438,10 @@ export class AIGenerator {
       }
     }
 
+    // Convert world-space coordinates into parent-relative coordinates so that Three.js
+    // scene graph transforms match the exact intended world positions without doubling.
+    this.convertWorldToLocalHierarchy(spec);
+
     // Validate glTF exportable animation clips
     if (Array.isArray(spec.animations) && spec.animations.length > 0) {
       const validClips: any[] = [];
@@ -550,6 +554,12 @@ Your mission is to construct realistic, physically coherent, mechanically solid 
 5. LAW OF SYMMETRY & COHESIVE PROPORTIONS:
 - Center main structures at X = 0.
 - Bilateral parts (wheels, dual tanks, side handles, thrusters, legs) MUST be placed in symmetric pairs (+X and -X) with identical Y and Z.
+
+6. LAW OF MECHANICAL DENSITY (15-30 COMPONENTS MINIMUM):
+- A convincing low-poly 3D asset MUST NOT be a solitary simple box with a lone antenna or floating badge.
+- Break machines and objects into modular parts: base plate/frame, structural chassis, housing shell, ventilation grills/louvers, pipes/hoses/cables (using pipe/torus/cylinder), brackets/fixtures, access hatches, tactile control interfaces (buttons, dials, emergency switch), warning beacons, and CRT displays.
+- MANDATORY: Generate between 15 and 30 components for standard models (and minimum 12 for compact items). More detail creates professional retro/sci-fi aesthetics.
+- MANDATORY PBR TEXTURE PRESET: Every component MUST specify a valid "texturePreset" (e.g. "painted_metal_white", "painted_metal_blue", "diamond_plate", "crt_screen_green", "vent_grill", "rubber_black", "hazard_stripes", etc.). DO NOT leave components with plain flat colors and no texture.
 
 ### 12 PRIMITIVE SHAPES (METERS) & USAGE
 - "box": size [width_X, height_Y, depth_Z]
