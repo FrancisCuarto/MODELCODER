@@ -239,6 +239,11 @@ export class StudioViewport {
     });
     this.renderer.domElement.addEventListener('pointerup', (e) => {
       if (this.isFaceMagnetActive) {
+        if (e.button !== 0) return; // Ignore right-click/middle-click camera panning
+        const dist = Math.hypot(e.clientX - this.pointerDownPos.x, e.clientY - this.pointerDownPos.y);
+        const duration = Date.now() - this.pointerDownPos.time;
+        if (dist > 8 || duration > 500) return; // Camera orbit or pan drag, not a snap click!
+
         this.handleFaceMagnetClick(e);
         return;
       }
@@ -819,7 +824,16 @@ export class StudioViewport {
       this.magnetCursorHelper.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), normal);
       this.magnetCursorHelper.visible = true;
     } else {
-      this.magnetCursorHelper.visible = false;
+      // Fallback: check ground plane (Y = 0)
+      const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+      const groundHit = new THREE.Vector3();
+      if (this.raycaster.ray.intersectPlane(groundPlane, groundHit) && groundHit.length() < 15) {
+        this.magnetCursorHelper.position.copy(groundHit).add(new THREE.Vector3(0, 0.005, 0));
+        this.magnetCursorHelper.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), new THREE.Vector3(0, 1, 0));
+        this.magnetCursorHelper.visible = true;
+      } else {
+        this.magnetCursorHelper.visible = false;
+      }
     }
   }
 
@@ -861,16 +875,29 @@ export class StudioViewport {
       }
     }
 
-    if (!targetHit || !targetHit.face) return;
+    if (targetHit && targetHit.face) {
+      const normal = targetHit.face.normal.clone().transformDirection(targetHit.object.matrixWorld).normalize();
+      const hitPoint = targetHit.point.clone();
 
-    const normal = targetHit.face.normal.clone().transformDirection(targetHit.object.matrixWorld).normalize();
-    const hitPoint = targetHit.point.clone();
+      const cb = this.faceMagnetCallback;
+      this.deactivateFaceMagnet();
 
-    const cb = this.faceMagnetCallback;
-    this.deactivateFaceMagnet();
+      if (cb) {
+        cb(hitPoint, normal, hitCompIdx);
+      }
+      return;
+    }
 
-    if (cb) {
-      cb(hitPoint, normal, hitCompIdx);
+    // Fallback: check ground plane (Y = 0)
+    const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+    const groundHit = new THREE.Vector3();
+    if (this.raycaster.ray.intersectPlane(groundPlane, groundHit) && groundHit.length() < 15) {
+      const normal = new THREE.Vector3(0, 1, 0);
+      const cb = this.faceMagnetCallback;
+      this.deactivateFaceMagnet();
+      if (cb) {
+        cb(groundHit, normal, null);
+      }
     }
   }
 
@@ -968,7 +995,7 @@ export class StudioViewport {
     }
   }
 
-  private getMeshByComponentIndex(index: number): THREE.Object3D | null {
+  public getMeshByComponentIndex(index: number): THREE.Object3D | null {
     if (!this.currentMesh) return null;
     let match: THREE.Object3D | null = null;
     this.currentMesh.traverse((child) => {

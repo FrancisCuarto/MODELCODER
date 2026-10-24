@@ -5300,30 +5300,46 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
         // Compute orientation aligned with surface normal
         const q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), normal);
         const euler = new THREE.Euler().setFromQuaternion(q, 'XYZ');
-        const rot: [number, number, number] = [
+        let rot: [number, number, number] = [
           parseFloat(THREE.MathUtils.radToDeg(euler.x).toFixed(1)),
           parseFloat(THREE.MathUtils.radToDeg(euler.y).toFixed(1)),
           parseFloat(THREE.MathUtils.radToDeg(euler.z).toFixed(1))
         ];
 
-        // Compute offset along normal based on pivot and dimensions
+        // Compute offset along normal based on real dimensions of each shape
         const s = comp.size || [1, 1, 1];
         const scl = comp.scale || [1, 1, 1];
-        const height = Math.max(0.01, (s[1] ?? 1.0) * (scl[1] ?? 1.0));
+        let rawHeight = s[1] ?? 1.0;
+        if (comp.shape === 'cylinder' || comp.shape === 'pipe') {
+          rawHeight = s[2] ?? 1.0;
+        } else if (comp.shape === 'sphere') {
+          rawHeight = (s[0] ?? 0.5) * 2;
+        }
+        const height = Math.max(0.01, rawHeight * (scl[1] ?? 1.0));
         const isPivotAtBase = (comp.pivot?.[1] ?? 0) < -0.01;
         const offset = isPivotAtBase ? 0.002 : (height / 2 + 0.002);
 
         const targetPos = hitPoint.clone().addScaledVector(normal, offset);
 
-        // If component has a parent, convert world position into parent local coordinate space
+        // If component has a parent, convert world position AND world orientation into parent local coordinate space
         if (comp.parentId) {
           const parentComp = currentSpec.components.find((c) => c.name === comp.parentId);
           if (parentComp) {
             const parentIdx = currentSpec.components.indexOf(parentComp);
-            const parentMesh = (viewport as any).getMeshByComponentIndex?.(parentIdx);
+            const parentMesh = viewport?.getMeshByComponentIndex?.(parentIdx);
             if (parentMesh) {
               const inv = parentMesh.matrixWorld.clone().invert();
               targetPos.applyMatrix4(inv);
+
+              const parentQuat = new THREE.Quaternion();
+              parentMesh.getWorldQuaternion(parentQuat);
+              const localQ = parentQuat.clone().invert().multiply(q);
+              const localEuler = new THREE.Euler().setFromQuaternion(localQ, 'XYZ');
+              rot = [
+                parseFloat(THREE.MathUtils.radToDeg(localEuler.x).toFixed(1)),
+                parseFloat(THREE.MathUtils.radToDeg(localEuler.y).toFixed(1)),
+                parseFloat(THREE.MathUtils.radToDeg(localEuler.z).toFixed(1))
+              ];
             }
           }
         }
@@ -5337,7 +5353,7 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
 
         updateMagnetUIState(false);
         renderCurrentSpec('visual', true, true);
-        showStudioToast('🧲 Pieza adherida a la superficie con éxito');
+        showStudioToast(hitCompIdx !== null ? '🧲 Pieza adherida a la superficie con éxito' : '🧲 Pieza adherida al suelo con éxito');
       },
       () => {
         updateMagnetUIState(false);
