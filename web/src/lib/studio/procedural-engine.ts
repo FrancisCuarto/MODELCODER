@@ -629,6 +629,9 @@ export class ProceduralEngine {
       }
     }
 
+    // Ensure world matrices are fully computed across hierarchy before CSG operations
+    group.updateMatrixWorld(true);
+
     // Apply non-destructive Boolean (CSG) modifiers
     for (let i = 0; i < spec.components.length; i++) {
       const comp = spec.components[i];
@@ -647,6 +650,8 @@ export class ProceduralEngine {
 
         if (comp.boolean.hideTarget !== false) {
           meshB.visible = false;
+          meshB.userData.isBooleanCutter = true;
+          meshB.userData.cutterBaseComp = comp.name;
         }
       }
     }
@@ -1016,8 +1021,8 @@ export class ProceduralEngine {
   ): void {
     if (!meshA || !meshB) return;
 
-    meshA.updateWorldMatrix(true, false);
-    meshB.updateWorldMatrix(true, false);
+    meshA.updateWorldMatrix(true, true);
+    meshB.updateWorldMatrix(true, true);
 
     let actualMeshA: THREE.Mesh | null = null;
     let actualMeshB: THREE.Mesh | null = null;
@@ -1037,17 +1042,30 @@ export class ProceduralEngine {
     if (!actualMeshA || !actualMeshB) return;
 
     try {
-      const invA = actualMeshA.matrixWorld.clone().invert();
-      const relB = new THREE.Matrix4().multiplyMatrices(invA, actualMeshB.matrixWorld);
+      const invA = (actualMeshA as THREE.Mesh).matrixWorld.clone().invert();
+      const relB = new THREE.Matrix4().multiplyMatrices(invA, (actualMeshB as THREE.Mesh).matrixWorld);
 
-      const brushA = new Brush(actualMeshA.geometry.clone(), actualMeshA.material);
-      const brushB = new Brush(actualMeshB.geometry.clone(), actualMeshB.material);
+      const geomA = (actualMeshA as THREE.Mesh).geometry.clone();
+      const geomB = (actualMeshB as THREE.Mesh).geometry.clone();
 
-      brushA.matrix.identity();
-      brushA.matrixAutoUpdate = false;
+      if (!geomA.attributes.normal) geomA.computeVertexNormals();
+      if (!geomB.attributes.normal) geomB.computeVertexNormals();
 
-      brushB.matrix.copy(relB);
-      brushB.matrixAutoUpdate = false;
+      const brushA = new Brush(geomA, (actualMeshA as THREE.Mesh).material);
+      const brushB = new Brush(geomB, (actualMeshB as THREE.Mesh).material);
+
+      brushA.position.set(0, 0, 0);
+      brushA.quaternion.identity();
+      brushA.scale.set(1, 1, 1);
+      brushA.updateMatrix();
+      brushA.updateMatrixWorld(true);
+
+      brushB.position.set(0, 0, 0);
+      brushB.quaternion.identity();
+      brushB.scale.set(1, 1, 1);
+      relB.decompose(brushB.position, brushB.quaternion, brushB.scale);
+      brushB.updateMatrix();
+      brushB.updateMatrixWorld(true);
 
       let opCode = SUBTRACTION;
       if (operation === 'union') opCode = ADDITION;
@@ -1059,7 +1077,9 @@ export class ProceduralEngine {
 
       if (result && result.geometry) {
         result.geometry.computeVertexNormals();
-        actualMeshA.geometry = result.geometry;
+        result.geometry.computeBoundingBox();
+        result.geometry.computeBoundingSphere();
+        (actualMeshA as THREE.Mesh).geometry = result.geometry;
       }
     } catch (err) {
       console.warn('[ProceduralEngine] Error al evaluar operación booleana CSG:', err);
@@ -1089,12 +1109,16 @@ export class ProceduralEngine {
 
       let bakedMesh: THREE.Mesh | null = null;
       group.traverse((obj) => {
-        if (!bakedMesh && obj.userData && obj.userData.componentIndex === compIndex) {
-          obj.traverse((child) => {
-            if (!bakedMesh && (child as THREE.Mesh).isMesh && (child as THREE.Mesh).geometry) {
-              bakedMesh = child as THREE.Mesh;
-            }
-          });
+        if (!bakedMesh && (obj.userData?.componentIndex === compIndex || obj.name === compA.name)) {
+          if ((obj as THREE.Mesh).isMesh && (obj as THREE.Mesh).geometry) {
+            bakedMesh = obj as THREE.Mesh;
+          } else {
+            obj.traverse((child) => {
+              if (!bakedMesh && (child as THREE.Mesh).isMesh && (child as THREE.Mesh).geometry) {
+                bakedMesh = child as THREE.Mesh;
+              }
+            });
+          }
         }
       });
 

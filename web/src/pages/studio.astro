@@ -3511,7 +3511,7 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
       <!-- SECTION 8: ANIMACIÓN -->
       <div class="prop-section collapsible-section ps1-inset ${isOpen('animation') ? 'is-open' : 'is-collapsed'}" data-sec-id="animation">
         <div class="section-titlebar section-toggle-header" data-sec-target="animation" role="button" tabindex="0" aria-expanded="${isOpen('animation')}">
-          <span class="section-badge">6</span>
+          <span class="section-badge">8</span>
           <span class="section-heading">ANIMACIÓN & MECÁNICAS</span>
           <button type="button" id="btn-quick-add-anim" class="btn-mini-link" title="Crear nueva pista de animación para esta pieza">
             + Nueva
@@ -5083,10 +5083,19 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     });
 
     chkBoolHideTarget?.addEventListener('change', () => {
-      if (comp.boolean) {
+      if (!comp.boolean) {
+        const otherComps = currentSpec.components.filter((_, idx) => idx !== selectedComponentIndex);
+        const firstOther = otherComps[0]?.name || '';
+        comp.boolean = {
+          enabled: true,
+          operation: 'difference',
+          targetComponent: firstOther,
+          hideTarget: chkBoolHideTarget.checked
+        };
+      } else {
         comp.boolean.hideTarget = chkBoolHideTarget.checked;
-        renderCurrentSpec('visual', true, true);
       }
+      renderCurrentSpec('visual', true, true);
     });
 
     btnBakeBoolean?.addEventListener('click', (e) => {

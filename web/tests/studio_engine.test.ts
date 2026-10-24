@@ -3069,6 +3069,60 @@ test('Boolean Operations: Difference (Sustracción) corta un orificio cilíndric
   ProceduralEngine.disposeHierarchy(group);
 });
 
+test('Boolean Operations: Difference con offset espacial corta correctamente en coordenadas relativas (Caso Pirámide)', async () => {
+  const { ProceduralEngine } = await import('../src/lib/studio/procedural-engine.ts');
+
+  // Exact scenario: A box at [-0.4, 0.8, 0.3] cut by an offset pyramid at [-0.4, 1.2, 0.3]
+  const spec: any = {
+    id: 'test.boolean.offset_pyramid',
+    name: 'Cubo con corte de Pirámide',
+    units: 'meters',
+    dimensions: { width: 2, depth: 2, height: 2 },
+    components: [
+      {
+        name: 'cubo_6',
+        shape: 'box',
+        size: [1, 1, 1],
+        position: [-0.4, 0.8, 0.3],
+        boolean: {
+          enabled: true,
+          operation: 'difference',
+          targetComponent: 'piramide_7',
+          hideTarget: true
+        }
+      },
+      {
+        name: 'piramide_7',
+        shape: 'pyramid',
+        size: [0.5, 1, 4],
+        position: [-0.4, 1.2, 0.3]
+      }
+    ]
+  };
+
+  const { group } = ProceduralEngine.buildModelFromSpec(spec);
+  assert.ok(group);
+
+  const cuboMesh = group.children.find((c: any) => c.name === 'cubo_6') as any;
+  const piramideMesh = group.children.find((c: any) => c.name === 'piramide_7') as any;
+
+  assert.ok(cuboMesh, 'cubo_6 debe existir');
+  assert.ok(piramideMesh, 'piramide_7 debe existir');
+  assert.equal(piramideMesh.visible, false, 'La pirámide cortadora debe estar oculta si hideTarget es true');
+  assert.equal(piramideMesh.userData.isBooleanCutter, true, 'Debe estar marcada como cortadora booleana');
+
+  // Verify that the cut actually modified the cube's geometry
+  const triCount = cuboMesh.geometry.index.count / 3;
+  assert.ok(triCount > 12, `El cubo cortado debe tener más de 12 triángulos estándar (actual: ${triCount})`);
+
+  // Verify bounding box of the cut cube
+  cuboMesh.geometry.computeBoundingBox();
+  const topCutY = cuboMesh.geometry.boundingBox.max.y;
+  assert.ok(topCutY <= 0.501, 'El corte superior debe respetar el volumen de la pirámide');
+
+  ProceduralEngine.disposeHierarchy(group);
+});
+
 test('Boolean Operations: Union e Intersección generan geometrías CSG válidas', async () => {
   const { ProceduralEngine } = await import('../src/lib/studio/procedural-engine.ts');
 

@@ -660,6 +660,12 @@ export class StudioViewport {
    * Selects an individual component by index, highlights it with BoxHelper, and attaches gizmo.
    */
   public selectComponent(index: number | null): void {
+    // Restore visibility of any cutter that was temporarily made visible for selection
+    if (this.selectedMesh && this.selectedMesh.userData?.isBooleanCutter && this.selectedMesh.userData?.tempShownForSelection) {
+      this.selectedMesh.visible = false;
+      delete this.selectedMesh.userData.tempShownForSelection;
+    }
+
     this.selectedComponentIndex = index;
 
     if (index === null || !this.currentMesh) {
@@ -678,6 +684,13 @@ export class StudioViewport {
     }
 
     this.selectedMesh = target;
+
+    // If target is a hidden boolean cutter, reveal it while selected so the user can see and transform it
+    if (target.userData?.isBooleanCutter && !target.visible) {
+      target.visible = true;
+      target.userData.tempShownForSelection = true;
+    }
+
     if (this.currentGizmoMode !== 'none') {
       this.transformControls.attach(target);
     }
