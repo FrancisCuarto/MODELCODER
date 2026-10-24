@@ -1895,6 +1895,9 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
         handleViewportComponentSelect,
         handleViewportGizmoTransform
       );
+      viewport.setOnMagnetFeedback((msg, isError) => {
+        showStudioToast(msg, isError);
+      });
       viewport.setOnAnimationProgressCallback((curTime, dur, isPlaying, clipName) => {
         if (animTimeSlider) {
           animTimeSlider.max = String(dur || 1.0);
@@ -5306,16 +5309,10 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
           parseFloat(THREE.MathUtils.radToDeg(euler.z).toFixed(1))
         ];
 
-        // Compute offset along normal based on real dimensions of each shape
-        const s = comp.size || [1, 1, 1];
+        // Compute offset along normal based on canonical bounds of each shape
+        const bounds = ProceduralEngine.computeComponentBounds(comp);
         const scl = comp.scale || [1, 1, 1];
-        let rawHeight = s[1] ?? 1.0;
-        if (comp.shape === 'cylinder' || comp.shape === 'pipe') {
-          rawHeight = s[2] ?? 1.0;
-        } else if (comp.shape === 'sphere') {
-          rawHeight = (s[0] ?? 0.5) * 2;
-        }
-        const height = Math.max(0.01, rawHeight * (scl[1] ?? 1.0));
+        const height = Math.max(0.01, bounds.h * (scl[1] ?? 1.0));
         const isPivotAtBase = (comp.pivot?.[1] ?? 0) < -0.01;
         const offset = isPivotAtBase ? 0.002 : (height / 2 + 0.002);
 
@@ -5353,7 +5350,8 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
 
         updateMagnetUIState(false);
         renderCurrentSpec('visual', true, true);
-        showStudioToast(hitCompIdx !== null ? '🧲 Pieza adherida a la superficie con éxito' : '🧲 Pieza adherida al suelo con éxito');
+        const targetName = hitCompIdx !== null ? currentSpec.components[hitCompIdx]?.name : null;
+        showStudioToast(targetName ? `🧲 Pieza adherida a la cara de "${targetName}"` : '🧲 Pieza adherida al suelo con éxito');
       },
       () => {
         updateMagnetUIState(false);

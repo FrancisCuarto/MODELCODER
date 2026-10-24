@@ -60,6 +60,7 @@ export class StudioViewport {
   // Callbacks
   private onStatsUpdate?: (stats: GeometricStats | null, result: GenerationResult | null) => void;
   private onComponentSelected?: (index: number | null) => void;
+  private onMagnetFeedback?: (msg: string, isError?: boolean) => void;
   private onComponentTransformChange?: (
     index: number,
     pos: [number, number, number],
@@ -239,10 +240,10 @@ export class StudioViewport {
     });
     this.renderer.domElement.addEventListener('pointerup', (e) => {
       if (this.isFaceMagnetActive) {
-        if (e.button !== 0) return; // Ignore right-click/middle-click camera panning
+        const isLeftOrTouch = e.pointerType === 'touch' || e.button === 0 || typeof e.button === 'undefined';
+        if (!isLeftOrTouch) return; // Ignore right-click/middle-click camera panning
         const dist = Math.hypot(e.clientX - this.pointerDownPos.x, e.clientY - this.pointerDownPos.y);
-        const duration = Date.now() - this.pointerDownPos.time;
-        if (dist > 8 || duration > 500) return; // Camera orbit or pan drag, not a snap click!
+        if (dist > 14) return; // Camera orbit or pan drag, not a snap click!
 
         this.handleFaceMagnetClick(e);
         return;
@@ -790,17 +791,20 @@ export class StudioViewport {
     if (!this.currentMesh || !this.magnetCursorHelper) return;
 
     const rect = this.renderer.domElement.getBoundingClientRect();
+    const clientX = e.clientX || (e as any).changedTouches?.[0]?.clientX || 0;
+    const clientY = e.clientY || (e as any).changedTouches?.[0]?.clientY || 0;
     const mouse = new THREE.Vector2(
-      ((e.clientX - rect.left) / rect.width) * 2 - 1,
-      -((e.clientY - rect.top) / rect.height) * 2 + 1
+      ((clientX - rect.left) / rect.width) * 2 - 1,
+      -((clientY - rect.top) / rect.height) * 2 + 1
     );
     this.raycaster.setFromCamera(mouse, this.camera);
 
     const hits = this.raycaster.intersectObjects(this.currentMesh.children, true);
     let targetHit: THREE.Intersection | null = null;
+    let hoveringSelf = false;
 
     for (const hit of hits) {
-      if (!hit.object.visible || !hit.face || !hit.point) continue;
+      if (!hit.object.visible || !hit.point) continue;
       let curr: THREE.Object3D | null = hit.object;
       let isSelectedChild = false;
 
@@ -812,27 +816,40 @@ export class StudioViewport {
         curr = curr.parent;
       }
 
-      if (!isSelectedChild) {
-        targetHit = hit;
-        break;
+      if (isSelectedChild) {
+        hoveringSelf = true;
+        continue;
       }
+
+      targetHit = hit;
+      break;
     }
 
-    if (targetHit && targetHit.face) {
-      const normal = targetHit.face.normal.clone().transformDirection(targetHit.object.matrixWorld).normalize();
+    if (targetHit) {
+      const normal = targetHit.face && targetHit.face.normal
+        ? targetHit.face.normal.clone().transformDirection(targetHit.object.matrixWorld).normalize()
+        : new THREE.Vector3(0, 1, 0);
       this.magnetCursorHelper.position.copy(targetHit.point).addScaledVector(normal, 0.005);
       this.magnetCursorHelper.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), normal);
+      (this.magnetCursorHelper.material as THREE.MeshBasicMaterial).color.setHex(0x00ffcc);
       this.magnetCursorHelper.visible = true;
+      this.renderer.domElement.style.cursor = 'crosshair';
+    } else if (hoveringSelf) {
+      this.magnetCursorHelper.visible = false;
+      this.renderer.domElement.style.cursor = 'not-allowed';
     } else {
       // Fallback: check ground plane (Y = 0)
       const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
       const groundHit = new THREE.Vector3();
-      if (this.raycaster.ray.intersectPlane(groundPlane, groundHit) && groundHit.length() < 15) {
+      if (this.raycaster.ray.intersectPlane(groundPlane, groundHit) && groundHit.length() < 30) {
         this.magnetCursorHelper.position.copy(groundHit).add(new THREE.Vector3(0, 0.005, 0));
         this.magnetCursorHelper.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), new THREE.Vector3(0, 1, 0));
+        (this.magnetCursorHelper.material as THREE.MeshBasicMaterial).color.setHex(0x38bdf8);
         this.magnetCursorHelper.visible = true;
+        this.renderer.domElement.style.cursor = 'crosshair';
       } else {
         this.magnetCursorHelper.visible = false;
+        this.renderer.domElement.style.cursor = 'crosshair';
       }
     }
   }
@@ -841,18 +858,21 @@ export class StudioViewport {
     if (this.selectedComponentIndex === null || !this.currentMesh) return;
 
     const rect = this.renderer.domElement.getBoundingClientRect();
+    const clientX = e.clientX || (e as any).changedTouches?.[0]?.clientX || this.pointerDownPos.x;
+    const clientY = e.clientY || (e as any).changedTouches?.[0]?.clientY || this.pointerDownPos.y;
     const mouse = new THREE.Vector2(
-      ((e.clientX - rect.left) / rect.width) * 2 - 1,
-      -((e.clientY - rect.top) / rect.height) * 2 + 1
+      ((clientX - rect.left) / rect.width) * 2 - 1,
+      -((clientY - rect.top) / rect.height) * 2 + 1
     );
     this.raycaster.setFromCamera(mouse, this.camera);
 
     const hits = this.raycaster.intersectObjects(this.currentMesh.children, true);
     let targetHit: THREE.Intersection | null = null;
     let hitCompIdx: number | null = null;
+    let clickedOnSelf = false;
 
     for (const hit of hits) {
-      if (!hit.object.visible || !hit.face || !hit.point) continue;
+      if (!hit.object.visible || !hit.point) continue;
       let curr: THREE.Object3D | null = hit.object;
       let isSelectedChild = false;
       let matchedIdx: number | null = null;
@@ -868,15 +888,24 @@ export class StudioViewport {
         curr = curr.parent;
       }
 
-      if (!isSelectedChild) {
-        targetHit = hit;
-        hitCompIdx = matchedIdx;
-        break;
+      if (isSelectedChild) {
+        clickedOnSelf = true;
+        continue;
       }
+
+      targetHit = hit;
+      hitCompIdx = matchedIdx;
+      break;
     }
 
-    if (targetHit && targetHit.face) {
-      const normal = targetHit.face.normal.clone().transformDirection(targetHit.object.matrixWorld).normalize();
+    if (targetHit) {
+      let normal: THREE.Vector3;
+      if (targetHit.face && targetHit.face.normal) {
+        normal = targetHit.face.normal.clone().transformDirection(targetHit.object.matrixWorld).normalize();
+      } else {
+        const objWorldPos = targetHit.object.getWorldPosition(new THREE.Vector3());
+        normal = targetHit.point.clone().sub(objWorldPos).normalize();
+      }
       const hitPoint = targetHit.point.clone();
 
       const cb = this.faceMagnetCallback;
@@ -888,16 +917,29 @@ export class StudioViewport {
       return;
     }
 
+    if (clickedOnSelf) {
+      if (this.onMagnetFeedback) {
+        this.onMagnetFeedback('⚠️ Esta es la pieza seleccionada. Haz clic en la superficie de otra pieza o en el suelo para pegarla.', true);
+      }
+      return;
+    }
+
     // Fallback: check ground plane (Y = 0)
     const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
     const groundHit = new THREE.Vector3();
-    if (this.raycaster.ray.intersectPlane(groundPlane, groundHit) && groundHit.length() < 15) {
+    if (this.raycaster.ray.intersectPlane(groundPlane, groundHit) && groundHit.length() < 30) {
       const normal = new THREE.Vector3(0, 1, 0);
       const cb = this.faceMagnetCallback;
       this.deactivateFaceMagnet();
       if (cb) {
         cb(groundHit, normal, null);
       }
+      return;
+    }
+
+    // Clicked in empty sky
+    if (this.onMagnetFeedback) {
+      this.onMagnetFeedback('⚠️ Haz clic sobre la superficie de una pieza o sobre la cuadrícula del suelo.', true);
     }
   }
 
@@ -1364,6 +1406,10 @@ export class StudioViewport {
 
   public setOnComponentTransformChange(cb: (index: number, pos: [number, number, number], rot: [number, number, number], scale: [number, number, number]) => void): void {
     this.onComponentTransformChange = cb;
+  }
+
+  public setOnMagnetFeedback(cb: (msg: string, isError?: boolean) => void): void {
+    this.onMagnetFeedback = cb;
   }
 
   /**
