@@ -5297,62 +5297,68 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     viewport.activateFaceMagnet(
       selectedComponentIndex,
       (hitPoint, normal, hitCompIdx) => {
-        if (selectedComponentIndex === null) return;
-        const comp = currentSpec.components[selectedComponentIndex];
-        if (!comp) return;
+        try {
+          if (selectedComponentIndex === null) return;
+          const comp = currentSpec.components[selectedComponentIndex];
+          if (!comp) return;
 
-        // Compute orientation aligned with surface normal
-        const q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), normal);
-        const euler = new THREE.Euler().setFromQuaternion(q, 'XYZ');
-        let rot: [number, number, number] = [
-          parseFloat(THREE.MathUtils.radToDeg(euler.x).toFixed(1)),
-          parseFloat(THREE.MathUtils.radToDeg(euler.y).toFixed(1)),
-          parseFloat(THREE.MathUtils.radToDeg(euler.z).toFixed(1))
-        ];
+          // Compute orientation aligned with surface normal
+          const q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), normal);
+          const euler = new THREE.Euler().setFromQuaternion(q, 'XYZ');
+          let rot: [number, number, number] = [
+            parseFloat(THREE.MathUtils.radToDeg(euler.x).toFixed(1)),
+            parseFloat(THREE.MathUtils.radToDeg(euler.y).toFixed(1)),
+            parseFloat(THREE.MathUtils.radToDeg(euler.z).toFixed(1))
+          ];
 
-        // Compute offset along normal based on canonical bounds of each shape
-        const bounds = ProceduralEngine.computeComponentBounds(comp);
-        const scl = comp.scale || [1, 1, 1];
-        const height = Math.max(0.01, bounds.h * (scl[1] ?? 1.0));
-        const isPivotAtBase = (comp.pivot?.[1] ?? 0) < -0.01;
-        const offset = isPivotAtBase ? 0.002 : (height / 2 + 0.002);
+          // Compute offset along normal based on canonical bounds of each shape
+          const bounds = ProceduralEngine.computeComponentBounds(comp);
+          const scl = comp.scale || [1, 1, 1];
+          const height = Math.max(0.01, bounds.h * (scl[1] ?? 1.0));
+          const isPivotAtBase = (comp.pivot?.[1] ?? 0) < -0.01;
+          const offset = isPivotAtBase ? 0.002 : (height / 2 + 0.002);
 
-        const targetPos = hitPoint.clone().addScaledVector(normal, offset);
+          const targetPos = hitPoint.clone().addScaledVector(normal, offset);
 
-        // If component has a parent, convert world position AND world orientation into parent local coordinate space
-        if (comp.parentId) {
-          const parentComp = currentSpec.components.find((c) => c.name === comp.parentId);
-          if (parentComp) {
-            const parentIdx = currentSpec.components.indexOf(parentComp);
-            const parentMesh = viewport?.getMeshByComponentIndex?.(parentIdx);
-            if (parentMesh) {
-              const inv = parentMesh.matrixWorld.clone().invert();
-              targetPos.applyMatrix4(inv);
+          // If component has a parent, convert world position AND world orientation into parent local coordinate space
+          if (comp.parentId) {
+            const parentComp = currentSpec.components.find((c) => c.name === comp.parentId);
+            if (parentComp) {
+              const parentIdx = currentSpec.components.indexOf(parentComp);
+              const parentMesh = viewport?.getMeshByComponentIndex?.(parentIdx);
+              if (parentMesh) {
+                const inv = parentMesh.matrixWorld.clone().invert();
+                targetPos.applyMatrix4(inv);
 
-              const parentQuat = new THREE.Quaternion();
-              parentMesh.getWorldQuaternion(parentQuat);
-              const localQ = parentQuat.clone().invert().multiply(q);
-              const localEuler = new THREE.Euler().setFromQuaternion(localQ, 'XYZ');
-              rot = [
-                parseFloat(THREE.MathUtils.radToDeg(localEuler.x).toFixed(1)),
-                parseFloat(THREE.MathUtils.radToDeg(localEuler.y).toFixed(1)),
-                parseFloat(THREE.MathUtils.radToDeg(localEuler.z).toFixed(1))
-              ];
+                const parentQuat = new THREE.Quaternion();
+                parentMesh.getWorldQuaternion(parentQuat);
+                const localQ = parentQuat.clone().invert().multiply(q);
+                const localEuler = new THREE.Euler().setFromQuaternion(localQ, 'XYZ');
+                rot = [
+                  parseFloat(THREE.MathUtils.radToDeg(localEuler.x).toFixed(1)),
+                  parseFloat(THREE.MathUtils.radToDeg(localEuler.y).toFixed(1)),
+                  parseFloat(THREE.MathUtils.radToDeg(localEuler.z).toFixed(1))
+                ];
+              }
             }
           }
+
+          comp.position = [
+            parseFloat(targetPos.x.toFixed(3)),
+            parseFloat(targetPos.y.toFixed(3)),
+            parseFloat(targetPos.z.toFixed(3))
+          ];
+          comp.rotation = rot;
+
+          updateMagnetUIState(false);
+          renderCurrentSpec('visual', true, true);
+          const targetName = hitCompIdx !== null ? currentSpec.components[hitCompIdx]?.name : null;
+          showStudioToast(targetName ? `🧲 Pieza adherida a la cara de "${targetName}"` : '🧲 Pieza adherida al suelo con éxito');
+        } catch (err: any) {
+          console.error('[Studio Face Magnet] Error al pegar pieza:', err);
+          updateMagnetUIState(false);
+          showStudioToast('⚠️ Error al pegar pieza: ' + (err?.message || err), true);
         }
-
-        comp.position = [
-          parseFloat(targetPos.x.toFixed(3)),
-          parseFloat(targetPos.y.toFixed(3)),
-          parseFloat(targetPos.z.toFixed(3))
-        ];
-        comp.rotation = rot;
-
-        updateMagnetUIState(false);
-        renderCurrentSpec('visual', true, true);
-        const targetName = hitCompIdx !== null ? currentSpec.components[hitCompIdx]?.name : null;
-        showStudioToast(targetName ? `🧲 Pieza adherida a la cara de "${targetName}"` : '🧲 Pieza adherida al suelo con éxito');
       },
       () => {
         updateMagnetUIState(false);

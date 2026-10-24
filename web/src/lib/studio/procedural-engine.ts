@@ -462,6 +462,74 @@ export class ProceduralEngine {
     }
   }
 
+  public static computeComponentBounds(comp: ComponentDef): { w: number; h: number; d: number } {
+    const s = comp.size || [1, 1, 1];
+    let w = 1, h = 1, d = 1;
+    switch (comp.shape) {
+      case 'box':
+      case 'wedge':
+      case 'chamfer_box':
+        w = s[0] ?? 1;
+        h = s[1] ?? 1;
+        d = s[2] ?? 1;
+        break;
+      case 'cylinder':
+      case 'pipe':
+      case 'prism':
+        w = (s[0] ?? 0.5) * 2;
+        h = s[2] ?? 1;
+        d = (s[1] ?? (s[0] ?? 0.5)) * 2;
+        break;
+      case 'sphere':
+        w = (s[0] ?? 0.5) * 2;
+        h = w;
+        d = w;
+        break;
+      case 'cone':
+      case 'pyramid':
+        w = (s[0] ?? 0.5) * 2;
+        h = s[1] ?? 1;
+        d = w;
+        break;
+      case 'capsule':
+        w = (s[0] ?? 0.25) * 2;
+        h = (s[1] ?? 0.5) + (s[0] ?? 0.25) * 2;
+        d = w;
+        break;
+      case 'torus':
+        w = ((s[0] ?? 0.5) + (s[1] ?? 0.15)) * 2;
+        h = (s[1] ?? 0.15) * 2;
+        d = w;
+        break;
+      case 'plane':
+        w = s[0] ?? 1;
+        h = s[1] ?? 1;
+        d = 0.01;
+        break;
+      case 'mesh': {
+        const cachedGeom = (comp as any)?.meshId ? this.getRegisteredGeometry((comp as any).meshId) : null;
+        if (cachedGeom) {
+          if (!cachedGeom.boundingBox) cachedGeom.computeBoundingBox();
+          if (cachedGeom.boundingBox) {
+            w = cachedGeom.boundingBox.max.x - cachedGeom.boundingBox.min.x;
+            h = cachedGeom.boundingBox.max.y - cachedGeom.boundingBox.min.y;
+            d = cachedGeom.boundingBox.max.z - cachedGeom.boundingBox.min.z;
+            break;
+          }
+        }
+        w = s[0] ?? 1;
+        h = s[1] ?? 1;
+        d = s[2] ?? 1;
+        break;
+      }
+      default:
+        w = s[0] ?? 1;
+        h = s[1] ?? 1;
+        d = s[2] ?? 1;
+    }
+    return { w, h, d };
+  }
+
   public static computePresetPivot(
     preset: PivotPresetType,
     shape: ShapePrimitive,

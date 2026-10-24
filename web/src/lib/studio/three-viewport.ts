@@ -56,7 +56,7 @@ export class StudioViewport {
   private faceMagnetCallback: ((hitPoint: THREE.Vector3, normal: THREE.Vector3, hitCompIndex: number | null) => void) | null = null;
   private faceMagnetCancelCallback: (() => void) | null = null;
   private magnetCursorHelper: THREE.Mesh | null = null;
-  private savedControlsConfig: { mouseButtonsLeft: any; mouseButtonsRight: any; touchesOne: any } | null = null;
+  private savedControlsConfig: { enabled: boolean } | null = null;
 
   // Callbacks
   private onStatsUpdate?: (stats: GeometricStats | null, result: GenerationResult | null) => void;
@@ -791,13 +791,9 @@ export class StudioViewport {
 
     if (this.controls) {
       this.savedControlsConfig = {
-        mouseButtonsLeft: this.controls.mouseButtons.LEFT,
-        mouseButtonsRight: this.controls.mouseButtons.RIGHT,
-        touchesOne: this.controls.touches.ONE
+        enabled: this.controls.enabled
       };
-      this.controls.mouseButtons.LEFT = null as any;
-      this.controls.mouseButtons.RIGHT = THREE.MOUSE.ROTATE;
-      this.controls.touches.ONE = null as any;
+      this.controls.enabled = false;
     }
   }
 
@@ -811,9 +807,7 @@ export class StudioViewport {
     this.renderer.domElement.style.cursor = 'default';
 
     if (this.controls && this.savedControlsConfig) {
-      this.controls.mouseButtons.LEFT = this.savedControlsConfig.mouseButtonsLeft;
-      this.controls.mouseButtons.RIGHT = this.savedControlsConfig.mouseButtonsRight;
-      this.controls.touches.ONE = this.savedControlsConfig.touchesOne;
+      this.controls.enabled = this.savedControlsConfig.enabled;
       this.savedControlsConfig = null;
     }
 
