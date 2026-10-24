@@ -80,6 +80,12 @@ export class GLBExporterService {
               width: img.width,
               height: img.height
             };
+          } else if (img && img._imageData && img._imageData.data) {
+            canvasObj._imageData = {
+              data: new Uint8ClampedArray(img._imageData.data),
+              width: img._imageData.width,
+              height: img._imageData.height
+            };
           }
         },
         getImageData: (_x: number, _y: number, w = 64, h = 64) => {
@@ -255,6 +261,87 @@ export class GLBExporterService {
   }
 
   /**
+   * Converts a DataTexture (or any texture with raw pixel buffer) into a CanvasTexture
+   * so that Three.js GLTFExporter can safely process it with CanvasRenderingContext2D.drawImage()
+   * without throwing TypeErrors in browser environments.
+   */
+  public static convertDataTextureToCanvasTexture(tex: THREE.Texture): THREE.CanvasTexture | null {
+    if (!tex || !tex.image) return null;
+    const img: any = tex.image;
+    const width = img.width || 64;
+    const height = img.height || 64;
+
+    // Check if it's already an HTMLCanvasElement or ImageBitmap or HTMLImageElement
+    if (typeof HTMLCanvasElement !== 'undefined' && img instanceof HTMLCanvasElement) {
+      return null;
+    }
+
+    try {
+      let canvas: any;
+      if (typeof document !== 'undefined' && document.createElement) {
+        canvas = document.createElement('canvas');
+      } else if (typeof OffscreenCanvas !== 'undefined') {
+        canvas = new OffscreenCanvas(width, height);
+      } else {
+        return null;
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return null;
+
+      if (img.data) {
+        let clamped: Uint8ClampedArray;
+        if (img.data instanceof Uint8ClampedArray) {
+          clamped = img.data;
+        } else if (img.data.buffer) {
+          clamped = new Uint8ClampedArray(img.data.buffer, img.data.byteOffset, img.data.byteLength);
+        } else {
+          clamped = new Uint8ClampedArray(img.data);
+        }
+
+        let imageData: any;
+        if (typeof ImageData !== 'undefined') {
+          imageData = new ImageData(clamped, width, height);
+        } else if (ctx.createImageData) {
+          imageData = ctx.createImageData(width, height);
+          imageData.data.set(clamped);
+        }
+
+        if (imageData && ctx.putImageData) {
+          ctx.putImageData(imageData, 0, 0);
+        }
+      } else if (typeof ctx.drawImage === 'function') {
+        try {
+          ctx.drawImage(img, 0, 0, width, height);
+        } catch {
+          // ignore
+        }
+      }
+
+      const canvasTex = new THREE.CanvasTexture(canvas);
+      canvasTex.wrapS = tex.wrapS;
+      canvasTex.wrapT = tex.wrapT;
+      canvasTex.repeat.copy(tex.repeat);
+      canvasTex.offset.copy(tex.offset);
+      canvasTex.rotation = tex.rotation;
+      if (tex.center) canvasTex.center.copy(tex.center);
+      canvasTex.flipY = tex.flipY;
+      canvasTex.generateMipmaps = tex.generateMipmaps;
+      canvasTex.minFilter = tex.minFilter;
+      canvasTex.magFilter = tex.magFilter;
+      canvasTex.name = tex.name || 'exported_canvas_tex';
+      canvasTex.needsUpdate = true;
+
+      return canvasTex;
+    } catch (err) {
+      console.warn('[GLBExporterService] Failed to convert texture to CanvasTexture:', err);
+      return null;
+    }
+  }
+
+  /**
    * Converts a Three.js hierarchy to an ArrayBuffer using GLTFExporter.
    */
   public static exportToArrayBuffer(
@@ -312,6 +399,56 @@ export class GLBExporterService {
       }
     };
 
+    // Stash any DataTextures and swap with temporary CanvasTextures for GLTFExporter browser compatibility
+    const textureReplacements: Array<{
+      material: any;
+      field: string;
+      originalTexture: THREE.Texture;
+    }> = [];
+
+    const textureFields = [
+      'map',
+      'normalMap',
+      'roughnessMap',
+      'metalnessMap',
+      'aoMap',
+      'emissiveMap',
+      'bumpMap',
+      'displacementMap'
+    ] as const;
+
+    const visitedMaterials = new Set<any>();
+    obj.traverse((node: any) => {
+      if (node.isMesh && node.material) {
+        const materials = Array.isArray(node.material) ? node.material : [node.material];
+        for (const mat of materials) {
+          if (!mat || visitedMaterials.has(mat)) continue;
+          visitedMaterials.add(mat);
+
+          for (const field of textureFields) {
+            const tex = mat[field];
+            if (tex && (tex.isDataTexture || (tex.image && tex.image.data))) {
+              const canvasTex = GLBExporterService.convertDataTextureToCanvasTexture(tex);
+              if (canvasTex) {
+                textureReplacements.push({
+                  material: mat,
+                  field,
+                  originalTexture: tex
+                });
+                mat[field] = canvasTex;
+              }
+            }
+          }
+        }
+      }
+    });
+
+    const restoreTextures = () => {
+      for (const { material, field, originalTexture } of textureReplacements) {
+        material[field] = originalTexture;
+      }
+    };
+
     return new Promise((resolve, reject) => {
       const exporter = new GLTFExporter();
       const exportOptions: any = {
@@ -327,6 +464,7 @@ export class GLBExporterService {
         obj,
         (result) => {
           restoreColliders();
+          restoreTextures();
           if (result instanceof ArrayBuffer) {
             resolve(result);
           } else {
@@ -338,6 +476,7 @@ export class GLBExporterService {
         },
         (error) => {
           restoreColliders();
+          restoreTextures();
           reject(new Error(`Error durante exportación GLTFExporter: ${error}`));
         },
         exportOptions

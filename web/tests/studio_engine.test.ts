@@ -81,6 +81,12 @@ if (typeof (globalThis as any).document === 'undefined') {
                 width: img.width,
                 height: img.height
               };
+            } else if (img && img._imageData && img._imageData.data) {
+              canvasObj._imageData = {
+                data: new Uint8ClampedArray(img._imageData.data),
+                width: img._imageData.width,
+                height: img._imageData.height
+              };
             }
           },
           getImageData: (_x: number, _y: number, w = 64, h = 64) => {
