@@ -7,6 +7,7 @@ export interface GenerationConfig {
   engine?: 'ai' | 'local';
   apiKey?: string;
   forceFresh?: boolean;
+  model?: string;
 }
 
 export class AIGenerator {
@@ -18,7 +19,12 @@ export class AIGenerator {
   public static async generateModel(
     prompt: string,
     configOrKey?: string | GenerationConfig
-  ): Promise<{ spec: ModelSpec; rawResponse?: string; source: 'gemini' | 'local' | 'local_memory' | 'cloud_memory' | 'gemini_fallback' }> {
+  ): Promise<{
+    spec: ModelSpec;
+    rawResponse?: string;
+    source: 'gemini' | 'local' | 'local_memory' | 'cloud_memory' | 'gemini_fallback';
+    usedModel?: string;
+  }> {
     const cleanPrompt = prompt.trim();
     if (!cleanPrompt) {
       throw new Error('El prompt no puede estar vacío.');
@@ -27,6 +33,7 @@ export class AIGenerator {
     let engine: 'ai' | 'local' = 'local';
     let apiKey: string | undefined = undefined;
     let forceFresh = false;
+    let model: string | undefined = undefined;
 
     if (typeof configOrKey === 'string') {
       apiKey = configOrKey;
@@ -35,6 +42,7 @@ export class AIGenerator {
       engine = configOrKey.engine || 'local';
       apiKey = configOrKey.apiKey;
       forceFresh = configOrKey.forceFresh ?? (engine === 'ai');
+      model = configOrKey.model;
     }
 
     // =========================================================================
@@ -53,9 +61,14 @@ export class AIGenerator {
 
       try {
         // Llamada directa a Gemini sin consultar memoria ni presets existentes
-        const geminiRes = await this.callGeminiAPI(cleanPrompt, apiKey.trim());
+        const geminiRes = await this.callGeminiAPI(cleanPrompt, apiKey.trim(), model);
         const normalizedSpec = this.normalizeSpecGeometry(geminiRes.spec);
-        return { spec: normalizedSpec, rawResponse: geminiRes.rawResponse, source: 'gemini' };
+        return {
+          spec: normalizedSpec,
+          rawResponse: geminiRes.rawResponse,
+          source: 'gemini',
+          usedModel: geminiRes.usedModel
+        };
       } catch (geminiErr: any) {
         console.warn('[AIGenerator] Todos los modelos de Gemini devolvieron error o están saturados (503/429). Activando auto-fallback procedural para no bloquear al usuario:', geminiErr);
 
@@ -488,8 +501,9 @@ export class AIGenerator {
    */
   private static async callGeminiAPI(
     prompt: string,
-    apiKey: string
-  ): Promise<{ spec: ModelSpec; rawResponse: string }> {
+    apiKey: string,
+    preferredModel?: string
+  ): Promise<{ spec: ModelSpec; rawResponse: string; usedModel: string }> {
     const uniqueNonce = `${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
 
     const systemInstruction = `You are ModelCoder 3D Master Architect, an expert procedural 3D modeler for retro-modern, sci-fi, industrial, and cybernetic games.
@@ -820,8 +834,8 @@ Return ONLY valid JSON matching this schema:
     };
 
     // Google Gemini API production models in priority order.
-    // Incluye modelos de alta capacidad y disponibilidad global en Google AI Studio v1beta.
-    const candidateModels = [
+    // Si el usuario especificó un modelo en el selector, se intenta primero.
+    const defaultModels = [
       'gemini-3.8-flash',
       'gemini-3.5-flash-lite',
       'gemini-3.1-flash-lite',
@@ -831,6 +845,13 @@ Return ONLY valid JSON matching this schema:
       'gemini-1.5-flash',
       'gemini-3.6-flash'
     ];
+
+    let candidateModels: string[];
+    if (preferredModel && preferredModel !== 'auto') {
+      candidateModels = [preferredModel, ...defaultModels.filter(m => m !== preferredModel)];
+    } else {
+      candidateModels = defaultModels;
+    }
     let lastError: Error | null = null;
 
     for (const modelName of candidateModels) {
@@ -886,7 +907,7 @@ Return ONLY valid JSON matching this schema:
         }
 
         const normalized = this.normalizeSpecGeometry(parsed);
-        return { spec: normalized, rawResponse: cleanedJsonText };
+        return { spec: normalized, rawResponse: cleanedJsonText, usedModel: modelName };
       } catch (err: any) {
         lastError = err;
         console.warn(`[AIGenerator] Intento con ${modelName} falló:`, err);

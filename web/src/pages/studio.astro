@@ -332,6 +332,21 @@ import catalog from '../data/catalog.json';
                 </div>
               </div>
 
+              <!-- Gemini Model Selector Row -->
+              <div class="gemini-model-row" id="gemini-model-row" style="display: none; align-items: center; gap: 0.6rem; padding: 0.4rem 0.75rem; background: rgba(15, 23, 42, 0.75); border: 1px solid rgba(255, 215, 0, 0.25); border-radius: 4px; margin-bottom: 0.5rem; flex-wrap: wrap;">
+                <span class="selector-heading" style="color: var(--ps1-gold); font-size: 0.72rem; font-family: var(--font-mono); font-weight: bold;">&gt; MODELO GEMINI:</span>
+                <select id="gemini-model-select" class="form-select gemini-model-select" style="flex: 1; min-width: 260px; background: #0f172a; color: #f8fafc; border: 1px solid rgba(255, 215, 0, 0.35); font-size: 0.73rem; padding: 0.3rem 0.6rem; border-radius: 3px; font-family: var(--font-mono); cursor: pointer;" title="Selecciona el modelo de IA de Google Gemini para generar">
+                  <option value="auto">🔄 Automático (Recomendado: 3.8 con respaldo inteligente)</option>
+                  <option value="gemini-3.8-flash">⚡ Gemini 3.8 Flash (Mayor razonamiento y detalle 3D)</option>
+                  <option value="gemini-2.5-flash">🚀 Gemini 2.5 Flash (Ultra veloz y balanceado)</option>
+                  <option value="gemini-2.0-flash">🌐 Gemini 2.0 Flash (Alta disponibilidad global)</option>
+                  <option value="gemini-1.5-flash">🛡️ Gemini 1.5 Flash (Clásico / Gran resistencia a picos)</option>
+                  <option value="gemini-3.5-flash-lite">⚡ Gemini 3.5 Flash-Lite (Ultraliviano)</option>
+                  <option value="gemini-2.5-flash-lite">⚡ Gemini 2.5 Flash-Lite (Económico)</option>
+                  <option value="gemini-3.1-flash-lite">⚡ Gemini 3.1 Flash-Lite (Rápido)</option>
+                </select>
+              </div>
+
               <!-- Prompt Input Row -->
               <div class="ai-prompt-row">
                 <div class="prompt-input-wrap">
@@ -2240,6 +2255,18 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
   // --- ENGINE SELECTION (AI vs LOCAL) ---
   let currentEngine: 'ai' | 'local' = (localStorage.getItem('modelcoder_selected_engine') as any) || 'local';
 
+  const geminiModelRow = document.getElementById('gemini-model-row');
+  const geminiModelSelect = document.getElementById('gemini-model-select') as HTMLSelectElement;
+  const savedModel = localStorage.getItem('modelcoder_gemini_model') || 'auto';
+  if (geminiModelSelect) {
+    geminiModelSelect.value = savedModel;
+    geminiModelSelect.addEventListener('change', () => {
+      localStorage.setItem('modelcoder_gemini_model', geminiModelSelect.value);
+      updateAIEngineBadge();
+      showStudioToast(`⚡ Modelo activo: ${geminiModelSelect.options[geminiModelSelect.selectedIndex]?.text || geminiModelSelect.value}`);
+    });
+  }
+
   function setEngineMode(engine: 'ai' | 'local'): void {
     currentEngine = engine;
     localStorage.setItem('modelcoder_selected_engine', engine);
@@ -2247,6 +2274,7 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     if (engine === 'ai') {
       btnEngineAi?.classList.add('active');
       btnEngineLocal?.classList.remove('active');
+      if (geminiModelRow) geminiModelRow.style.display = 'flex';
       if (aiPromptInput) {
         aiPromptInput.placeholder = '⚡ Describe lo que quieras: la IA inventará un diseño 3D 100% nuevo y original...';
       }
@@ -2258,6 +2286,7 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     } else {
       btnEngineLocal?.classList.add('active');
       btnEngineAi?.classList.remove('active');
+      if (geminiModelRow) geminiModelRow.style.display = 'none';
       if (aiPromptInput) {
         aiPromptInput.placeholder = 'ej. auto deportivo rojo con ruedas / caza espacial con alas / robot mech / tarjeta de acceso';
       }
@@ -2270,14 +2299,16 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
 
   function updateAIEngineBadge(): void {
     const key = localStorage.getItem('modelcoder_gemini_key');
+    const model = localStorage.getItem('modelcoder_gemini_model') || 'auto';
     if (aiEngineBadge) {
       if (currentEngine === 'ai') {
+        const modelLabel = model === 'auto' ? 'AUTO' : model.replace('gemini-', '');
         if (key && key.trim().length > 10) {
-          aiEngineBadge.textContent = '⚡ IA GEMINI (SIEMPRE NUEVO / SIN CACHÉ)';
+          aiEngineBadge.textContent = `⚡ IA GEMINI [${modelLabel.toUpperCase()}]`;
           aiEngineBadge.style.borderColor = 'var(--ps1-gold)';
           aiEngineBadge.style.color = 'var(--ps1-gold)';
         } else {
-          aiEngineBadge.textContent = '⚡ IA GEMINI (INGRESA TU CLAVE)';
+          aiEngineBadge.textContent = `⚡ IA GEMINI [${modelLabel.toUpperCase()}] (FALTA CLAVE)`;
           aiEngineBadge.style.borderColor = 'var(--ps1-gold)';
           aiEngineBadge.style.color = 'var(--ps1-gold)';
         }
@@ -6081,12 +6112,14 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     }
 
     const apiKey = localStorage.getItem('modelcoder_gemini_key') || undefined;
+    const selectedModel = (document.getElementById('gemini-model-select') as HTMLSelectElement)?.value || localStorage.getItem('modelcoder_gemini_model') || 'auto';
 
     try {
-      const { spec, source } = await AIGenerator.generateModel(prompt, {
+      const { spec, source, usedModel } = await AIGenerator.generateModel(prompt, {
         engine: currentEngine,
         apiKey,
-        forceFresh: currentEngine === 'ai'
+        forceFresh: currentEngine === 'ai',
+        model: selectedModel
       });
       currentSpec = spec;
       selectedComponentIndex = 0;
@@ -6114,7 +6147,7 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
         } else {
           aiLoadingStatus.className = 'ai-status-indicator status-ok';
           let engineLabel = '🤖 MOTOR PROCEDURAL';
-          if (source === 'gemini') engineLabel = '⚡ IA GEMINI (DISEÑO 100% ÚNICO)';
+          if (source === 'gemini') engineLabel = `⚡ IA GEMINI (${usedModel || selectedModel})`;
           else if (source === 'local_memory') engineLabel = '💾 MEMORIA LOCAL APRENDIDA';
           else if (source === 'cloud_memory') engineLabel = '☁️ NUBE COMUNITARIA RECUPERADA';
           aiLoadingStatus.textContent = `✅ [ ${engineLabel} ] ${spec.name} (${spec.components.length} componentes) renderizado en el visor.`;
