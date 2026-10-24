@@ -639,6 +639,83 @@ test('AIGenerator: normalizeSpecGeometry preserva y valida primitivas avanzadas,
   assert.equal(normalized.animations![0].presetType, 'spin_continuous');
 });
 
+
+test('AIGenerator: convertWorldToLocalHierarchy convierte coordenadas globales a jerarquía Three.js sin desfasar piezas en el aire', () => {
+  // Caso similar al reporte de usuario: consola mural con cuerpo principal y tanques/pantalla hijos
+  const rawAISpec: ModelSpec = {
+    id: 'test.world_to_local',
+    name: 'Estación de Recarga',
+    category: 'infrastructure',
+    description: 'Estación mural con soporte, cuerpo y piezas anidadas',
+    units: 'meters',
+    dimensions: { width: 1, depth: 1, height: 2 },
+    palette: 'industrial_hazard',
+    components: [
+      {
+        name: 'main_housing',
+        shape: 'box',
+        size: [0.8, 1.0, 0.4],
+        position: [0, 0.9, -0.2] // centro Y = 0.9 (de Y = 0.4 a 1.4)
+      },
+      {
+        name: 'o2_tank_left',
+        shape: 'capsule',
+        size: [0.1, 0.4],
+        position: [-0.2, 1.6, -0.2], // World Y = 1.6 (apoyado en el techo a Y=1.4 + altura/2 = 1.6)
+        parentId: 'main_housing'
+      },
+      {
+        name: 'control_console_wedge',
+        shape: 'wedge',
+        size: [0.5, 0.3, 0.1],
+        position: [0, 0.9, 0.05], // World Y = 0.9, Z = 0.05 (adosado al frente)
+        parentId: 'main_housing'
+      },
+      {
+        name: 'crt_pressure_screen',
+        shape: 'box',
+        size: [0.2, 0.15, 0.02],
+        position: [0, 0.95, 0.11], // World Y = 0.95, Z = 0.11 (adosado a la cuña)
+        parentId: 'control_console_wedge'
+      }
+    ]
+  };
+
+  AIGenerator.convertWorldToLocalHierarchy(rawAISpec);
+
+  // La posición local del tanque debe ser relativa al housing (1.6 - 0.9 = 0.7)
+  const tank = rawAISpec.components.find(c => c.name === 'o2_tank_left')!;
+  assert.ok(Math.abs(tank.position![1] - 0.7) < 0.001, `Tank local Y debe ser 0.7, pero fue ${tank.position![1]}`);
+
+  // La posición local de la pantalla debe ser relativa a la cuña (0.95 - 0.9 = 0.05)
+  const screen = rawAISpec.components.find(c => c.name === 'crt_pressure_screen')!;
+  assert.ok(Math.abs(screen.position![1] - 0.05) < 0.001, `Screen local Y debe ser 0.05, pero fue ${screen.position![1]}`);
+
+  // Al construir la escena con Three.js, las posiciones mundiales deben ser exactamente las que diseñó la IA
+  const { group } = ProceduralEngine.buildModelFromSpec(rawAISpec);
+  group.updateMatrixWorld(true);
+
+  let tankMesh: THREE.Object3D | null = null;
+  let screenMesh: THREE.Object3D | null = null;
+  group.traverse(obj => {
+    if (obj.name === 'o2_tank_left') tankMesh = obj;
+    if (obj.name === 'crt_pressure_screen') screenMesh = obj;
+  });
+
+  assert.ok(tankMesh, 'Tank mesh debe existir en la escena');
+  assert.ok(screenMesh, 'Screen mesh debe existir en la escena');
+
+  const tankWorldPos = new THREE.Vector3();
+  (tankMesh as THREE.Object3D).getWorldPosition(tankWorldPos);
+  assert.ok(Math.abs(tankWorldPos.y - 1.6) < 0.001, `Tank World Y debe ser 1.60m, pero fue ${tankWorldPos.y}`);
+
+  const screenWorldPos = new THREE.Vector3();
+  (screenMesh as THREE.Object3D).getWorldPosition(screenWorldPos);
+  assert.ok(Math.abs(screenWorldPos.y - 0.95) < 0.001, `Screen World Y debe ser 0.95m, pero fue ${screenWorldPos.y}`);
+
+  ProceduralEngine.disposeHierarchy(group);
+});
+
 test('AIGenerator: normalizeSpecGeometry elimina referencias cíclicas de parentId', () => {
   const cyclicSpec: ModelSpec = {
     id: 'test.cyclic',

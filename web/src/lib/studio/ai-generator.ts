@@ -79,6 +79,109 @@ export class AIGenerator {
    * 3. Model is automatically grounded so its lowest contact point touches floor at Y = 0.
    * 4. Overall bounding box dimensions are verified.
    */
+  /**
+   * Converts world-space coordinates from generative models into clean Three.js
+   * parent-local coordinates for all components with parentId.
+   * This guarantees that hierarchical pieces appear at their exact intended
+   * 3D world positions without doubling parent transforms.
+   */
+  public static convertWorldToLocalHierarchy(spec: ModelSpec): ModelSpec {
+    if (!spec || !Array.isArray(spec.components) || spec.components.length === 0) {
+      return spec;
+    }
+
+    const compMap = new Map<string, ComponentDef>();
+    for (const comp of spec.components) {
+      if (comp.name) compMap.set(comp.name, comp);
+    }
+
+    // Build parent-to-children adjacency map
+    const childrenMap = new Map<string, ComponentDef[]>();
+    const roots: ComponentDef[] = [];
+
+    for (const comp of spec.components) {
+      if (comp.parentId && compMap.has(comp.parentId) && comp.parentId !== comp.name) {
+        if (!childrenMap.has(comp.parentId)) {
+          childrenMap.set(comp.parentId, []);
+        }
+        childrenMap.get(comp.parentId)!.push(comp);
+      } else {
+        roots.push(comp);
+      }
+    }
+
+    // If no parent-child relationships exist, nothing to convert
+    if (childrenMap.size === 0) {
+      return spec;
+    }
+
+    // Compute initial world matrices for all components assuming positions/rotations are in world space
+    const worldMatrices = new Map<string, THREE.Matrix4>();
+    for (const comp of spec.components) {
+      const pos = new THREE.Vector3(
+        Array.isArray(comp.position) && Number.isFinite(comp.position[0]) ? comp.position[0] : 0,
+        Array.isArray(comp.position) && Number.isFinite(comp.position[1]) ? comp.position[1] : 0,
+        Array.isArray(comp.position) && Number.isFinite(comp.position[2]) ? comp.position[2] : 0
+      );
+      const euler = new THREE.Euler(
+        THREE.MathUtils.degToRad(Array.isArray(comp.rotation) && Number.isFinite(comp.rotation[0]) ? comp.rotation[0] : 0),
+        THREE.MathUtils.degToRad(Array.isArray(comp.rotation) && Number.isFinite(comp.rotation[1]) ? comp.rotation[1] : 0),
+        THREE.MathUtils.degToRad(Array.isArray(comp.rotation) && Number.isFinite(comp.rotation[2]) ? comp.rotation[2] : 0),
+        'XYZ'
+      );
+      const quat = new THREE.Quaternion().setFromEuler(euler);
+      const scale = new THREE.Vector3(
+        Array.isArray(comp.scale) && Number.isFinite(comp.scale[0]) && comp.scale[0] > 0 ? comp.scale[0] : 1,
+        Array.isArray(comp.scale) && Number.isFinite(comp.scale[1]) && comp.scale[1] > 0 ? comp.scale[1] : 1,
+        Array.isArray(comp.scale) && Number.isFinite(comp.scale[2]) && comp.scale[2] > 0 ? comp.scale[2] : 1
+      );
+      const mat = new THREE.Matrix4().compose(pos, quat, scale);
+      worldMatrices.set(comp.name, mat);
+    }
+
+    // Traverse breadth-first starting from root nodes
+    const queue = [...roots];
+    const visited = new Set<string>();
+
+    while (queue.length > 0) {
+      const parent = queue.shift()!;
+      if (visited.has(parent.name)) continue;
+      visited.add(parent.name);
+
+      const children = childrenMap.get(parent.name) || [];
+      const parentWorldMat = worldMatrices.get(parent.name)!;
+      const invParentWorld = parentWorldMat.clone().invert();
+
+      for (const child of children) {
+        const childWorldMat = worldMatrices.get(child.name)!;
+        // childLocal = inv(parentWorld) * childWorld
+        const localMat = new THREE.Matrix4().multiplyMatrices(invParentWorld, childWorldMat);
+
+        const localPos = new THREE.Vector3();
+        const localQuat = new THREE.Quaternion();
+        const localScale = new THREE.Vector3();
+        localMat.decompose(localPos, localQuat, localScale);
+
+        const localEuler = new THREE.Euler().setFromQuaternion(localQuat, 'XYZ');
+
+        child.position = [
+          parseFloat(localPos.x.toFixed(4)),
+          parseFloat(localPos.y.toFixed(4)),
+          parseFloat(localPos.z.toFixed(4))
+        ];
+        child.rotation = [
+          parseFloat(THREE.MathUtils.radToDeg(localEuler.x).toFixed(2)),
+          parseFloat(THREE.MathUtils.radToDeg(localEuler.y).toFixed(2)),
+          parseFloat(THREE.MathUtils.radToDeg(localEuler.z).toFixed(2))
+        ];
+
+        queue.push(child);
+      }
+    }
+
+    return spec;
+  }
+
   public static normalizeSpecGeometry(spec: ModelSpec): ModelSpec {
     if (!spec || !Array.isArray(spec.components) || spec.components.length === 0) {
       return spec;
@@ -713,7 +816,7 @@ Return ONLY valid JSON matching this schema:
       try {
         const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
         const signal = typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function'
-          ? AbortSignal.timeout(45000)
+          ? AbortSignal.timeout(20000)
           : undefined;
         const res = await fetch(url, {
           method: 'POST',
