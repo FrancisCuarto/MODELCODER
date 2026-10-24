@@ -313,8 +313,24 @@ import catalog from '../data/catalog.json';
               <button type="button" class="btn-gizmo" data-mode="scale" id="gizmo-btn-scale" title="Escalar tamaño [R]">
                 ⤢ Escalar
               </button>
-              <button type="button" class="btn-gizmo" id="gizmo-btn-snap" title="Ajuste a la rejilla (0.1m / 15°)">
+              <button type="button" class="btn-gizmo" id="gizmo-btn-snap" title="Ajuste a la rejilla y rotación (Snap)">
                 🧲 Snap
+              </button>
+              <select id="select-snap-grid" class="snap-select" title="Paso de rejilla / traslación">
+                <option value="0.05">0.05m</option>
+                <option value="0.1" selected>0.10m</option>
+                <option value="0.25">0.25m</option>
+                <option value="0.5">0.50m</option>
+                <option value="1.0">1.00m</option>
+              </select>
+              <select id="select-snap-angle" class="snap-select" title="Paso de rotación en grados">
+                <option value="5">5°</option>
+                <option value="15" selected>15°</option>
+                <option value="45">45°</option>
+                <option value="90">90°</option>
+              </select>
+              <button type="button" class="btn-gizmo" id="gizmo-btn-magnet" title="Imán de caras: clic en cualquier superficie para adherir la pieza seleccionada">
+                🎯 Imán
               </button>
             </div>
 
@@ -344,6 +360,13 @@ import catalog from '../data/catalog.json';
           <!-- Viewport Three.js Canvas Container -->
           <div class="ps1-inset studio-viewport-surface" id="three-viewport-container">
             <div id="three-canvas-mount" class="three-canvas-mount"></div>
+
+            <!-- Face Magnet Active Floating Banner -->
+            <div id="face-magnet-banner" class="face-magnet-banner hidden">
+              <span class="magnet-icon">🧲</span>
+              <span class="magnet-text">MODO IMÁN ACTIVO: Haz clic en una superficie para pegar la pieza seleccionada</span>
+              <button type="button" id="btn-cancel-magnet" class="btn-cancel-magnet-pill" title="Cancelar modo imán [ESC]">ESC Salir</button>
+            </div>
 
             <!-- Overlay Controls (Shading & Status) -->
             <div class="viewport-overlay-controls">
@@ -1614,6 +1637,8 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
   let selectedComponentIndex: number | null = 0;
   let isUniformScaleLocked = true;
   let isGridSnapEnabled = false;
+  let currentTranslationSnap = 0.1;
+  let currentRotationSnapDeg = 15;
   let lastGeometricStats: GeometricStats | null = null;
   const inspectorSectionsOpen: Record<string, boolean> = {
     transform: true,
@@ -3076,6 +3101,39 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
             <span class="eff-label">DIMENSIONES REALES EFECTIVAS:</span>
             <span id="eff-dims-val" class="eff-val">Calculando...</span>
           </div>
+
+          <!-- ALINEACIÓN Y PRECISIÓN -->
+          <div class="prop-field-block alignment-tools-block">
+            <div class="field-label-row">
+              <label class="field-label">ALINEACIÓN RÁPIDA Y PRECISIÓN:</label>
+              <span class="field-unit-tag">Auto-Align</span>
+            </div>
+            <div class="alignment-actions-grid">
+              <button type="button" id="btn-align-ground" class="btn-mini btn-outline btn-align" title="Asentar al suelo: mueve la pieza para que su base toque Y = 0.00 exactamente">
+                ⬇ Suelo (Y=0)
+              </button>
+              <button type="button" id="btn-center-origin" class="btn-mini btn-outline btn-align" title="Centrar en el eje central de la escena (X=0, Z=0)">
+                🎯 Centrar X/Z
+              </button>
+              <button type="button" id="btn-insp-magnet" class="btn-mini btn-outline btn-align" title="Activar Imán de caras: haz clic en una superficie para pegar la pieza">
+                🧲 Imán Cara
+              </button>
+            </div>
+
+            ${comp.parentId ? `
+            <div class="parent-align-wrap">
+              <div class="parent-align-title">Pegar a cara del Padre (<span class="parent-badge-name">${comp.parentId}</span>):</div>
+              <div class="parent-faces-grid">
+                <button type="button" class="btn-mini btn-outline btn-parent-face" data-face="+y" title="Pegar encima del techo del padre (+Y)">Arriba ↑</button>
+                <button type="button" class="btn-mini btn-outline btn-parent-face" data-face="-y" title="Pegar debajo de la base del padre (-Y)">Abajo ↓</button>
+                <button type="button" class="btn-mini btn-outline btn-parent-face" data-face="+x" title="Pegar a la derecha del padre (+X)">Der. →</button>
+                <button type="button" class="btn-mini btn-outline btn-parent-face" data-face="-x" title="Pegar a la izquierda del padre (-X)">Izq. ←</button>
+                <button type="button" class="btn-mini btn-outline btn-parent-face" data-face="+z" title="Pegar al frente del padre (+Z)">Frente ⊙</button>
+                <button type="button" class="btn-mini btn-outline btn-parent-face" data-face="-z" title="Pegar detrás del padre (-Z)">Atrás ⊗</button>
+              </div>
+            </div>
+            ` : ''}
+          </div>
         </div>
       </div>
 
@@ -4053,6 +4111,49 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
       });
     });
 
+    // Alignment: Ground (Y=0)
+    document.getElementById('btn-align-ground')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (selectedComponentIndex === null) return;
+      const newPos = ProceduralEngine.alignComponentToGround(currentSpec, selectedComponentIndex);
+      if (newPos) {
+        renderCurrentSpec('visual', true, true);
+        showStudioToast('⬇ Pieza asentada al suelo (Y=0.00)');
+      }
+    });
+
+    // Alignment: Center Origin (X=0, Z=0)
+    document.getElementById('btn-center-origin')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (selectedComponentIndex === null) return;
+      const newPos = ProceduralEngine.centerComponentOnOrigin(currentSpec, selectedComponentIndex, 'xz');
+      if (newPos) {
+        renderCurrentSpec('visual', true, true);
+        showStudioToast('🎯 Pieza centrada en origen (X=0, Z=0)');
+      }
+    });
+
+    // Alignment: Inspector Face Magnet button
+    document.getElementById('btn-insp-magnet')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleFaceMagnetMode();
+    });
+
+    // Alignment: Parent Face buttons
+    inspectorContentMount?.querySelectorAll('.btn-parent-face').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (selectedComponentIndex === null) return;
+        const face = (btn as HTMLElement).dataset.face as any;
+        if (!face) return;
+        const newPos = ProceduralEngine.alignComponentToParentFace(currentSpec, selectedComponentIndex, face);
+        if (newPos) {
+          renderCurrentSpec('visual', true, true);
+          showStudioToast(`↔ Pieza alineada a cara ${face.toUpperCase()} del padre`);
+        }
+      });
+    });
+
     // Shape-specific parameters
     document.querySelectorAll('.shape-num-inp').forEach((inp) => {
       const input = inp as HTMLInputElement;
@@ -4842,11 +4943,116 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     updateGizmoButtons('scale');
   });
 
+  const selectSnapGrid = document.getElementById('select-snap-grid') as HTMLSelectElement | null;
+  const selectSnapAngle = document.getElementById('select-snap-angle') as HTMLSelectElement | null;
+  const gizmoBtnMagnet = document.getElementById('gizmo-btn-magnet');
+  const btnCancelMagnet = document.getElementById('btn-cancel-magnet');
+
   gizmoBtnSnap?.addEventListener('click', () => {
     isGridSnapEnabled = !isGridSnapEnabled;
     gizmoBtnSnap.classList.toggle('active', isGridSnapEnabled);
-    viewport?.setSnap(isGridSnapEnabled, 0.1, 15);
+    viewport?.setSnap(isGridSnapEnabled, currentTranslationSnap, currentRotationSnapDeg);
   });
+
+  selectSnapGrid?.addEventListener('change', () => {
+    currentTranslationSnap = parseFloat(selectSnapGrid.value) || 0.1;
+    if (isGridSnapEnabled) {
+      viewport?.setSnap(true, currentTranslationSnap, currentRotationSnapDeg);
+    }
+  });
+
+  selectSnapAngle?.addEventListener('change', () => {
+    currentRotationSnapDeg = parseFloat(selectSnapAngle.value) || 15;
+    if (isGridSnapEnabled) {
+      viewport?.setSnap(true, currentTranslationSnap, currentRotationSnapDeg);
+    }
+  });
+
+  gizmoBtnMagnet?.addEventListener('click', () => {
+    toggleFaceMagnetMode();
+  });
+
+  btnCancelMagnet?.addEventListener('click', () => {
+    viewport?.deactivateFaceMagnet();
+    updateMagnetUIState(false);
+  });
+
+  function toggleFaceMagnetMode(): void {
+    if (!viewport) return;
+    if (selectedComponentIndex === null) {
+      showStudioToast('⚠️ Selecciona una pieza primero para activar el imán', true);
+      return;
+    }
+
+    if (viewport.isFaceMagnetMode()) {
+      viewport.deactivateFaceMagnet();
+      updateMagnetUIState(false);
+      return;
+    }
+
+    updateMagnetUIState(true);
+    viewport.activateFaceMagnet(
+      (hitPoint, normal, hitCompIdx) => {
+        if (selectedComponentIndex === null) return;
+        const comp = currentSpec.components[selectedComponentIndex];
+        if (!comp) return;
+
+        // Compute orientation aligned with surface normal
+        const q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), normal);
+        const euler = new THREE.Euler().setFromQuaternion(q, 'XYZ');
+        const rot: [number, number, number] = [
+          parseFloat(THREE.MathUtils.radToDeg(euler.x).toFixed(1)),
+          parseFloat(THREE.MathUtils.radToDeg(euler.y).toFixed(1)),
+          parseFloat(THREE.MathUtils.radToDeg(euler.z).toFixed(1))
+        ];
+
+        // Compute offset along normal based on pivot and dimensions
+        const s = comp.size || [1, 1, 1];
+        const scl = comp.scale || [1, 1, 1];
+        const height = Math.max(0.01, (s[1] ?? 1.0) * (scl[1] ?? 1.0));
+        const isPivotAtBase = (comp.pivot?.[1] ?? 0) < -0.01;
+        const offset = isPivotAtBase ? 0.002 : (height / 2 + 0.002);
+
+        const targetPos = hitPoint.clone().addScaledVector(normal, offset);
+
+        // If component has a parent, convert world position into parent local coordinate space
+        if (comp.parentId) {
+          const parentComp = currentSpec.components.find((c) => c.name === comp.parentId);
+          if (parentComp) {
+            const parentIdx = currentSpec.components.indexOf(parentComp);
+            const parentMesh = (viewport as any).getMeshByComponentIndex?.(parentIdx);
+            if (parentMesh) {
+              const inv = parentMesh.matrixWorld.clone().invert();
+              targetPos.applyMatrix4(inv);
+            }
+          }
+        }
+
+        comp.position = [
+          parseFloat(targetPos.x.toFixed(3)),
+          parseFloat(targetPos.y.toFixed(3)),
+          parseFloat(targetPos.z.toFixed(3))
+        ];
+        comp.rotation = rot;
+
+        updateMagnetUIState(false);
+        renderCurrentSpec('visual', true, true);
+        showStudioToast('🧲 Pieza adherida a la superficie con éxito');
+      },
+      () => {
+        updateMagnetUIState(false);
+      }
+    );
+  }
+
+  function updateMagnetUIState(active: boolean): void {
+    const banner = document.getElementById('face-magnet-banner');
+    if (banner) banner.classList.toggle('hidden', !active);
+    const gizmoBtnMagnet = document.getElementById('gizmo-btn-magnet');
+    if (gizmoBtnMagnet) gizmoBtnMagnet.classList.toggle('active', active);
+    const inspBtnMagnet = document.getElementById('btn-insp-magnet');
+    if (inspBtnMagnet) inspBtnMagnet.classList.toggle('active', active);
+  }
 
   // Camera Presets
   document.querySelectorAll('.btn-cam-preset').forEach((btn) => {
@@ -8725,6 +8931,139 @@ if __name__ == "__main__":
     font-size: 0.78rem;
     font-weight: bold;
     color: var(--text-bright);
+  }
+
+  /* Precision Snapping & Face Magnet */
+  .snap-select {
+    background: #060a14;
+    border: 1px solid #1e293b;
+    color: #94a3b8;
+    font-family: var(--font-pixel);
+    font-size: 0.6rem;
+    padding: 0.2rem 0.3rem;
+    cursor: pointer;
+    outline: none;
+    border-radius: 2px;
+  }
+  .snap-select:hover, .snap-select:focus {
+    border-color: var(--ps1-cyan);
+    color: #fff;
+  }
+  .btn-gizmo#gizmo-btn-magnet.active {
+    background: #00ffcc;
+    color: #000;
+    font-weight: bold;
+    border-color: #00ffcc;
+  }
+
+  .face-magnet-banner {
+    position: absolute;
+    top: 1rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(10, 16, 28, 0.95);
+    border: 1px solid #00ffcc;
+    box-shadow: 0 4px 20px rgba(0, 255, 204, 0.25);
+    padding: 0.5rem 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    z-index: 50;
+    font-family: var(--font-pixel);
+    font-size: 0.75rem;
+    color: #e2e8f0;
+    pointer-events: auto;
+    border-radius: 2px;
+  }
+  .face-magnet-banner.hidden {
+    display: none;
+  }
+  .face-magnet-banner .magnet-icon {
+    font-size: 1.1rem;
+    animation: pulse 1.5s infinite ease-in-out;
+  }
+  .btn-cancel-magnet-pill {
+    background: #ef4444;
+    color: #fff;
+    border: none;
+    font-size: 0.65rem;
+    font-family: var(--font-pixel);
+    padding: 0.2rem 0.5rem;
+    cursor: pointer;
+    border-radius: 2px;
+  }
+  .btn-cancel-magnet-pill:hover {
+    background: #dc2626;
+  }
+
+  .alignment-tools-block {
+    margin-top: 0.6rem;
+    padding: 0.5rem;
+    background: #060a14;
+    border: 1px dashed #23314d;
+  }
+  .alignment-actions-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.35rem;
+    margin-top: 0.35rem;
+  }
+  .btn-align {
+    font-size: 0.65rem;
+    padding: 0.25rem 0.2rem;
+    background: #091122;
+    border: 1px solid #1e293b;
+    color: #cbd5e1;
+    cursor: pointer;
+    text-align: center;
+    white-space: nowrap;
+    transition: all 0.12s ease;
+  }
+  .btn-align:hover {
+    border-color: var(--ps1-cyan);
+    color: var(--ps1-cyan);
+    background: #0e1e3b;
+  }
+  .btn-align.active {
+    background: #00ffcc;
+    color: #000;
+    font-weight: bold;
+    border-color: #00ffcc;
+  }
+
+  .parent-align-wrap {
+    margin-top: 0.5rem;
+    padding-top: 0.4rem;
+    border-top: 1px solid #1a253a;
+  }
+  .parent-align-title {
+    font-size: 0.62rem;
+    color: #94a3b8;
+    margin-bottom: 0.3rem;
+  }
+  .parent-badge-name {
+    color: var(--ps1-gold);
+    font-weight: bold;
+  }
+  .parent-faces-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.25rem;
+  }
+  .btn-parent-face {
+    font-size: 0.62rem;
+    padding: 0.18rem 0.2rem;
+    background: #0b1528;
+    border: 1px solid #1e293b;
+    color: #94a3b8;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.12s ease;
+  }
+  .btn-parent-face:hover {
+    border-color: var(--ps1-gold);
+    color: var(--ps1-gold);
+    background: #15243d;
   }
 
   /* Gizmo Toolbar */

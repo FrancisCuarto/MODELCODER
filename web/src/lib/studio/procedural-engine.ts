@@ -167,6 +167,299 @@ export class ProceduralEngine {
   /**
    * Calculates the standard pivot offset [ox, oy, oz] in meters for a given shape and dimensions.
    */
+  /**
+   * Computes the world-space bounding box for a specific component in a ModelSpec hierarchy.
+   */
+  public static computeComponentWorldBounds(
+    spec: ModelSpec,
+    compIndex: number
+  ): { min: THREE.Vector3; max: THREE.Vector3; size: THREE.Vector3; center: THREE.Vector3 } | null {
+    if (compIndex < 0 || compIndex >= spec.components.length) return null;
+    const targetComp = spec.components[compIndex];
+
+    let group: THREE.Group | null = null;
+    try {
+      const built = this.buildModelFromSpec(spec);
+      group = built.group;
+      group.updateMatrixWorld(true);
+
+      let targetMesh: THREE.Object3D | null = null;
+      group.traverse((obj) => {
+        if (targetMesh) return;
+        if (obj.userData && obj.userData.componentIndex === compIndex) {
+          targetMesh = obj;
+        } else if (obj.name === targetComp.name) {
+          targetMesh = obj;
+        }
+      });
+
+      if (!targetMesh) return null;
+
+      const box = new THREE.Box3().setFromObject(targetMesh);
+      const size = new THREE.Vector3();
+      const center = new THREE.Vector3();
+      box.getSize(size);
+      box.getCenter(center);
+
+      return {
+        min: box.min.clone(),
+        max: box.max.clone(),
+        size,
+        center
+      };
+    } finally {
+      if (group) {
+        this.disposeHierarchy(group);
+      }
+    }
+  }
+
+  /**
+   * Adjusts a component's position so that its lowest point in world coordinates sits exactly on Y = 0.
+   * If the component has a parent, the shift is accurately transformed into the parent's local coordinate space.
+   */
+  public static alignComponentToGround(
+    spec: ModelSpec,
+    compIndex: number
+  ): [number, number, number] | null {
+    if (compIndex < 0 || compIndex >= spec.components.length) return null;
+    const comp = spec.components[compIndex];
+
+    let group: THREE.Group | null = null;
+    try {
+      const built = this.buildModelFromSpec(spec);
+      group = built.group;
+      group.updateMatrixWorld(true);
+
+      let targetMesh: THREE.Object3D | null = null;
+      group.traverse((obj) => {
+        if (targetMesh) return;
+        if (obj.userData && obj.userData.componentIndex === compIndex) {
+          targetMesh = obj;
+        } else if (obj.name === comp.name) {
+          targetMesh = obj;
+        }
+      });
+
+      if (!targetMesh) return null;
+
+      const box = new THREE.Box3().setFromObject(targetMesh);
+      const deltaWorldY = -box.min.y;
+
+      if (targetMesh.parent && targetMesh.parent !== group) {
+        const invParent = targetMesh.parent.matrixWorld.clone().invert();
+        const localDelta = new THREE.Vector3(0, deltaWorldY, 0).transformDirection(invParent);
+        const curPos = comp.position || [0, 0, 0];
+        const newPos: [number, number, number] = [
+          parseFloat((curPos[0] + localDelta.x).toFixed(3)),
+          parseFloat((curPos[1] + localDelta.y).toFixed(3)),
+          parseFloat((curPos[2] + localDelta.z).toFixed(3))
+        ];
+        comp.position = newPos;
+        return newPos;
+      } else {
+        const curPos = comp.position || [0, 0, 0];
+        const newPos: [number, number, number] = [
+          curPos[0],
+          parseFloat((curPos[1] + deltaWorldY).toFixed(3)),
+          curPos[2]
+        ];
+        comp.position = newPos;
+        return newPos;
+      }
+    } finally {
+      if (group) {
+        this.disposeHierarchy(group);
+      }
+    }
+  }
+
+  /**
+   * Centers a component on the scene origin (X = 0, Z = 0) based on its bounding box center.
+   */
+  public static centerComponentOnOrigin(
+    spec: ModelSpec,
+    compIndex: number,
+    axes: 'xz' | 'x' | 'z' = 'xz'
+  ): [number, number, number] | null {
+    if (compIndex < 0 || compIndex >= spec.components.length) return null;
+    const comp = spec.components[compIndex];
+
+    let group: THREE.Group | null = null;
+    try {
+      const built = this.buildModelFromSpec(spec);
+      group = built.group;
+      group.updateMatrixWorld(true);
+
+      let targetMesh: THREE.Object3D | null = null;
+      group.traverse((obj) => {
+        if (targetMesh) return;
+        if (obj.userData && obj.userData.componentIndex === compIndex) {
+          targetMesh = obj;
+        } else if (obj.name === comp.name) {
+          targetMesh = obj;
+        }
+      });
+
+      if (!targetMesh) return null;
+
+      const box = new THREE.Box3().setFromObject(targetMesh);
+      const center = new THREE.Vector3();
+      box.getCenter(center);
+
+      const deltaWorld = new THREE.Vector3(
+        (axes === 'xz' || axes === 'x') ? -center.x : 0,
+        0,
+        (axes === 'xz' || axes === 'z') ? -center.z : 0
+      );
+
+      if (targetMesh.parent && targetMesh.parent !== group) {
+        const invParent = targetMesh.parent.matrixWorld.clone().invert();
+        const localDelta = deltaWorld.transformDirection(invParent);
+        const curPos = comp.position || [0, 0, 0];
+        const newPos: [number, number, number] = [
+          parseFloat((curPos[0] + localDelta.x).toFixed(3)),
+          parseFloat((curPos[1] + localDelta.y).toFixed(3)),
+          parseFloat((curPos[2] + localDelta.z).toFixed(3))
+        ];
+        comp.position = newPos;
+        return newPos;
+      } else {
+        const curPos = comp.position || [0, 0, 0];
+        const newPos: [number, number, number] = [
+          parseFloat((curPos[0] + deltaWorld.x).toFixed(3)),
+          curPos[1],
+          parseFloat((curPos[2] + deltaWorld.z).toFixed(3))
+        ];
+        comp.position = newPos;
+        return newPos;
+      }
+    } finally {
+      if (group) {
+        this.disposeHierarchy(group);
+      }
+    }
+  }
+
+  /**
+   * Snaps a child component flush against one of its parent's 6 bounding faces (+X, -X, +Y, -Y, +Z, -Z).
+   */
+  public static alignComponentToParentFace(
+    spec: ModelSpec,
+    compIndex: number,
+    face: '+x' | '-x' | '+y' | '-y' | '+z' | '-z'
+  ): [number, number, number] | null {
+    if (compIndex < 0 || compIndex >= spec.components.length) return null;
+    const comp = spec.components[compIndex];
+    if (!comp.parentId) return null;
+
+    let group: THREE.Group | null = null;
+    try {
+      const built = this.buildModelFromSpec(spec);
+      group = built.group;
+      group.updateMatrixWorld(true);
+
+      let targetMesh: THREE.Object3D | null = null;
+      let parentMesh: THREE.Object3D | null = null;
+
+      group.traverse((obj) => {
+        if (obj.userData && obj.userData.componentIndex === compIndex) {
+          targetMesh = obj;
+        } else if (obj.name === comp.name) {
+          targetMesh = obj;
+        }
+        if (obj.name === comp.parentId) {
+          parentMesh = obj;
+        }
+      });
+
+      if (!targetMesh || !parentMesh) return null;
+
+      const parentBox = new THREE.Box3();
+      parentMesh.traverse((child) => {
+        if (child === targetMesh || targetMesh.children.includes(child)) return;
+        if ((child as THREE.Mesh).isMesh && (child as THREE.Mesh).geometry) {
+          const geom = (child as THREE.Mesh).geometry;
+          if (!geom.boundingBox) geom.computeBoundingBox();
+          if (geom.boundingBox) {
+            const m = new THREE.Matrix4();
+            let curr: THREE.Object3D | null = child;
+            while (curr && curr !== parentMesh) {
+              m.premultiply(curr.matrix);
+              curr = curr.parent;
+            }
+            parentBox.union(geom.boundingBox.clone().applyMatrix4(m));
+          }
+        }
+      });
+
+      if (parentBox.isEmpty()) {
+        const parentComp = spec.components.find((c) => c.name === comp.parentId);
+        const ps = parentComp?.size || [1, 1, 1];
+        parentBox.set(
+          new THREE.Vector3(-ps[0] / 2, -ps[1] / 2, -ps[2] / 2),
+          new THREE.Vector3(ps[0] / 2, ps[1] / 2, ps[2] / 2)
+        );
+      }
+
+      targetMesh.updateMatrix();
+      const childBox = new THREE.Box3();
+      targetMesh.traverse((child) => {
+        if ((child as THREE.Mesh).isMesh && (child as THREE.Mesh).geometry) {
+          const geom = (child as THREE.Mesh).geometry;
+          if (!geom.boundingBox) geom.computeBoundingBox();
+          if (geom.boundingBox) {
+            const m = new THREE.Matrix4();
+            let curr: THREE.Object3D | null = child;
+            while (curr && curr !== parentMesh) {
+              m.premultiply(curr.matrix);
+              curr = curr.parent;
+            }
+            childBox.union(geom.boundingBox.clone().applyMatrix4(m));
+          }
+        }
+      });
+
+      let deltaX = 0;
+      let deltaY = 0;
+      let deltaZ = 0;
+
+      switch (face) {
+        case '+y':
+          deltaY = parentBox.max.y - childBox.min.y;
+          break;
+        case '-y':
+          deltaY = parentBox.min.y - childBox.max.y;
+          break;
+        case '+x':
+          deltaX = parentBox.max.x - childBox.min.x;
+          break;
+        case '-x':
+          deltaX = parentBox.min.x - childBox.max.x;
+          break;
+        case '+z':
+          deltaZ = parentBox.max.z - childBox.min.z;
+          break;
+        case '-z':
+          deltaZ = parentBox.min.z - childBox.max.z;
+          break;
+      }
+
+      const curPos = comp.position || [0, 0, 0];
+      const newPos: [number, number, number] = [
+        parseFloat((curPos[0] + deltaX).toFixed(3)),
+        parseFloat((curPos[1] + deltaY).toFixed(3)),
+        parseFloat((curPos[2] + deltaZ).toFixed(3))
+      ];
+      comp.position = newPos;
+      return newPos;
+    } finally {
+      if (group) {
+        this.disposeHierarchy(group);
+      }
+    }
+  }
+
   public static computePresetPivot(
     preset: PivotPresetType,
     shape: ShapePrimitive,

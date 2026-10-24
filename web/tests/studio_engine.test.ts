@@ -2914,6 +2914,114 @@ test('Array Modifier: unrollArrayModifier desglosa el array en piezas independie
   assert.deepEqual(unrolled.components[2].position, [2.0, 0, 1]);
 });
 
+test('Precision Alignment: alignComponentToGround ajusta la pieza al suelo exacto (Y=0.00)', async () => {
+  const { ProceduralEngine } = await import('../src/lib/studio/procedural-engine.ts');
+
+  const spec: any = {
+    id: 'test.ground.align',
+    name: 'Test Suelo',
+    units: 'meters',
+    dimensions: { width: 1, depth: 1, height: 2 },
+    components: [
+      {
+        name: 'caja_flotante',
+        shape: 'box',
+        size: [1, 2, 1],
+        position: [0, 5, 0] // Centro en 5, altura 2 => min Y = 4.0
+      }
+    ]
+  };
+
+  const initialBounds = ProceduralEngine.computeComponentWorldBounds(spec, 0);
+  assert.ok(initialBounds);
+  assert.equal(Math.round(initialBounds.min.y), 4);
+
+  const newPos = ProceduralEngine.alignComponentToGround(spec, 0);
+  assert.ok(newPos);
+  assert.equal(newPos[1], 1.0, 'La posición Y debe ser 1.0 (para que min.y sea 0)');
+
+  const groundedBounds = ProceduralEngine.computeComponentWorldBounds(spec, 0);
+  assert.ok(groundedBounds);
+  assert.equal(Math.abs(groundedBounds.min.y) < 0.001, true, 'El punto más bajo debe tocar Y=0');
+});
+
+test('Precision Alignment: centerComponentOnOrigin centra los ejes X y Z en 0', async () => {
+  const { ProceduralEngine } = await import('../src/lib/studio/procedural-engine.ts');
+
+  const spec: any = {
+    id: 'test.origin.align',
+    name: 'Test Origen',
+    units: 'meters',
+    dimensions: { width: 1, depth: 1, height: 1 },
+    components: [
+      {
+        name: 'objeto_desplazado',
+        shape: 'box',
+        size: [1, 1, 1],
+        position: [4.5, 0.5, -3.2]
+      }
+    ]
+  };
+
+  const newPos = ProceduralEngine.centerComponentOnOrigin(spec, 0, 'xz');
+  assert.ok(newPos);
+  assert.equal(newPos[0], 0, 'Eje X debe ser 0');
+  assert.equal(newPos[2], 0, 'Eje Z debe ser 0');
+  assert.equal(newPos[1], 0.5, 'Eje Y debe conservarse');
+
+  const bounds = ProceduralEngine.computeComponentWorldBounds(spec, 0);
+  assert.ok(bounds);
+  assert.equal(Math.abs(bounds.center.x) < 0.001, true);
+  assert.equal(Math.abs(bounds.center.z) < 0.001, true);
+});
+
+test('Precision Alignment: alignComponentToParentFace alinea hijo a caras del padre (+Y, -Y, +X, -X, +Z, -Z)', async () => {
+  const { ProceduralEngine } = await import('../src/lib/studio/procedural-engine.ts');
+
+  const spec: any = {
+    id: 'test.parent.face',
+    name: 'Test Caras Padre',
+    units: 'meters',
+    dimensions: { width: 2, depth: 2, height: 2 },
+    components: [
+      {
+        name: 'bloque_padre',
+        shape: 'box',
+        size: [2, 2, 2],
+        position: [0, 1, 0] // Bounds: X [-1, 1], Y [0, 2], Z [-1, 1]
+      },
+      {
+        name: 'cubo_hijo',
+        shape: 'box',
+        size: [0.6, 0.6, 0.6],
+        parentId: 'bloque_padre',
+        position: [0, 0, 0] // Local a padre
+      }
+    ]
+  };
+
+  // 1. Alinear al techo (+Y): base de hijo debe tocar techo de padre (Y=2 en mundo, o Y=1 en local)
+  const posTop = ProceduralEngine.alignComponentToParentFace(spec, 1, '+y');
+  assert.ok(posTop);
+  const boundsTop = ProceduralEngine.computeComponentWorldBounds(spec, 1);
+  assert.ok(boundsTop);
+  assert.equal(Math.abs(boundsTop.min.y - 2.0) < 0.002, true, 'El hijo debe tocar el techo de su padre');
+
+  // 2. Alinear a la derecha (+X): cara izquierda del hijo toca cara derecha del padre (X=1 en mundo)
+  const posRight = ProceduralEngine.alignComponentToParentFace(spec, 1, '+x');
+  assert.ok(posRight);
+  const boundsRight = ProceduralEngine.computeComponentWorldBounds(spec, 1);
+  assert.ok(boundsRight);
+  assert.equal(Math.abs(boundsRight.min.x - 1.0) < 0.002, true, 'El hijo debe apoyarse en la cara derecha del padre');
+
+  // 3. Alinear al frente (+Z): cara trasera del hijo toca cara frontal del padre (Z=1 en mundo)
+  const posFront = ProceduralEngine.alignComponentToParentFace(spec, 1, '+z');
+  assert.ok(posFront);
+  const boundsFront = ProceduralEngine.computeComponentWorldBounds(spec, 1);
+  assert.ok(boundsFront);
+  assert.equal(Math.abs(boundsFront.min.z - 1.0) < 0.002, true, 'El hijo debe apoyarse en la cara frontal del padre');
+});
+
 // Teardown: ensure Node exits cleanly after tests
 test('Teardown: Exit cleanly', () => {
   setTimeout(() => process.exit(0), 100);

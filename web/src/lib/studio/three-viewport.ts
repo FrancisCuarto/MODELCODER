@@ -48,6 +48,15 @@ export class StudioViewport {
   private playbackLoopMode: 'repeat' | 'once' | 'pingpong' = 'repeat';
   private onAnimationProgress?: (time: number, duration: number, isPlaying: boolean, clipName: string) => void;
 
+  // Snapping & Face Magnet state
+  private isSnapEnabled = false;
+  private currentTranslationSnap = 0.1;
+  private currentRotationSnapDeg = 15;
+  private isFaceMagnetActive = false;
+  private faceMagnetCallback: ((hitPoint: THREE.Vector3, normal: THREE.Vector3, hitCompIndex: number | null) => void) | null = null;
+  private faceMagnetCancelCallback: (() => void) | null = null;
+  private magnetCursorHelper: THREE.Mesh | null = null;
+
   // Callbacks
   private onStatsUpdate?: (stats: GeometricStats | null, result: GenerationResult | null) => void;
   private onComponentSelected?: (index: number | null) => void;
@@ -199,12 +208,40 @@ export class StudioViewport {
       : (this.transformControls as any);
     this.scene.add(gizmoHelper);
 
+    // Magnet surface cursor helper
+    const ringGeom = new THREE.RingGeometry(0.04, 0.08, 24);
+    const ringMat = new THREE.MeshBasicMaterial({
+      color: 0x00ffcc,
+      side: THREE.DoubleSide,
+      depthTest: false,
+      transparent: true,
+      opacity: 0.9
+    });
+    this.magnetCursorHelper = new THREE.Mesh(ringGeom, ringMat);
+    this.magnetCursorHelper.visible = false;
+    this.magnetCursorHelper.renderOrder = 999;
+    this.scene.add(this.magnetCursorHelper);
+
     // 9. Raycasting for Direct 3D Selection
     this.raycaster = new THREE.Raycaster();
     this.renderer.domElement.addEventListener('pointerdown', (e) => {
       this.pointerDownPos = { x: e.clientX, y: e.clientY, time: Date.now() };
     });
+    this.renderer.domElement.addEventListener('pointermove', (e) => {
+      if (this.isFaceMagnetActive) {
+        this.handleFaceMagnetPointerMove(e);
+      }
+    });
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && this.isFaceMagnetActive) {
+        this.deactivateFaceMagnet();
+      }
+    });
     this.renderer.domElement.addEventListener('pointerup', (e) => {
+      if (this.isFaceMagnetActive) {
+        this.handleFaceMagnetClick(e);
+        return;
+      }
       if (this.isTransformDragging) return;
       const dist = Math.hypot(e.clientX - this.pointerDownPos.x, e.clientY - this.pointerDownPos.y);
       const duration = Date.now() - this.pointerDownPos.time;
@@ -671,14 +708,156 @@ export class StudioViewport {
    * Configures grid & rotation snapping on gizmos.
    */
   public setSnap(enableSnap: boolean, translationSnap: number = 0.1, rotationSnapDeg: number = 15): void {
+    this.isSnapEnabled = enableSnap;
+    this.currentTranslationSnap = translationSnap;
+    this.currentRotationSnapDeg = rotationSnapDeg;
+
     if (enableSnap) {
       this.transformControls.setTranslationSnap(translationSnap);
       this.transformControls.setRotationSnap(THREE.MathUtils.degToRad(rotationSnapDeg));
-      this.transformControls.setScaleSnap(0.1);
+      this.transformControls.setScaleSnap(translationSnap >= 0.1 ? 0.1 : translationSnap);
     } else {
       this.transformControls.setTranslationSnap(null);
       this.transformControls.setRotationSnap(null);
       this.transformControls.setScaleSnap(null);
+    }
+  }
+
+  public getSnapSettings(): { enabled: boolean; translationSnap: number; rotationSnapDeg: number } {
+    return {
+      enabled: this.isSnapEnabled,
+      translationSnap: this.currentTranslationSnap,
+      rotationSnapDeg: this.currentRotationSnapDeg
+    };
+  }
+
+  /**
+   * Activates Raycast Surface Magnet ("Pegar en Cara / Face Magnet").
+   * User can click any surface to attach and orient the selected component onto that face.
+   */
+  public activateFaceMagnet(
+    onSnap: (hitPoint: THREE.Vector3, normal: THREE.Vector3, hitCompIndex: number | null) => void,
+    onCancel?: () => void
+  ): void {
+    if (this.selectedComponentIndex === null) return;
+    this.isFaceMagnetActive = true;
+    this.faceMagnetCallback = onSnap;
+    this.faceMagnetCancelCallback = onCancel || null;
+    this.renderer.domElement.style.cursor = 'crosshair';
+    this.transformControls.detach();
+  }
+
+  public deactivateFaceMagnet(): void {
+    if (!this.isFaceMagnetActive) return;
+    this.isFaceMagnetActive = false;
+    this.faceMagnetCallback = null;
+    if (this.magnetCursorHelper) {
+      this.magnetCursorHelper.visible = false;
+    }
+    this.renderer.domElement.style.cursor = 'default';
+    if (this.selectedMesh && this.currentGizmoMode !== 'none') {
+      this.transformControls.attach(this.selectedMesh);
+    }
+    if (this.faceMagnetCancelCallback) {
+      this.faceMagnetCancelCallback();
+      this.faceMagnetCancelCallback = null;
+    }
+  }
+
+  public isFaceMagnetMode(): boolean {
+    return this.isFaceMagnetActive;
+  }
+
+  private handleFaceMagnetPointerMove(e: PointerEvent): void {
+    if (!this.currentMesh || !this.magnetCursorHelper) return;
+
+    const rect = this.renderer.domElement.getBoundingClientRect();
+    const mouse = new THREE.Vector2(
+      ((e.clientX - rect.left) / rect.width) * 2 - 1,
+      -((e.clientY - rect.top) / rect.height) * 2 + 1
+    );
+    this.raycaster.setFromCamera(mouse, this.camera);
+
+    const hits = this.raycaster.intersectObjects(this.currentMesh.children, true);
+    let targetHit: THREE.Intersection | null = null;
+
+    for (const hit of hits) {
+      if (!hit.object.visible || !hit.face || !hit.point) continue;
+      let curr: THREE.Object3D | null = hit.object;
+      let isSelectedChild = false;
+
+      while (curr && curr !== this.currentMesh) {
+        if (curr.userData && curr.userData.componentIndex === this.selectedComponentIndex) {
+          isSelectedChild = true;
+          break;
+        }
+        curr = curr.parent;
+      }
+
+      if (!isSelectedChild) {
+        targetHit = hit;
+        break;
+      }
+    }
+
+    if (targetHit && targetHit.face) {
+      const normal = targetHit.face.normal.clone().transformDirection(targetHit.object.matrixWorld).normalize();
+      this.magnetCursorHelper.position.copy(targetHit.point).addScaledVector(normal, 0.005);
+      this.magnetCursorHelper.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), normal);
+      this.magnetCursorHelper.visible = true;
+    } else {
+      this.magnetCursorHelper.visible = false;
+    }
+  }
+
+  private handleFaceMagnetClick(e: PointerEvent): void {
+    if (this.selectedComponentIndex === null || !this.currentMesh) return;
+
+    const rect = this.renderer.domElement.getBoundingClientRect();
+    const mouse = new THREE.Vector2(
+      ((e.clientX - rect.left) / rect.width) * 2 - 1,
+      -((e.clientY - rect.top) / rect.height) * 2 + 1
+    );
+    this.raycaster.setFromCamera(mouse, this.camera);
+
+    const hits = this.raycaster.intersectObjects(this.currentMesh.children, true);
+    let targetHit: THREE.Intersection | null = null;
+    let hitCompIdx: number | null = null;
+
+    for (const hit of hits) {
+      if (!hit.object.visible || !hit.face || !hit.point) continue;
+      let curr: THREE.Object3D | null = hit.object;
+      let isSelectedChild = false;
+      let matchedIdx: number | null = null;
+
+      while (curr && curr !== this.currentMesh) {
+        if (curr.userData && curr.userData.componentIndex === this.selectedComponentIndex) {
+          isSelectedChild = true;
+          break;
+        }
+        if (matchedIdx === null && curr.userData && typeof curr.userData.componentIndex === 'number') {
+          matchedIdx = curr.userData.componentIndex;
+        }
+        curr = curr.parent;
+      }
+
+      if (!isSelectedChild) {
+        targetHit = hit;
+        hitCompIdx = matchedIdx;
+        break;
+      }
+    }
+
+    if (!targetHit || !targetHit.face) return;
+
+    const normal = targetHit.face.normal.clone().transformDirection(targetHit.object.matrixWorld).normalize();
+    const hitPoint = targetHit.point.clone();
+
+    const cb = this.faceMagnetCallback;
+    this.deactivateFaceMagnet();
+
+    if (cb) {
+      cb(hitPoint, normal, hitCompIdx);
     }
   }
 
