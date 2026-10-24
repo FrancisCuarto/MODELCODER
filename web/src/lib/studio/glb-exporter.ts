@@ -28,6 +28,9 @@ export class GLBExporterService {
     if (typeof (globalThis as any).self === 'undefined') {
       (globalThis as any).self = globalThis;
     }
+    if (typeof (globalThis as any).HTMLCanvasElement === 'undefined') {
+      (globalThis as any).HTMLCanvasElement = class NodeHTMLCanvasElement {};
+    }
     if (typeof (globalThis as any).ImageData === 'undefined') {
       (globalThis as any).ImageData = class NodeImageData {
         data: Uint8ClampedArray;
@@ -58,50 +61,78 @@ export class GLBExporterService {
       }
       (globalThis as any).FileReader = NodeFileReader;
     }
-    if (typeof (globalThis as any).document === 'undefined') {
-      const selfRef = this;
-      (globalThis as any).document = {
-        createElement: (tag: string) => {
-          if (tag === 'canvas') {
-            const canvasObj: any = {
-              width: 0,
-              height: 0,
-              _imageData: null,
-              getContext: () => ({
-                translate: () => {},
-                scale: () => {},
-                putImageData: (imgData: any) => {
-                  canvasObj._imageData = imgData;
-                },
-                drawImage: () => {},
-                getImageData: (_x: number, _y: number, w = 64, h = 64) => ({
-                  data: new Uint8ClampedArray(w * h * 4),
-                  width: w,
-                  height: h
-                }),
-                createImageData: (w = 64, h = 64) => ({
-                  data: new Uint8ClampedArray(w * h * 4),
-                  width: w,
-                  height: h
-                })
-              }),
-              toBlob: (cb: any, type: string) => {
-                let pngBuf: any = null;
-                if (canvasObj._imageData && canvasObj._imageData.data && canvasObj._imageData.width > 0 && canvasObj._imageData.height > 0) {
-                  pngBuf = selfRef.encodeNodePNG(canvasObj._imageData.width, canvasObj._imageData.height, canvasObj._imageData.data);
-                }
-                if (!pngBuf && typeof Buffer !== 'undefined') {
-                  // Fallback: 1x1 neutral pure white PNG (leaves base color 100% unaltered, never turns green)
-                  pngBuf = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4////fwAJ+wP9KobjigAAAABJRU5ErkJggg==', 'base64');
-                }
-                cb(new Blob([pngBuf], { type: type || 'image/png' }));
-              }
+    const selfRef = this;
+    const createCanvasObject = () => {
+      const canvasObj: any = Object.create((globalThis as any).HTMLCanvasElement.prototype);
+      canvasObj.width = 0;
+      canvasObj.height = 0;
+      canvasObj._imageData = null;
+      canvasObj.getContext = () => ({
+        translate: () => {},
+        scale: () => {},
+        putImageData: (imgData: any) => {
+          canvasObj._imageData = imgData;
+        },
+        drawImage: (img: any) => {
+          if (img && img.data && img.width) {
+            canvasObj._imageData = {
+              data: new Uint8ClampedArray(img.data),
+              width: img.width,
+              height: img.height
             };
-            return canvasObj;
           }
-          return {};
+        },
+        getImageData: (_x: number, _y: number, w = 64, h = 64) => {
+          if (canvasObj._imageData && canvasObj._imageData.data) {
+            return canvasObj._imageData;
+          }
+          return {
+            data: new Uint8ClampedArray(w * h * 4),
+            width: w,
+            height: h
+          };
+        },
+        createImageData: (w = 64, h = 64) => ({
+          data: new Uint8ClampedArray(w * h * 4),
+          width: w,
+          height: h
+        })
+      });
+      canvasObj.toDataURL = (type: string) => 'data:image/png;base64,mock';
+      canvasObj.toBlob = (cb: any, type: string) => {
+        let pngBuf: any = null;
+        if (canvasObj._imageData && canvasObj._imageData.data && canvasObj._imageData.width > 0 && canvasObj._imageData.height > 0) {
+          pngBuf = selfRef.encodeNodePNG(canvasObj._imageData.width, canvasObj._imageData.height, canvasObj._imageData.data);
         }
+        if (!pngBuf && typeof Buffer !== 'undefined') {
+          // Fallback: 1x1 neutral pure white PNG (leaves base color 100% unaltered, never turns green)
+          pngBuf = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4////fwAJ+wP9KobjigAAAABJRU5ErkJggg==', 'base64');
+        }
+        cb(new Blob([pngBuf], { type: type || 'image/png' }));
       };
+      return canvasObj;
+    };
+
+    if (typeof (globalThis as any).document === 'undefined') {
+      (globalThis as any).document = {
+        createElement: (tag: string) => (tag === 'canvas' ? createCanvasObject() : {})
+      };
+    } else {
+      const originalCreate = (globalThis as any).document.createElement;
+      try {
+        const testCanvas = originalCreate ? originalCreate.call((globalThis as any).document, 'canvas') : null;
+        if (!testCanvas?.getContext?.('2d')?.getImageData) {
+          (globalThis as any).document.createElement = (tag: string) => {
+            if (tag === 'canvas') return createCanvasObject();
+            return originalCreate ? originalCreate.call((globalThis as any).document, tag) : {};
+          };
+        }
+      } catch {
+        (globalThis as any).document.createElement = (tag: string) => {
+          if (tag === 'canvas') return createCanvasObject();
+          return originalCreate ? originalCreate.call((globalThis as any).document, tag) : {};
+        };
+      }
     }
   }
 
@@ -231,25 +262,6 @@ export class GLBExporterService {
     options?: GLBExportOptions
   ): Promise<ArrayBuffer> {
     this.ensureNodePolyfills();
-    const stashedMaps: Array<{ mat: any; normalMap: any; roughnessMap: any }> = [];
-    obj.traverse((node: any) => {
-      if (node.isMesh && node.material) {
-        const mats = Array.isArray(node.material) ? node.material : [node.material];
-        for (const m of mats) {
-          if ((m.normalMap && m.normalMap.isDataTexture) || (m.roughnessMap && m.roughnessMap.isDataTexture)) {
-            stashedMaps.push({ mat: m, normalMap: m.normalMap, roughnessMap: m.roughnessMap });
-            if (m.normalMap?.isDataTexture) m.normalMap = null;
-            if (m.roughnessMap?.isDataTexture) m.roughnessMap = null;
-          }
-        }
-      }
-    });
-    const restoreMaps = () => {
-      for (const item of stashedMaps) {
-        item.mat.normalMap = item.normalMap;
-        item.mat.roughnessMap = item.roughnessMap;
-      }
-    };
 
     // Handle Godot collider suffixes or bounding collider
     const originalNames: Array<{ node: THREE.Object3D; name: string }> = [];
@@ -315,7 +327,6 @@ export class GLBExporterService {
         obj,
         (result) => {
           restoreColliders();
-          restoreMaps();
           if (result instanceof ArrayBuffer) {
             resolve(result);
           } else {
@@ -327,7 +338,6 @@ export class GLBExporterService {
         },
         (error) => {
           restoreColliders();
-          restoreMaps();
           reject(new Error(`Error durante exportación GLTFExporter: ${error}`));
         },
         exportOptions

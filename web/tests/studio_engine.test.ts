@@ -6,6 +6,9 @@ import * as THREE from 'three';
 if (typeof (globalThis as any).self === 'undefined') {
   (globalThis as any).self = globalThis;
 }
+if (typeof (globalThis as any).HTMLCanvasElement === 'undefined') {
+  (globalThis as any).HTMLCanvasElement = class NodeHTMLCanvasElement {};
+}
 if (typeof (globalThis as any).ImageData === 'undefined') {
   (globalThis as any).ImageData = class NodeImageData {
     data: Uint8ClampedArray;
@@ -61,42 +64,64 @@ if (typeof (globalThis as any).document === 'undefined') {
   (globalThis as any).document = {
     createElement: (tag: string) => {
       if (tag === 'canvas') {
-        const canvasObj: any = {
-          width: 0,
-          height: 0,
-          _imageData: null,
-          getContext: () => ({
-            translate: () => {},
-            scale: () => {},
-            putImageData: (imgData: any) => {
-              canvasObj._imageData = imgData;
-            },
-            drawImage: () => {},
-            beginPath: () => {},
-            moveTo: () => {},
-            lineTo: () => {},
-            quadraticCurveTo: () => {},
-            closePath: () => {},
-            fill: () => {},
-            stroke: () => {},
-            fillRect: () => {},
-            clearRect: () => {},
-            fillText: () => {},
-            measureText: (text: string) => ({ width: (text || '').length * 10 }),
-            createLinearGradient: () => ({ addColorStop: () => {} }),
-            createRadialGradient: () => ({ addColorStop: () => {} })
+        const canvasObj: any = Object.create((globalThis as any).HTMLCanvasElement.prototype);
+        canvasObj.width = 0;
+        canvasObj.height = 0;
+        canvasObj._imageData = null;
+        canvasObj.getContext = () => ({
+          translate: () => {},
+          scale: () => {},
+          putImageData: (imgData: any) => {
+            canvasObj._imageData = imgData;
+          },
+          drawImage: (img: any) => {
+            if (img && img.data && img.width) {
+              canvasObj._imageData = {
+                data: new Uint8ClampedArray(img.data),
+                width: img.width,
+                height: img.height
+              };
+            }
+          },
+          getImageData: (_x: number, _y: number, w = 64, h = 64) => {
+            if (canvasObj._imageData && canvasObj._imageData.data) {
+              return canvasObj._imageData;
+            }
+            return {
+              data: new Uint8ClampedArray(w * h * 4),
+              width: w,
+              height: h
+            };
+          },
+          createImageData: (w = 64, h = 64) => ({
+            data: new Uint8ClampedArray(w * h * 4),
+            width: w,
+            height: h
           }),
-          toDataURL: (type: string) => 'data:image/png;base64,mock',
-          toBlob: (cb: any, type: string) => {
-            let pngBuf: any = null;
-            if (canvasObj._imageData && canvasObj._imageData.data && canvasObj._imageData.width > 0 && canvasObj._imageData.height > 0) {
-              pngBuf = testEncodePNG(canvasObj._imageData.width, canvasObj._imageData.height, canvasObj._imageData.data);
-            }
-            if (!pngBuf && typeof Buffer !== 'undefined') {
-              pngBuf = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4////fwAJ+wP9KobjigAAAABJRU5ErkJggg==', 'base64');
-            }
-            cb(new Blob([pngBuf], { type: type || 'image/png' }));
+          beginPath: () => {},
+          moveTo: () => {},
+          lineTo: () => {},
+          quadraticCurveTo: () => {},
+          closePath: () => {},
+          fill: () => {},
+          stroke: () => {},
+          fillRect: () => {},
+          clearRect: () => {},
+          fillText: () => {},
+          measureText: (text: string) => ({ width: (text || '').length * 10 }),
+          createLinearGradient: () => ({ addColorStop: () => {} }),
+          createRadialGradient: () => ({ addColorStop: () => {} })
+        });
+        canvasObj.toDataURL = (type: string) => 'data:image/png;base64,mock';
+        canvasObj.toBlob = (cb: any, type: string) => {
+          let pngBuf: any = null;
+          if (canvasObj._imageData && canvasObj._imageData.data && canvasObj._imageData.width > 0 && canvasObj._imageData.height > 0) {
+            pngBuf = testEncodePNG(canvasObj._imageData.width, canvasObj._imageData.height, canvasObj._imageData.data);
           }
+          if (!pngBuf && typeof Buffer !== 'undefined') {
+            pngBuf = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4////fwAJ+wP9KobjigAAAABJRU5ErkJggg==', 'base64');
+          }
+          cb(new Blob([pngBuf], { type: type || 'image/png' }));
         };
         return canvasObj;
       }
@@ -446,6 +471,194 @@ test('AIGenerator: Synthesizer genera estación de soldadura industrial detallad
   // Verify that the normalized lowest Y touches Y = 0
   const normalized = AIGenerator.normalizeSpecGeometry(welderSpec);
   assert.ok(normalized.components[1].position[1] >= 0, 'Las patas deben descansar en el suelo');
+});
+
+test('AIGenerator: normalizeSpecGeometry preserva y valida primitivas avanzadas, jerarquía, pivotes y modificadores', () => {
+  const advancedSpec: ModelSpec = {
+    id: 'test.advanced.mech',
+    name: 'Robot Avanzado',
+    category: 'security',
+    description: 'Prueba de normalización de geometrías avanzadas',
+    units: 'meters',
+    dimensions: { width: 2, depth: 2, height: 2 },
+    palette: 'industrial_hazard',
+    components: [
+      {
+        name: 'chassis_core',
+        shape: 'chamfer_box',
+        size: [1.0, 0.8, 0.6, 0.03, 2],
+        position: [0, 0.4, 0],
+        color: '#2b6cb0',
+        texturePreset: 'worn_metal',
+        wear: 0.35,
+        normalStrength: 1.2
+      },
+      {
+        name: 'exhaust_nozzle',
+        shape: 'pipe',
+        size: [0.15, 0.12, 0.40, 12],
+        position: [-0.3, 0.5, -0.35],
+        rotation: [90, 0, 0],
+        color: '#1a202c',
+        parentId: 'chassis_core',
+        texturePreset: 'iron_cast'
+      },
+      {
+        name: 'pylon_hex',
+        shape: 'prism',
+        size: [0.10, 0.30, 6],
+        position: [0.3, 0.5, -0.35],
+        color: '#d69e2e',
+        parentId: 'chassis_core',
+        texturePreset: 'brass_burnished'
+      },
+      {
+        name: 'stealth_deflector',
+        shape: 'pyramid',
+        size: [0.25, 0.35, 4],
+        position: [0, 0.85, 0.25],
+        color: '#4a5568',
+        parentId: 'chassis_core'
+      },
+      {
+        name: 'hinged_access_hatch',
+        shape: 'box',
+        size: [0.3, 0.25, 0.04],
+        position: [0, 0.75, 0.32],
+        pivot: [0, 0, -0.12],
+        color: '#e53e3e',
+        parentId: 'chassis_core'
+      },
+      {
+        name: 'heat_sink_fin',
+        shape: 'box',
+        size: [0.02, 0.04, 0.3],
+        position: [0.52, 0.3, 0],
+        color: '#718096',
+        parentId: 'chassis_core',
+        array: {
+          enabled: true,
+          type: 'linear',
+          count: 5,
+          offset: [0, 0.06, 0]
+        }
+      },
+      {
+        name: 'status_beacon',
+        shape: 'cylinder',
+        size: [0.03, 0.03, 0.05, 8],
+        position: [0.25, 0.85, 0],
+        color: '#00ffcc',
+        emissive: '#00ffcc',
+        emissiveIntensity: 2.0,
+        parentId: 'chassis_core'
+      },
+      {
+        name: 'intake_cutter',
+        shape: 'cylinder',
+        size: [0.08, 0.08, 0.2, 8],
+        position: [0, 0.4, 0.3],
+        color: '#ffffff'
+      },
+      {
+        name: 'cut_plate',
+        shape: 'box',
+        size: [0.4, 0.4, 0.1],
+        position: [0, 0.4, 0.28],
+        color: '#718096',
+        boolean: {
+          enabled: true,
+          operation: 'difference',
+          targetComponent: 'intake_cutter',
+          hideTarget: true
+        }
+      }
+    ],
+    animations: [
+      {
+        id: 'clip_spin',
+        name: 'BeaconSpin',
+        duration: 2.0,
+        loop: 'repeat',
+        presetType: 'spin_continuous',
+        tracks: [
+          {
+            targetComponent: 'status_beacon',
+            property: 'rotation',
+            keyframes: [
+              { time: 0, value: [0, 0, 0] },
+              { time: 2, value: [0, 360, 0] }
+            ]
+          }
+        ]
+      }
+    ]
+  };
+
+  const normalized = AIGenerator.normalizeSpecGeometry(advancedSpec);
+
+  // 1. Verificar preservación de primitivas avanzadas (no convertidas a 'box')
+  assert.equal(normalized.components[0].shape, 'chamfer_box');
+  assert.equal(normalized.components[1].shape, 'pipe');
+  assert.equal(normalized.components[2].shape, 'prism');
+  assert.equal(normalized.components[3].shape, 'pyramid');
+
+  // 2. Verificar parámetros de tamaño sanitizados
+  assert.equal(normalized.components[0].size!.length, 5);
+  assert.equal(normalized.components[1].size!.length, 4);
+  assert.equal(normalized.components[2].size!.length, 3);
+  assert.equal(normalized.components[3].size!.length, 3);
+
+  // 3. Jerarquía y Parenting
+  assert.equal(normalized.components[1].parentId, 'chassis_core');
+  assert.equal(normalized.components[2].parentId, 'chassis_core');
+
+  // 4. Pivote de articulación
+  assert.deepEqual(normalized.components[4].pivot, [0, 0, -0.12]);
+
+  // 5. Modificador Array
+  assert.ok(normalized.components[5].array);
+  assert.equal(normalized.components[5].array?.type, 'linear');
+  assert.equal(normalized.components[5].array?.count, 5);
+  assert.deepEqual(normalized.components[5].array?.offset, [0, 0.06, 0]);
+
+  // 6. Emisivo y PBR
+  assert.equal(normalized.components[6].emissive, '#00ffcc');
+  assert.equal(normalized.components[6].emissiveIntensity, 2.0);
+  assert.equal(normalized.components[0].wear, 0.35);
+  assert.equal(normalized.components[0].normalStrength, 1.2);
+
+  // 7. Modificador Booleano
+  assert.ok(normalized.components[8].boolean);
+  assert.equal(normalized.components[8].boolean?.operation, 'difference');
+  assert.equal(normalized.components[8].boolean?.targetComponent, 'intake_cutter');
+
+  // 8. Animaciones
+  assert.ok(normalized.animations);
+  assert.equal(normalized.animations!.length, 1);
+  assert.equal(normalized.animations![0].presetType, 'spin_continuous');
+});
+
+test('AIGenerator: normalizeSpecGeometry elimina referencias cíclicas de parentId', () => {
+  const cyclicSpec: ModelSpec = {
+    id: 'test.cyclic',
+    name: 'Ciclo Jerárquico',
+    category: 'fixtures',
+    description: 'Prueba de corte de ciclos',
+    units: 'meters',
+    dimensions: { width: 1, depth: 1, height: 1 },
+    palette: 'industrial_hazard',
+    components: [
+      { name: 'comp_a', shape: 'box', size: [1, 1, 1], position: [0, 0.5, 0], parentId: 'comp_b' },
+      { name: 'comp_b', shape: 'box', size: [1, 1, 1], position: [0, 0.5, 0], parentId: 'comp_a' },
+      { name: 'comp_self', shape: 'box', size: [1, 1, 1], position: [0, 0.5, 0], parentId: 'comp_self' }
+    ]
+  };
+
+  const normalized = AIGenerator.normalizeSpecGeometry(cyclicSpec);
+  assert.equal(normalized.components[2].parentId, undefined);
+  const hasDirectCycle = normalized.components[0].parentId === 'comp_b' && normalized.components[1].parentId === 'comp_a';
+  assert.equal(hasDirectCycle, false, 'No deben existir ciclos directos');
 });
 
 test('Material System Test 1: Un componente antiguo que solo tenga color sigue funcionando (compatibilidad retroactiva)', () => {
@@ -1776,6 +1989,71 @@ test('Godot 4 Integration & Collisions: exportSpec genera sufijos -convcol y esc
   assert.ok(snippets.godotScene.includes('[node name="BarreraDeSeguridad" type="StaticBody3D"]'), 'Debe definir StaticBody3D');
   assert.ok(snippets.godotScene.includes('CollisionShape3D'), 'Debe incluir CollisionShape3D');
   assert.ok(snippets.godotScene.includes('BoxShape3D_root'), 'Debe definir BoxShape3D');
+  assert.ok(snippets.godotScene.includes('path="./barrera_seguridad.glb"'), 'Debe usar ruta relativa limpia');
+  assert.ok(!snippets.godotScene.includes('uid="uid://modelcoder_'), 'No debe contener UIDs inválidos falsos');
+});
+
+test('Godot 4 GLB & TSCN: preservación de normal maps y deduplicación limpia de materiales', async () => {
+  const pbrSpec: ModelSpec = {
+    id: 'test.pbr.export',
+    name: 'Robot PBR Godot',
+    category: 'security',
+    description: 'Prueba de exportación de texturas y normales para Godot',
+    units: 'meters',
+    dimensions: { width: 1, depth: 1, height: 1 },
+    palette: 'industrial_hazard',
+    components: [
+      {
+        name: 'chapa_1',
+        shape: 'box',
+        size: [0.5, 0.5, 0.5],
+        position: [-0.25, 0.25, 0],
+        texturePreset: 'worn_metal',
+        color: '#dd6b20',
+        normalStrength: 1.0
+      },
+      {
+        name: 'chapa_2',
+        shape: 'box',
+        size: [0.5, 0.5, 0.5],
+        position: [0.25, 0.25, 0],
+        texturePreset: 'worn_metal',
+        color: '#dd6b20',
+        normalStrength: 1.0
+      },
+      {
+        name: 'rueda_goma',
+        shape: 'cylinder',
+        size: [0.2, 0.2, 0.1, 8],
+        position: [0, 0.1, 0.3],
+        texturePreset: 'rubber_black',
+        color: '#1a202c'
+      }
+    ]
+  };
+
+  const glbBuffer = await GLBExporterService.exportSpec(pbrSpec);
+  assert.ok(glbBuffer.byteLength > 0, 'Debe generar buffer binario');
+
+  // Parsear la cabecera JSON del GLB para inspeccionar materiales y texturas exportados
+  const view = new DataView(glbBuffer);
+  const jsonLen = view.getUint32(12, true);
+  const jsonBytes = new Uint8Array(glbBuffer, 20, jsonLen);
+  const gltf = JSON.parse(new TextDecoder().decode(jsonBytes));
+
+  // 1. Verificar que chapa_1 y chapa_2 comparten el mismo material (deduplicación limpia)
+  assert.ok(gltf.materials.length === 2, `Debe haber 2 materiales únicos (metal y goma), pero hay ${gltf.materials.length}`);
+  const metalMat = gltf.materials.find((m: any) => m.name.includes('worn_metal'));
+  assert.ok(metalMat, 'Debe existir el material nombrado de metal desgastado');
+
+  // 2. Verificar que el mapa de normales (normalTexture) está presente y activo
+  assert.ok(metalMat.normalTexture, 'El material de metal desgastado debe tener normalTexture para profundidad en Godot');
+  assert.ok(metalMat.normalTexture.index !== undefined, 'normalTexture debe referenciar un índice válido');
+
+  // 3. Verificar que las texturas e imágenes tienen nombres descriptivos (no nombres vacíos o anónimos)
+  assert.ok(gltf.textures.length >= 2, 'Debe incluir al menos textura base y normal map');
+  const hasNormImage = gltf.images.some((img: any) => img.name && img.name.startsWith('N_'));
+  assert.ok(hasNormImage || gltf.images.length >= 2, 'Las imágenes deben estar presentes y estructuradas');
 });
 
 test('Component Hierarchy 1: wouldCreateCycle detecta ciclos directos e indirectos', () => {

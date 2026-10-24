@@ -98,7 +98,21 @@ export class AIGenerator {
       }
       usedNames.add(comp.name);
 
-      const validShapes = ['box', 'cylinder', 'sphere', 'plane', 'cone', 'torus', 'capsule', 'wedge', 'mesh'];
+      const validShapes = [
+        'box',
+        'cylinder',
+        'sphere',
+        'plane',
+        'cone',
+        'torus',
+        'capsule',
+        'wedge',
+        'chamfer_box',
+        'pipe',
+        'prism',
+        'pyramid',
+        'mesh'
+      ];
       if (!comp.shape || !validShapes.includes(comp.shape)) {
         comp.shape = 'box';
       }
@@ -111,10 +125,47 @@ export class AIGenerator {
 
       if (comp.shape === 'box' || comp.shape === 'wedge') {
         while (comp.size.length < 3) comp.size.push(1);
+      } else if (comp.shape === 'chamfer_box') {
+        while (comp.size.length < 3) comp.size.push(1);
+        if (comp.size.length < 4) comp.size.push(0.02);
+        if (comp.size.length < 5) comp.size.push(1);
       } else if (comp.shape === 'cylinder') {
         while (comp.size.length < 3) comp.size.push(comp.size[0] || 0.5);
+        if (comp.size.length < 4) comp.size.push(10);
+      } else if (comp.shape === 'pipe') {
+        if (comp.size.length < 1) comp.size.push(0.5);
+        if (comp.size.length < 2) comp.size.push(comp.size[0] * 0.7);
+        if (comp.size.length < 3) comp.size.push(1.0);
+        if (comp.size.length < 4) comp.size.push(12);
+        if (comp.size[1] >= comp.size[0]) comp.size[1] = comp.size[0] * 0.7;
+      } else if (comp.shape === 'prism') {
+        if (comp.size.length < 1) comp.size.push(0.5);
+        if (comp.size.length < 2) comp.size.push(1.0);
+        if (comp.size.length < 3) comp.size.push(6);
+      } else if (comp.shape === 'pyramid') {
+        if (comp.size.length < 1) comp.size.push(0.5);
+        if (comp.size.length < 2) comp.size.push(1.0);
+        if (comp.size.length < 3) comp.size.push(4);
       } else if (comp.shape === 'sphere') {
         if (comp.size.length < 1) comp.size.push(0.5);
+        if (comp.size.length < 2) comp.size.push(10);
+        if (comp.size.length < 3) comp.size.push(8);
+      } else if (comp.shape === 'cone') {
+        if (comp.size.length < 1) comp.size.push(0.5);
+        if (comp.size.length < 2) comp.size.push(1.0);
+        if (comp.size.length < 3) comp.size.push(8);
+      } else if (comp.shape === 'torus') {
+        if (comp.size.length < 1) comp.size.push(0.5);
+        if (comp.size.length < 2) comp.size.push(0.15);
+        if (comp.size.length < 3) comp.size.push(6);
+        if (comp.size.length < 4) comp.size.push(12);
+      } else if (comp.shape === 'capsule') {
+        if (comp.size.length < 1) comp.size.push(0.25);
+        if (comp.size.length < 2) comp.size.push(0.5);
+        if (comp.size.length < 3) comp.size.push(4);
+        if (comp.size.length < 4) comp.size.push(8);
+      } else if (comp.shape === 'plane') {
+        while (comp.size.length < 2) comp.size.push(1);
       }
 
       if (!Array.isArray(comp.position) || comp.position.length < 3) {
@@ -137,9 +188,145 @@ export class AIGenerator {
         ];
       }
 
+      if (Array.isArray(comp.scale) && comp.scale.length >= 3) {
+        comp.scale = [
+          Number.isFinite(comp.scale[0]) && comp.scale[0] > 0.001 ? parseFloat(comp.scale[0].toFixed(3)) : 1,
+          Number.isFinite(comp.scale[1]) && comp.scale[1] > 0.001 ? parseFloat(comp.scale[1].toFixed(3)) : 1,
+          Number.isFinite(comp.scale[2]) && comp.scale[2] > 0.001 ? parseFloat(comp.scale[2].toFixed(3)) : 1
+        ];
+      } else if (comp.scale) {
+        delete comp.scale;
+      }
+
+      // Hinge / Articulation Pivot offset
+      if (Array.isArray(comp.pivot) && comp.pivot.length >= 3) {
+        comp.pivot = [
+          Number.isFinite(comp.pivot[0]) ? parseFloat(comp.pivot[0].toFixed(4)) : 0,
+          Number.isFinite(comp.pivot[1]) ? parseFloat(comp.pivot[1].toFixed(4)) : 0,
+          Number.isFinite(comp.pivot[2]) ? parseFloat(comp.pivot[2].toFixed(4)) : 0
+        ];
+      } else if (comp.pivot) {
+        delete comp.pivot;
+      }
+
+      // Array Modifier sanitization
+      if (comp.array && typeof comp.array === 'object') {
+        const arr = comp.array;
+        const isRadial = arr.type === 'radial';
+        const count = Math.max(2, Math.min(64, Math.round(Number(arr.count) || 2)));
+        if (isRadial) {
+          comp.array = {
+            enabled: arr.enabled !== false,
+            type: 'radial',
+            count,
+            radialAxis: ['x', 'y', 'z'].includes(arr.radialAxis as any) ? arr.radialAxis : 'y',
+            radialRadius: Number.isFinite(arr.radialRadius) ? Math.max(0, parseFloat((arr.radialRadius as number).toFixed(4))) : 0.5,
+            radialAngle: Number.isFinite(arr.radialAngle) ? parseFloat((arr.radialAngle as number).toFixed(2)) : 360,
+            radialRotateCopies: arr.radialRotateCopies !== false
+          };
+        } else {
+          const off = Array.isArray(arr.offset) && arr.offset.length >= 3
+            ? [
+                Number.isFinite(arr.offset[0]) ? parseFloat(arr.offset[0].toFixed(4)) : 0,
+                Number.isFinite(arr.offset[1]) ? parseFloat(arr.offset[1].toFixed(4)) : 0,
+                Number.isFinite(arr.offset[2]) ? parseFloat(arr.offset[2].toFixed(4)) : 0
+              ] as [number, number, number]
+            : [0, 0.1, 0] as [number, number, number];
+          comp.array = {
+            enabled: arr.enabled !== false,
+            type: 'linear',
+            count,
+            offset: off
+          };
+        }
+      } else if (comp.array) {
+        delete comp.array;
+      }
+
+      // Boolean Modifier sanitization
+      if (comp.boolean && typeof comp.boolean === 'object') {
+        const b = comp.boolean;
+        const op = ['difference', 'union', 'intersection'].includes(b.operation) ? b.operation : 'difference';
+        const target = typeof b.targetComponent === 'string' ? b.targetComponent.trim().replace(/\s+/g, '_') : '';
+        if (target && target !== comp.name) {
+          comp.boolean = {
+            enabled: b.enabled !== false,
+            operation: op as any,
+            targetComponent: target,
+            hideTarget: b.hideTarget !== false
+          };
+        } else {
+          delete comp.boolean;
+        }
+      } else if (comp.boolean) {
+        delete comp.boolean;
+      }
+
+      // Material weathering, relief & emissive
+      if (typeof comp.wear === 'number' && Number.isFinite(comp.wear)) {
+        comp.wear = Math.max(0, Math.min(1, parseFloat(comp.wear.toFixed(2))));
+      }
+      if (typeof comp.normalStrength === 'number' && Number.isFinite(comp.normalStrength)) {
+        comp.normalStrength = Math.max(0, Math.min(2, parseFloat(comp.normalStrength.toFixed(2))));
+      }
+      if (comp.emissive && typeof comp.emissive === 'string') {
+        comp.emissive = comp.emissive.trim();
+        if (typeof comp.emissiveIntensity === 'number' && Number.isFinite(comp.emissiveIntensity)) {
+          comp.emissiveIntensity = Math.max(0, parseFloat(comp.emissiveIntensity.toFixed(2)));
+        } else {
+          comp.emissiveIntensity = 1.0;
+        }
+      }
+
       if (!comp.color || typeof comp.color !== 'string') {
         comp.color = '#718096';
       }
+    }
+
+    // Second pass: Validate hierarchy parenting and boolean target cross-references
+    const compNameSet = new Set(spec.components.map((c) => c.name));
+    for (const comp of spec.components) {
+      if (comp.parentId && typeof comp.parentId === 'string') {
+        const cleanParent = comp.parentId.trim().replace(/\s+/g, '_');
+        if (
+          cleanParent !== comp.name &&
+          compNameSet.has(cleanParent) &&
+          !ProceduralEngine.wouldCreateCycle(spec.components, comp.name, cleanParent)
+        ) {
+          comp.parentId = cleanParent;
+        } else {
+          delete comp.parentId;
+        }
+      } else {
+        delete comp.parentId;
+      }
+
+      if (comp.boolean?.targetComponent && !compNameSet.has(comp.boolean.targetComponent)) {
+        delete comp.boolean;
+      }
+    }
+
+    // Validate glTF exportable animation clips
+    if (Array.isArray(spec.animations) && spec.animations.length > 0) {
+      const validClips: any[] = [];
+      for (const clip of spec.animations) {
+        if (!clip || typeof clip !== 'object') continue;
+        const validClip: any = {
+          id: clip.id || `anim_${validClips.length + 1}`,
+          name: clip.name || `Animation_${validClips.length + 1}`,
+          duration: Number.isFinite(clip.duration) && clip.duration > 0 ? parseFloat(clip.duration.toFixed(2)) : 2.0,
+          loop: ['repeat', 'pingpong', 'once'].includes(clip.loop) ? clip.loop : 'repeat',
+          tracks: Array.isArray(clip.tracks) ? clip.tracks : []
+        };
+        if (
+          clip.presetType &&
+          ['sliding_door', 'hinge_lid', 'button_press', 'spin_continuous', 'mechanical_deploy', 'idle_hover'].includes(clip.presetType)
+        ) {
+          validClip.presetType = clip.presetType;
+        }
+        validClips.push(validClip);
+      }
+      spec.animations = validClips.length > 0 ? validClips : undefined;
     }
 
     // Auto-Grounding: measure true 3D bounding box to ground lowest contact points at Y = 0
@@ -186,8 +373,8 @@ export class AIGenerator {
   ): Promise<{ spec: ModelSpec; rawResponse: string }> {
     const uniqueNonce = `${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
 
-    const systemInstruction = `You are ModelCoder 3D Master Architect, an expert procedural 3D modeler for retro PS1 sci-fi, industrial, and cybernetic games.
-Your mission is to construct realistic, physically coherent, and mechanically solid 3D models with ZERO floating geometry, perfect ground alignment, and authentic retro materials.
+    const systemInstruction = `You are ModelCoder 3D Master Architect, an expert procedural 3D modeler for retro-modern, sci-fi, industrial, and cybernetic games.
+Your mission is to construct realistic, physically coherent, mechanically solid 3D models with ZERO floating geometry, perfect ground alignment, high mechanical detail, and authentic retro materials.
 
 ### 5 ABSOLUTE LAWS OF 3D CONSTRUCTION (MANDATORY)
 
@@ -222,171 +409,213 @@ Your mission is to construct realistic, physically coherent, and mechanically so
 4. LAW OF MECHANICAL HIERARCHY & FUNCTIONAL ANATOMY:
 - Design objects like real machines and structures:
   a) HEAVY FOUNDATION / CHASSIS / WHEELS: Heavy base at Y=0 (diamond plate, cast iron, rubber feet).
-  b) MAIN HOUSING / BODY: Enclosed structural core (worn metal, beige plastic, painted metal).
-  c) MECHANICAL & ELECTRICAL PARTS: Tanks, vents, heat sinks, cables, hydraulic cylinders, pipes.
+  b) MAIN HOUSING / BODY: Enclosed structural core (worn metal, beige plastic, painted metal, chamfer_box).
+  c) MECHANICAL & ELECTRICAL PARTS: Tanks, vents, heat sinks, conduits, hydraulic pistons, pipes, prisms.
   d) INTERFACE & CONTROLS: Flush control panels, switches, CRT screens, gauges, dials, emergency stop buttons.
-  e) ACCENTS: Warning decals, hazard stripes, LED indicators.
+  e) ACCENTS & LIGHTS: Warning decals, hazard stripes, LED indicators with emissive glow.
 
 5. LAW OF SYMMETRY & COHESIVE PROPORTIONS:
 - Center main structures at X = 0.
 - Bilateral parts (wheels, dual tanks, side handles, thrusters, legs) MUST be placed in symmetric pairs (+X and -X) with identical Y and Z.
 
-### PRIMITIVE SHAPE PARAMETERS (METERS)
+### 12 PRIMITIVE SHAPES (METERS) & USAGE
 - "box": size [width_X, height_Y, depth_Z]
-- "cylinder": size [radiusTop, radiusBottom, height_Y, radialSegments] (height is along Y! Use radius, not diameter. e.g. [0.12, 0.12, 0.60, 12])
-- "wedge": size [width_X, height_Y, depth_Z] (sloped triangular prism for consoles/ramps)
-- "sphere": size [radius, widthSegments, heightSegments] (e.g. [0.20, 12, 8])
-- "capsule": size [radius, length_Y, capSegments, radSegments] (e.g. [0.08, 0.30, 4, 8])
-- "torus": size [radius, tubeRadius, radSegs, tubSegs] (e.g. [0.15, 0.03, 8, 12])
+  * Cuboid for structural framing, walls, steps, brackets, chassis cores.
+- "chamfer_box": size [width_X, height_Y, depth_Z, bevelRadius, bevelSegments]
+  * Box with beveled/rounded edges. Ideal for cybernetic armor, electronics consoles, smooth sci-fi crates, high-tech furniture.
+  * Low-poly rule: keep bevelRadius ~0.02-0.05 and bevelSegments 1 or 2 (e.g. [0.60, 0.40, 0.50, 0.02, 1]).
+- "cylinder": size [radiusTop, radiusBottom, height_Y, radialSegments]
+  * Solid cylinder/column. Wheels, tanks, hydraulic pistons, columns, barrels (e.g. [0.15, 0.15, 0.60, 12]).
+- "pipe": size [radiusOuter, radiusInner, height_Y, radialSegments]
+  * HOLLOW tube/nozzle! Outer radius and inner radius. Perfect for jet thrusters, rocket nozzles, exhaust pipes, gun barrels, intake conduits, ring mounts (e.g. [0.20, 0.16, 0.40, 12]). Note: radiusInner MUST be less than radiusOuter.
+- "prism": size [radius, height_Y, sides]
+  * Regular N-sided polygonal prism (height along Y). Use for hexagonal armor plates, sci-fi pylons, heavy bolts/nuts, octagonal columns (e.g. [0.25, 0.80, 6] for a hex pylon).
+- "pyramid": size [radius, height_Y, sides]
+  * N-sided pyramid tapering to a tip (height along Y). Use for stealth facets, angular deflector plating, nosecones, sensor caps (e.g. [0.30, 0.45, 4] for a 4-sided pyramid).
+- "wedge": size [width_X, height_Y, depth_Z]
+  * Sloped triangular prism for ergonomic control consoles, ramps, cowcatchers, sloped vehicle hoods.
+- "sphere": size [radius, widthSegments, heightSegments]
+  * Domes, radar bubbles, cockpit spheres, robotics joint bearings (e.g. [0.20, 12, 8]).
+- "capsule": size [radius, length_Y, capSegments, radialSegments]
+  * Pressurized tanks, gas cylinders, medical cryo-pods, pill capsules (e.g. [0.10, 0.40, 4, 8]).
+- "torus": size [radius, tubeRadius, radSegs, tubSegs]
+  * Steering wheels, circular conduits, reactor containment rings, gaskets (e.g. [0.25, 0.04, 6, 12]).
+- "cone": size [radius, height_Y, radialSegments]
+  * Warning cones, sharp spikes, spotlights, antenna tips (e.g. [0.15, 0.40, 8]).
+- "plane": size [width_X, height_Y]
+  * Thin display sheets, solar panels, backing plates (e.g. [0.50, 0.30]).
 
-### TEXTURE PRESETS & PALETTES
-Assign authentic retro PBR textures from our 8 families:
-- Metals: "worn_metal", "metal_light_brushed", "steel_polished", "steel_galvanized", "iron_cast", "copper_polished", "copper_oxidized", "bronze_antique", "brass_burnished", "titanium_aerospace", "diamond_plate", "metal_perforated", "gold_contacts", "chrome_mirror", "painted_metal_white", "red_paint_worn"
-- Construction: "concrete_smooth", "concrete_rough", "brick_industrial", "asphalt_road", "corrugated_metal", "hazard_stripes"
-- Plastics/Rubbers: "beige_plastic_worn", "plastic_abs_matte", "plastic_acrylic_gloss", "rubber_black", "rubber_ribbed_mat", "polymer_tactical"
-- Tech/Screens: "pcb_green_gold", "pcb_black_hd", "carbon_fiber", "vent_grill", "crt_screen_green", "crt_screen_amber", "crt_screen_blue", "crt_data_matrix", "caution_label", "radiation_label", "biohazard_label", "plasma_core_glow"
-- Glass/Fabrics: "clean_glass", "tinted_glass", "reinforced_glass", "hologram_cyan", "rust_heavy"
+### HIERARCHICAL PARENTING ("parentId") & ARTICULATION PIVOTS ("pivot")
+- "parentId": Link child components to their logical parent (e.g. wheels attached to "main_chassis", cannons to "turret_head", doors to "door_frame").
+  * This creates clean transform hierarchies so rotating the parent moves all child parts together!
+- "pivot": [offsetX, offsetY, offsetZ] (meters relative to component center).
+  * Defines where hinges, joints, and articulation axes rotate:
+  * Left-hinged door (width W): pivot = [-W/2, 0, 0]
+  * Bottom-hinged hatch / folding ramp (height H): pivot = [0, -H/2, 0]
+  * Rear-hinged lid (depth D): pivot = [0, 0, -D/2]
+  * Elevating gun / antenna base: pivot = [0, -H/2, 0]
 
-### FEW-SHOT REFERENCE: INDUSTRIAL WELDING MACHINE ("máquina de soldar")
-Notice how every piece connects with exact mathematical contact:
+### MODIFIERS: REPETITION ARRAYS & CSG BOOLEAN CUTS
+- "array": Instantiates multiple copies along an axis or in a circle without duplicating code:
+  * Linear Array: "array": { "enabled": true, "type": "linear", "count": 4, "offset": [0, 0.08, 0] }
+    -> Ideal for heat sink cooling fins, ladder rungs, radiator slats, ventilation louvers, steps.
+  * Radial Array: "array": { "enabled": true, "type": "radial", "count": 6, "radialAxis": "y", "radialRadius": 0.35, "radialAngle": 360, "radialRotateCopies": true }
+    -> Ideal for multi-thruster nozzle rings, circular bolt patterns, dial ticks, spoke rims.
+- "boolean": Non-destructive CSG difference/union/intersection:
+  * "boolean": { "enabled": true, "operation": "difference", "targetComponent": "<cutter_component_name>", "hideTarget": true }
+    -> Ideal for cutting cockpit cavities out of fuselages, hollow intake vents, recessed access ports.
+
+### TEXTURES, WEATHERING & EMISSIVE GLOW (138 PBR PRESETS)
+- 138 authentic presets across 8 categories:
+  * Metals: "worn_metal", "steel_polished", "steel_galvanized", "iron_cast", "copper_polished", "copper_oxidized", "bronze_antique", "brass_burnished", "titanium_aerospace", "diamond_plate", "metal_perforated", "gold_contacts", "chrome_mirror", "painted_metal_white", "painted_metal_blue", "painted_metal_olive", "red_paint_worn"
+  * Tech/Screens: "pcb_green_gold", "pcb_black_hd", "carbon_fiber", "server_vent_panel", "solar_panel_blue", "vent_grill", "crt_screen_green", "crt_screen_amber", "crt_screen_blue", "crt_data_matrix", "plasma_core_glow", "radiation_label", "biohazard_label", "caution_label"
+  * Industrial/Construction: "concrete_smooth", "asphalt_road", "corrugated_metal", "hazard_stripes", "rubber_black", "rubber_ribbed_mat", "plastic_abs_matte", "polymer_tactical", "station_modular_panel", "nonslip_floor"
+  * Glass/Transparencies: "clean_glass", "tinted_glass", "reinforced_glass", "frosted_glass", "hologram_cyan", "visor_gold_mirror"
+- Surface Weathering: "wear": 0.0 (factory new) to 0.8 (gritty battle-worn).
+- Relief Depth: "normalStrength": 0.5 to 1.5.
+- Emissive Lighting: "emissive": "#00ffcc" (or "#ff3300", "#39ff14", "#ffb700") with "emissiveIntensity": 1.2 to 2.5 for CRT monitors, LED status beacons, power cores, thruster fire.
+
+### EXPORTABLE glTF ANIMATIONS ("animations")
+When mechanically appropriate, include animation clips:
+- "presetType": "spin_continuous" -> continuous 360° spin for radars, rotors, warning beacons, turbine fans.
+- "presetType": "idle_hover" -> subtle floating vertical oscillation for hovering drones, hovercraft, alien relics.
+- "presetType": "sliding_door" -> automated linear open/close for airlocks, blast gates, elevator doors.
+- "presetType": "hinge_lid" -> angular swing for inspection hatches, cockpit canopies, storage crates.
+- "presetType": "button_press" -> tactile mechanical depression for switches, buttons.
+- "presetType": "mechanical_deploy" -> unfolding action for landing gear, solar panels, weapon bays.
+
+### FEW-SHOT REFERENCE: INDUSTRIAL WELDING & POWER STATION ("máquina de soldar / generador")
+Notice how every piece connects with exact mathematical contact, leveraging hierarchy, chamfers, and arrays:
 {
   "id": "below_nominal.generated.welder_reference",
-  "name": "Estación de Soldadura Inverter Pro-Arc 300",
+  "name": "Estación de Energía y Soldadura Arc-Core 500",
   "category": "infrastructure",
-  "description": "Unidad de soldadura de arco industrial compacta con chasis de acero, panel de control frontal flush, terminales de latón y asa ergonómica.",
+  "description": "Unidad de potencia industrial con chasis biselado, tobera de escape hueca, radiador lineal, escotilla articulada y pantalla CRT emisiva.",
   "units": "meters",
-  "dimensions": { "width": 0.85, "height": 0.72, "depth": 0.65 },
+  "dimensions": { "width": 0.90, "height": 0.85, "depth": 0.70 },
   "palette": "industrial_hazard",
   "components": [
     {
-      "name": "rubber_feet_fl",
-      "shape": "cylinder",
-      "size": [0.03, 0.03, 0.04, 8],
-      "position": [-0.25, 0.02, 0.22],
+      "name": "base_skid",
+      "shape": "box",
+      "size": [0.80, 0.06, 0.65],
+      "position": [0, 0.03, 0],
       "rotation": [0, 0, 0],
       "color": "#1a202c",
-      "texturePreset": "rubber_black"
-    },
-    {
-      "name": "rubber_feet_fr",
-      "shape": "cylinder",
-      "size": [0.03, 0.03, 0.04, 8],
-      "position": [0.25, 0.02, 0.22],
-      "rotation": [0, 0, 0],
-      "color": "#1a202c",
-      "texturePreset": "rubber_black"
-    },
-    {
-      "name": "rubber_feet_bl",
-      "shape": "cylinder",
-      "size": [0.03, 0.03, 0.04, 8],
-      "position": [-0.25, 0.02, -0.22],
-      "rotation": [0, 0, 0],
-      "color": "#1a202c",
-      "texturePreset": "rubber_black"
-    },
-    {
-      "name": "rubber_feet_br",
-      "shape": "cylinder",
-      "size": [0.03, 0.03, 0.04, 8],
-      "position": [0.25, 0.02, -0.22],
-      "rotation": [0, 0, 0],
-      "color": "#1a202c",
-      "texturePreset": "rubber_black"
+      "texturePreset": "steel_galvanized",
+      "wear": 0.4
     },
     {
       "name": "main_chassis",
-      "shape": "box",
-      "size": [0.60, 0.42, 0.50],
-      "position": [0, 0.25, 0],
+      "shape": "chamfer_box",
+      "size": [0.65, 0.48, 0.54, 0.03, 1],
+      "position": [0, 0.30, 0],
       "rotation": [0, 0, 0],
       "color": "#dd6b20",
       "texturePreset": "worn_metal",
       "roughness": 0.6,
-      "metalness": 0.4
+      "metalness": 0.4,
+      "wear": 0.3
     },
     {
-      "name": "front_control_panel",
+      "name": "cooling_radiator_slat",
       "shape": "box",
-      "size": [0.52, 0.34, 0.02],
-      "position": [0, 0.25, 0.26],
+      "size": [0.015, 0.03, 0.40],
+      "position": [0.33, 0.20, 0],
+      "rotation": [0, 0, 0],
+      "color": "#2d3748",
+      "texturePreset": "steel_polished",
+      "parentId": "main_chassis",
+      "array": {
+        "enabled": true,
+        "type": "linear",
+        "count": 5,
+        "offset": [0, 0.05, 0]
+      }
+    },
+    {
+      "name": "exhaust_pipe",
+      "shape": "pipe",
+      "size": [0.09, 0.07, 0.22, 12],
+      "position": [-0.18, 0.65, -0.12],
+      "rotation": [0, 0, 0],
+      "color": "#718096",
+      "texturePreset": "iron_cast",
+      "parentId": "main_chassis",
+      "wear": 0.6
+    },
+    {
+      "name": "power_coupler_hex",
+      "shape": "prism",
+      "size": [0.08, 0.10, 6],
+      "position": [0.18, 0.59, -0.12],
+      "rotation": [0, 0, 0],
+      "color": "#ecc94b",
+      "texturePreset": "brass_burnished",
+      "parentId": "main_chassis"
+    },
+    {
+      "name": "front_console_wedge",
+      "shape": "wedge",
+      "size": [0.55, 0.32, 0.08],
+      "position": [0, 0.30, 0.31],
       "rotation": [0, 0, 0],
       "color": "#2d3748",
       "texturePreset": "plastic_abs_matte",
-      "roughness": 0.8,
-      "metalness": 0.1
+      "parentId": "main_chassis"
     },
     {
-      "name": "digital_amp_display",
+      "name": "crt_telemetry_screen",
       "shape": "box",
-      "size": [0.18, 0.09, 0.01],
-      "position": [-0.12, 0.32, 0.275],
+      "size": [0.22, 0.14, 0.01],
+      "position": [-0.12, 0.34, 0.355],
       "rotation": [0, 0, 0],
-      "color": "#38a169",
-      "texturePreset": "crt_screen_green"
+      "color": "#00ffcc",
+      "texturePreset": "crt_screen_green",
+      "emissive": "#00ffcc",
+      "emissiveIntensity": 1.6,
+      "parentId": "main_chassis"
     },
     {
-      "name": "amperage_dial",
+      "name": "status_lamp_warning",
       "shape": "cylinder",
-      "size": [0.04, 0.04, 0.03, 12],
-      "position": [0.12, 0.32, 0.28],
+      "size": [0.02, 0.02, 0.02, 10],
+      "position": [0.14, 0.38, 0.355],
       "rotation": [90, 0, 0],
-      "color": "#ecc94b",
-      "texturePreset": "brass_burnished"
+      "color": "#ff3300",
+      "emissive": "#ff3300",
+      "emissiveIntensity": 2.0,
+      "parentId": "main_chassis"
     },
     {
-      "name": "terminal_negative",
-      "shape": "cylinder",
-      "size": [0.025, 0.025, 0.04, 10],
-      "position": [-0.15, 0.15, 0.285],
-      "rotation": [90, 0, 0],
-      "color": "#1a202c",
-      "texturePreset": "rubber_black"
-    },
-    {
-      "name": "terminal_positive",
-      "shape": "cylinder",
-      "size": [0.025, 0.025, 0.04, 10],
-      "position": [0.15, 0.15, 0.285],
-      "rotation": [90, 0, 0],
-      "color": "#e53e3e",
-      "texturePreset": "red_paint_worn"
-    },
-    {
-      "name": "top_handle_grip",
+      "name": "inspection_hatch_door",
       "shape": "box",
-      "size": [0.32, 0.05, 0.04],
-      "position": [0, 0.52, 0],
+      "size": [0.24, 0.20, 0.02],
+      "position": [0, 0.55, 0.12],
       "rotation": [0, 0, 0],
-      "color": "#1a202c",
-      "texturePreset": "rubber_ribbed_mat"
-    },
+      "pivot": [0, 0, -0.10],
+      "color": "#4a5568",
+      "texturePreset": "diamond_plate",
+      "parentId": "main_chassis"
+    }
+  ],
+  "animations": [
     {
-      "name": "handle_post_front",
-      "shape": "box",
-      "size": [0.04, 0.06, 0.04],
-      "position": [0, 0.49, 0.14],
-      "rotation": [0, 0, 0],
-      "color": "#718096",
-      "texturePreset": "steel_polished"
-    },
-    {
-      "name": "handle_post_back",
-      "shape": "box",
-      "size": [0.04, 0.06, 0.04],
-      "position": [0, 0.49, -0.14],
-      "rotation": [0, 0, 0],
-      "color": "#718096",
-      "texturePreset": "steel_polished"
-    },
-    {
-      "name": "side_cooling_vent",
-      "shape": "box",
-      "size": [0.01, 0.22, 0.32],
-      "position": [0.305, 0.25, 0],
-      "rotation": [0, 0, 0],
-      "color": "#1a202c",
-      "texturePreset": "vent_grill"
+      "id": "anim_hatch_open",
+      "name": "InspectHatchOpen",
+      "duration": 2.0,
+      "loop": "pingpong",
+      "presetType": "hinge_lid",
+      "tracks": [
+        {
+          "targetComponent": "inspection_hatch_door",
+          "property": "rotation",
+          "keyframes": [
+            { "time": 0.0, "value": [0, 0, 0] },
+            { "time": 2.0, "value": [-65, 0, 0] }
+          ]
+        }
+      ]
     }
   ]
 }
@@ -403,14 +632,54 @@ Return ONLY valid JSON matching this schema:
   "components": [
     {
       "name": "<unique_component_name>",
-      "shape": "box" | "cylinder" | "sphere" | "wedge" | "cone" | "torus" | "capsule",
+      "shape": "box" | "chamfer_box" | "cylinder" | "pipe" | "prism" | "pyramid" | "wedge" | "sphere" | "capsule" | "torus" | "cone" | "plane",
       "size": [<numbers>],
       "position": [<x>, <y>, <z>],
       "rotation": [<deg_x>, <deg_y>, <deg_z>],
       "color": "<hex_or_palette_name>",
+      "parentId": "<optional_parent_component_name>",
+      "pivot": [<optional_offsetX>, <optional_offsetY>, <optional_offsetZ>],
       "texturePreset": "<valid texturePreset>",
       "roughness": 0.7,
-      "metalness": 0.2
+      "metalness": 0.2,
+      "wear": 0.3,
+      "normalStrength": 1.0,
+      "emissive": "<optional_hex_color>",
+      "emissiveIntensity": 1.5,
+      "array": {
+        "enabled": true,
+        "type": "linear" | "radial",
+        "count": <int_2_to_64>,
+        "offset": [<dx>, <dy>, <dz>],
+        "radialAxis": "x" | "y" | "z",
+        "radialRadius": <float>,
+        "radialAngle": <degrees_default_360>,
+        "radialRotateCopies": true
+      },
+      "boolean": {
+        "enabled": true,
+        "operation": "difference" | "union" | "intersection",
+        "targetComponent": "<other_component_name>",
+        "hideTarget": true
+      }
+    }
+  ],
+  "animations": [
+    {
+      "id": "<clip_id>",
+      "name": "<ClipName>",
+      "duration": <seconds_float>,
+      "loop": "repeat" | "pingpong" | "once",
+      "presetType": "spin_continuous" | "idle_hover" | "sliding_door" | "hinge_lid" | "button_press" | "mechanical_deploy",
+      "tracks": [
+        {
+          "targetComponent": "<target_component_name>",
+          "property": "position" | "rotation" | "scale",
+          "keyframes": [
+            { "time": <sec>, "value": [<x>, <y>, <z>] }
+          ]
+        }
+      ]
     }
   ]
 }`;

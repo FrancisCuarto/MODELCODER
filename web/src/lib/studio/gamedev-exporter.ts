@@ -217,9 +217,12 @@ export function generateGodotScene(spec: ModelSpec, filename?: string): string {
   const d = Number(dims.depth) || 1.0;
   const centerY = (h / 2).toFixed(4);
 
-  return `[gd_scene load_steps=3 format=3 uid="uid://modelcoder_${cleanId}"]
+  // Standard Godot 4 scene:
+  // 1. No invalid fake UIDs (Godot generates valid UIDs automatically on import without errors).
+  // 2. Relative path to sibling GLB (path="./${glbFile}") so dropping the scene and model into any folder works out-of-the-box.
+  return `[gd_scene load_steps=3 format=3]
 
-[ext_resource type="PackedScene" uid="uid://mesh_${cleanId}" path="res://assets/${glbFile}" id="1_mesh"]
+[ext_resource type="PackedScene" path="./${glbFile}" id="1_mesh"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_root"]
 size = Vector3(${w.toFixed(4)}, ${h.toFixed(4)}, ${d.toFixed(4)})

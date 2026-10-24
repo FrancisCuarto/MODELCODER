@@ -115,10 +115,15 @@ export class TextureLibrary {
   private static textures = new Map<string, THREE.DataTexture>();
   private static normalTextures = new Map<string, THREE.DataTexture>();
   private static roughnessTextures = new Map<string, THREE.DataTexture>();
+  private static materialCache = new Map<string, THREE.MeshStandardMaterial>();
   private static presetTextures = new Set<THREE.Texture>();
   private static thumbnailCache = new Map<string, string>();
   private static customTextures = new Map<string, THREE.Texture>();
   private static customDataUrls = new Map<string, string>();
+
+  public static clearMaterialCache(): void {
+    this.materialCache.clear();
+  }
 
   public static registerCustomTexture(id: string, dataUrl: string): THREE.Texture {
     this.customDataUrls.set(id, dataUrl);
@@ -1933,6 +1938,7 @@ export class TextureLibrary {
     }
 
     const tex = new THREE.DataTexture(pixels, size, size, THREE.RGBAFormat);
+    tex.name = `T_${preset}${wearStep > 0 ? `_w${wearStep}` : ''}`;
     tex.wrapS = THREE.RepeatWrapping;
     tex.wrapT = THREE.RepeatWrapping;
     tex.magFilter = THREE.NearestFilter;
@@ -1999,6 +2005,7 @@ export class TextureLibrary {
     }
 
     const normTex = new THREE.DataTexture(normPixels, size, size, THREE.RGBAFormat);
+    normTex.name = `N_${preset}_s${step}`;
     normTex.wrapS = THREE.RepeatWrapping;
     normTex.wrapT = THREE.RepeatWrapping;
     normTex.magFilter = THREE.NearestFilter;
@@ -2088,7 +2095,14 @@ export class TextureLibrary {
         if (comp.uvScale) {
           customTex.repeat.set(comp.uvScale[0], comp.uvScale[1]);
         }
-        return new THREE.MeshStandardMaterial({
+        const cleanCustomKey = texKey.replace(/[^a-zA-Z0-9_]/g, '_');
+        customTex.name = `T_custom_${cleanCustomKey}`;
+        const matCustomKey = `custom_${cleanCustomKey}_${comp.color || 'def'}_${comp.roughness ?? 0.6}_${comp.metalness ?? 0.2}_${Boolean(comp.wireframe)}`;
+        if (this.materialCache.has(matCustomKey)) {
+          return this.materialCache.get(matCustomKey)!;
+        }
+        const customMat = new THREE.MeshStandardMaterial({
+          name: `M_custom_${cleanCustomKey}`,
           color: comp.color && !comp.color.startsWith('default') ? baseColor : new THREE.Color('#ffffff'),
           roughness: comp.roughness ?? 0.6,
           metalness: comp.metalness ?? 0.2,
@@ -2098,13 +2112,21 @@ export class TextureLibrary {
           transparent: Boolean(comp.transparent || (comp.opacity !== undefined && comp.opacity < 1.0)),
           opacity: comp.opacity ?? 1.0
         });
+        this.materialCache.set(matCustomKey, customMat);
+        return customMat;
       }
     }
 
     const presetName = this.resolvePresetName(comp.texturePreset);
     if (!presetName) {
       // Legacy color-only material
-      return new THREE.MeshStandardMaterial({
+      const colHex = baseColor.getHexString();
+      const legacyKey = `legacy_${colHex}_${comp.roughness ?? 0.75}_${comp.metalness ?? 0.25}_${Boolean(comp.wireframe)}`;
+      if (this.materialCache.has(legacyKey)) {
+        return this.materialCache.get(legacyKey)!;
+      }
+      const legacyMat = new THREE.MeshStandardMaterial({
+        name: `M_solid_${colHex}`,
         color: baseColor,
         roughness: comp.roughness ?? 0.75,
         metalness: comp.metalness ?? 0.25,
@@ -2112,6 +2134,8 @@ export class TextureLibrary {
         vertexColors: true,
         wireframe: Boolean(comp.wireframe)
       });
+      this.materialCache.set(legacyKey, legacyMat);
+      return legacyMat;
     }
 
     const variant = this.getParametricVariant(comp.texturePreset);
@@ -2146,14 +2170,29 @@ export class TextureLibrary {
       ? baseRoughness
       : Math.min(1.0, baseRoughness + wearAmount * 0.14);
 
+    const normStrength = comp.normalStrength ?? profile.normalStrength ?? 0.5;
+    const hasNorm = normStrength > 0.05 && !isTransp;
+    const emissiveHex = comp.emissive ?? variant?.emissive ?? profile.emissive;
+    const emissiveIntensity = comp.emissiveIntensity ?? variant?.emissiveIntensity ?? profile.emissiveIntensity ?? 1.5;
+    const isWireframe = Boolean(comp.wireframe);
+
+    // Deduplication cache key: share identical PBR materials across multiple components
+    const cleanPreset = presetName.replace(/[^a-zA-Z0-9_]/g, '_');
+    const matKey = `${cleanPreset}__c_${matColor.getHexString()}__r_${effectiveRoughness.toFixed(2)}__m_${baseMetalness.toFixed(2)}__w_${wearAmount.toFixed(2)}__n_${hasNorm ? normStrength.toFixed(2) : '0'}__e_${emissiveHex || '0'}_${emissiveHex ? emissiveIntensity.toFixed(1) : '0'}__o_${isTransp ? targetOpacity.toFixed(2) : '1'}__wf_${isWireframe}`;
+
+    if (this.materialCache.has(matKey)) {
+      return this.materialCache.get(matKey)!;
+    }
+
     const mat = new THREE.MeshStandardMaterial({
+      name: `M_${cleanPreset}_${matColor.getHexString()}`,
       map: texture,
       color: matColor,
       roughness: effectiveRoughness,
       metalness: baseMetalness,
       flatShading: true,
       vertexColors: false, // Pure crisp texture rendering
-      wireframe: Boolean(comp.wireframe),
+      wireframe: isWireframe,
       transparent: isTransp,
       opacity: targetOpacity,
       depthWrite: isTransp && targetOpacity < 0.9 ? false : true,
@@ -2161,18 +2200,17 @@ export class TextureLibrary {
     });
 
     // Attach procedural Normal Map for surface relief (strength baked into normal map so normalScale stays 1,1 for fast GLB export)
-    const normStrength = comp.normalStrength ?? profile.normalStrength ?? 0.5;
-    if (normStrength > 0.05 && !isTransp) {
+    if (hasNorm) {
       mat.normalMap = this.getNormalTexture(presetName, normStrength);
     }
 
     // Emissive setup for CRTs, holograms, energy minerals and lit indicators
-    const emissiveHex = comp.emissive ?? variant?.emissive ?? profile.emissive;
     if (emissiveHex) {
       mat.emissive = new THREE.Color(emissiveHex);
-      mat.emissiveIntensity = comp.emissiveIntensity ?? variant?.emissiveIntensity ?? profile.emissiveIntensity ?? 1.5;
+      mat.emissiveIntensity = emissiveIntensity;
     }
 
+    this.materialCache.set(matKey, mat);
     return mat;
   }
 

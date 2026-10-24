@@ -658,6 +658,7 @@ export class ProceduralEngine {
   }
 
   public static buildModelFromSpec(spec: ModelSpec): { group: THREE.Group; stats: GeometricStats } {
+    TextureLibrary.clearMaterialCache();
     const group = new THREE.Group();
     group.name = spec.id || 'procedural_root';
 

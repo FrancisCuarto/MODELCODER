@@ -8,6 +8,7 @@ interface Props {
   schemaData?: Record<string, any>;
   useModelViewer?: boolean;
   forceTheme?: 'ps1' | 'dark-professional';
+  hideGlobalNav?: boolean;
 }
 
 const {
@@ -18,7 +19,8 @@ const {
   ogType = "website",
   schemaData,
   useModelViewer = true,
-  forceTheme
+  forceTheme,
+  hideGlobalNav = false
 } = Astro.props;
 
 import catalog from '../data/catalog.json';
@@ -139,10 +141,11 @@ const globalJsonLd = {
       <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js"></script>
     )}
   </head>
-  <body>
+  <body class={hideGlobalNav ? 'is-dcc-app' : ''}>
     <!-- CRT Scanlines Overlay -->
-    <div class="ps1-scanlines" aria-hidden="true"></div>
+    {!hideGlobalNav && <div class="ps1-scanlines" aria-hidden="true"></div>}
 
+    {!hideGlobalNav && (
     <header class="site-header">
       <div class="header-container">
         <a href="/" class="brand-logo" title="ModelCoder — Generadores 3D Procedurales por IV Orbit Games">
@@ -259,8 +262,9 @@ const globalJsonLd = {
         </nav>
       </div>
     </header>
+    )}
 
-    <main class="site-content">
+    <main class={hideGlobalNav ? 'site-content dcc-main-content' : 'site-content'}>
       <slot />
     </main>
 
@@ -449,6 +453,7 @@ const globalJsonLd = {
       </div>
     </div>
 
+    {!hideGlobalNav && (
     <footer class="site-footer">
       <div class="footer-container">
         <!-- Columna 1: Marca & Propósito -->
@@ -554,6 +559,7 @@ const globalJsonLd = {
         </div>
       </div>
     </footer>
+    )}
 
     <!-- Script de Inicialización de Autenticación de Supabase -->
     <script>
@@ -1361,6 +1367,25 @@ const globalJsonLd = {
     </script>
 
     <style>
+      /* Modo DCC Minimalista (Estilo IV Orbit Texture Studio) */
+      :global(body.is-dcc-app) {
+        overflow: hidden !important;
+        height: 100vh !important;
+        max-height: 100vh !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: #121316 !important;
+        background-image: none !important;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif !important;
+      }
+      :global(body.is-dcc-app) .dcc-main-content {
+        margin: 0 !important;
+        padding: 0 !important;
+        height: 100vh !important;
+        max-height: 100vh !important;
+        overflow: hidden !important;
+      }
+
       /* Optimizaciones de interfaz para Modo Escritorio (Tauri v2) */
       :global(.is-desktop-app) .site-header {
         padding: 0.25rem 0.75rem;

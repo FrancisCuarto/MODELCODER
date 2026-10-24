@@ -8,97 +8,250 @@ import catalog from '../data/catalog.json';
   description="Creá, modelá y personalizá objetos 3D procedurales low-poly con IA y controles visuales. Exportá archivos GLB universales listos para Godot, Unity y Blender directamente en tu navegador."
   keywords="editor 3d online, generador 3d procedural con ia, modelado 3d navegador, three.js 3d editor, exportar glb online"
   useModelViewer={false}
-  forceTheme="ps1"
+  forceTheme="dark-professional"
+  hideGlobalNav={true}
 >
-  <div class="studio-container">
-    <!-- Studio Header Bar (Ultra-Compact DCC Style) -->
-    <header class="ps1-window studio-topbar-compact" id="studio-topbar">
-      <!-- Left zone: Brand logo + Workspace Tabs + Undo/Redo -->
-      <div class="topbar-left-zone">
-        <a href="/" title="Volver al Catálogo de ModelCoder" class="topbar-brand-link">
-          <img src="/logo.png" alt="ModelCoder" class="topbar-brand-logo" />
-          <span class="topbar-brand-text">STUDIO</span>
-        </a>
+  <div class="studio-container" id="studio-container" data-studio-theme="modern">
+    <!-- Scanlines overlay (Active only in Retro PS1 style) -->
+    <div class="ps1-scanlines studio-scanlines" id="studio-scanlines" aria-hidden="true"></div>
+    <script is:inline>
+      try {
+        var savedTheme = localStorage.getItem('modelcoder_studio_ui_theme');
+        if (savedTheme === 'retro') {
+          document.getElementById('studio-container')?.setAttribute('data-studio-theme', 'retro');
+        }
+      } catch (e) {}
+    </script>
+    <!-- DCC Main Window Header & Ribbon (Estilo IV Orbit Texture Studio) -->
+    <header class="dcc-window-header" id="studio-topbar">
+      <!-- Tier 1: Window Titlebar + DCC Menubar + Workspace Tabs + Fullscreen -->
+      <div class="dcc-titlebar-row">
+        <!-- Title & App Logo on left -->
+        <div class="dcc-title-left">
+          <a href="/" title="Volver al Catálogo de ModelCoder" class="dcc-brand-link">
+            <img src="/logo.png" alt="ModelCoder" class="dcc-brand-logo" />
+          </a>
+          <span class="dcc-app-title" id="dcc-window-title">Sin título — ModelCoder 3D Studio</span>
+        </div>
 
-        <nav class="workspace-tabs-group" id="workspace-tabs-group" aria-label="Espacios de trabajo">
-          <button id="ws-tab-layout" class="btn-workspace-tab active" data-workspace="layout" title="Layout: Visor 3D, Árbol e Inspector">📐 LAYOUT</button>
-          <button id="ws-tab-modeling" class="btn-workspace-tab" data-workspace="modeling" title="Modelado: Primitivas y Gizmos">🛠️ MODELADO</button>
-          <button id="ws-tab-shading" class="btn-workspace-tab" data-workspace="shading" title="Shading: Texturas y Materiales">🎨 SHADING</button>
-          <button id="ws-tab-render" class="btn-workspace-tab" data-workspace="render" title="Render: Vista limpia y turntable">🎬 RENDER</button>
-          <button id="ws-tab-code" class="btn-workspace-tab" data-workspace="code" title="Editor de Código">💻 CÓDIGO</button>
-          <button id="ws-tab-ai" class="btn-workspace-tab" data-workspace="ai" title="Copiloto IA Gemini">⚡ IA</button>
+        <!-- DCC Native Menubar (Archivo, Editar, Herramientas, Ver, Ventana, Ayuda) -->
+        <nav class="dcc-menubar" id="dcc-menubar" aria-label="Menú principal de la aplicación">
+          <!-- Archivo -->
+          <div class="dcc-menu-wrap">
+            <button type="button" class="dcc-menu-trigger" data-menu="file" id="menu-btn-file">Archivo</button>
+            <div class="dcc-menu-dropdown hidden" id="menu-dropdown-file">
+              <button type="button" class="dcc-menu-action" id="menu-item-new-model"><span>📄 Nuevo Proyecto</span><kbd>Ctrl+N</kbd></button>
+              <button type="button" class="dcc-menu-action" id="menu-item-open-project"><span>📂 Abrir Proyecto...</span><kbd>Ctrl+O</kbd></button>
+              <button type="button" class="dcc-menu-action" id="menu-item-save-project"><span>💾 Guardar Proyecto</span><kbd>Ctrl+S</kbd></button>
+              <button type="button" class="dcc-menu-action" id="menu-item-catalog-templates"><span>📦 Plantillas del Catálogo (100+)</span></button>
+              <div class="dcc-menu-sep"></div>
+              <button type="button" class="dcc-menu-action" id="menu-item-export-glb"><span>💾 Exportar GLB Universal</span></button>
+              <button type="button" class="dcc-menu-action" id="menu-item-export-godot"><span>🤖 Exportar GLB Godot 4 (-convcol)</span></button>
+              <button type="button" class="dcc-menu-action" id="menu-item-export-tscn"><span>🎬 Exportar Escena Godot (.TSCN)</span></button>
+              <button type="button" class="dcc-menu-action" id="menu-item-export-godot-pack"><span>📦 Exportar Paquete Godot 4 (.ZIP)</span></button>
+              <button type="button" class="dcc-menu-action" id="menu-item-export-zip"><span>📦 Exportar Paquete Blender (.ZIP)</span></button>
+              <button type="button" class="dcc-menu-action" id="menu-item-capture-render"><span>📷 Capturar Render HD (.PNG)</span></button>
+              <div class="dcc-menu-sep"></div>
+              <a href="/" class="dcc-menu-action"><span>🌐 Volver al Catálogo Web</span></a>
+            </div>
+          </div>
+
+          <!-- Editar -->
+          <div class="dcc-menu-wrap">
+            <button type="button" class="dcc-menu-trigger" data-menu="edit" id="menu-btn-edit">Editar</button>
+            <div class="dcc-menu-dropdown hidden" id="menu-dropdown-edit">
+              <button type="button" class="dcc-menu-action" id="menu-item-undo"><span>↩ Deshacer</span><kbd>Ctrl+Z</kbd></button>
+              <button type="button" class="dcc-menu-action" id="menu-item-redo"><span>↪ Rehacer</span><kbd>Ctrl+Y</kbd></button>
+              <div class="dcc-menu-sep"></div>
+              <button type="button" class="dcc-menu-action" id="menu-item-dup-piece"><span>📋 Duplicar Pieza</span><kbd>Ctrl+D</kbd></button>
+              <button type="button" class="dcc-menu-action" id="menu-item-mirror-piece"><span>🪞 Duplicar en Espejo (Mirror)</span></button>
+              <button type="button" class="dcc-menu-action" id="menu-item-del-piece"><span>🗑️ Eliminar Pieza</span><kbd>Supr</kbd></button>
+              <div class="dcc-menu-sep"></div>
+              <button type="button" class="dcc-menu-action" id="menu-item-reset-trans"><span>↺ Restablecer Transformación</span></button>
+            </div>
+          </div>
+
+          <!-- Herramientas -->
+          <div class="dcc-menu-wrap">
+            <button type="button" class="dcc-menu-trigger" data-menu="tools" id="menu-btn-tools">Herramientas</button>
+            <div class="dcc-menu-dropdown hidden" id="menu-dropdown-tools">
+              <button type="button" class="dcc-menu-action" id="menu-item-magnet"><span>🎯 Imán de Caras (Face Snap)</span></button>
+              <button type="button" class="dcc-menu-action" id="menu-item-boolean"><span>✂️ Operaciones Booleanas CSG</span></button>
+              <button type="button" class="dcc-menu-action" id="menu-item-array"><span>▦ Modificador Array (Repetición)</span></button>
+              <button type="button" class="dcc-menu-action" id="menu-item-textures"><span>🧱 Biblioteca PBR (138 Texturas)</span></button>
+              <button type="button" class="dcc-menu-action" id="menu-item-anim"><span>🎬 Pistas de Animación</span></button>
+              <div class="dcc-menu-sep"></div>
+              <button type="button" class="dcc-menu-action" id="menu-item-ai"><span>⚡ Copiloto IA Gemini</span></button>
+              <button type="button" class="dcc-menu-action" id="menu-item-code"><span>💻 Editor de Código DSL</span></button>
+            </div>
+          </div>
+
+          <!-- Ver -->
+          <div class="dcc-menu-wrap">
+            <button type="button" class="dcc-menu-trigger" data-menu="view" id="menu-btn-view">Ver</button>
+            <div class="dcc-menu-dropdown hidden" id="menu-dropdown-view">
+              <button type="button" class="dcc-menu-action" id="menu-item-shading-shaded"><span>🎨 Sombreado PBR</span></button>
+              <button type="button" class="dcc-menu-action" id="menu-item-shading-wire"><span>🕸️ Malla Poligonal (Wireframe)</span></button>
+              <button type="button" class="dcc-menu-action" id="menu-item-shading-normals"><span>🧭 Normales</span></button>
+              <button type="button" class="dcc-menu-action" id="menu-item-shading-verts"><span>🌈 Colores de Vértice</span></button>
+              <button type="button" class="dcc-menu-action" id="menu-item-shading-unlit"><span>💡 Color Plano (Unlit)</span></button>
+              <div class="dcc-menu-sep"></div>
+              <button type="button" class="dcc-menu-action" id="menu-item-cam-iso"><span>📐 Vista Isométrica</span></button>
+              <button type="button" class="dcc-menu-action" id="menu-item-cam-front"><span>👁️ Vista Frontal (Z)</span></button>
+              <button type="button" class="dcc-menu-action" id="menu-item-cam-side"><span>👁️ Vista Lateral (X)</span></button>
+              <button type="button" class="dcc-menu-action" id="menu-item-cam-top"><span>👁️ Vista Cenital (Y)</span></button>
+              <button type="button" class="dcc-menu-action" id="menu-item-cam-focus"><span>🔍 Enfocar Selección</span><kbd>F</kbd></button>
+              <button type="button" class="dcc-menu-action" id="menu-item-cam-center"><span>🎯 Centrar Encuadre</span></button>
+              <div class="dcc-menu-sep"></div>
+              <button type="button" class="dcc-menu-action" id="menu-item-toggle-grid"><span>▦ Alternar Rejilla</span></button>
+              <button type="button" class="dcc-menu-action" id="menu-item-toggle-axes"><span>🧭 Alternar Ejes XYZ</span></button>
+              <div class="dcc-menu-sep"></div>
+              <button type="button" class="dcc-menu-action" id="menu-item-fullscreen"><span>⛶ Pantalla Completa</span><kbd>F11</kbd></button>
+              <div class="dcc-menu-sep"></div>
+              <button type="button" class="dcc-menu-action" id="menu-item-theme-modern"><span>🎨 Estilo: Moderno (IV Orbit)</span><span id="menu-check-modern" class="menu-check">✓</span></button>
+              <button type="button" class="dcc-menu-action" id="menu-item-theme-retro"><span>🕹️ Estilo: Retro PS1 (CRT & Pixel)</span><span id="menu-check-retro" class="menu-check hidden">✓</span></button>
+            </div>
+          </div>
+
+          <!-- Ventana -->
+          <div class="dcc-menu-wrap">
+            <button type="button" class="dcc-menu-trigger" data-menu="window" id="menu-btn-window">Ventana</button>
+            <div class="dcc-menu-dropdown hidden" id="menu-dropdown-window">
+              <button type="button" class="dcc-menu-action" id="menu-item-ws-layout"><span>📐 Espacio: Layout</span></button>
+              <button type="button" class="dcc-menu-action" id="menu-item-ws-modeling"><span>🛠️ Espacio: Modelado</span></button>
+              <button type="button" class="dcc-menu-action" id="menu-item-ws-shading"><span>🎨 Espacio: Shading</span></button>
+              <button type="button" class="dcc-menu-action" id="menu-item-ws-render"><span>🎬 Espacio: Render</span></button>
+              <button type="button" class="dcc-menu-action" id="menu-item-ws-code"><span>💻 Espacio: Código</span></button>
+              <button type="button" class="dcc-menu-action" id="menu-item-ws-ai"><span>⚡ Espacio: Copiloto IA</span></button>
+            </div>
+          </div>
+
+          <!-- Ayuda -->
+          <div class="dcc-menu-wrap">
+            <button type="button" class="dcc-menu-trigger" data-menu="help" id="menu-btn-help">Ayuda</button>
+            <div class="dcc-menu-dropdown hidden" id="menu-dropdown-help">
+              <button type="button" class="dcc-menu-action" id="menu-item-docs"><span>📖 Guía y Documentación</span></button>
+              <button type="button" class="dcc-menu-action" id="menu-item-shortcuts"><span>⌨️ Atajos de Teclado</span></button>
+              <div class="dcc-menu-sep"></div>
+              <a href="https://ivorbitgames.online" target="_blank" rel="noopener noreferrer" class="dcc-menu-action"><span>🪐 IV Orbit Games (Estudio Creador) ↗</span></a>
+              <a href="https://ivorbitgames.online/herramientas/texture-studio" target="_blank" rel="noopener noreferrer" class="dcc-menu-action"><span>🎨 IV Orbit Texture Studio (PBR) ↗</span></a>
+              <a href="https://github.com/FrancisCuarto/MODELCODER" target="_blank" rel="noopener noreferrer" class="dcc-menu-action"><span>🐱 Código Fuente en GitHub ↗</span></a>
+            </div>
+          </div>
         </nav>
 
-        <div class="history-actions-group">
-          <button id="btn-topbar-undo" class="btn-mini ps1-ctrl-btn" title="Deshacer última acción (Ctrl+Z)" disabled>↩</button>
-          <button id="btn-topbar-redo" class="btn-mini ps1-ctrl-btn" title="Rehacer acción (Ctrl+Y)" disabled>↪</button>
+        <!-- Right side: Workspace tabs + Fullscreen -->
+        <div class="dcc-titlebar-right">
+          <nav class="workspace-tabs-group" id="workspace-tabs-group" aria-label="Espacios de trabajo">
+            <button id="ws-tab-layout" class="btn-workspace-tab active" data-workspace="layout" title="Layout: Visor 3D, Árbol e Inspector">Layout</button>
+            <button id="ws-tab-modeling" class="btn-workspace-tab" data-workspace="modeling" title="Modelado: Primitivas y Gizmos">Modelado</button>
+            <button id="ws-tab-shading" class="btn-workspace-tab" data-workspace="shading" title="Shading: Texturas y Materiales">Shading</button>
+            <button id="ws-tab-render" class="btn-workspace-tab" data-workspace="render" title="Render: Vista limpia y turntable">Render</button>
+            <button id="ws-tab-code" class="btn-workspace-tab" data-workspace="code" title="Editor de Código">Código</button>
+            <button id="ws-tab-ai" class="btn-workspace-tab" data-workspace="ai" title="Copiloto IA Gemini">⚡ IA</button>
+          </nav>
+          <button id="btn-toggle-fullscreen" class="dcc-ribbon-btn btn-fullscreen-toggle" title="Pantalla Completa estilo Blender (F11 / ESC)">
+            <span class="fs-icon">⛶</span>
+          </button>
         </div>
       </div>
 
-      <!-- Right zone: Quick actions + More tools dropdown + Fullscreen -->
-      <div class="topbar-right-zone">
-        <button id="btn-save-project" class="btn-mini btn-gold" title="Guardar borrador actual (Ctrl + S)">
-          💾 GUARDAR
-        </button>
-        <button id="btn-my-projects" class="btn-mini ps1-ctrl-btn" title="Ver y retomar mis proyectos y borradores en curso">
-          📂 PROYECTOS (<span id="studio-drafts-badge">0</span>)
-        </button>
-        <button id="btn-open-catalog-templates" class="btn-mini ps1-ctrl-btn" title="Cargar y desarmar cualquier modelo del catálogo para editarlo">
-          📦 PLANTILLAS
-        </button>
-        <button id="run-compile-btn" class="btn-mini btn-cyan" title="Compilar código actual y actualizar visor 3D">
-          ⚡ COMPILAR 3D
-        </button>
-        <button id="export-glb-btn" class="btn-mini btn-gold" title="Exportar modelo a formato universal GLB">
-          💾 EXPORTAR GLB
-        </button>
-        <button id="export-godot-btn" class="btn-mini" style="background: #172a45; color: #6ee7b7; border: 1px solid #2563eb;" title="Exportar modelo con colisiones nativas para Godot 4 (-convcol / StaticBody3D)">
-          🤖 GLB GODOT
-        </button>
-
-        <!-- Dropdown for Secondary Tools & Exports -->
-        <div class="topbar-dropdown-wrap">
-          <button id="btn-topbar-more" type="button" class="btn-mini ps1-ctrl-btn" title="Más herramientas, exportaciones y comunidad">
-            ⋯ MÁS ▼
+      <!-- Tier 2: DCC Sub-toolbar Ribbon (Matching IV Orbit Texture Studio) -->
+      <div class="dcc-ribbon-row">
+        <div class="dcc-ribbon-left">
+          <button type="button" id="btn-ribbon-new" class="dcc-ribbon-btn" title="Nuevo modelo en blanco">
+            Nuevo proyecto
           </button>
-          <div id="topbar-more-menu" class="topbar-dropdown-menu hidden">
-            <button id="btn-menu-welcome-splash" type="button" class="topbar-menu-item" style="color: var(--ps1-cyan);">
-              ⚡ PANTALLA DE INICIO (NUEVO / RETOMAR)
-            </button>
-            <button id="btn-menu-catalog-templates" type="button" class="topbar-menu-item" style="color: var(--ps1-gold);">
-              📦 PLANTILLAS DEL CATÁLOGO (100+ MODELOS)
-            </button>
-            <button id="btn-export-godot-glb" type="button" class="topbar-menu-item" style="color: #6ee7b7;">
-              🤖 EXPORTAR GLB CON COLISIÓN GODOT (-convcol)
-            </button>
-            <button id="btn-export-godot-tscn" type="button" class="topbar-menu-item" style="color: #6ee7b7;">
-              🎬 EXPORTAR ESCENA GODOT 4 (.TSCN + COLLIDERS)
-            </button>
-            <button id="btn-header-story" type="button" class="topbar-menu-item">
-              📱 HISTORIA IG / REEL (9:16 o 1:1)
-            </button>
-            <button id="btn-share-url" type="button" class="topbar-menu-item">
-              🔗 COMPARTIR ENLACE
-            </button>
-            <button id="btn-gamedev-code" type="button" class="topbar-menu-item">
-              🎮 CÓDIGO MOTOR (GODOT / UNITY)
-            </button>
-            <button id="export-zip-btn" type="button" class="topbar-menu-item">
-              📦 PAQUETE BLENDER (.ZIP)
-            </button>
-            <div class="topbar-menu-divider"></div>
-            <button id="github-pr-btn" type="button" class="topbar-menu-item" style="color: var(--ps1-green);">
-              🚀 PUBLICAR EN CATÁLOGO
-            </button>
-            <button id="open-docs-btn" type="button" class="topbar-menu-item">
-              📖 GUÍA Y DOCUMENTACIÓN
-            </button>
-          </div>
+          <button type="button" id="btn-my-projects" class="dcc-ribbon-btn" title="Ver y retomar mis proyectos y borradores en curso">
+            Abrir proyecto (<span id="studio-drafts-badge">0</span>)
+          </button>
+          <button type="button" id="btn-save-project" class="dcc-ribbon-btn" title="Guardar borrador actual (Ctrl + S)">
+            Guardar proyecto
+          </button>
+          <span class="dcc-ribbon-sep"></span>
+          <button type="button" id="btn-open-catalog-templates" class="dcc-ribbon-btn" title="Cargar y desarmar cualquier modelo del catálogo">
+            Plantillas (100+)
+          </button>
+          <span class="dcc-ribbon-sep"></span>
+          <button type="button" id="btn-topbar-undo" class="dcc-ribbon-btn" title="Deshacer última acción (Ctrl+Z)" disabled>
+            ↩ Deshacer
+          </button>
+          <button type="button" id="btn-topbar-redo" class="dcc-ribbon-btn" title="Rehacer acción (Ctrl+Y)" disabled>
+            ↪ Rehacer
+          </button>
+          <span class="dcc-ribbon-sep"></span>
+          <button type="button" id="btn-ribbon-magnet" class="dcc-ribbon-btn" title="Imán de caras: clic en una superficie para pegar la pieza seleccionada">
+            🎯 Imán
+          </button>
         </div>
 
-        <button id="btn-toggle-fullscreen" class="btn-mini ps1-ctrl-btn btn-fullscreen-toggle" title="Pantalla Completa estilo Blender (F11 / ESC)">
-          <span class="fs-icon">⛶</span> <span class="fs-text">PANTALLA COMPLETA</span>
-        </button>
+        <div class="dcc-ribbon-right">
+          <!-- Interface Style Switcher (Moderno IV Orbit vs Retro PS1) -->
+          <button type="button" id="btn-toggle-studio-ui" class="dcc-ribbon-btn" title="Alternar entre estilo Moderno Minimalista (IV Orbit) y estilo Retro PS1">
+            <span id="ui-theme-icon">🎨</span>
+            <span id="ui-theme-label">Estilo: Moderno</span>
+          </button>
+          <span class="dcc-ribbon-sep"></span>
+
+          <button id="export-glb-btn" class="dcc-ribbon-btn" title="Exportar modelo a formato universal GLB">
+            Exportar GLB
+          </button>
+          <button id="btn-ribbon-add-cat" class="dcc-ribbon-btn dcc-btn-accent-purple" title="Publicar propuesta o compartir modelo">
+            + Añadir al Catálogo
+          </button>
+          <button id="export-godot-btn" class="dcc-ribbon-btn dcc-btn-accent-green" title="Exportar modelo con colisiones nativas para Godot 4 (-convcol / StaticBody3D)">
+            Exportar Godot
+          </button>
+          <button id="run-compile-btn" class="dcc-ribbon-btn dcc-btn-accent-cyan" title="Compilar código actual y actualizar visor 3D">
+            ⚡ Compilar 3D
+          </button>
+
+          <!-- Dropdown for Secondary Tools & Exports -->
+          <div class="topbar-dropdown-wrap">
+            <button id="btn-topbar-more" type="button" class="dcc-ribbon-btn" title="Más herramientas, exportaciones y comunidad">
+              ⋯
+            </button>
+            <div id="topbar-more-menu" class="topbar-dropdown-menu hidden">
+              <button id="btn-menu-welcome-splash" type="button" class="topbar-menu-item">
+                ⚡ Pantalla de Inicio (Nuevo / Retomar)
+              </button>
+              <button id="btn-menu-toggle-ui" type="button" class="topbar-menu-item">
+                🎨 Alternar Estilo (Moderno / Retro PS1)
+              </button>
+              <button id="btn-menu-catalog-templates" type="button" class="topbar-menu-item">
+                📦 Plantillas del Catálogo (100+ Modelos)
+              </button>
+              <button id="btn-export-godot-glb" type="button" class="topbar-menu-item">
+                🤖 Exportar GLB con Colisión Godot (-convcol)
+              </button>
+              <button id="btn-export-godot-tscn" type="button" class="topbar-menu-item">
+                🎬 Exportar Escena Godot 4 (.TSCN + Colliders)
+              </button>
+              <button id="btn-export-godot-pack" type="button" class="topbar-menu-item">
+                📦 Paquete Godot 4 Completo (.ZIP)
+              </button>
+              <button id="btn-header-story" type="button" class="topbar-menu-item">
+                📱 Historia IG / Reel (9:16)
+              </button>
+              <button id="btn-share-url" type="button" class="topbar-menu-item">
+                🔗 Compartir Enlace
+              </button>
+              <button id="btn-gamedev-code" type="button" class="topbar-menu-item">
+                🎮 Código Motor (Godot / Unity)
+              </button>
+              <button id="export-zip-btn" type="button" class="topbar-menu-item">
+                📦 Paquete Blender (.ZIP)
+              </button>
+              <div class="topbar-menu-divider"></div>
+              <button id="github-pr-btn" type="button" class="topbar-menu-item">
+                🚀 Publicar en Catálogo
+              </button>
+              <button id="open-docs-btn" type="button" class="topbar-menu-item">
+                📖 Guía y Documentación
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     </header>
 
@@ -213,39 +366,44 @@ import catalog from '../data/catalog.json';
 
         <!-- MODE B: OUTLINER COMPONENT TREE (MODO EDITOR 3D) -->
         <div id="outliner-mode-container" class="mode-panel active">
-          <div class="ps1-window outliner-window">
-            <div class="ps1-titlebar">
-              <span>ÁRBOL DE COMPONENTES (<span id="outliner-count">0</span>)</span>
+          <div class="ps1-window outliner-window dcc-panel">
+            <div class="dcc-panel-header">
+              <span class="dcc-panel-title">Árbol de Componentes (<span id="outliner-count">0</span>)</span>
               <div class="outliner-titlebar-tools">
-                <button type="button" id="btn-outliner-undo" class="ps1-ctrl-btn" title="Deshacer (Ctrl+Z)" disabled>↩</button>
-                <button type="button" id="btn-outliner-redo" class="ps1-ctrl-btn" title="Rehacer (Ctrl+Y)" disabled>↪</button>
+                <button type="button" id="btn-outliner-undo" class="dcc-ribbon-btn dcc-btn-xs" title="Deshacer (Ctrl+Z)" disabled>↩</button>
+                <button type="button" id="btn-outliner-redo" class="dcc-ribbon-btn dcc-btn-xs" title="Rehacer (Ctrl+Y)" disabled>↪</button>
               </div>
             </div>
 
-            <!-- Primitives Creation Toolbar -->
-            <div class="primitives-palette-container">
-              <span class="palette-label">AÑADIR PIEZA PRIMITIVA:</span>
-              <div class="primitives-grid">
-                <button type="button" class="btn-primitive" data-shape="box" title="Añadir Cubo / Prisma rectangular">+ CUBO</button>
-                <button type="button" class="btn-primitive" data-shape="chamfer_box" title="Añadir Cubo Biselado con bordes suaves">+ BISELADO</button>
-                <button type="button" class="btn-primitive" data-shape="cylinder" title="Añadir Cilindro / Tubo">+ CILINDRO</button>
-                <button type="button" class="btn-primitive" data-shape="pipe" title="Añadir Tubo / Cilindro Hueco con grosor de pared">+ TUBO</button>
-                <button type="button" class="btn-primitive" data-shape="prism" title="Añadir Prisma Regular (Hexagonal, etc.)">+ PRISMA</button>
-                <button type="button" class="btn-primitive" data-shape="sphere" title="Añadir Esfera / Domo">+ ESFERA</button>
-                <button type="button" class="btn-primitive" data-shape="wedge" title="Añadir Cuña prismática inclinada">+ CUÑA</button>
-                <button type="button" class="btn-primitive" data-shape="cone" title="Añadir Cono">+ CONO</button>
-                <button type="button" class="btn-primitive" data-shape="pyramid" title="Añadir Pirámide Regular (3 a 8 caras)">+ PIRÁMIDE</button>
-                <button type="button" class="btn-primitive" data-shape="torus" title="Añadir Toroide / Anillo">+ TORO</button>
-                <button type="button" class="btn-primitive" data-shape="capsule" title="Añadir Cápsula presurizada">+ CÁPSULA</button>
-                <button type="button" class="btn-primitive" data-shape="plane" title="Añadir Plano bidimensional">+ PLANO</button>
-              </div>
-            </div>
+            <div class="dcc-panel-body">
+              <!-- Primitives Fieldset -->
+              <fieldset class="dcc-fieldset primitives-palette-container">
+                <legend class="dcc-legend">— Añadir Pieza Primitiva —</legend>
+                <div class="primitives-grid">
+                  <button type="button" class="btn-primitive" data-shape="box" title="Añadir Cubo / Prisma rectangular">+ Cubo</button>
+                  <button type="button" class="btn-primitive" data-shape="chamfer_box" title="Añadir Cubo Biselado con bordes suaves">+ Biselado</button>
+                  <button type="button" class="btn-primitive" data-shape="cylinder" title="Añadir Cilindro / Tubo">+ Cilindro</button>
+                  <button type="button" class="btn-primitive" data-shape="pipe" title="Añadir Tubo / Cilindro Hueco con grosor de pared">+ Tubo</button>
+                  <button type="button" class="btn-primitive" data-shape="prism" title="Añadir Prisma Regular (Hexagonal, etc.)">+ Prisma</button>
+                  <button type="button" class="btn-primitive" data-shape="sphere" title="Añadir Esfera / Domo">+ Esfera</button>
+                  <button type="button" class="btn-primitive" data-shape="wedge" title="Añadir Cuña prismática inclinada">+ Cuña</button>
+                  <button type="button" class="btn-primitive" data-shape="cone" title="Añadir Cono">+ Cono</button>
+                  <button type="button" class="btn-primitive" data-shape="pyramid" title="Añadir Pirámide Regular (3 a 8 caras)">+ Pirámide</button>
+                  <button type="button" class="btn-primitive" data-shape="torus" title="Añadir Toroide / Anillo">+ Toro</button>
+                  <button type="button" class="btn-primitive" data-shape="capsule" title="Añadir Cápsula presurizada">+ Cápsula</button>
+                  <button type="button" class="btn-primitive" data-shape="plane" title="Añadir Plano bidimensional">+ Plano</button>
+                </div>
+              </fieldset>
 
-            <!-- Outliner Tree List -->
-            <div class="outliner-tree-wrapper ps1-inset">
-              <div id="outliner-tree-list" class="outliner-tree-list">
-                <!-- Dynamically populated component rows -->
-              </div>
+              <!-- Outliner Hierarchy Fieldset -->
+              <fieldset class="dcc-fieldset dcc-fieldset-flex outliner-fieldset">
+                <legend class="dcc-legend">— Jerarquía de Piezas —</legend>
+                <div class="outliner-tree-wrapper">
+                  <div id="outliner-tree-list" class="outliner-tree-list">
+                    <!-- Dynamically populated component rows -->
+                  </div>
+                </div>
+              </fieldset>
             </div>
             
             <div class="outliner-footer">
@@ -551,6 +709,28 @@ import catalog from '../data/catalog.json';
       </div>
 
     </div>
+
+    <!-- DCC Bottom Status Bar (identical to IV Orbit Texture Studio) -->
+    <footer class="dcc-statusbar" id="dcc-statusbar">
+      <div class="statusbar-left">
+        <span class="status-item status-model-name" id="sb-model-name">Sin modelo</span>
+        <span class="status-sep">|</span>
+        <span class="status-item status-comp-count" id="sb-comp-count">0 piezas</span>
+        <span class="status-sep">|</span>
+        <span class="status-item" id="sb-tris">🔺 0 Tris</span>
+        <span class="status-sep">|</span>
+        <span class="status-item" id="sb-verts">📐 0 Verts</span>
+        <span class="status-sep">|</span>
+        <span class="status-item" id="sb-dims">Dim: --</span>
+      </div>
+      <div class="statusbar-right">
+        <span class="status-item status-engine" id="sb-engine-info">Motor Procedural v2.6</span>
+        <span class="status-sep">|</span>
+        <span class="status-item status-webgl-info">WebGL 2.0 • Three.js</span>
+        <span class="status-sep">|</span>
+        <a href="https://ivorbitgames.online" target="_blank" rel="noopener noreferrer" class="status-item status-credit">IV Orbit Games</a>
+      </div>
+    </footer>
   </div>
 
   <!-- Documentation Modal -->
@@ -1561,7 +1741,7 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     type SocialFormat
   } from '../lib/studio/story-generator';
   import { serializeSpecToHash, deserializeSpecFromHash, compressSpecToHash, deserializeSpec } from '../lib/studio/share-serializer';
-  import { generateAllSnippets, generateGodotScene } from '../lib/studio/gamedev-exporter';
+  import { generateAllSnippets, generateGodotScene, generateGodotScript } from '../lib/studio/gamedev-exporter';
   import { CatalogBridge } from '../lib/studio/catalog-bridge';
 
   if (typeof window !== 'undefined') {
@@ -1775,6 +1955,7 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
   const exportGodotBtn = document.getElementById('export-godot-btn');
   const btnExportGodotGlb = document.getElementById('btn-export-godot-glb');
   const btnExportGodotTscn = document.getElementById('btn-export-godot-tscn');
+  const btnExportGodotPack = document.getElementById('btn-export-godot-pack');
   const exportZipBtn = document.getElementById('export-zip-btn');
   const openDocsBtn = document.getElementById('open-docs-btn');
   const githubPrBtn = document.getElementById('github-pr-btn');
@@ -1926,12 +2107,27 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
   }
 
   function handleViewportStatsUpdate(stats: GeometricStats | null, result: GenerationResult | null) {
+    const sbTris = document.getElementById('sb-tris');
+    const sbVerts = document.getElementById('sb-verts');
+    const sbDims = document.getElementById('sb-dims');
+    const sbModelName = document.getElementById('sb-model-name');
+    const sbCompCount = document.getElementById('sb-comp-count');
+    const dccWindowTitle = document.getElementById('dcc-window-title');
+
     if (stats) {
       lastGeometricStats = stats;
       if (hudTris) hudTris.textContent = `${stats.triangles.toLocaleString()} tris`;
       if (hudVerts) hudVerts.textContent = `${stats.vertices.toLocaleString()} verts`;
       if (hudDims) hudDims.textContent = `X: ${stats.dimensions.x}m | Y: ${stats.dimensions.y}m | Z: ${stats.dimensions.z}m`;
+
+      if (sbTris) sbTris.textContent = `🔺 ${stats.triangles.toLocaleString()} Tris`;
+      if (sbVerts) sbVerts.textContent = `📐 ${stats.vertices.toLocaleString()} Verts`;
+      if (sbDims) sbDims.textContent = `Dim: ${stats.dimensions.x} x ${stats.dimensions.y} x ${stats.dimensions.z} m`;
     }
+
+    if (sbModelName) sbModelName.textContent = currentSpec.name || 'Sin modelo';
+    if (sbCompCount) sbCompCount.textContent = `${currentSpec.components.length} piezas`;
+    if (dccWindowTitle) dccWindowTitle.textContent = `${currentSpec.name || 'Sin título'} — ModelCoder 3D Studio`;
 
     if (result) {
       if (hudGenId) hudGenId.textContent = `${result.id} v${result.version}`;
@@ -2131,6 +2327,351 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
       topbarMoreMenu.classList.add('hidden');
     });
   });
+
+  // --- DCC NATIVE MENUBAR CONTROLLER (Estilo IV Orbit Texture Studio) ---
+  const dccMenuTriggers = document.querySelectorAll('.dcc-menu-trigger');
+  const dccMenuDropdowns = document.querySelectorAll('.dcc-menu-dropdown');
+
+  function closeAllDccMenus() {
+    dccMenuTriggers.forEach((t) => t.classList.remove('active'));
+    dccMenuDropdowns.forEach((d) => d.classList.add('hidden'));
+  }
+
+  dccMenuTriggers.forEach((trigger) => {
+    trigger.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const menuType = (trigger as HTMLElement).dataset.menu;
+      const targetDropdown = document.getElementById(`menu-dropdown-${menuType}`);
+      const isAlreadyOpen = targetDropdown && !targetDropdown.classList.contains('hidden');
+
+      closeAllDccMenus();
+
+      if (!isAlreadyOpen && targetDropdown) {
+        trigger.classList.add('active');
+        targetDropdown.classList.remove('hidden');
+      }
+    });
+
+    trigger.addEventListener('mouseenter', () => {
+      const anyMenuOpen = Array.from(dccMenuDropdowns).some((d) => !d.classList.contains('hidden'));
+      if (anyMenuOpen) {
+        const menuType = (trigger as HTMLElement).dataset.menu;
+        const targetDropdown = document.getElementById(`menu-dropdown-${menuType}`);
+        closeAllDccMenus();
+        if (targetDropdown) {
+          trigger.classList.add('active');
+          targetDropdown.classList.remove('hidden');
+        }
+      }
+    });
+  });
+
+  document.addEventListener('click', (e) => {
+    const clickedInsideMenu = (e.target as HTMLElement)?.closest('.dcc-menu-wrap');
+    if (!clickedInsideMenu) {
+      closeAllDccMenus();
+    }
+  });
+
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      closeAllDccMenus();
+    }
+  });
+
+  // Ribbon Actions
+  const btnRibbonNew = document.getElementById('btn-ribbon-new');
+  const btnRibbonMagnet = document.getElementById('btn-ribbon-magnet');
+  const btnRibbonAddCat = document.getElementById('btn-ribbon-add-cat');
+
+  btnRibbonNew?.addEventListener('click', () => {
+    if (confirm('¿Deseas iniciar un nuevo modelo en blanco? Se restablecerá la escena.')) {
+      currentSpec = {
+        name: 'Nuevo Objeto',
+        description: 'Modelo creado en Studio 3D',
+        components: [
+          {
+            name: 'Base',
+            shape: 'box',
+            size: [1, 1, 1],
+            position: [0, 0.5, 0],
+            rotation: [0, 0, 0],
+            color: '#4a5568',
+            roughness: 0.75,
+            metalness: 0.25
+          }
+        ]
+      };
+      selectedComponentIndex = 0;
+      pushHistoryState(currentSpec);
+      renderCurrentSpec('visual');
+      showStudioToast('⚡ Nuevo proyecto creado');
+    }
+  });
+
+  btnRibbonMagnet?.addEventListener('click', () => {
+    document.getElementById('gizmo-btn-magnet')?.click();
+  });
+
+  btnRibbonAddCat?.addEventListener('click', () => {
+    githubPrBtn?.click();
+  });
+
+  // DCC Menu Actions wiring
+  document.getElementById('menu-item-new-model')?.addEventListener('click', () => {
+    closeAllDccMenus();
+    btnRibbonNew?.click();
+  });
+  document.getElementById('menu-item-open-project')?.addEventListener('click', () => {
+    closeAllDccMenus();
+    btnMyProjects?.click();
+  });
+  document.getElementById('menu-item-save-project')?.addEventListener('click', () => {
+    closeAllDccMenus();
+    btnSaveProject?.click();
+  });
+  document.getElementById('menu-item-catalog-templates')?.addEventListener('click', () => {
+    closeAllDccMenus();
+    btnOpenCatalogTemplates?.click();
+  });
+  document.getElementById('menu-item-export-glb')?.addEventListener('click', () => {
+    closeAllDccMenus();
+    exportGlbBtn?.click();
+  });
+  document.getElementById('menu-item-export-godot')?.addEventListener('click', () => {
+    closeAllDccMenus();
+    exportGodotBtn?.click();
+  });
+  document.getElementById('menu-item-export-tscn')?.addEventListener('click', () => {
+    closeAllDccMenus();
+    btnExportGodotTscn?.click();
+  });
+  document.getElementById('menu-item-export-godot-pack')?.addEventListener('click', () => {
+    closeAllDccMenus();
+    btnExportGodotPack?.click();
+  });
+  document.getElementById('menu-item-export-zip')?.addEventListener('click', () => {
+    closeAllDccMenus();
+    exportZipBtn?.click();
+  });
+  document.getElementById('menu-item-capture-render')?.addEventListener('click', () => {
+    closeAllDccMenus();
+    btnCaptureRenderHd?.click();
+  });
+  document.getElementById('menu-item-undo')?.addEventListener('click', () => {
+    closeAllDccMenus();
+    btnTopbarUndo?.click();
+  });
+  document.getElementById('menu-item-redo')?.addEventListener('click', () => {
+    closeAllDccMenus();
+    btnTopbarRedo?.click();
+  });
+  document.getElementById('menu-item-dup-piece')?.addEventListener('click', () => {
+    closeAllDccMenus();
+    document.getElementById('btn-prop-dup')?.click();
+  });
+  document.getElementById('menu-item-mirror-piece')?.addEventListener('click', () => {
+    closeAllDccMenus();
+    document.getElementById('btn-prop-mirror')?.click();
+  });
+  document.getElementById('menu-item-del-piece')?.addEventListener('click', () => {
+    closeAllDccMenus();
+    document.getElementById('btn-prop-del')?.click();
+  });
+  document.getElementById('menu-item-reset-trans')?.addEventListener('click', () => {
+    closeAllDccMenus();
+    document.getElementById('btn-reset-transform')?.click();
+  });
+  document.getElementById('menu-item-magnet')?.addEventListener('click', () => {
+    closeAllDccMenus();
+    btnRibbonMagnet?.click();
+  });
+  document.getElementById('menu-item-boolean')?.addEventListener('click', () => {
+    closeAllDccMenus();
+    document.querySelector('.insp-tab-pill[data-toggle-sec="boolean"]')?.dispatchEvent(new MouseEvent('click'));
+  });
+  document.getElementById('menu-item-array')?.addEventListener('click', () => {
+    closeAllDccMenus();
+    document.querySelector('.insp-tab-pill[data-toggle-sec="array"]')?.dispatchEvent(new MouseEvent('click'));
+  });
+  document.getElementById('menu-item-textures')?.addEventListener('click', () => {
+    closeAllDccMenus();
+    document.querySelector('.insp-tab-pill[data-toggle-sec="textures"]')?.dispatchEvent(new MouseEvent('click'));
+  });
+  document.getElementById('menu-item-anim')?.addEventListener('click', () => {
+    closeAllDccMenus();
+    btnOpenAnimModal?.click();
+  });
+  document.getElementById('menu-item-ai')?.addEventListener('click', () => {
+    closeAllDccMenus();
+    setStudioWorkspace('ai');
+  });
+  document.getElementById('menu-item-code')?.addEventListener('click', () => {
+    closeAllDccMenus();
+    setStudioWorkspace('code');
+  });
+  document.getElementById('menu-item-shading-shaded')?.addEventListener('click', () => {
+    closeAllDccMenus();
+    document.querySelector('.btn-shading[data-shading="shaded"]')?.dispatchEvent(new MouseEvent('click'));
+  });
+  document.getElementById('menu-item-shading-wire')?.addEventListener('click', () => {
+    closeAllDccMenus();
+    document.querySelector('.btn-shading[data-shading="wireframe"]')?.dispatchEvent(new MouseEvent('click'));
+  });
+  document.getElementById('menu-item-shading-normals')?.addEventListener('click', () => {
+    closeAllDccMenus();
+    document.querySelector('.btn-shading[data-shading="normals"]')?.dispatchEvent(new MouseEvent('click'));
+  });
+  document.getElementById('menu-item-shading-verts')?.addEventListener('click', () => {
+    closeAllDccMenus();
+    document.querySelector('.btn-shading[data-shading="vertex_colors"]')?.dispatchEvent(new MouseEvent('click'));
+  });
+  document.getElementById('menu-item-shading-unlit')?.addEventListener('click', () => {
+    closeAllDccMenus();
+    document.querySelector('.btn-shading[data-shading="unlit"]')?.dispatchEvent(new MouseEvent('click'));
+  });
+  document.getElementById('menu-item-cam-iso')?.addEventListener('click', () => {
+    closeAllDccMenus();
+    document.querySelector('.btn-cam-preset[data-preset="isometric"]')?.dispatchEvent(new MouseEvent('click'));
+  });
+  document.getElementById('menu-item-cam-front')?.addEventListener('click', () => {
+    closeAllDccMenus();
+    document.querySelector('.btn-cam-preset[data-preset="front"]')?.dispatchEvent(new MouseEvent('click'));
+  });
+  document.getElementById('menu-item-cam-side')?.addEventListener('click', () => {
+    closeAllDccMenus();
+    document.querySelector('.btn-cam-preset[data-preset="side"]')?.dispatchEvent(new MouseEvent('click'));
+  });
+  document.getElementById('menu-item-cam-top')?.addEventListener('click', () => {
+    closeAllDccMenus();
+    document.querySelector('.btn-cam-preset[data-preset="top"]')?.dispatchEvent(new MouseEvent('click'));
+  });
+  document.getElementById('menu-item-cam-focus')?.addEventListener('click', () => {
+    closeAllDccMenus();
+    btnFocusSelected?.click();
+  });
+  document.getElementById('menu-item-cam-center')?.addEventListener('click', () => {
+    closeAllDccMenus();
+    document.getElementById('studio-reset-cam')?.click();
+  });
+  document.getElementById('menu-item-toggle-grid')?.addEventListener('click', () => {
+    closeAllDccMenus();
+    btnToggleGrid?.click();
+  });
+  document.getElementById('menu-item-toggle-axes')?.addEventListener('click', () => {
+    closeAllDccMenus();
+    btnToggleAxes?.click();
+  });
+  document.getElementById('menu-item-fullscreen')?.addEventListener('click', () => {
+    closeAllDccMenus();
+    btnToggleFullscreen?.click();
+  });
+  document.getElementById('menu-item-ws-layout')?.addEventListener('click', () => {
+    closeAllDccMenus();
+    setStudioWorkspace('layout');
+  });
+  document.getElementById('menu-item-ws-modeling')?.addEventListener('click', () => {
+    closeAllDccMenus();
+    setStudioWorkspace('modeling');
+  });
+  document.getElementById('menu-item-ws-shading')?.addEventListener('click', () => {
+    closeAllDccMenus();
+    setStudioWorkspace('shading');
+  });
+  document.getElementById('menu-item-ws-render')?.addEventListener('click', () => {
+    closeAllDccMenus();
+    setStudioWorkspace('render');
+  });
+  document.getElementById('menu-item-ws-code')?.addEventListener('click', () => {
+    closeAllDccMenus();
+    setStudioWorkspace('code');
+  });
+  document.getElementById('menu-item-ws-ai')?.addEventListener('click', () => {
+    closeAllDccMenus();
+    setStudioWorkspace('ai');
+  });
+  document.getElementById('menu-item-docs')?.addEventListener('click', () => {
+    closeAllDccMenus();
+    openDocsBtn?.click();
+  });
+  document.getElementById('menu-item-shortcuts')?.addEventListener('click', () => {
+    closeAllDccMenus();
+    openDocsBtn?.click();
+  });
+
+  // --- STUDIO UI STYLE TOGGLE (Moderno IV Orbit vs Retro PS1) ---
+  function applyStudioTheme(theme: 'modern' | 'retro', showToast = false): void {
+    const container = document.getElementById('studio-container');
+    if (!container) return;
+
+    container.setAttribute('data-studio-theme', theme);
+    try {
+      localStorage.setItem('modelcoder_studio_ui_theme', theme);
+    } catch (_) {}
+
+    const themeIcon = document.getElementById('ui-theme-icon');
+    const themeLabel = document.getElementById('ui-theme-label');
+    if (themeIcon && themeLabel) {
+      if (theme === 'retro') {
+        themeIcon.textContent = '🕹️';
+        themeLabel.textContent = 'Estilo: Retro PS1';
+      } else {
+        themeIcon.textContent = '🎨';
+        themeLabel.textContent = 'Estilo: Moderno';
+      }
+    }
+
+    const checkModern = document.getElementById('menu-check-modern');
+    const checkRetro = document.getElementById('menu-check-retro');
+    if (checkModern && checkRetro) {
+      if (theme === 'retro') {
+        checkModern.classList.add('hidden');
+        checkRetro.classList.remove('hidden');
+      } else {
+        checkModern.classList.remove('hidden');
+        checkRetro.classList.add('hidden');
+      }
+    }
+
+    if (showToast) {
+      showStudioToast(
+        theme === 'retro'
+          ? '🕹️ Estilo activado: Retro PS1 Clásico (Pixel, Scanlines & Bevels)'
+          : '🎨 Estilo activado: Minimalista Moderno (IV Orbit Studio)'
+      );
+    }
+  }
+
+  document.getElementById('btn-toggle-studio-ui')?.addEventListener('click', () => {
+    const current = document.getElementById('studio-container')?.getAttribute('data-studio-theme') === 'retro' ? 'retro' : 'modern';
+    const next = current === 'modern' ? 'retro' : 'modern';
+    applyStudioTheme(next, true);
+  });
+
+  document.getElementById('menu-item-theme-modern')?.addEventListener('click', () => {
+    closeAllDccMenus();
+    applyStudioTheme('modern', true);
+  });
+
+  document.getElementById('menu-item-theme-retro')?.addEventListener('click', () => {
+    closeAllDccMenus();
+    applyStudioTheme('retro', true);
+  });
+
+  document.getElementById('btn-menu-toggle-ui')?.addEventListener('click', () => {
+    topbarMoreMenu?.classList.add('hidden');
+    const current = document.getElementById('studio-container')?.getAttribute('data-studio-theme') === 'retro' ? 'retro' : 'modern';
+    const next = current === 'modern' ? 'retro' : 'modern';
+    applyStudioTheme(next, true);
+  });
+
+  // Read saved theme from localStorage on start
+  try {
+    const savedTheme = localStorage.getItem('modelcoder_studio_ui_theme');
+    if (savedTheme === 'retro' || savedTheme === 'modern') {
+      applyStudioTheme(savedTheme, false);
+    }
+  } catch (_) {}
 
   workspaceTabs.forEach((tab) => {
     tab.addEventListener('click', () => {
@@ -2933,8 +3474,9 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
       .join('');
 
     inspectorContentMount.innerHTML = `
-      <!-- Component Header / Identifier -->
-      <div class="prop-card-header ps1-inset">
+      <!-- Component Header / Identifier Fieldset -->
+      <fieldset class="dcc-fieldset prop-card-header">
+        <legend class="dcc-legend">— Identificador & Jerarquía —</legend>
         <div class="prop-row-item">
           <label class="field-label" for="inp-comp-name">NOMBRE DE LA PIEZA:</label>
           <input type="text" id="inp-comp-name" class="form-input comp-name-editor" value="${escapeHtml(comp.name)}" />
@@ -2947,20 +3489,20 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
           </select>
         </div>
         <div class="prop-quick-btns">
-          <button type="button" id="btn-prop-vis" class="btn-mini btn-outline" title="Visibilidad">
+          <button type="button" id="btn-prop-vis" class="dcc-ribbon-btn dcc-btn-xs" title="Visibilidad">
             ${comp.visible !== false ? '👁️ Visible' : '🚫 Oculta'}
           </button>
-          <button type="button" id="btn-prop-dup" class="btn-mini btn-outline" title="Duplicar">
+          <button type="button" id="btn-prop-dup" class="dcc-ribbon-btn dcc-btn-xs" title="Duplicar">
             📋 Duplicar
           </button>
-          <button type="button" id="btn-prop-mirror" class="btn-mini btn-outline" title="Duplicar en espejo simétrico (reflejar en X/Y/Z)">
+          <button type="button" id="btn-prop-mirror" class="dcc-ribbon-btn dcc-btn-xs" title="Duplicar en espejo simétrico (reflejar en X/Y/Z)">
             🪞 Espejo
           </button>
-          <button type="button" id="btn-prop-del" class="btn-mini btn-danger" title="Eliminar pieza seleccionada (Ctrl+X)">
+          <button type="button" id="btn-prop-del" class="dcc-ribbon-btn dcc-btn-xs dcc-btn-danger" title="Eliminar pieza seleccionada (Ctrl+X)">
             🗑️ Eliminar
           </button>
         </div>
-      </div>
+      </fieldset>
 
       <!-- Barra de Pestañas Expandibles / Contraíbles Rápidas -->
       <div class="inspector-tabs-bar ps1-inset" role="navigation" aria-label="Secciones de propiedades">
@@ -3528,6 +4070,19 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
             <!-- Populated dynamically -->
           </div>
         </div>
+      </div>
+
+      <!-- Inspector Bottom Quick Actions (Estilo IV Orbit Texture Studio) -->
+      <div class="dcc-inspector-bottom-actions">
+        <button type="button" id="btn-insp-save-draft" class="dcc-action-pill-btn dcc-pill-purple" title="Guardar borrador de proyecto">
+          💾 Guardar Proyecto
+        </button>
+        <button type="button" id="btn-insp-export-glb" class="dcc-action-pill-btn dcc-pill-green" title="Exportar modelo GLB universal">
+          🤖 Exportar GLB (Godot / Blender)
+        </button>
+        <button type="button" id="btn-insp-compile" class="dcc-action-pill-btn dcc-pill-default" title="Compilar y actualizar geometría 3D">
+          ⚡ Compilar Geometría 3D
+        </button>
       </div>
     `;
 
@@ -5910,6 +6465,58 @@ if __name__ == "__main__":
     a.click();
     setTimeout(() => URL.revokeObjectURL(url), 2000);
     showStudioToast(`🎬 Escena Godot 4 descargada: ${cleanName}.tscn`);
+  });
+
+  btnExportGodotPack?.addEventListener('click', async () => {
+    showStudioToast('⏳ Empaquetando escena y modelo Godot 4...');
+    try {
+      const JSZip = (window as any).JSZip;
+      if (!JSZip) throw new Error('JSZip no disponible');
+
+      const cleanName = (currentSpec.name || 'model').toLowerCase().replace(/[^a-z0-9]/g, '_');
+      const zip = new JSZip();
+      const folder = zip.folder(cleanName) || zip;
+
+      // 1. Export GLB with embedded normal maps & Godot convex colliders
+      const glbBuffer = await GLBExporterService.exportSpec(currentSpec, { godotColliders: 'convex' });
+      folder.file(`${cleanName}.glb`, glbBuffer);
+
+      // 2. Export Godot 4 Scene (.tscn) referencing sibling .glb cleanly
+      const tscnContent = generateGodotScene(currentSpec, `${cleanName}.glb`);
+      folder.file(`${cleanName}.tscn`, tscnContent);
+
+      // 3. Export GDScript controller (.gd)
+      const gdContent = generateGodotScript(currentSpec, `${cleanName}.glb`);
+      folder.file(`${cleanName}.gd`, gdContent);
+
+      // 4. Instructions
+      const readme = `# ${currentSpec.name} — Paquete para Godot 4
+
+Generado desde ModelCoder 3D Studio con materiales optimizados y texturas PBR integradas.
+
+## Contenido:
+- **${cleanName}.glb**: Modelo 3D con mallas colisionadoras convexas (-convcol), texturas PBR y Normal Maps de alta resolución embebidos.
+- **${cleanName}.tscn**: Escena de Godot 4 lista para instanciar en tu juego (StaticBody3D con CollisionShape3D).
+- **${cleanName}.gd**: Script GDScript para control de animaciones y comportamiento.
+
+## Instrucciones de uso en Godot 4:
+1. Copia o extrae la carpeta \`${cleanName}/\` dentro de tu proyecto Godot (ej. en \`res://models/${cleanName}/\`).
+2. Abre la escena \`${cleanName}.tscn\` haciendo doble clic o arrástrala directamente dentro de cualquier nivel 3D.
+3. No necesitas extraer texturas; las texturas vienen comprimidas y deduplicadas dentro del GLB para mantener tu FileSystem 100% limpio.
+`;
+      folder.file('LEEME_GODOT.md', readme);
+
+      const content = await zip.generateAsync({ type: 'blob' });
+      const zipUrl = URL.createObjectURL(content);
+      const a = document.createElement('a');
+      a.href = zipUrl;
+      a.download = `${cleanName}_godot4_package.zip`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(zipUrl), 2000);
+      showStudioToast(`🤖 Paquete Godot 4 descargado: ${cleanName}_godot4_package.zip`);
+    } catch (e: any) {
+      showStudioToast(`⚠️ Error al generar paquete Godot: ${e.message}`, true);
+    }
   });
 
   exportZipBtn?.addEventListener('click', async () => {
@@ -8486,73 +9093,551 @@ if __name__ == "__main__":
     transform: translateY(-2px);
     border-color: var(--ps1-cyan) !important;
   }
+  /* ========================================================
+     IV ORBIT TEXTURE STUDIO STYLE — DCC UI DESIGN SYSTEM
+     Minimalist Slate / Graphite Dark Theme
+     ======================================================== */
+  :root {
+    --dcc-bg-darkest: #121316;
+    --dcc-bg-surface: #18191d;
+    --dcc-bg-panel: #1e2025;
+    --dcc-bg-input: #121316;
+    --dcc-border-subtle: #242730;
+    --dcc-border-medium: #2e323b;
+    --dcc-border-focus: #7c3aed;
+    --dcc-text-bright: #f3f4f6;
+    --dcc-text-main: #e5e7eb;
+    --dcc-text-muted: #9ca3af;
+    --dcc-text-dim: #6b7280;
+    --dcc-accent-purple: #7c3aed;
+    --dcc-accent-purple-hover: #8b5cf6;
+    --dcc-accent-green: #059669;
+    --dcc-accent-green-hover: #10b981;
+    --dcc-accent-cyan: #0891b2;
+    --dcc-accent-cyan-hover: #06b6d4;
+    --dcc-font-ui: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --dcc-font-mono: ui-monospace, "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+  }
+
+  /* Reset Studio layout to 100vh app window */
   .studio-container {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
-    padding: 0.35rem 0.5rem;
-    max-width: 100%;
+    padding: 0;
+    margin: 0;
+    max-width: 100vw;
     width: 100%;
-    margin: 0 auto;
-    min-height: calc(100vh - 80px);
+    height: 100vh;
+    max-height: 100vh;
+    overflow: hidden;
+    background: var(--dcc-bg-darkest);
+    color: var(--dcc-text-main);
+    font-family: var(--dcc-font-ui);
     box-sizing: border-box;
   }
 
-  /* Topbar Compact DCC */
-  .studio-topbar-compact {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.25rem 0.5rem;
-    gap: 0.5rem;
-    position: relative;
-    z-index: 100;
+  .studio-container * {
+    box-sizing: border-box;
   }
 
-  .topbar-left-zone {
+  /* ----------------------------------------------------
+     TIER 1 & 2 DCC WINDOW HEADER (Topbars)
+     ---------------------------------------------------- */
+  .dcc-window-header {
+    background: var(--dcc-bg-surface);
+    border-bottom: 1px solid var(--dcc-border-subtle);
     display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    flex-wrap: wrap;
+    flex-direction: column;
     flex-shrink: 0;
+    position: relative;
+    z-index: 1000;
   }
 
-  .topbar-brand-link {
+  /* Tier 1: Window Titlebar + Menubar */
+  .dcc-titlebar-row {
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 0.5rem;
+    border-bottom: 1px solid #1a1c22;
+  }
+
+  .dcc-title-left {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .dcc-brand-link {
+    display: inline-flex;
+    align-items: center;
+    text-decoration: none;
+    line-height: 1;
+  }
+
+  .dcc-brand-logo {
+    width: 18px;
+    height: 18px;
+    object-fit: contain;
+  }
+
+  .dcc-app-title {
+    font-family: var(--dcc-font-ui);
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: #cbd5e1;
+    letter-spacing: 0.2px;
+  }
+
+  /* DCC Native Menubar */
+  .dcc-menubar {
+    display: flex;
+    align-items: center;
+    gap: 0.15rem;
+    margin-left: 0.75rem;
+  }
+
+  .dcc-menu-wrap {
+    position: relative;
+  }
+
+  .dcc-menu-trigger {
+    background: transparent;
+    border: none;
+    color: var(--dcc-text-muted);
+    font-family: var(--dcc-font-ui);
+    font-size: 0.75rem;
+    padding: 0.22rem 0.5rem;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: background 0.12s ease, color 0.12s ease;
+  }
+
+  .dcc-menu-trigger:hover,
+  .dcc-menu-trigger.active {
+    background: #252830;
+    color: var(--dcc-text-bright);
+  }
+
+  .dcc-menu-dropdown {
+    position: absolute;
+    top: calc(100% + 2px);
+    left: 0;
+    background: #191a20;
+    border: 1px solid var(--dcc-border-medium);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7), 0 0 1px rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    padding: 0.3rem 0;
+    min-width: 230px;
+    z-index: 100000;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
+
+  .dcc-menu-dropdown.hidden {
+    display: none !important;
+  }
+
+  .dcc-menu-action {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 0.38rem 0.75rem;
+    background: transparent;
+    border: none;
+    color: var(--dcc-text-main);
+    font-family: var(--dcc-font-ui);
+    font-size: 0.74rem;
+    text-align: left;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background 0.1s ease, color 0.1s ease;
+    white-space: nowrap;
+  }
+
+  .dcc-menu-action:hover {
+    background: #282c36;
+    color: #ffffff;
+  }
+
+  .dcc-menu-action kbd {
+    font-family: var(--dcc-font-mono);
+    font-size: 0.65rem;
+    color: var(--dcc-text-dim);
+    background: #121316;
+    border: 1px solid var(--dcc-border-subtle);
+    padding: 0.05rem 0.35rem;
+    border-radius: 3px;
+    margin-left: 1rem;
+  }
+
+  .dcc-menu-sep {
+    height: 1px;
+    background: var(--dcc-border-subtle);
+    margin: 0.25rem 0;
+  }
+
+  .dcc-titlebar-right {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .workspace-tabs-group {
+    display: flex;
+    gap: 2px;
+    background: #121316;
+    padding: 2px;
+    border-radius: 4px;
+    border: 1px solid #242730;
+  }
+
+  .btn-workspace-tab {
+    background: transparent;
+    border: none;
+    color: var(--dcc-text-muted);
+    font-family: var(--dcc-font-ui);
+    font-size: 0.72rem;
+    padding: 0.22rem 0.55rem;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.12s ease;
+    white-space: nowrap;
+    font-weight: 500;
+  }
+
+  .btn-workspace-tab:hover {
+    color: var(--dcc-text-bright);
+    background: #1e2128;
+  }
+
+  .btn-workspace-tab.active {
+    background: #2c313d;
+    color: #ffffff;
+    font-weight: 600;
+  }
+
+  .btn-fullscreen-toggle {
+    background: transparent;
+    border: 1px solid var(--dcc-border-subtle);
+    color: var(--dcc-text-muted);
+    padding: 0.2rem 0.45rem;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 0.82rem;
+    line-height: 1;
+    transition: all 0.12s ease;
+  }
+
+  .btn-fullscreen-toggle:hover {
+    background: #22252c;
+    color: var(--dcc-text-bright);
+    border-color: var(--dcc-border-medium);
+  }
+
+  /* Tier 2: DCC Sub-toolbar Ribbon */
+  .dcc-ribbon-row {
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 0.5rem;
+    background: var(--dcc-bg-surface);
+  }
+
+  .dcc-ribbon-left,
+  .dcc-ribbon-right {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+
+  .dcc-ribbon-btn {
+    font-family: var(--dcc-font-ui);
+    font-size: 0.74rem;
+    font-weight: 500;
+    color: #d1d5db;
+    background: #22252c;
+    border: 1px solid var(--dcc-border-medium);
+    border-radius: 4px;
+    padding: 0.32rem 0.65rem;
+    cursor: pointer;
     display: inline-flex;
     align-items: center;
     gap: 0.35rem;
-    text-decoration: none;
-    padding: 0.15rem 0.35rem;
-    border: 1px solid transparent;
-    border-radius: 2px;
-    transition: all 0.15s ease;
-  }
-  .topbar-brand-link:hover {
-    border-color: var(--ps1-cyan);
-    background: rgba(0, 240, 255, 0.08);
+    transition: all 0.12s ease;
+    white-space: nowrap;
+    line-height: 1.2;
   }
 
-  .topbar-brand-logo {
-    width: 20px;
-    height: 20px;
-    object-fit: contain;
-    image-rendering: pixelated;
+  .dcc-ribbon-btn:hover {
+    background: #2b2f3a;
+    border-color: #434958;
+    color: #ffffff;
   }
 
-  .topbar-brand-text {
-    font-family: var(--font-pixel);
-    font-size: 0.82rem;
-    font-weight: 700;
-    color: var(--ps1-cyan);
-    letter-spacing: 0.5px;
+  .dcc-ribbon-btn:active {
+    transform: translateY(1px);
   }
 
-  .topbar-right-zone {
+  .dcc-ribbon-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    border-color: var(--dcc-border-subtle);
+  }
+
+  .dcc-ribbon-sep {
+    width: 1px;
+    height: 18px;
+    background: #272a33;
+    margin: 0 0.2rem;
+  }
+
+  .dcc-btn-accent-purple {
+    background: var(--dcc-accent-purple) !important;
+    border-color: #8b5cf6 !important;
+    color: #ffffff !important;
+  }
+  .dcc-btn-accent-purple:hover {
+    background: var(--dcc-accent-purple-hover) !important;
+    box-shadow: 0 2px 8px rgba(124, 58, 237, 0.4);
+  }
+
+  .dcc-btn-accent-green {
+    background: var(--dcc-accent-green) !important;
+    border-color: #10b981 !important;
+    color: #ffffff !important;
+  }
+  .dcc-btn-accent-green:hover {
+    background: var(--dcc-accent-green-hover) !important;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4);
+  }
+
+  .dcc-btn-accent-cyan {
+    background: var(--dcc-accent-cyan) !important;
+    border-color: #06b6d4 !important;
+    color: #ffffff !important;
+  }
+  .dcc-btn-accent-cyan:hover {
+    background: var(--dcc-accent-cyan-hover) !important;
+  }
+
+  .dcc-btn-xs {
+    padding: 0.2rem 0.45rem !important;
+    font-size: 0.7rem !important;
+  }
+
+  .dcc-btn-danger {
+    color: #f87171 !important;
+    border-color: #451a1a !important;
+  }
+  .dcc-btn-danger:hover {
+    background: #451a1a !important;
+    color: #ffffff !important;
+  }
+
+  /* ----------------------------------------------------
+     DCC FIELDSETS & LEGENDS (Signature IV Orbit Style)
+     ---------------------------------------------------- */
+  fieldset.dcc-fieldset {
+    border: 1px solid var(--dcc-border-medium);
+    border-radius: 4px;
+    padding: 0.5rem 0.65rem 0.65rem 0.65rem;
+    margin: 0 0 0.55rem 0;
+    background: var(--dcc-bg-surface);
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  legend.dcc-legend {
+    font-family: var(--dcc-font-ui);
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #9499a6;
+    padding: 0 0.45rem;
+    letter-spacing: 0.3px;
+    user-select: none;
+  }
+
+  fieldset.dcc-fieldset-flex {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .outliner-fieldset .outliner-tree-wrapper {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    background: var(--dcc-bg-darkest);
+    border: 1px solid var(--dcc-border-subtle);
+    border-radius: 3px;
+    padding: 0.35rem;
+  }
+
+  /* Panels (Outliner, Viewport, Inspector) */
+  .dcc-panel,
+  .ps1-window {
+    background: var(--dcc-bg-surface) !important;
+    border: 1px solid var(--dcc-border-subtle) !important;
+    box-shadow: none !important;
+    border-radius: 4px !important;
+  }
+
+  .dcc-panel-header,
+  .ps1-titlebar {
+    background: #1c1d23 !important;
+    border-bottom: 1px solid var(--dcc-border-subtle) !important;
+    color: #cbd5e1 !important;
+    font-family: var(--dcc-font-ui) !important;
+    font-size: 0.74rem !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.2px !important;
+    text-transform: uppercase !important;
+    padding: 0.35rem 0.6rem !important;
     display: flex;
     align-items: center;
-    gap: 0.35rem;
+    justify-content: space-between;
+  }
+
+  .dcc-panel-title {
+    font-family: var(--dcc-font-ui);
+    font-size: 0.74rem;
+    font-weight: 600;
+    color: #cbd5e1;
+  }
+
+  .dcc-panel-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    padding: 0.45rem;
+    overflow-y: auto;
+  }
+
+  .ps1-inset {
+    background: var(--dcc-bg-darkest) !important;
+    border: 1px solid var(--dcc-border-subtle) !important;
+    box-shadow: none !important;
+    border-radius: 4px !important;
+  }
+
+  /* ----------------------------------------------------
+     DCC STATUS BAR (Bottom)
+     ---------------------------------------------------- */
+  .dcc-statusbar {
+    height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 0.75rem;
+    background: #141518;
+    border-top: 1px solid #202228;
+    font-family: var(--dcc-font-mono);
+    font-size: 0.68rem;
+    color: #8a909d;
+    user-select: none;
     flex-shrink: 0;
-    flex-wrap: wrap;
+  }
+
+  .statusbar-left,
+  .statusbar-right {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+  }
+
+  .status-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
+  .status-model-name {
+    color: #e2e8f0;
+    font-weight: 600;
+  }
+
+  .status-sep {
+    color: #313540;
+  }
+
+  .status-credit {
+    color: #9ca3af;
+    text-decoration: none;
+    transition: color 0.12s ease;
+  }
+
+  .status-credit:hover {
+    color: #a78bfa;
+  }
+
+  /* ----------------------------------------------------
+     INSPECTOR ACTION PILL BUTTONS (Matching IV Orbit bottom)
+     ---------------------------------------------------- */
+  .dcc-inspector-bottom-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    margin-top: 0.75rem;
+    padding-top: 0.6rem;
+    border-top: 1px solid var(--dcc-border-subtle);
+  }
+
+  .dcc-action-pill-btn {
+    width: 100%;
+    padding: 0.55rem 0.85rem;
+    border-radius: 6px;
+    font-family: var(--dcc-font-ui);
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-align: center;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all 0.15s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+  }
+
+  .dcc-pill-purple {
+    background: var(--dcc-accent-purple);
+    border-color: #8b5cf6;
+    color: #ffffff;
+  }
+  .dcc-pill-purple:hover {
+    background: var(--dcc-accent-purple-hover);
+    box-shadow: 0 4px 12px rgba(124, 58, 237, 0.35);
+  }
+
+  .dcc-pill-green {
+    background: var(--dcc-accent-green);
+    border-color: #10b981;
+    color: #ffffff;
+  }
+  .dcc-pill-green:hover {
+    background: var(--dcc-accent-green-hover);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
+  }
+
+  .dcc-pill-dark,
+  .dcc-pill-default {
+    background: #242730;
+    border-color: var(--dcc-border-medium);
+    color: #e5e7eb;
+  }
+  .dcc-pill-dark:hover,
+  .dcc-pill-default:hover {
+    background: #2d313c;
+    border-color: #4b5263;
+    color: #ffffff;
   }
 
   /* Dropdown for Secondary Tools */
@@ -8565,16 +9650,16 @@ if __name__ == "__main__":
     position: absolute;
     top: calc(100% + 4px);
     right: 0;
-    background: #060911;
-    border: 2px outset #3b4252;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.9), 0 0 12px rgba(0, 240, 255, 0.25);
+    background: #191a20;
+    border: 1px solid var(--dcc-border-medium);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.8);
     z-index: 100000;
     min-width: 230px;
     padding: 0.35rem 0;
     display: flex;
     flex-direction: column;
     gap: 2px;
-    border-radius: 2px;
+    border-radius: 4px;
   }
 
   .topbar-dropdown-menu.hidden {
@@ -8585,27 +9670,27 @@ if __name__ == "__main__":
     display: flex;
     align-items: center;
     width: 100%;
-    padding: 0.45rem 0.85rem;
+    padding: 0.42rem 0.85rem;
     background: transparent;
     border: none;
-    color: var(--text-bright);
-    font-family: var(--font-pixel);
-    font-size: 0.72rem;
+    color: var(--dcc-text-main);
+    font-family: var(--dcc-font-ui);
+    font-size: 0.74rem;
     text-align: left;
     cursor: pointer;
-    transition: background 0.15s ease, color 0.15s ease;
+    transition: background 0.12s ease, color 0.12s ease;
     white-space: nowrap;
     box-sizing: border-box;
   }
 
   .topbar-menu-item:hover {
-    background: #0f1c30;
-    color: var(--ps1-cyan);
+    background: #282c36;
+    color: #ffffff;
   }
 
   .topbar-menu-divider {
     height: 1px;
-    background: #1e293b;
+    background: var(--dcc-border-subtle);
     margin: 0.25rem 0;
   }
 
@@ -8777,8 +9862,14 @@ if __name__ == "__main__":
   .studio-workspace {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 0.75rem;
-    min-height: 720px;
+    gap: 0.45rem;
+    flex: 1 1 auto;
+    height: calc(100vh - 72px - 26px);
+    max-height: calc(100vh - 72px - 26px);
+    min-height: 0 !important;
+    padding: 0.35rem 0.5rem;
+    box-sizing: border-box;
+    overflow: hidden;
   }
 
   /* 3-Column Responsive Grid in Visual 3D Mode */
@@ -8833,6 +9924,56 @@ if __name__ == "__main__":
 
   .studio-workspace.workspace-ai {
     grid-template-columns: 1fr 1fr !important;
+  }
+  .studio-workspace.workspace-ai .creation-column {
+    display: flex !important;
+  }
+  .studio-workspace.workspace-ai .inspector-column {
+    display: none !important;
+  }
+
+  .creation-column,
+  .viewport-column,
+  .inspector-column {
+    height: 100% !important;
+    min-height: 0 !important;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  .outliner-window,
+  .inspector-window {
+    height: 100% !important;
+    min-height: 0 !important;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: var(--dcc-bg-surface) !important;
+    border: 1px solid var(--dcc-border-medium) !important;
+    border-radius: 4px !important;
+    box-shadow: none !important;
+  }
+
+  .outliner-tree-wrapper {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none;
+    overflow-y: auto;
+    padding: 0.4rem;
+    background: var(--dcc-bg-darkest) !important;
+    border: 1px solid var(--dcc-border-subtle) !important;
+    border-radius: 3px;
+  }
+
+  .inspector-scroll-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 0.5rem;
+    background: var(--dcc-bg-darkest);
   }
   .studio-workspace.workspace-ai .creation-column {
     display: flex !important;
@@ -8995,29 +10136,26 @@ if __name__ == "__main__":
   }
 
   /* Outliner Panel */
-  .outliner-window {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-  }
-
   .outliner-titlebar-tools {
     display: flex;
     gap: 0.25rem;
   }
 
   .primitives-palette-container {
-    padding: 0.6rem;
-    background: #080c16;
-    border-bottom: 1px solid var(--border-color);
+    padding: 0.5rem 0.6rem;
+    background: var(--dcc-bg-surface);
+    border: 1px solid var(--dcc-border-medium);
+    border-radius: 4px;
+    margin-bottom: 0.4rem;
   }
 
   .palette-label {
     display: block;
-    font-family: var(--font-pixel);
-    font-size: 0.65rem;
-    color: var(--text-muted);
+    font-family: var(--dcc-font-ui);
+    font-size: 0.68rem;
+    color: var(--dcc-text-muted);
     margin-bottom: 0.4rem;
+    font-weight: 500;
   }
 
   .primitives-grid {
@@ -9027,34 +10165,27 @@ if __name__ == "__main__":
   }
 
   .btn-primitive {
-    background: #0d1527;
-    border: 1px solid #1e293b;
-    color: var(--ps1-cyan);
-    font-family: var(--font-pixel);
-    font-size: 0.62rem;
-    padding: 0.35rem 0.2rem;
+    background: #1f222a !important;
+    border: 1px solid var(--dcc-border-medium) !important;
+    color: #d1d5db !important;
+    font-family: var(--dcc-font-ui) !important;
+    font-size: 0.68rem !important;
+    font-weight: 500 !important;
+    padding: 0.35rem 0.25rem !important;
+    border-radius: 4px !important;
     cursor: pointer;
     text-align: center;
-    transition: all 0.15s ease;
+    transition: all 0.12s ease;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
 
   .btn-primitive:hover {
-    background: var(--ps1-cyan);
-    color: #000;
-    border-color: var(--ps1-cyan);
-    box-shadow: 0 0 8px rgba(0, 240, 255, 0.3);
-  }
-
-  .outliner-tree-wrapper {
-    flex: 1;
-    overflow-y: auto;
-    padding: 0.4rem;
-    background: #040710;
-    min-height: 380px;
-    max-height: 520px;
+    background: #2b303c !important;
+    border-color: #4b5263 !important;
+    color: #ffffff !important;
+    box-shadow: none !important;
   }
 
   .outliner-tree-list {
@@ -9067,22 +10198,24 @@ if __name__ == "__main__":
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: #0b1120;
-    border: 1px solid #1e293b;
-    padding: 0.35rem 0.5rem;
+    background: #16171d !important;
+    border: 1px solid var(--dcc-border-subtle) !important;
+    border-radius: 4px !important;
+    padding: 0.35rem 0.5rem !important;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition: all 0.12s ease;
+    font-family: var(--dcc-font-ui) !important;
   }
 
   .outliner-item:hover {
-    border-color: #3b82f6;
-    background: #10192e;
+    border-color: #3b4252 !important;
+    background: #1f222a !important;
   }
 
   .outliner-item.active {
-    border-color: var(--ps1-cyan);
-    background: #0f2338;
-    box-shadow: 0 0 8px rgba(0, 240, 255, 0.2);
+    border-color: var(--dcc-accent-purple) !important;
+    background: #272b38 !important;
+    box-shadow: 0 0 6px rgba(124, 58, 237, 0.25) !important;
   }
 
   .outliner-item.is-hidden {
@@ -9100,22 +10233,23 @@ if __name__ == "__main__":
   .outliner-idx-tag {
     font-size: 0.62rem;
     color: #64748b;
-    font-family: var(--font-mono);
+    font-family: var(--dcc-font-mono);
   }
 
   .outliner-shape-badge {
-    font-family: var(--font-pixel);
-    font-size: 0.62rem;
-    color: var(--ps1-cyan);
-    background: #071322;
-    padding: 0.1rem 0.3rem;
-    border: 1px solid rgba(0, 240, 255, 0.2);
+    font-family: var(--dcc-font-mono) !important;
+    font-size: 0.62rem !important;
+    color: #93c5fd !important;
+    background: #172033 !important;
+    padding: 0.1rem 0.35rem !important;
+    border: 1px solid #1e3a5f !important;
+    border-radius: 2px !important;
   }
 
   .outliner-hierarchy-glyph {
     font-size: 0.75rem;
     font-weight: 700;
-    color: var(--ps1-cyan);
+    color: var(--dcc-accent-cyan);
     margin-right: -0.1rem;
     user-select: none;
   }
@@ -9257,25 +10391,25 @@ if __name__ == "__main__":
 
   /* Precision Snapping & Face Magnet */
   .snap-select {
-    background: #060a14;
-    border: 1px solid #1e293b;
-    color: #94a3b8;
-    font-family: var(--font-pixel);
-    font-size: 0.6rem;
-    padding: 0.2rem 0.3rem;
+    background: var(--dcc-bg-input);
+    border: 1px solid var(--dcc-border-medium);
+    color: var(--dcc-text-bright);
+    font-family: var(--dcc-font-mono);
+    font-size: 0.68rem;
+    padding: 0.2rem 0.35rem;
     cursor: pointer;
     outline: none;
-    border-radius: 2px;
+    border-radius: 3px;
   }
   .snap-select:hover, .snap-select:focus {
-    border-color: var(--ps1-cyan);
+    border-color: var(--dcc-accent-purple);
     color: #fff;
   }
   .btn-gizmo#gizmo-btn-magnet.active {
-    background: #00ffcc;
-    color: #000;
-    font-weight: bold;
-    border-color: #00ffcc;
+    background: #133932 !important;
+    border-color: #10b981 !important;
+    color: #34d399 !important;
+    font-weight: 600 !important;
   }
 
   .face-magnet-banner {
@@ -9283,19 +10417,19 @@ if __name__ == "__main__":
     top: 1rem;
     left: 50%;
     transform: translateX(-50%);
-    background: rgba(10, 16, 28, 0.95);
-    border: 1px solid #00ffcc;
-    box-shadow: 0 4px 20px rgba(0, 255, 204, 0.25);
+    background: rgba(24, 25, 29, 0.96);
+    border: 1px solid #10b981;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6), 0 0 10px rgba(16, 185, 129, 0.25);
     padding: 0.5rem 1rem;
     display: flex;
     align-items: center;
     gap: 0.75rem;
     z-index: 50;
-    font-family: var(--font-pixel);
+    font-family: var(--dcc-font-ui);
     font-size: 0.75rem;
     color: #e2e8f0;
     pointer-events: auto;
-    border-radius: 2px;
+    border-radius: 4px;
   }
   .face-magnet-banner.hidden {
     display: none;
@@ -9308,11 +10442,11 @@ if __name__ == "__main__":
     background: #ef4444;
     color: #fff;
     border: none;
-    font-size: 0.65rem;
-    font-family: var(--font-pixel);
-    padding: 0.2rem 0.5rem;
+    font-size: 0.68rem;
+    font-family: var(--dcc-font-ui);
+    padding: 0.2rem 0.55rem;
     cursor: pointer;
-    border-radius: 2px;
+    border-radius: 3px;
   }
   .btn-cancel-magnet-pill:hover {
     background: #dc2626;
@@ -9321,8 +10455,9 @@ if __name__ == "__main__":
   .alignment-tools-block {
     margin-top: 0.6rem;
     padding: 0.5rem;
-    background: #060a14;
-    border: 1px dashed #23314d;
+    background: var(--dcc-bg-surface);
+    border: 1px solid var(--dcc-border-medium);
+    border-radius: 4px;
   }
   .alignment-actions-grid {
     display: grid;
@@ -9331,40 +10466,43 @@ if __name__ == "__main__":
     margin-top: 0.35rem;
   }
   .btn-align {
-    font-size: 0.65rem;
+    font-size: 0.68rem;
+    font-family: var(--dcc-font-ui);
     padding: 0.25rem 0.2rem;
-    background: #091122;
-    border: 1px solid #1e293b;
+    background: #1f222a;
+    border: 1px solid var(--dcc-border-medium);
     color: #cbd5e1;
     cursor: pointer;
     text-align: center;
     white-space: nowrap;
+    border-radius: 3px;
     transition: all 0.12s ease;
   }
   .btn-align:hover {
-    border-color: var(--ps1-cyan);
-    color: var(--ps1-cyan);
-    background: #0e1e3b;
+    border-color: #4b5263;
+    color: #ffffff;
+    background: #2a2e38;
   }
   .btn-align.active {
-    background: #00ffcc;
-    color: #000;
-    font-weight: bold;
-    border-color: #00ffcc;
+    background: var(--dcc-accent-purple);
+    color: #fff;
+    font-weight: 600;
+    border-color: var(--dcc-accent-purple);
   }
 
   .parent-align-wrap {
     margin-top: 0.5rem;
     padding-top: 0.4rem;
-    border-top: 1px solid #1a253a;
+    border-top: 1px solid var(--dcc-border-subtle);
   }
   .parent-align-title {
-    font-size: 0.62rem;
-    color: #94a3b8;
+    font-size: 0.65rem;
+    font-family: var(--dcc-font-ui);
+    color: var(--dcc-text-muted);
     margin-bottom: 0.3rem;
   }
   .parent-badge-name {
-    color: var(--ps1-gold);
+    color: #f59e0b;
     font-weight: bold;
   }
   .parent-faces-grid {
@@ -9373,19 +10511,21 @@ if __name__ == "__main__":
     gap: 0.25rem;
   }
   .btn-parent-face {
-    font-size: 0.62rem;
-    padding: 0.18rem 0.2rem;
-    background: #0b1528;
-    border: 1px solid #1e293b;
+    font-size: 0.65rem;
+    font-family: var(--dcc-font-ui);
+    padding: 0.2rem 0.2rem;
+    background: #1f222a;
+    border: 1px solid var(--dcc-border-medium);
     color: #94a3b8;
     cursor: pointer;
     text-align: center;
+    border-radius: 3px;
     transition: all 0.12s ease;
   }
   .btn-parent-face:hover {
-    border-color: var(--ps1-gold);
-    color: var(--ps1-gold);
-    background: #15243d;
+    border-color: #4b5263;
+    color: #ffffff;
+    background: #2a2e38;
   }
 
   /* Boolean & Array Blocks */
@@ -9396,9 +10536,9 @@ if __name__ == "__main__":
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    font-family: var(--font-pixel);
-    font-size: 0.68rem;
-    color: var(--ps1-cyan);
+    font-family: var(--dcc-font-ui);
+    font-size: 0.72rem;
+    color: var(--dcc-text-main);
     cursor: pointer;
   }
   .bool-ops-grid {
@@ -9408,64 +10548,71 @@ if __name__ == "__main__":
     margin-top: 0.25rem;
   }
   .btn-bool-op, .btn-array-type {
-    font-size: 0.62rem;
+    font-size: 0.68rem;
+    font-family: var(--dcc-font-ui);
     padding: 0.25rem 0.2rem;
-    background: #091122;
-    border: 1px solid #1e293b;
+    background: #1f222a;
+    border: 1px solid var(--dcc-border-medium);
     color: #94a3b8;
     cursor: pointer;
     text-align: center;
     white-space: nowrap;
+    border-radius: 3px;
     transition: all 0.12s ease;
   }
   .btn-bool-op:hover, .btn-array-type:hover {
-    border-color: var(--ps1-cyan);
+    border-color: #4b5263;
     color: #fff;
+    background: #2a2e38;
   }
   .btn-bool-op.active, .btn-array-type.active {
-    background: var(--ps1-cyan);
-    color: #000;
-    font-weight: bold;
-    border-color: var(--ps1-cyan);
+    background: var(--dcc-accent-purple);
+    color: #fff;
+    font-weight: 600;
+    border-color: var(--dcc-accent-purple);
   }
   .bool-target-select {
     width: 100%;
     margin-top: 0.25rem;
   }
   .btn-bake-bool {
-    background: #0f1c33;
-    border: 1px solid var(--ps1-gold);
-    color: var(--ps1-gold);
-    font-family: var(--font-pixel);
-    font-size: 0.65rem;
+    background: #22252c;
+    border: 1px solid var(--dcc-border-medium);
+    color: #f59e0b;
+    font-family: var(--dcc-font-ui);
+    font-size: 0.72rem;
+    font-weight: 500;
     padding: 0.35rem 0.5rem;
+    border-radius: 4px;
     cursor: pointer;
     width: 100%;
     transition: all 0.15s ease;
   }
   .btn-bake-bool:hover {
-    background: var(--ps1-gold);
-    color: #000;
-    font-weight: bold;
+    background: #2d313c;
+    border-color: #f59e0b;
+    color: #fbbf24;
   }
   .disabled-wrap {
     opacity: 0.45;
     pointer-events: none;
   }
   .outliner-bool-tag {
-    font-size: 0.55rem;
-    background: rgba(0, 255, 204, 0.2);
-    border: 1px solid var(--ps1-cyan);
-    color: var(--ps1-cyan);
+    font-size: 0.6rem;
+    font-family: var(--dcc-font-mono);
+    background: rgba(124, 58, 237, 0.2);
+    border: 1px solid var(--dcc-accent-purple);
+    color: #c4b5fd;
     padding: 0 0.25rem;
     border-radius: 2px;
     margin-left: 0.25rem;
   }
   .outliner-array-tag {
-    font-size: 0.55rem;
-    background: rgba(255, 215, 0, 0.2);
-    border: 1px solid var(--ps1-gold);
-    color: var(--ps1-gold);
+    font-size: 0.6rem;
+    font-family: var(--dcc-font-mono);
+    background: rgba(245, 158, 11, 0.2);
+    border: 1px solid #f59e0b;
+    color: #fcd34d;
     padding: 0 0.25rem;
     border-radius: 2px;
     margin-left: 0.25rem;
@@ -9475,37 +10622,40 @@ if __name__ == "__main__":
   .gizmo-toolbar {
     display: flex;
     gap: 0.25rem;
-    background: #080d18;
-    border: 1px solid #1a253a;
-    padding: 0.15rem;
+    background: var(--dcc-bg-surface);
+    border: 1px solid var(--dcc-border-medium);
+    border-radius: 4px;
+    padding: 0.15rem 0.25rem;
   }
 
   .btn-gizmo {
     background: transparent;
     border: 1px solid transparent;
-    color: #94a3b8;
-    font-family: var(--font-pixel);
-    font-size: 0.62rem;
-    padding: 0.25rem 0.5rem;
+    color: var(--dcc-text-muted);
+    font-family: var(--dcc-font-ui);
+    font-size: 0.72rem;
+    padding: 0.22rem 0.5rem;
+    border-radius: 3px;
     cursor: pointer;
     transition: all 0.12s ease;
   }
 
   .btn-gizmo:hover {
-    color: var(--text-bright);
-    border-color: #2e3c54;
+    color: var(--dcc-text-bright);
+    background: #252832;
   }
 
   .btn-gizmo.active {
-    background: var(--ps1-cyan);
-    color: #000;
-    font-weight: bold;
-    border-color: var(--ps1-cyan);
+    background: #2c313e;
+    color: #ffffff;
+    font-weight: 600;
+    border-color: var(--dcc-accent-purple);
   }
 
   .btn-gizmo#gizmo-btn-snap.active {
-    background: var(--ps1-gold);
-    color: #000;
+    background: #3b2a1a;
+    border-color: #f59e0b;
+    color: #fbbf24;
   }
 
   .viewport-camera-tools {
@@ -9521,16 +10671,20 @@ if __name__ == "__main__":
   }
 
   .btn-cam-preset {
-    font-size: 0.62rem;
-    padding: 0.2rem 0.4rem;
+    font-size: 0.68rem;
+    font-family: var(--dcc-font-ui);
+    padding: 0.2rem 0.45rem;
+    border-radius: 3px;
   }
 
   .studio-viewport-surface {
     position: relative;
     width: 100%;
-    height: 520px;
+    flex: 1 1 auto;
+    height: 100% !important;
+    min-height: 0;
     overflow: hidden;
-    background: #060910;
+    background: var(--dcc-bg-darkest);
   }
 
   .three-canvas-mount {
@@ -9563,33 +10717,36 @@ if __name__ == "__main__":
 
   .shading-toggles {
     display: flex;
-    gap: 0.25rem;
+    gap: 0.2rem;
     pointer-events: auto;
-    background: rgba(6, 9, 16, 0.75);
-    backdrop-filter: blur(4px);
+    background: rgba(24, 25, 29, 0.9);
+    backdrop-filter: blur(6px);
     padding: 0.2rem;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--dcc-border-medium);
+    border-radius: 4px;
   }
 
   .btn-shading {
     background: transparent;
-    border: 1px solid transparent;
-    color: #94a3b8;
-    font-family: var(--font-pixel);
-    font-size: 0.62rem;
-    padding: 0.25rem 0.45rem;
+    border: none;
+    color: var(--dcc-text-muted);
+    font-family: var(--dcc-font-ui);
+    font-size: 0.7rem;
+    padding: 0.2rem 0.45rem;
+    border-radius: 3px;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition: all 0.12s ease;
   }
 
   .btn-shading:hover {
-    color: var(--text-bright);
+    color: var(--dcc-text-bright);
+    background: #262933;
   }
 
   .btn-shading.active {
-    background: var(--ps1-cyan);
-    color: #000;
-    font-weight: bold;
+    background: #2f3442;
+    color: #ffffff;
+    font-weight: 600;
   }
 
   .generation-status-badge {
@@ -9744,20 +10901,24 @@ if __name__ == "__main__":
   }
 
   .prop-card-header {
-    background: #090e1a;
-    border: 1px solid #1a253a;
-    padding: 0.5rem;
+    background: var(--dcc-bg-surface);
+    border: 1px solid var(--dcc-border-medium);
+    border-radius: 4px;
+    padding: 0.55rem 0.65rem;
     display: flex;
     flex-direction: column;
-    gap: 0.4rem;
+    gap: 0.45rem;
   }
 
   .comp-name-editor {
-    font-size: 0.8rem;
-    font-family: var(--font-mono);
-    font-weight: bold;
-    color: var(--ps1-cyan);
-    background: #040710;
+    font-size: 0.78rem;
+    font-family: var(--dcc-font-mono);
+    font-weight: 600;
+    color: var(--dcc-text-bright);
+    background: var(--dcc-bg-input);
+    border: 1px solid var(--dcc-border-medium);
+    border-radius: 4px;
+    padding: 0.3rem 0.5rem;
   }
 
   .prop-parent-row {
@@ -9765,17 +10926,18 @@ if __name__ == "__main__":
   }
 
   .comp-parent-selector {
-    font-size: 0.72rem;
-    font-family: var(--font-mono);
-    color: #e2e8f0;
-    background: #040710;
-    border: 1px solid #1e293b;
-    padding: 0.25rem 0.4rem;
+    font-size: 0.74rem;
+    font-family: var(--dcc-font-mono);
+    color: var(--dcc-text-main);
+    background: var(--dcc-bg-input);
+    border: 1px solid var(--dcc-border-medium);
+    border-radius: 4px;
+    padding: 0.3rem 0.5rem;
     width: 100%;
   }
 
   .comp-parent-selector:focus {
-    border-color: var(--ps1-cyan);
+    border-color: var(--dcc-border-focus);
     outline: none;
   }
 
@@ -9785,9 +10947,10 @@ if __name__ == "__main__":
   }
 
   .prop-section {
-    background: #080c16;
-    border: 1px solid #192336;
-    padding: 0.55rem;
+    background: var(--dcc-bg-surface);
+    border: 1px solid var(--dcc-border-medium);
+    border-radius: 4px;
+    padding: 0.55rem 0.65rem;
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
@@ -9797,39 +10960,43 @@ if __name__ == "__main__":
     display: flex;
     align-items: center;
     gap: 0.4rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-bottom: 1px solid var(--dcc-border-subtle);
     padding-bottom: 0.35rem;
     margin-bottom: 0.2rem;
   }
 
   .section-badge {
-    background: var(--ps1-cyan);
-    color: #000;
-    font-family: var(--font-pixel);
-    font-size: 0.6rem;
+    background: #252832;
+    color: var(--dcc-text-muted);
+    font-family: var(--dcc-font-mono);
+    font-size: 0.65rem;
     padding: 0.1rem 0.35rem;
-    font-weight: bold;
+    font-weight: 600;
+    border-radius: 3px;
   }
 
   .section-heading {
-    font-family: var(--font-pixel);
-    font-size: 0.68rem;
-    color: var(--text-bright);
-    letter-spacing: 0.5px;
+    font-family: var(--dcc-font-ui);
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--dcc-text-bright);
+    letter-spacing: 0.3px;
     flex: 1;
   }
 
   .btn-mini-link {
     background: transparent;
     border: none;
-    color: var(--ps1-gold);
-    font-family: var(--font-pixel);
-    font-size: 0.62rem;
+    color: var(--dcc-text-muted);
+    font-family: var(--dcc-font-ui);
+    font-size: 0.68rem;
     cursor: pointer;
     padding: 0;
+    transition: color 0.12s ease;
   }
 
   .btn-mini-link:hover {
+    color: var(--dcc-text-bright);
     text-decoration: underline;
   }
 
@@ -9846,24 +11013,25 @@ if __name__ == "__main__":
   }
 
   .field-label {
-    font-size: 0.65rem;
-    color: var(--text-muted);
-    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    color: var(--dcc-text-muted);
+    font-family: var(--dcc-font-ui);
+    font-weight: 500;
   }
 
   .field-unit-tag {
     font-size: 0.62rem;
-    color: #64748b;
-    font-family: var(--font-mono);
+    color: var(--dcc-text-dim);
+    font-family: var(--dcc-font-mono);
   }
 
   .lock-proportions-toggle {
     display: flex;
     align-items: center;
     gap: 0.3rem;
-    font-size: 0.62rem;
-    color: var(--ps1-gold);
-    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: #f59e0b;
+    font-family: var(--dcc-font-ui);
     cursor: pointer;
   }
 
@@ -9882,9 +11050,16 @@ if __name__ == "__main__":
   .coord-input-wrap {
     display: flex;
     align-items: center;
-    background: #04060c;
-    border: 1px solid #23314d;
-    padding: 0 0.3rem;
+    background: var(--dcc-bg-input);
+    border: 1px solid var(--dcc-border-medium);
+    border-radius: 4px;
+    padding: 0 0.35rem;
+    transition: border-color 0.12s ease, box-shadow 0.12s ease;
+  }
+
+  .coord-input-wrap:focus-within {
+    border-color: var(--dcc-border-focus);
+    box-shadow: 0 0 0 1px var(--dcc-border-focus);
   }
 
   .pivot-presets-grid {
@@ -9895,40 +11070,42 @@ if __name__ == "__main__":
   }
 
   .btn-piv-preset {
-    font-size: 0.65rem;
-    padding: 0.12rem 0.35rem;
-    background: #080f1e;
-    border: 1px solid #1e293b;
-    color: #94a3b8;
+    font-size: 0.68rem;
+    font-family: var(--dcc-font-ui);
+    padding: 0.18rem 0.45rem;
+    background: #1f222a;
+    border: 1px solid var(--dcc-border-medium);
+    border-radius: 3px;
+    color: #cbd5e1;
     cursor: pointer;
     transition: all 0.12s ease;
   }
 
   .btn-piv-preset:hover {
-    border-color: var(--ps1-cyan);
-    color: var(--ps1-cyan);
-    background: #0d1b33;
+    border-color: #4b5263;
+    color: #ffffff;
+    background: #2a2e38;
   }
 
   .axis-tag {
     font-size: 0.65rem;
-    font-weight: bold;
-    font-family: var(--font-mono);
+    font-weight: 700;
+    font-family: var(--dcc-font-mono);
     margin-right: 0.25rem;
   }
 
-  .axis-x { color: #ef4444; }
-  .axis-y { color: #10b981; }
-  .axis-z { color: #3b82f6; }
+  .axis-x { color: #f87171; }
+  .axis-y { color: #4ade80; }
+  .axis-z { color: #60a5fa; }
 
   .coord-num-inp {
     flex: 1;
     background: transparent;
     border: none;
-    color: var(--text-bright);
-    font-family: var(--font-mono);
-    font-size: 0.75rem;
-    padding: 0.25rem 0;
+    color: var(--dcc-text-bright);
+    font-family: var(--dcc-font-mono);
+    font-size: 0.78rem;
+    padding: 0.3rem 0;
     outline: none;
     width: 100%;
   }
@@ -11083,5 +12260,359 @@ if __name__ == "__main__":
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+
+  /* Menu checkmark */
+  .menu-check {
+    color: #10b981;
+    font-weight: bold;
+    margin-left: auto;
+  }
+  .menu-check.hidden {
+    display: none !important;
+  }
+
+  /* Scanlines overlay */
+  .studio-scanlines {
+    display: none;
+  }
+
+  /* ========================================================
+     ESTILO 1: MODERNO MINIMALISTA (IV ORBIT STUDIO)
+     ======================================================== */
+  .studio-container[data-studio-theme="modern"],
+  .studio-container[data-studio-theme="modern"] * {
+    font-family: var(--dcc-font-ui);
+  }
+
+  .studio-container[data-studio-theme="modern"] input,
+  .studio-container[data-studio-theme="modern"] select,
+  .studio-container[data-studio-theme="modern"] textarea,
+  .studio-container[data-studio-theme="modern"] code,
+  .studio-container[data-studio-theme="modern"] kbd,
+  .studio-container[data-studio-theme="modern"] pre,
+  .studio-container[data-studio-theme="modern"] .dcc-statusbar,
+  .studio-container[data-studio-theme="modern"] .hud-val,
+  .studio-container[data-studio-theme="modern"] .coord-num-inp,
+  .studio-container[data-studio-theme="modern"] .outliner-idx-tag,
+  .studio-container[data-studio-theme="modern"] .mat-pbr-badge,
+  .studio-container[data-studio-theme="modern"] .param-val-disp,
+  .studio-container[data-studio-theme="modern"] .anim-time-display,
+  .studio-container[data-studio-theme="modern"] .line-numbers,
+  .studio-container[data-studio-theme="modern"] #code-textarea,
+  .studio-container[data-studio-theme="modern"] .comp-name-editor,
+  .studio-container[data-studio-theme="modern"] .comp-parent-selector {
+    font-family: var(--dcc-font-mono) !important;
+  }
+
+  /* ========================================================
+     ESTILO 2: RETRO PS1 CLÁSICO (CRT, PIXEL & SCANLINES)
+     ======================================================== */
+  .studio-container[data-studio-theme="retro"] {
+    background: #080c16 !important;
+  }
+
+  .studio-container[data-studio-theme="retro"] .studio-scanlines {
+    display: block !important;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    z-index: 99999;
+    opacity: 0.16;
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.45) 50%),
+                linear-gradient(90deg, rgba(255, 0, 0, 0.04), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.04));
+    background-size: 100% 3px, 6px 100%;
+  }
+
+  .studio-container[data-studio-theme="retro"],
+  .studio-container[data-studio-theme="retro"] button,
+  .studio-container[data-studio-theme="retro"] span,
+  .studio-container[data-studio-theme="retro"] label,
+  .studio-container[data-studio-theme="retro"] legend,
+  .studio-container[data-studio-theme="retro"] p,
+  .studio-container[data-studio-theme="retro"] h1,
+  .studio-container[data-studio-theme="retro"] h2,
+  .studio-container[data-studio-theme="retro"] h3 {
+    font-family: var(--font-pixel) !important;
+  }
+
+  .studio-container[data-studio-theme="retro"] input,
+  .studio-container[data-studio-theme="retro"] select,
+  .studio-container[data-studio-theme="retro"] textarea,
+  .studio-container[data-studio-theme="retro"] .coord-num-inp,
+  .studio-container[data-studio-theme="retro"] .line-numbers,
+  .studio-container[data-studio-theme="retro"] #code-textarea,
+  .studio-container[data-studio-theme="retro"] code {
+    font-family: var(--font-mono) !important;
+  }
+
+  .studio-container[data-studio-theme="retro"] .ps1-window,
+  .studio-container[data-studio-theme="retro"] .dcc-panel {
+    background: #0d1322 !important;
+    border: 2px outset #5a6478 !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.8), 2px 2px 0 #000 !important;
+    border-radius: 0 !important;
+  }
+
+  .studio-container[data-studio-theme="retro"] .ps1-titlebar,
+  .studio-container[data-studio-theme="retro"] .dcc-panel-header {
+    background: linear-gradient(90deg, #141f36 0%, #0a0f1c 100%) !important;
+    border-bottom: 2px solid var(--ps1-cyan) !important;
+    color: var(--ps1-cyan) !important;
+    font-family: var(--font-pixel) !important;
+    font-size: 0.68rem !important;
+    border-radius: 0 !important;
+    text-shadow: 0 0 6px rgba(0, 240, 255, 0.4);
+  }
+
+  .studio-container[data-studio-theme="retro"] .dcc-panel-title {
+    color: var(--ps1-cyan) !important;
+    font-family: var(--font-pixel) !important;
+  }
+
+  .studio-container[data-studio-theme="retro"] .ps1-inset,
+  .studio-container[data-studio-theme="retro"] fieldset.dcc-fieldset {
+    background: #04060c !important;
+    border: 2px inset #050810 !important;
+    border-radius: 0 !important;
+  }
+
+  .studio-container[data-studio-theme="retro"] legend.dcc-legend {
+    font-family: var(--font-pixel) !important;
+    font-size: 0.62rem !important;
+    color: var(--ps1-cyan) !important;
+    text-shadow: 0 0 6px rgba(0, 240, 255, 0.4);
+  }
+
+  .studio-container[data-studio-theme="retro"] .dcc-window-header {
+    background: #0a0f1d !important;
+    border-bottom: 2px outset #3b4252 !important;
+  }
+
+  .studio-container[data-studio-theme="retro"] .dcc-titlebar-row {
+    background: #070b16 !important;
+    border-bottom: 1px solid #162440 !important;
+  }
+
+  .studio-container[data-studio-theme="retro"] .dcc-app-title {
+    font-family: var(--font-pixel) !important;
+    font-size: 0.72rem !important;
+    color: var(--ps1-cyan) !important;
+    text-shadow: 0 0 6px rgba(0, 240, 255, 0.4);
+  }
+
+  .studio-container[data-studio-theme="retro"] .dcc-menu-trigger {
+    font-family: var(--font-pixel) !important;
+    font-size: 0.68rem !important;
+    color: #a0aec0 !important;
+    border-radius: 0 !important;
+  }
+
+  .studio-container[data-studio-theme="retro"] .dcc-menu-trigger:hover,
+  .studio-container[data-studio-theme="retro"] .dcc-menu-trigger.active {
+    background: #162440 !important;
+    color: var(--ps1-cyan) !important;
+  }
+
+  .studio-container[data-studio-theme="retro"] .dcc-menu-dropdown {
+    background: #060911 !important;
+    border: 2px outset #3b4252 !important;
+    border-radius: 0 !important;
+    font-family: var(--font-pixel) !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.9), 0 0 10px rgba(0, 240, 255, 0.25) !important;
+  }
+
+  .studio-container[data-studio-theme="retro"] .dcc-menu-action {
+    font-family: var(--font-pixel) !important;
+    font-size: 0.65rem !important;
+    color: #cbd5e1 !important;
+  }
+
+  .studio-container[data-studio-theme="retro"] .dcc-menu-action:hover {
+    background: #0f1c30 !important;
+    color: var(--ps1-cyan) !important;
+  }
+
+  .studio-container[data-studio-theme="retro"] .dcc-ribbon-row {
+    background: #0c1222 !important;
+    border-bottom: 2px outset #2d3748 !important;
+  }
+
+  .studio-container[data-studio-theme="retro"] .dcc-ribbon-btn {
+    background: #0f172a !important;
+    border: 1px solid #334155 !important;
+    border-radius: 0 !important;
+    font-family: var(--font-pixel) !important;
+    font-size: 0.64rem !important;
+    color: #cbd5e1 !important;
+  }
+
+  .studio-container[data-studio-theme="retro"] .dcc-ribbon-btn:hover {
+    background: #1e293b !important;
+    border-color: var(--ps1-cyan) !important;
+    color: var(--ps1-cyan) !important;
+  }
+
+  .studio-container[data-studio-theme="retro"] .btn-workspace-tab {
+    font-family: var(--font-pixel) !important;
+    font-size: 0.65rem !important;
+    border-radius: 0 !important;
+    color: #94a3b8 !important;
+  }
+
+  .studio-container[data-studio-theme="retro"] .btn-workspace-tab.active {
+    background: var(--ps1-cyan) !important;
+    color: #000 !important;
+    font-weight: bold !important;
+    box-shadow: 0 0 8px rgba(0, 240, 255, 0.4) !important;
+  }
+
+  .studio-container[data-studio-theme="retro"] .btn-primitive {
+    background: #0d1527 !important;
+    border: 1px solid #1e293b !important;
+    color: var(--ps1-cyan) !important;
+    font-family: var(--font-pixel) !important;
+    font-size: 0.62rem !important;
+    border-radius: 0 !important;
+  }
+
+  .studio-container[data-studio-theme="retro"] .btn-primitive:hover {
+    background: var(--ps1-cyan) !important;
+    color: #000 !important;
+    border-color: var(--ps1-cyan) !important;
+    box-shadow: 0 0 8px rgba(0, 240, 255, 0.3) !important;
+  }
+
+  .studio-container[data-studio-theme="retro"] .btn-gizmo {
+    font-family: var(--font-pixel) !important;
+    font-size: 0.62rem !important;
+    border-radius: 0 !important;
+    background: #0a1122 !important;
+    border: 1px solid #1e293b !important;
+    color: #94a3b8 !important;
+  }
+
+  .studio-container[data-studio-theme="retro"] .btn-gizmo:hover {
+    background: #14203a !important;
+    color: var(--ps1-cyan) !important;
+  }
+
+  .studio-container[data-studio-theme="retro"] .btn-gizmo.active {
+    background: var(--ps1-cyan) !important;
+    color: #000 !important;
+    border-color: var(--ps1-cyan) !important;
+    font-weight: bold !important;
+    box-shadow: 0 0 8px rgba(0, 240, 255, 0.4) !important;
+  }
+
+  .studio-container[data-studio-theme="retro"] .outliner-item {
+    background: #0b1120 !important;
+    border: 1px solid #1e293b !important;
+    border-radius: 0 !important;
+    font-family: var(--font-pixel) !important;
+    font-size: 0.65rem !important;
+  }
+
+  .studio-container[data-studio-theme="retro"] .outliner-item:hover {
+    border-color: #3b82f6 !important;
+    background: #10192e !important;
+  }
+
+  .studio-container[data-studio-theme="retro"] .outliner-item.active {
+    border-color: var(--ps1-cyan) !important;
+    background: #0f2338 !important;
+    box-shadow: 0 0 8px rgba(0, 240, 255, 0.3) !important;
+  }
+
+  .studio-container[data-studio-theme="retro"] .outliner-name-label {
+    font-family: var(--font-pixel) !important;
+    font-size: 0.65rem !important;
+    color: var(--text-bright) !important;
+  }
+
+  .studio-container[data-studio-theme="retro"] .prop-card-header,
+  .studio-container[data-studio-theme="retro"] .prop-section {
+    background: #080c16 !important;
+    border: 1px solid #192336 !important;
+    border-radius: 0 !important;
+  }
+
+  .studio-container[data-studio-theme="retro"] .section-heading {
+    font-family: var(--font-pixel) !important;
+    font-size: 0.65rem !important;
+    color: var(--ps1-cyan) !important;
+    letter-spacing: 0.5px !important;
+  }
+
+  .studio-container[data-studio-theme="retro"] .section-badge {
+    background: var(--ps1-cyan) !important;
+    color: #000 !important;
+    font-family: var(--font-pixel) !important;
+    font-size: 0.6rem !important;
+    font-weight: bold !important;
+    border-radius: 0 !important;
+  }
+
+  .studio-container[data-studio-theme="retro"] .field-label {
+    font-family: var(--font-pixel) !important;
+    font-size: 0.6rem !important;
+    color: var(--text-muted) !important;
+  }
+
+  .studio-container[data-studio-theme="retro"] .coord-input-wrap {
+    background: #04060c !important;
+    border: 1px solid #23314d !important;
+    border-radius: 0 !important;
+  }
+
+  .studio-container[data-studio-theme="retro"] .coord-num-inp {
+    font-family: var(--font-mono) !important;
+    font-size: 0.72rem !important;
+    color: var(--ps1-cyan) !important;
+  }
+
+  .studio-container[data-studio-theme="retro"] .dcc-action-pill-btn {
+    border-radius: 0 !important;
+    font-family: var(--font-pixel) !important;
+    font-size: 0.68rem !important;
+  }
+
+  .studio-container[data-studio-theme="retro"] .dcc-statusbar {
+    background: #05070e !important;
+    border-top: 2px outset #334155 !important;
+    font-family: var(--font-pixel) !important;
+    font-size: 0.6rem !important;
+    color: var(--ps1-cyan) !important;
+  }
+
+  .studio-container[data-studio-theme="retro"] .status-model-name {
+    color: var(--ps1-gold) !important;
+  }
+
+  .studio-container[data-studio-theme="retro"] .status-sep {
+    color: #1e3a5f !important;
+  }
+
+  .studio-container[data-studio-theme="retro"] .status-credit:hover {
+    color: var(--ps1-cyan) !important;
+  }
+
+  /* Custom Sleek Scrollbar */
+  .studio-container ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .studio-container ::-webkit-scrollbar-track {
+    background: #141518;
+  }
+  .studio-container ::-webkit-scrollbar-thumb {
+    background: #2b2f3a;
+    border-radius: 3px;
+  }
+  .studio-container ::-webkit-scrollbar-thumb:hover {
+    background: #3e4452;
   }
 </style>
