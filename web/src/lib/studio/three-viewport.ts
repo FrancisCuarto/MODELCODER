@@ -56,6 +56,7 @@ export class StudioViewport {
   private faceMagnetCallback: ((hitPoint: THREE.Vector3, normal: THREE.Vector3, hitCompIndex: number | null) => void) | null = null;
   private faceMagnetCancelCallback: (() => void) | null = null;
   private magnetCursorHelper: THREE.Mesh | null = null;
+  private savedControlsConfig: { mouseButtonsLeft: any; mouseButtonsRight: any; touchesOne: any } | null = null;
 
   // Callbacks
   private onStatsUpdate?: (stats: GeometricStats | null, result: GenerationResult | null) => void;
@@ -238,14 +239,16 @@ export class StudioViewport {
         this.deactivateFaceMagnet();
       }
     });
+    const handleMagnetClickOrTap = (e: MouseEvent | PointerEvent) => {
+      if (!this.isFaceMagnetActive) return;
+      const isLeftOrTouch = (e as PointerEvent).pointerType === 'touch' || e.button === 0 || typeof e.button === 'undefined';
+      if (!isLeftOrTouch) return;
+      this.handleFaceMagnetClick(e as any);
+    };
+
     this.renderer.domElement.addEventListener('pointerup', (e) => {
       if (this.isFaceMagnetActive) {
-        const isLeftOrTouch = e.pointerType === 'touch' || e.button === 0 || typeof e.button === 'undefined';
-        if (!isLeftOrTouch) return; // Ignore right-click/middle-click camera panning
-        const dist = Math.hypot(e.clientX - this.pointerDownPos.x, e.clientY - this.pointerDownPos.y);
-        if (dist > 14) return; // Camera orbit or pan drag, not a snap click!
-
-        this.handleFaceMagnetClick(e);
+        handleMagnetClickOrTap(e);
         return;
       }
       if (this.isTransformDragging) return;
@@ -281,6 +284,12 @@ export class StudioViewport {
             this.onComponentSelected(matchedIdx);
           }
         }
+      }
+    });
+
+    this.renderer.domElement.addEventListener('click', (e) => {
+      if (this.isFaceMagnetActive) {
+        handleMagnetClickOrTap(e);
       }
     });
 
@@ -755,15 +764,41 @@ export class StudioViewport {
    * User can click any surface to attach and orient the selected component onto that face.
    */
   public activateFaceMagnet(
-    onSnap: (hitPoint: THREE.Vector3, normal: THREE.Vector3, hitCompIndex: number | null) => void,
+    componentIndexOrCb: number | ((hitPoint: THREE.Vector3, normal: THREE.Vector3, hitCompIndex: number | null) => void),
+    onSnapOrCancel?: ((hitPoint: THREE.Vector3, normal: THREE.Vector3, hitCompIndex: number | null) => void) | (() => void),
     onCancel?: () => void
   ): void {
-    if (this.selectedComponentIndex === null) return;
+    let targetIdx: number | null = this.selectedComponentIndex;
+    let snapCb: ((hitPoint: THREE.Vector3, normal: THREE.Vector3, hitCompIndex: number | null) => void) | null = null;
+    let cancelCb: (() => void) | null = null;
+
+    if (typeof componentIndexOrCb === 'number') {
+      targetIdx = componentIndexOrCb;
+      snapCb = onSnapOrCancel as any;
+      cancelCb = onCancel || null;
+    } else {
+      snapCb = componentIndexOrCb;
+      cancelCb = (onSnapOrCancel as any) || null;
+    }
+
+    if (targetIdx === null) return;
+    this.selectedComponentIndex = targetIdx;
     this.isFaceMagnetActive = true;
-    this.faceMagnetCallback = onSnap;
-    this.faceMagnetCancelCallback = onCancel || null;
+    this.faceMagnetCallback = snapCb;
+    this.faceMagnetCancelCallback = cancelCb;
     this.renderer.domElement.style.cursor = 'crosshair';
     this.transformControls.detach();
+
+    if (this.controls) {
+      this.savedControlsConfig = {
+        mouseButtonsLeft: this.controls.mouseButtons.LEFT,
+        mouseButtonsRight: this.controls.mouseButtons.RIGHT,
+        touchesOne: this.controls.touches.ONE
+      };
+      this.controls.mouseButtons.LEFT = null as any;
+      this.controls.mouseButtons.RIGHT = THREE.MOUSE.ROTATE;
+      this.controls.touches.ONE = null as any;
+    }
   }
 
   public deactivateFaceMagnet(): void {
@@ -774,6 +809,14 @@ export class StudioViewport {
       this.magnetCursorHelper.visible = false;
     }
     this.renderer.domElement.style.cursor = 'default';
+
+    if (this.controls && this.savedControlsConfig) {
+      this.controls.mouseButtons.LEFT = this.savedControlsConfig.mouseButtonsLeft;
+      this.controls.mouseButtons.RIGHT = this.savedControlsConfig.mouseButtonsRight;
+      this.controls.touches.ONE = this.savedControlsConfig.touchesOne;
+      this.savedControlsConfig = null;
+    }
+
     if (this.selectedMesh && this.currentGizmoMode !== 'none') {
       this.transformControls.attach(this.selectedMesh);
     }
@@ -799,7 +842,7 @@ export class StudioViewport {
     );
     this.raycaster.setFromCamera(mouse, this.camera);
 
-    const hits = this.raycaster.intersectObjects(this.currentMesh.children, true);
+    const hits = this.raycaster.intersectObject(this.currentMesh, true);
     let targetHit: THREE.Intersection | null = null;
     let hoveringSelf = false;
 
@@ -866,7 +909,7 @@ export class StudioViewport {
     );
     this.raycaster.setFromCamera(mouse, this.camera);
 
-    const hits = this.raycaster.intersectObjects(this.currentMesh.children, true);
+    const hits = this.raycaster.intersectObject(this.currentMesh, true);
     let targetHit: THREE.Intersection | null = null;
     let hitCompIdx: number | null = null;
     let clickedOnSelf = false;
