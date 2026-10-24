@@ -227,10 +227,14 @@ import catalog from '../data/catalog.json';
               <span class="palette-label">AÑADIR PIEZA PRIMITIVA:</span>
               <div class="primitives-grid">
                 <button type="button" class="btn-primitive" data-shape="box" title="Añadir Cubo / Prisma rectangular">+ CUBO</button>
+                <button type="button" class="btn-primitive" data-shape="chamfer_box" title="Añadir Cubo Biselado con bordes suaves">+ BISELADO</button>
                 <button type="button" class="btn-primitive" data-shape="cylinder" title="Añadir Cilindro / Tubo">+ CILINDRO</button>
+                <button type="button" class="btn-primitive" data-shape="pipe" title="Añadir Tubo / Cilindro Hueco con grosor de pared">+ TUBO</button>
+                <button type="button" class="btn-primitive" data-shape="prism" title="Añadir Prisma Regular (Hexagonal, etc.)">+ PRISMA</button>
                 <button type="button" class="btn-primitive" data-shape="sphere" title="Añadir Esfera / Domo">+ ESFERA</button>
                 <button type="button" class="btn-primitive" data-shape="wedge" title="Añadir Cuña prismática inclinada">+ CUÑA</button>
                 <button type="button" class="btn-primitive" data-shape="cone" title="Añadir Cono">+ CONO</button>
+                <button type="button" class="btn-primitive" data-shape="pyramid" title="Añadir Pirámide Regular (3 a 8 caras)">+ PIRÁMIDE</button>
                 <button type="button" class="btn-primitive" data-shape="torus" title="Añadir Toroide / Anillo">+ TORO</button>
                 <button type="button" class="btn-primitive" data-shape="capsule" title="Añadir Cápsula presurizada">+ CÁPSULA</button>
                 <button type="button" class="btn-primitive" data-shape="plane" title="Añadir Plano bidimensional">+ PLANO</button>
@@ -2793,6 +2797,58 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
           metalness: 0.10
         };
         break;
+      case 'chamfer_box':
+        newComp = {
+          name: `biselado_${count}`,
+          shape: 'chamfer_box',
+          size: [1.0, 1.0, 1.0, 0.05, 2],
+          position: [0, 0.5, 0],
+          rotation: [0, 0, 0],
+          scale: [1, 1, 1],
+          color: '#4a5568',
+          roughness: 0.60,
+          metalness: 0.30
+        };
+        break;
+      case 'pipe':
+        newComp = {
+          name: `tubo_${count}`,
+          shape: 'pipe',
+          size: [0.5, 0.35, 1.0, 12],
+          position: [0, 0.5, 0],
+          rotation: [0, 0, 0],
+          scale: [1, 1, 1],
+          color: '#718096',
+          roughness: 0.50,
+          metalness: 0.50
+        };
+        break;
+      case 'prism':
+        newComp = {
+          name: `prisma_${count}`,
+          shape: 'prism',
+          size: [0.5, 1.0, 6],
+          position: [0, 0.5, 0],
+          rotation: [0, 0, 0],
+          scale: [1, 1, 1],
+          color: '#2b6cb0',
+          roughness: 0.65,
+          metalness: 0.25
+        };
+        break;
+      case 'pyramid':
+        newComp = {
+          name: `piramide_${count}`,
+          shape: 'pyramid',
+          size: [0.5, 1.0, 4],
+          position: [0, 0.5, 0],
+          rotation: [0, 0, 0],
+          scale: [1, 1, 1],
+          color: '#c53030',
+          roughness: 0.70,
+          metalness: 0.20
+        };
+        break;
     }
 
     currentSpec.components.push(newComp);
@@ -2890,6 +2946,9 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
         </button>
         <button type="button" class="insp-tab-pill ${isOpen('textures') ? 'active' : ''}" data-toggle-sec="textures" title="Expandir/contraer Biblioteca de 138 Texturas">
           🧱 Texturas
+        </button>
+        <button type="button" class="insp-tab-pill ${isOpen('array') ? 'active' : ''}" data-toggle-sec="array" title="Expandir/contraer Modificador Array (Repetición Lineal y Radial)">
+          ▦ Array
         </button>
         <button type="button" class="insp-tab-pill ${isOpen('animation') ? 'active' : ''}" data-toggle-sec="animation" title="Expandir/contraer Pistas de Animación de esta pieza">
           🎬 Anim.
@@ -3469,6 +3528,86 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
             </div>
           </div>
         `;
+      case 'chamfer_box':
+        return `
+          <div class="shape-grid-3">
+            <div class="shape-field">
+              <label class="field-label">Ancho (X):</label>
+              <div class="unit-input-wrap"><input type="number" step="0.01" min="0.01" class="shape-num-inp" data-param="0" value="${s[0] ?? 1.0}" /><span class="unit-sym">m</span></div>
+            </div>
+            <div class="shape-field">
+              <label class="field-label">Altura (Y):</label>
+              <div class="unit-input-wrap"><input type="number" step="0.01" min="0.01" class="shape-num-inp" data-param="1" value="${s[1] ?? 1.0}" /><span class="unit-sym">m</span></div>
+            </div>
+            <div class="shape-field">
+              <label class="field-label">Profundidad (Z):</label>
+              <div class="unit-input-wrap"><input type="number" step="0.01" min="0.01" class="shape-num-inp" data-param="2" value="${s[2] ?? 1.0}" /><span class="unit-sym">m</span></div>
+            </div>
+            <div class="shape-field">
+              <label class="field-label">Radio Bisel:</label>
+              <div class="unit-input-wrap"><input type="number" step="0.01" min="0.001" max="0.5" class="shape-num-inp" data-param="3" value="${s[3] ?? 0.05}" /><span class="unit-sym">m</span></div>
+            </div>
+            <div class="shape-field">
+              <label class="field-label">Segm. Bisel:</label>
+              <div class="unit-input-wrap"><input type="number" step="1" min="1" max="8" class="shape-num-inp" data-param="4" value="${s[4] ?? 2}" /><span class="unit-sym">seg</span></div>
+            </div>
+          </div>
+        `;
+      case 'pipe':
+        return `
+          <div class="shape-grid-2">
+            <div class="shape-field">
+              <label class="field-label">Radio Exterior:</label>
+              <div class="unit-input-wrap"><input type="number" step="0.01" min="0.01" class="shape-num-inp" data-param="0" value="${s[0] ?? 0.5}" /><span class="unit-sym">m</span></div>
+            </div>
+            <div class="shape-field">
+              <label class="field-label">Radio Interior:</label>
+              <div class="unit-input-wrap"><input type="number" step="0.01" min="0.005" class="shape-num-inp" data-param="1" value="${s[1] ?? 0.35}" /><span class="unit-sym">m</span></div>
+            </div>
+            <div class="shape-field">
+              <label class="field-label">Altura (Y):</label>
+              <div class="unit-input-wrap"><input type="number" step="0.01" min="0.01" class="shape-num-inp" data-param="2" value="${s[2] ?? 1.0}" /><span class="unit-sym">m</span></div>
+            </div>
+            <div class="shape-field">
+              <label class="field-label">Segmentos Radiales:</label>
+              <div class="unit-input-wrap"><input type="number" step="1" min="4" max="32" class="shape-num-inp" data-param="3" value="${s[3] ?? 12}" /><span class="unit-sym">seg</span></div>
+            </div>
+          </div>
+        `;
+      case 'prism':
+        return `
+          <div class="shape-grid-3">
+            <div class="shape-field">
+              <label class="field-label">Radio:</label>
+              <div class="unit-input-wrap"><input type="number" step="0.01" min="0.01" class="shape-num-inp" data-param="0" value="${s[0] ?? 0.5}" /><span class="unit-sym">m</span></div>
+            </div>
+            <div class="shape-field">
+              <label class="field-label">Altura (Y):</label>
+              <div class="unit-input-wrap"><input type="number" step="0.01" min="0.01" class="shape-num-inp" data-param="1" value="${s[1] ?? 1.0}" /><span class="unit-sym">m</span></div>
+            </div>
+            <div class="shape-field">
+              <label class="field-label">Lados (Caras):</label>
+              <div class="unit-input-wrap"><input type="number" step="1" min="3" max="16" class="shape-num-inp" data-param="2" value="${s[2] ?? 6}" /><span class="unit-sym">lados</span></div>
+            </div>
+          </div>
+        `;
+      case 'pyramid':
+        return `
+          <div class="shape-grid-3">
+            <div class="shape-field">
+              <label class="field-label">Radio Base:</label>
+              <div class="unit-input-wrap"><input type="number" step="0.01" min="0.01" class="shape-num-inp" data-param="0" value="${s[0] ?? 0.5}" /><span class="unit-sym">m</span></div>
+            </div>
+            <div class="shape-field">
+              <label class="field-label">Altura (Y):</label>
+              <div class="unit-input-wrap"><input type="number" step="0.01" min="0.01" class="shape-num-inp" data-param="1" value="${s[1] ?? 1.0}" /><span class="unit-sym">m</span></div>
+            </div>
+            <div class="shape-field">
+              <label class="field-label">Lados Base:</label>
+              <div class="unit-input-wrap"><input type="number" step="1" min="3" max="16" class="shape-num-inp" data-param="2" value="${s[2] ?? 4}" /><span class="unit-sym">lados</span></div>
+            </div>
+          </div>
+        `;
       case 'mesh':
         return `
           <div class="ps1-inset" style="padding: 0.6rem; font-size: 0.72rem; color: #cbd5e0; background: #050811; border: 1px inset var(--ps1-steel); display: flex; flex-direction: column; gap: 0.4rem;">
@@ -3496,6 +3635,10 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
       case 'torus': return [0.5, 0.15, 6, 12];
       case 'capsule': return [0.25, 0.5, 4, 8];
       case 'plane': return [1.0, 1.0];
+      case 'chamfer_box': return [1.0, 1.0, 1.0, 0.05, 2];
+      case 'pipe': return [0.5, 0.35, 1.0, 12];
+      case 'prism': return [0.5, 1.0, 6];
+      case 'pyramid': return [0.5, 1.0, 4];
       case 'mesh': return [1.0, 1.0, 1.0];
       default: return [1.0, 1.0, 1.0];
     }
@@ -3747,7 +3890,7 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     });
 
     document.getElementById('btn-toggle-all-secs')?.addEventListener('click', () => {
-      const keys = ['transform', 'geometry', 'uv', 'surface', 'textures'];
+      const keys = ['transform', 'geometry', 'uv', 'surface', 'textures', 'array', 'animation'];
       const anyCollapsed = keys.some((k) => inspectorSectionsOpen[k] === false);
       const nextState = anyCollapsed ? true : false;
       keys.forEach((k) => {

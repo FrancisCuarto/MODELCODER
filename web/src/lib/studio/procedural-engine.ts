@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import type { ModelSpec, ComponentDef, GeometricStats, ShapePrimitive, PivotPresetType } from './types.ts';
 import { TextureLibrary } from './texture-library.ts';
 
@@ -176,11 +177,14 @@ export class ProceduralEngine {
     switch (shape) {
       case 'box':
       case 'wedge':
+      case 'chamfer_box':
         w = s[0] ?? 1;
         h = s[1] ?? 1;
         d = s[2] ?? 1;
         break;
       case 'cylinder':
+      case 'pipe':
+      case 'prism':
         w = (s[0] ?? 0.5) * 2;
         h = s[2] ?? 1;
         d = (s[1] ?? (s[0] ?? 0.5)) * 2;
@@ -191,6 +195,7 @@ export class ProceduralEngine {
         d = w;
         break;
       case 'cone':
+      case 'pyramid':
         w = (s[0] ?? 0.5) * 2;
         h = s[1] ?? 1;
         d = w;
@@ -444,6 +449,49 @@ export class ProceduralEngine {
         geom = this.createWedgeGeometry(w, h, d, comp.uvScale, [sx, sy, sz]);
         break;
       }
+      case 'chamfer_box': {
+        const w = Math.max(0.01, s[0] ?? 1.0);
+        const h = Math.max(0.01, s[1] ?? 1.0);
+        const d = Math.max(0.01, s[2] ?? 1.0);
+        const maxR = Math.min(w, h, d) * 0.49;
+        const r = Math.max(0.001, Math.min(maxR, s[3] ?? 0.05));
+        const segs = Math.max(1, Math.min(8, Math.round(s[4] ?? 2)));
+        geom = new RoundedBoxGeometry(w, h, d, segs, r);
+        if (comp.texturePreset) {
+          this.adjustBoxUVs(geom, w * sx, h * sy, d * sz, comp.uvScale);
+        } else if (comp.uvScale) {
+          this.applyUVScale(geom, comp.uvScale);
+        }
+        break;
+      }
+      case 'pipe': {
+        const rOuter = Math.max(0.01, s[0] ?? 0.5);
+        const rInner = Math.max(0.005, Math.min(rOuter - 0.005, s[1] ?? (rOuter * 0.7)));
+        const h = Math.max(0.01, s[2] ?? 1.0);
+        const segs = Math.max(4, Math.min(32, Math.round(s[3] ?? 12)));
+        geom = this.createPipeGeometry(rOuter, rInner, h, segs, comp.uvScale);
+        break;
+      }
+      case 'prism': {
+        const r = Math.max(0.01, s[0] ?? 0.5);
+        const h = Math.max(0.01, s[1] ?? 1.0);
+        const sides = Math.max(3, Math.min(16, Math.round(s[2] ?? 6)));
+        geom = new THREE.CylinderGeometry(r, r, h, sides);
+        if (comp.uvScale) {
+          this.applyUVScale(geom, comp.uvScale);
+        }
+        break;
+      }
+      case 'pyramid': {
+        const r = Math.max(0.01, s[0] ?? 0.5);
+        const h = Math.max(0.01, s[1] ?? 1.0);
+        const sides = Math.max(3, Math.min(16, Math.round(s[2] ?? 4)));
+        geom = new THREE.ConeGeometry(r, h, sides);
+        if (comp.uvScale) {
+          this.applyUVScale(geom, comp.uvScale);
+        }
+        break;
+      }
       case 'mesh': {
         const cachedGeom = comp.meshId ? this.getRegisteredGeometry(comp.meshId) : null;
         if (cachedGeom) {
@@ -553,7 +601,219 @@ export class ProceduralEngine {
       mesh.add(labelBadge);
     }
 
+    // Array Modifier (linear or radial instance generation)
+    if (comp.array && comp.array.enabled && comp.array.count > 1) {
+      const arrayGroup = new THREE.Group();
+      arrayGroup.name = comp.name || `comp_${shape}`;
+
+      // Base instance placed at origin relative to arrayGroup
+      mesh.position.set(0, 0, 0);
+      mesh.rotation.set(0, 0, 0);
+      mesh.scale.set(1, 1, 1);
+      mesh.name = `${comp.name}_0`;
+      arrayGroup.add(mesh);
+
+      const count = Math.max(2, Math.min(64, Math.round(comp.array.count)));
+      const type = comp.array.type || 'linear';
+
+      if (type === 'linear') {
+        const [dx, dy, dz] = comp.array.offset || [1, 0, 0];
+        for (let c = 1; c < count; c++) {
+          const copy = mesh.clone();
+          copy.name = `${comp.name}_${c}`;
+          copy.position.set(dx * c, dy * c, dz * c);
+          copy.userData = { isArrayInstance: true, instanceIndex: c };
+          arrayGroup.add(copy);
+        }
+      } else if (type === 'radial') {
+        const axis = comp.array.radialAxis || 'y';
+        const radius = comp.array.radialRadius ?? 0;
+        const totalAngle = (comp.array.radialAngle ?? 360) * (Math.PI / 180);
+        const rotateCopies = comp.array.radialRotateCopies !== false;
+        const stepAngle = totalAngle / (Math.abs(totalAngle - 2 * Math.PI) < 0.01 ? count : Math.max(1, count - 1));
+
+        for (let c = 1; c < count; c++) {
+          const copy = mesh.clone();
+          const angle = stepAngle * c;
+          copy.name = `${comp.name}_${c}`;
+          copy.userData = { isArrayInstance: true, instanceIndex: c };
+
+          if (axis === 'y') {
+            if (radius > 0) {
+              copy.position.set(Math.sin(angle) * radius, 0, (Math.cos(angle) - 1) * radius);
+            }
+            if (rotateCopies) {
+              copy.rotation.y = angle;
+            }
+          } else if (axis === 'x') {
+            if (radius > 0) {
+              copy.position.set(0, Math.sin(angle) * radius, (Math.cos(angle) - 1) * radius);
+            }
+            if (rotateCopies) {
+              copy.rotation.x = angle;
+            }
+          } else if (axis === 'z') {
+            if (radius > 0) {
+              copy.position.set(Math.sin(angle) * radius, (Math.cos(angle) - 1) * radius, 0);
+            }
+            if (rotateCopies) {
+              copy.rotation.z = angle;
+            }
+          }
+          arrayGroup.add(copy);
+        }
+      }
+
+      // Root position, rotation, scale onto the array group
+      if (comp.position && comp.position.length >= 3) {
+        arrayGroup.position.set(comp.position[0], comp.position[1], comp.position[2]);
+      }
+      if (comp.rotation && comp.rotation.length >= 3) {
+        arrayGroup.rotation.set(
+          THREE.MathUtils.degToRad(comp.rotation[0]),
+          THREE.MathUtils.degToRad(comp.rotation[1]),
+          THREE.MathUtils.degToRad(comp.rotation[2])
+        );
+      }
+      if (comp.scale && comp.scale.length >= 3) {
+        arrayGroup.scale.set(comp.scale[0], comp.scale[1], comp.scale[2]);
+      }
+
+      return arrayGroup;
+    }
+
     return mesh;
+  }
+
+  /**
+   * Creates a watertight hollow pipe (cylinder with concentric bore) using ExtrudeGeometry.
+   */
+  public static createPipeGeometry(
+    rOuter: number,
+    rInner: number,
+    height: number,
+    segments: number = 12,
+    uvScale?: [number, number]
+  ): THREE.BufferGeometry {
+    const shape = new THREE.Shape();
+    shape.absarc(0, 0, rOuter, 0, Math.PI * 2, false);
+    const hole = new THREE.Path();
+    hole.absarc(0, 0, rInner, 0, Math.PI * 2, true);
+    shape.holes.push(hole);
+
+    const geom = new THREE.ExtrudeGeometry(shape, {
+      depth: height,
+      bevelEnabled: false,
+      curveSegments: Math.max(4, segments),
+    });
+    geom.center();
+    geom.rotateX(Math.PI / 2);
+    geom.computeVertexNormals();
+
+    if (uvScale) {
+      this.applyUVScale(geom, uvScale);
+    }
+    return geom;
+  }
+
+  /**
+   * Unrolls/bakes an array modifier into distinct independent ComponentDef pieces in the ModelSpec.
+   */
+  public static unrollArrayModifier(spec: ModelSpec, componentIndex: number): ModelSpec {
+    if (!spec.components || componentIndex < 0 || componentIndex >= spec.components.length) {
+      return spec;
+    }
+    const comp = spec.components[componentIndex];
+    if (!comp.array || !comp.array.enabled || comp.array.count <= 1) {
+      return spec;
+    }
+
+    const count = Math.max(2, Math.min(64, Math.round(comp.array.count)));
+    const type = comp.array.type || 'linear';
+    const newComponents: ComponentDef[] = [];
+
+    // Base component with array removed
+    const baseComp = JSON.parse(JSON.stringify(comp)) as ComponentDef;
+    delete baseComp.array;
+    newComponents.push(baseComp);
+
+    const baseRot = baseComp.rotation || [0, 0, 0];
+    const basePos = baseComp.position || [0, 0, 0];
+    const euler = new THREE.Euler(
+      THREE.MathUtils.degToRad(baseRot[0]),
+      THREE.MathUtils.degToRad(baseRot[1]),
+      THREE.MathUtils.degToRad(baseRot[2])
+    );
+
+    if (type === 'linear') {
+      const [dx, dy, dz] = comp.array.offset || [1, 0, 0];
+      for (let c = 1; c < count; c++) {
+        const copyComp = JSON.parse(JSON.stringify(baseComp)) as ComponentDef;
+        copyComp.name = `${baseComp.name}_${c + 1}`;
+        const offsetVec = new THREE.Vector3(dx * c, dy * c, dz * c).applyEuler(euler);
+        copyComp.position = [
+          basePos[0] + offsetVec.x,
+          basePos[1] + offsetVec.y,
+          basePos[2] + offsetVec.z
+        ];
+        newComponents.push(copyComp);
+      }
+    } else if (type === 'radial') {
+      const axis = comp.array.radialAxis || 'y';
+      const radius = comp.array.radialRadius ?? 0;
+      const totalAngle = (comp.array.radialAngle ?? 360) * (Math.PI / 180);
+      const rotateCopies = comp.array.radialRotateCopies !== false;
+      const stepAngle = totalAngle / (Math.abs(totalAngle - 2 * Math.PI) < 0.01 ? count : Math.max(1, count - 1));
+
+      for (let c = 1; c < count; c++) {
+        const copyComp = JSON.parse(JSON.stringify(baseComp)) as ComponentDef;
+        copyComp.name = `${baseComp.name}_${c + 1}`;
+        const angle = stepAngle * c;
+        const localPos = new THREE.Vector3();
+
+        if (axis === 'y') {
+          if (radius > 0) {
+            localPos.set(Math.sin(angle) * radius, 0, (Math.cos(angle) - 1) * radius);
+          }
+          if (rotateCopies) {
+            copyComp.rotation = [baseRot[0], baseRot[1] + THREE.MathUtils.radToDeg(angle), baseRot[2]];
+          }
+        } else if (axis === 'x') {
+          if (radius > 0) {
+            localPos.set(0, Math.sin(angle) * radius, (Math.cos(angle) - 1) * radius);
+          }
+          if (rotateCopies) {
+            copyComp.rotation = [baseRot[0] + THREE.MathUtils.radToDeg(angle), baseRot[1], baseRot[2]];
+          }
+        } else if (axis === 'z') {
+          if (radius > 0) {
+            localPos.set(Math.sin(angle) * radius, (Math.cos(angle) - 1) * radius, 0);
+          }
+          if (rotateCopies) {
+            copyComp.rotation = [baseRot[0], baseRot[1], baseRot[2] + THREE.MathUtils.radToDeg(angle)];
+          }
+        }
+
+        localPos.applyEuler(euler);
+        copyComp.position = [
+          basePos[0] + localPos.x,
+          basePos[1] + localPos.y,
+          basePos[2] + localPos.z
+        ];
+        newComponents.push(copyComp);
+      }
+    }
+
+    const updatedComponents = [
+      ...spec.components.slice(0, componentIndex),
+      ...newComponents,
+      ...spec.components.slice(componentIndex + 1)
+    ];
+
+    return {
+      ...spec,
+      components: updatedComponents
+    };
   }
 
   /**

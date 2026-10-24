@@ -11,6 +11,10 @@ export type ShapePrimitive =
   | 'torus' 
   | 'capsule' 
   | 'wedge'
+  | 'chamfer_box'
+  | 'pipe'
+  | 'prism'
+  | 'pyramid'
   | 'mesh';
 
 export type TexturePreset = 
@@ -159,6 +163,18 @@ export type MaterialCategoryType =
   | 'rubber'
   | 'ceramic';
 
+
+export interface ArrayModifierDef {
+  enabled: boolean;
+  type: 'linear' | 'radial';
+  count: number; // 2..64
+  offset?: [number, number, number]; // [dx, dy, dz] spacing per copy for linear
+  radialAxis?: 'x' | 'y' | 'z'; // default 'y'
+  radialRadius?: number; // distance from origin
+  radialAngle?: number; // in degrees, default 360
+  radialRotateCopies?: boolean; // default true
+}
+
 export type PivotPresetType = 'center' | 'bottom' | 'top' | 'left' | 'right' | 'front' | 'back';
 
 export interface ComponentDef {
@@ -205,6 +221,7 @@ export interface ComponentDef {
   uvRotation?: number; // UV rotation angle in degrees (0..360)
   wear?: number; // Parametric surface weathering/grime intensity (0..1)
   normalStrength?: number; // Normal map relief intensity (0..2)
+  array?: ArrayModifierDef;
 }
 
 // ---------------------------------------------------------------------------

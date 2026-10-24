@@ -2755,6 +2755,165 @@ test('Custom & Local Textures: ProceduralEngine y exportSpec soportan componente
   ProceduralEngine.disposeHierarchy(group);
 });
 
+
+test('Advanced Primitives: chamfer_box, pipe, prism y pyramid generan geometrías válidas', async () => {
+  const { ProceduralEngine } = await import('../src/lib/studio/procedural-engine.ts');
+  const { GLBExporterService } = await import('../src/lib/studio/glb-exporter.ts');
+
+  const spec: any = {
+    id: 'test.advanced.primitives',
+    name: 'Model Pro Primitives',
+    units: 'meters',
+    dimensions: { width: 4, depth: 4, height: 2 },
+    components: [
+      {
+        name: 'cubo_biselado',
+        shape: 'chamfer_box',
+        size: [1, 1, 1, 0.08, 2],
+        position: [-1.5, 0.5, 0]
+      },
+      {
+        name: 'tubo_escape',
+        shape: 'pipe',
+        size: [0.5, 0.35, 1.2, 12],
+        position: [0, 0.6, 0]
+      },
+      {
+        name: 'tuerca_hexagonal',
+        shape: 'prism',
+        size: [0.4, 0.3, 6],
+        position: [1.5, 0.15, 0]
+      },
+      {
+        name: 'torre_piramide',
+        shape: 'pyramid',
+        size: [0.6, 1.5, 4],
+        position: [0, 0.75, 1.5]
+      }
+    ]
+  };
+
+  const { group, stats } = ProceduralEngine.buildModelFromSpec(spec);
+  assert.ok(group, 'Group debe existir');
+  assert.equal(group.children.length, 4, 'Deben existir los 4 componentes primitivos');
+  assert.ok(stats.triangles > 200, 'Debe tener conteo de triángulos válido');
+
+  const glbBuffer = await GLBExporterService.exportSpec(spec);
+  assert.ok(glbBuffer instanceof ArrayBuffer);
+  assert.ok(glbBuffer.byteLength > 1000, 'El GLB debe tener peso superior a 1KB');
+
+  ProceduralEngine.disposeHierarchy(group);
+});
+
+test('Array Modifier: Linear Array genera N instancias con offsets correctos', async () => {
+  const { ProceduralEngine } = await import('../src/lib/studio/procedural-engine.ts');
+  const { GLBExporterService } = await import('../src/lib/studio/glb-exporter.ts');
+
+  const spec: any = {
+    id: 'test.linear.array',
+    name: 'Escalones en Array',
+    units: 'meters',
+    dimensions: { width: 4, depth: 2, height: 2 },
+    components: [
+      {
+        name: 'escalon',
+        shape: 'box',
+        size: [0.8, 0.15, 0.3],
+        position: [0, 0, 0],
+        array: {
+          enabled: true,
+          type: 'linear',
+          count: 5,
+          offset: [0, 0.15, 0.3]
+        }
+      }
+    ]
+  };
+
+  const { group, stats } = ProceduralEngine.buildModelFromSpec(spec);
+  assert.ok(group);
+  const arrayGroup = group.children[0] as any;
+  assert.ok(arrayGroup, 'El nodo raíz debe ser el grupo del array');
+  assert.equal(arrayGroup.children.length, 5, 'Debe contener 5 instancias generadas');
+  assert.ok(stats.triangles >= 5 * 12, 'Cada caja son 12 triángulos');
+
+  const glbBuffer = await GLBExporterService.exportSpec(spec);
+  assert.ok(glbBuffer instanceof ArrayBuffer);
+  assert.ok(glbBuffer.byteLength > 500);
+
+  ProceduralEngine.disposeHierarchy(group);
+});
+
+test('Array Modifier: Radial Array distribuye copias circularmente', async () => {
+  const { ProceduralEngine } = await import('../src/lib/studio/procedural-engine.ts');
+
+  const spec: any = {
+    id: 'test.radial.array',
+    name: 'Turbina Radial',
+    units: 'meters',
+    dimensions: { width: 3, depth: 3, height: 1 },
+    components: [
+      {
+        name: 'aspa',
+        shape: 'box',
+        size: [0.1, 0.05, 0.8],
+        position: [0, 0, 0],
+        array: {
+          enabled: true,
+          type: 'radial',
+          count: 6,
+          radialAxis: 'y',
+          radialRadius: 1.0,
+          radialAngle: 360,
+          radialRotateCopies: true
+        }
+      }
+    ]
+  };
+
+  const { group, stats } = ProceduralEngine.buildModelFromSpec(spec);
+  assert.ok(group);
+  const arrayGroup = group.children[0] as any;
+  assert.equal(arrayGroup.children.length, 6, 'Debe generar 6 aspas radiales');
+  assert.ok(stats.triangles >= 6 * 12);
+
+  ProceduralEngine.disposeHierarchy(group);
+});
+
+test('Array Modifier: unrollArrayModifier desglosa el array en piezas independientes en ModelSpec', async () => {
+  const { ProceduralEngine } = await import('../src/lib/studio/procedural-engine.ts');
+
+  const spec: any = {
+    id: 'test.unroll.array',
+    name: 'Array a Desglosar',
+    units: 'meters',
+    dimensions: { width: 3, depth: 3, height: 1 },
+    components: [
+      {
+        name: 'poste',
+        shape: 'cylinder',
+        size: [0.1, 0.1, 1.0, 8],
+        position: [1, 0, 1],
+        array: {
+          enabled: true,
+          type: 'linear',
+          count: 3,
+          offset: [0.5, 0, 0]
+        }
+      }
+    ]
+  };
+
+  const unrolled = ProceduralEngine.unrollArrayModifier(spec, 0);
+  assert.equal(unrolled.components.length, 3, 'El spec desglosado debe tener 3 componentes individuales');
+  assert.equal(unrolled.components[0].name, 'poste');
+  assert.equal(unrolled.components[0].array, undefined, 'El componente base no debe conservar modificador');
+  assert.equal(unrolled.components[1].name, 'poste_2');
+  assert.equal(unrolled.components[2].name, 'poste_3');
+  assert.deepEqual(unrolled.components[1].position, [1.5, 0, 1]);
+  assert.deepEqual(unrolled.components[2].position, [2.0, 0, 1]);
+});
+
 // Teardown: ensure Node exits cleanly after tests
 test('Teardown: Exit cleanly', () => {
   setTimeout(() => process.exit(0), 100);
