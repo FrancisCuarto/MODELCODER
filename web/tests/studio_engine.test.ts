@@ -815,6 +815,68 @@ test('AIGenerator: normalizeSpecGeometry converts world coordinates to parent-lo
   assert.ok(Math.abs(worldPos.y - 1.35) < 0.001, `World Y debe ser 1.35m, dio ${worldPos.y}`);
 });
 
+test('AIGenerator: normalizeSpecGeometry clamps outlier satellite components within compact base perimeter', () => {
+  const scatteredSpec: ModelSpec = {
+    id: 'test.scattered.station',
+    name: 'Estación con Piezas Dispersas',
+    category: 'infrastructure',
+    description: 'Prueba de contención espacial de piezas',
+    units: 'meters',
+    dimensions: { width: 1, depth: 1, height: 2 },
+    palette: 'industrial_hazard',
+    components: [
+      {
+        name: 'main_base',
+        shape: 'box',
+        size: [1.0, 0.1, 0.8],
+        position: [0, 0.05, 0]
+      },
+      {
+        name: 'distant_foot_1',
+        shape: 'cylinder',
+        size: [0.15, 0.15, 0.05],
+        position: [2.5, 0.05, 2.5]
+      },
+      {
+        name: 'distant_foot_2',
+        shape: 'cylinder',
+        size: [0.15, 0.15, 0.05],
+        position: [-3.0, 0.05, -2.8]
+      },
+      {
+        name: 'screen_twisted',
+        shape: 'box',
+        size: [0.3, 0.2, 0.02],
+        position: [0, 1.2, 0.3],
+        rotation: [14.5, 42.1, -12.3]
+      },
+      {
+        name: 'radial_feet',
+        shape: 'cylinder',
+        size: [0.1, 0.1, 0.05],
+        position: [0, 0.05, 0],
+        array: { enabled: true, type: 'radial', count: 4, radialRadius: 2.8 }
+      }
+    ]
+  };
+
+  const normalized = AIGenerator.normalizeSpecGeometry(scatteredSpec);
+
+  // 1. Las patas dispersas a 2.5m y 3.0m deben quedar fijadas dentro del perímetro de la base
+  assert.ok(Math.abs(normalized.components[1].position[0]) <= 0.45, 'distant_foot_1 X debe estar acotado');
+  assert.ok(Math.abs(normalized.components[1].position[2]) <= 0.40, 'distant_foot_1 Z debe estar acotado');
+  assert.ok(Math.abs(normalized.components[2].position[0]) <= 0.45, 'distant_foot_2 X debe estar acotado');
+  assert.ok(Math.abs(normalized.components[2].position[2]) <= 0.40, 'distant_foot_2 Z debe estar acotado');
+
+  // 2. La pantalla torcida no debe tener rotaciones diagonales arbitrarias en Y o Z
+  assert.equal(normalized.components[3].rotation[1], 0, 'Yaw en Y debe eliminarse para no torcer la pantalla');
+  assert.equal(normalized.components[3].rotation[2], 0, 'Roll en Z debe eliminarse');
+  assert.equal(normalized.components[3].rotation[0], 14.5, 'Pitch en X debe conservarse para inclinación ergonómica');
+
+  // 3. El radio radial sobredimensionado debe quedar acotado a <= 0.40m
+  assert.ok(normalized.components[4].array!.radialRadius <= 0.40, 'radialRadius debe acotarse a máximo 0.40m');
+});
+
 test('Material System Test 1: Un componente antiguo que solo tenga color sigue funcionando (compatibilidad retroactiva)', () => {
   const legacySpec = {
     id: 'test.legacy.box',

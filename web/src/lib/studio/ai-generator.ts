@@ -313,11 +313,33 @@ export class AIGenerator {
       if (!Array.isArray(comp.rotation) || comp.rotation.length < 3) {
         comp.rotation = [0, 0, 0];
       } else {
-        comp.rotation = [
-          Number.isFinite(comp.rotation[0]) ? parseFloat(comp.rotation[0].toFixed(2)) : 0,
-          Number.isFinite(comp.rotation[1]) ? parseFloat(comp.rotation[1].toFixed(2)) : 0,
-          Number.isFinite(comp.rotation[2]) ? parseFloat(comp.rotation[2].toFixed(2)) : 0
-        ];
+        let rx = Number.isFinite(comp.rotation[0]) ? parseFloat(comp.rotation[0].toFixed(2)) : 0;
+        let ry = Number.isFinite(comp.rotation[1]) ? parseFloat(comp.rotation[1].toFixed(2)) : 0;
+        let rz = Number.isFinite(comp.rotation[2]) ? parseFloat(comp.rotation[2].toFixed(2)) : 0;
+
+        const snapOrthogonal = (deg: number): number | null => {
+          const d = ((deg % 360) + 360) % 360;
+          if (Math.abs(d - 0) < 5 || Math.abs(d - 360) < 5) return 0;
+          if (Math.abs(d - 90) < 5) return 90;
+          if (Math.abs(d - 180) < 5) return 180;
+          if (Math.abs(d - 270) < 5) return -90;
+          return null;
+        };
+
+        const rxSnap = snapOrthogonal(rx);
+        if (rxSnap !== null) rx = rxSnap;
+        else if (Math.abs(rx) <= 30) rx = parseFloat(rx.toFixed(1));
+        else rx = 0;
+
+        const rySnap = snapOrthogonal(ry);
+        if (rySnap !== null) ry = rySnap;
+        else ry = 0;
+
+        const rzSnap = snapOrthogonal(rz);
+        if (rzSnap !== null) rz = rzSnap;
+        else rz = 0;
+
+        comp.rotation = [rx, ry, rz];
       }
 
       if (Array.isArray(comp.scale) && comp.scale.length >= 3) {
@@ -352,7 +374,7 @@ export class AIGenerator {
             type: 'radial',
             count,
             radialAxis: ['x', 'y', 'z'].includes(arr.radialAxis as any) ? arr.radialAxis : 'y',
-            radialRadius: Number.isFinite(arr.radialRadius) ? Math.max(0, parseFloat((arr.radialRadius as number).toFixed(4))) : 0.5,
+            radialRadius: Number.isFinite(arr.radialRadius) ? Math.min(0.40, Math.max(0, parseFloat((arr.radialRadius as number).toFixed(4)))) : 0.35,
             radialAngle: Number.isFinite(arr.radialAngle) ? parseFloat((arr.radialAngle as number).toFixed(2)) : 360,
             radialRotateCopies: arr.radialRotateCopies !== false
           };
@@ -435,6 +457,42 @@ export class AIGenerator {
 
       if (comp.boolean?.targetComponent && !compNameSet.has(comp.boolean.targetComponent)) {
         delete comp.boolean;
+      }
+    }
+
+    // -------------------------------------------------------------------------
+    // Automatic Spatial Clustering & Outlier Clamp
+    // Prevents rogue / disconnected components (like distant feet or satellite pads)
+    // from being scattered meters away across the room.
+    // -------------------------------------------------------------------------
+    let maxBodyArea = 0;
+    let bodyW = 1.0;
+    let bodyD = 1.0;
+
+    for (const c of spec.components) {
+      const s = Array.isArray(c.size) ? c.size : [1, 1, 1];
+      const w = s[0] || 1;
+      const d = (c.shape === 'cylinder' || c.shape === 'sphere' || c.shape === 'cone') ? w : (s[2] || s[1] || 1);
+      const area = w * d;
+      const isNearCenter = Math.abs(c.position?.[0] || 0) < 0.6 && Math.abs(c.position?.[2] || 0) < 0.6;
+      if (isNearCenter && area > maxBodyArea) {
+        maxBodyArea = area;
+        bodyW = w;
+        bodyD = d;
+      }
+    }
+
+    const isVehicle = spec.category === 'vehicles';
+    const maxAllowedX = Math.max(0.9, bodyW * (isVehicle ? 1.6 : 0.85) + (isVehicle ? 0.6 : 0.25));
+    const maxAllowedZ = Math.max(0.9, bodyD * (isVehicle ? 1.6 : 0.85) + (isVehicle ? 0.6 : 0.25));
+
+    for (const c of spec.components) {
+      if (!c.position) continue;
+      if (Math.abs(c.position[0]) > maxAllowedX) {
+        c.position[0] = parseFloat((Math.sign(c.position[0]) * (bodyW * 0.42)).toFixed(3));
+      }
+      if (Math.abs(c.position[2]) > maxAllowedZ) {
+        c.position[2] = parseFloat((Math.sign(c.position[2]) * (bodyD * 0.42)).toFixed(3));
       }
     }
 
@@ -560,6 +618,11 @@ Your mission is to construct realistic, physically coherent, mechanically solid 
 - Break machines and objects into modular parts: base plate/frame, structural chassis, housing shell, ventilation grills/louvers, pipes/hoses/cables (using pipe/torus/cylinder), brackets/fixtures, access hatches, tactile control interfaces (buttons, dials, emergency switch), warning beacons, and CRT displays.
 - MANDATORY: Generate between 15 and 30 components for standard models (and minimum 12 for compact items). More detail creates professional retro/sci-fi aesthetics.
 - MANDATORY PBR TEXTURE PRESET: Every component MUST specify a valid "texturePreset" (e.g. "painted_metal_white", "painted_metal_blue", "diamond_plate", "crt_screen_green", "vent_grill", "rubber_black", "hazard_stripes", etc.). DO NOT leave components with plain flat colors and no texture.
+
+7. LAW OF COMPACT ASSEMBLY & SOLID FOOTPRINT:
+- The asset MUST be ONE single, compact, solid machine or prop. NEVER scatter pieces or pads meters away across the floor!
+- All feet, pads, conduits, and accessories must remain physically attached within the base perimeter (width <= 1.50m, depth <= 1.50m).
+- All control consoles, CRT screens, and displays must face directly forward towards the player (+Z). NEVER twist consoles diagonally with random Y/Z rotations.
 
 ### 12 PRIMITIVE SHAPES (METERS) & USAGE
 - "box": size [width_X, height_Y, depth_Z]
