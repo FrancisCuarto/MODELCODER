@@ -26,7 +26,7 @@ const description = "Consulta la cronología completa de actualizaciones, nuevas
           <span class="title-glyph">▲</span>
           <span>FLIGHT LOG · REGISTRO PÚBLICO DE ACTUALIZACIONES</span>
         </div>
-        <div class="titlebar-version">SYS_VER: v2.5.0</div>
+        <div class="titlebar-version">SYS_VER: {DEVLOG_ENTRIES[0]?.version || 'v3.0.0'}</div>
       </div>
       <div class="header-body">
         <div class="header-main">
@@ -43,7 +43,7 @@ const description = "Consulta la cronología completa de actualizaciones, nuevas
         <div class="devlog-stats-grid">
           <div class="stat-card">
             <span class="stat-label">&gt; VERSIÓN ACTUAL</span>
-            <span class="stat-value gold">v2.5.0</span>
+            <span class="stat-value gold">{DEVLOG_ENTRIES[0]?.version || 'v3.0.0'}</span>
           </div>
           <div class="stat-card">
             <span class="stat-label">&gt; HITOS DOCUMENTADOS</span>

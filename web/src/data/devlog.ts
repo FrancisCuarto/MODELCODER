@@ -12,6 +12,26 @@ export interface DevlogEntry {
 
 export const DEVLOG_ENTRIES: DevlogEntry[] = [
   {
+    version: 'v3.0.0',
+    date: '24 de Octubre, 2026',
+    badge: 'MAJOR',
+    badgeColor: '#e53e3e',
+    title: 'Motor de Modelado Avanzado (CSG, Primitivas, Arrays, Imán a Caras), Paquete Godot 4 y Tema Dark Profesional',
+    summary: 'Actualización mayor de ModelCoder que transforma a Studio 3D en un entorno de modelado procedural completo y profesional. Introduce operaciones booleanas CSG (diferencia, unión, intersección) con horneado, 4 nuevas primitivas paramétricas, modificadores de array lineal y radial, sistema de alineación y encastre magnético a caras, exportación corregida a Godot 4 con empaquetador ZIP y mapas de normales PBR, conmutador de tema visual Dark Profesional y sincronización de capacidades con el motor de IA.',
+    highlights: [
+      'Operaciones Booleanas CSG en Tiempo Real: Capacidad de realizar cortes, sustracciones (Difference), uniones e intersecciones entre piezas paramétricas en vivo mediante Three-BVH-CSG, con horneado permanente a geometrías optimizadas (bake).',
+      '4 Nuevas Primitivas Paramétricas: Incorporación de chamfer_box (caja con bisel/chaflán), pipe (tubo hueco cilíndrico de grosor ajustable), prism (prismas regulares de 3 a 8 lados) y pyramid (pirámides regulares y truncadas).',
+      'Modificadores de Array No Destructivos: Duplicación en serie lineal (ejes X, Y, Z con espaciado) y radial (distribución circular con radio y ángulo) con opción de despliegue a componentes independientes.',
+      'Sistema de Alineación de Precisión & Face Magnet: Asentamiento exacto al suelo (Y=0.00), centrado en ejes, snap multi-paso de posición/ángulo y herramienta de Imán a Caras con alineación por vector normal para ensamblaje mecánico sin holguras.',
+      'Exportador Godot 4 & GLB Perfeccionado: Reparación completa de los mapas de normales y rugosidad en la exportación GLB, deduplicación de materiales para evitar saturar el FileSystem de Godot y nuevo botón de descarga "Paquete Godot 4 (.zip)" con escena .tscn (rutas relativas sin UIDs corruptos), modelo .glb y script .gd listos.',
+      'Conmutador de Estilo Visual (Dark Profesional vs Retro PS1): Selector de tema visual accesible desde la barra superior y menú para alternar entre el clásico modo Cyber-Industrial PS1 y un tema oscuro moderno, limpio y de alto contraste para largas sesiones de modelado.',
+      'IA Generativa Sincronizada: El modelo de IA y el sintetizador procedural ahora conocen y aplican activamente todas las nuevas primitivas, cortes booleanos y modificadores de array para generar modelos con un nivel de detalle y complejidad muy superior dentro del presupuesto low-poly.',
+      'Soporte Nativo de Escritorio (Tauri v2): Guardado de proyectos en carpetas personalizadas del sistema, enlaces externos seguros al navegador y sincronización de sesiones de cuenta.'
+    ],
+    tags: ['CSG Booleans', 'Godot 4', 'Primitivas Avanzadas', 'Array Modifier', 'Face Magnet', 'Dark Theme', 'IA Generativa', 'Tauri Desktop'],
+    author: 'Franciscuarto'
+  },
+  {
     version: 'v2.5.0',
     date: '18 de Octubre, 2026',
     badge: 'FEATURE',
