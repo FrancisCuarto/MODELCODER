@@ -3669,6 +3669,56 @@ test('Boolean Operations: bakeBooleanOperation convierte la booleana a shape mes
   ProceduralEngine.disposeHierarchy(group);
 });
 
+test('Boolean Operations & Persistence: La malla bakeada persiste su geometría serializada tras recargar proyecto o vaciar memoria', async () => {
+  const { ProceduralEngine } = await import('../src/lib/studio/procedural-engine.ts');
+
+  const spec: any = {
+    id: 'test.boolean.persistence',
+    name: 'Bake Booleana Persistencia',
+    units: 'meters',
+    dimensions: { width: 2, depth: 2, height: 2 },
+    components: [
+      {
+        name: 'base_bloque',
+        shape: 'box',
+        size: [2, 2, 2],
+        position: [0, 1, 0],
+        boolean: {
+          enabled: true,
+          operation: 'difference',
+          targetComponent: 'broca_cilindro'
+        }
+      },
+      {
+        name: 'broca_cilindro',
+        shape: 'cylinder',
+        size: [0.4, 0.4, 3, 16],
+        position: [0, 1, 0]
+      }
+    ]
+  };
+
+  const bakedSpec = ProceduralEngine.bakeBooleanOperation(spec, 0, true);
+  assert.ok(bakedSpec.components[0].geometryData, 'Debe incluir geometryData serializada en JSON');
+
+  // Simular guardado a JSON en disco / localStorage y reinicio completo del Studio
+  const serializedJson = JSON.stringify(bakedSpec);
+  ProceduralEngine.clearRegistries();
+  assert.equal(ProceduralEngine.getRegisteredGeometry(bakedSpec.components[0].meshId!), undefined, 'La memoria debe estar limpia');
+
+  // Reabrir proyecto desde el JSON serializado
+  const reloadedSpec = JSON.parse(serializedJson);
+  const { group } = ProceduralEngine.buildModelFromSpec(reloadedSpec);
+  assert.ok(group, 'El grupo debe construirse');
+  const restoredObj = group.children[0] as any;
+
+  // NO debe ser un cubo por defecto (BoxGeometry con 12 triángulos)
+  assert.notEqual(restoredObj.geometry.type, 'BoxGeometry', 'NO debe retroceder a un cubo BoxGeometry genérico');
+  assert.ok(restoredObj.geometry.index.count / 3 > 50, 'La malla reabierta debe conservar sus cortes booleanos CSG exactos');
+
+  ProceduralEngine.disposeHierarchy(group);
+});
+
 // Teardown: ensure Node exits cleanly after tests
 test('Teardown: Exit cleanly', () => {
   setTimeout(() => process.exit(0), 100);

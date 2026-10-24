@@ -31,6 +31,35 @@ export class ProceduralEngine {
   }
 
   /**
+   * Resolves a BufferGeometry for custom/baked mesh components.
+   * If the geometry is already registered in memory, returns it.
+   * If not registered, attempts to reconstruct it from serialized comp.geometryData.
+   */
+  public static resolveComponentGeometry(comp: ComponentDef): THREE.BufferGeometry | null {
+    if (comp.meshId) {
+      const cached = this.getRegisteredGeometry(comp.meshId);
+      if (cached) return cached;
+    }
+
+    if (comp.geometryData) {
+      try {
+        const loader = new THREE.BufferGeometryLoader();
+        const parsed = loader.parse(comp.geometryData);
+        if (parsed) {
+          const id = comp.meshId || `mesh_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+          comp.meshId = id;
+          this.registerGeometry(id, parsed);
+          return parsed;
+        }
+      } catch (e) {
+        console.warn(`[ProceduralEngine] Error restoring geometry from geometryData for "${comp.name}":`, e);
+      }
+    }
+
+    return null;
+  }
+
+  /**
    * Translates a ModelSpec into a real Three.js Group with proper transforms,
    * vertex colors, flat-shaded materials, and PSX low-poly geometry.
    */
@@ -507,7 +536,7 @@ export class ProceduralEngine {
         d = 0.01;
         break;
       case 'mesh': {
-        const cachedGeom = (comp as any)?.meshId ? this.getRegisteredGeometry((comp as any).meshId) : null;
+        const cachedGeom = this.resolveComponentGeometry(comp);
         if (cachedGeom) {
           if (!cachedGeom.boundingBox) cachedGeom.computeBoundingBox();
           if (cachedGeom.boundingBox) {
@@ -579,16 +608,6 @@ export class ProceduralEngine {
         d = 0.01;
         break;
       case 'mesh': {
-        const cachedGeom = (comp as any)?.meshId ? this.getRegisteredGeometry((comp as any).meshId) : null;
-        if (cachedGeom) {
-          if (!cachedGeom.boundingBox) cachedGeom.computeBoundingBox();
-          if (cachedGeom.boundingBox) {
-            w = cachedGeom.boundingBox.max.x - cachedGeom.boundingBox.min.x;
-            h = cachedGeom.boundingBox.max.y - cachedGeom.boundingBox.min.y;
-            d = cachedGeom.boundingBox.max.z - cachedGeom.boundingBox.min.z;
-            break;
-          }
-        }
         w = s[0] ?? 1;
         h = s[1] ?? 1;
         d = s[2] ?? 1;
@@ -884,7 +903,7 @@ export class ProceduralEngine {
         break;
       }
       case 'mesh': {
-        const cachedGeom = comp.meshId ? this.getRegisteredGeometry(comp.meshId) : null;
+        const cachedGeom = this.resolveComponentGeometry(comp);
         if (cachedGeom) {
           geom = cachedGeom.clone();
         } else {
@@ -1193,9 +1212,28 @@ export class ProceduralEngine {
 
       if (bakedMesh && (bakedMesh as THREE.Mesh).geometry) {
         const meshId = `baked_csg_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
-        this.registerGeometry(meshId, (bakedMesh as THREE.Mesh).geometry.clone());
+        const clonedGeom = (bakedMesh as THREE.Mesh).geometry.clone();
+        this.registerGeometry(meshId, clonedGeom);
         compA.shape = 'mesh';
         compA.meshId = meshId;
+
+        // Compute and store accurate dimensions of the baked mesh
+        if (!clonedGeom.boundingBox) clonedGeom.computeBoundingBox();
+        if (clonedGeom.boundingBox) {
+          const bbox = clonedGeom.boundingBox;
+          compA.size = [
+            parseFloat((bbox.max.x - bbox.min.x).toFixed(4)),
+            parseFloat((bbox.max.y - bbox.min.y).toFixed(4)),
+            parseFloat((bbox.max.z - bbox.min.z).toFixed(4))
+          ];
+        }
+
+        // Serialize geometry so it persists across sessions, drafts, and JSON project files
+        try {
+          compA.geometryData = clonedGeom.toJSON();
+        } catch (e) {
+          console.warn('[ProceduralEngine] Could not serialize baked geometry:', e);
+        }
       }
     } finally {
       if (group) {

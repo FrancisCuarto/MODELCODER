@@ -191,6 +191,7 @@ export interface ComponentDef {
   shape: ShapePrimitive;
   meshId?: string; // Cache key in ProceduralEngine for custom / imported GLB geometries
   sourceGlbUrl?: string; // Optional origin URL/family for custom mesh
+  geometryData?: any; // Serialized BufferGeometry data (Three.js JSON) for baked CSG or custom meshes to survive reload and project saves
   parentId?: string; // Optional parent component name (for hierarchical transform parenting)
   pivot?: [number, number, number]; // [offsetX, offsetY, offsetZ] in meters relative to shape center (pivot / hinge / articulation origin)
   /**

@@ -146,6 +146,7 @@ export class CatalogBridge {
             shape: 'mesh',
             meshId,
             sourceGlbUrl: modelUrl,
+            geometryData: node.geometry.toJSON(),
             position: [
               parseFloat(worldPos.x.toFixed(3)),
               parseFloat(worldPos.y.toFixed(3)),
