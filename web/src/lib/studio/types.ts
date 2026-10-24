@@ -175,6 +175,15 @@ export interface ArrayModifierDef {
   radialRotateCopies?: boolean; // default true
 }
 
+export type BooleanOperationType = 'difference' | 'union' | 'intersection';
+
+export interface BooleanModifierDef {
+  enabled: boolean;
+  operation: BooleanOperationType;
+  targetComponent: string; // Name of component to subtract, union, or intersect with
+  hideTarget?: boolean; // Automatically hide the cutter / union target mesh (default true)
+}
+
 export type PivotPresetType = 'center' | 'bottom' | 'top' | 'left' | 'right' | 'front' | 'back';
 
 export interface ComponentDef {
@@ -222,6 +231,7 @@ export interface ComponentDef {
   wear?: number; // Parametric surface weathering/grime intensity (0..1)
   normalStrength?: number; // Normal map relief intensity (0..2)
   array?: ArrayModifierDef;
+  boolean?: BooleanModifierDef;
 }
 
 // ---------------------------------------------------------------------------

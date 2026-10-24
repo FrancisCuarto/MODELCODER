@@ -2524,6 +2524,8 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
           ${isChild ? `<span class="outliner-hierarchy-glyph" title="Hijo de ${escapeHtml(comp.parentId!)}">↳</span>` : ''}
           <span class="outliner-shape-badge" title="Tipo: ${comp.shape}">${shapeIcon} ${comp.shape.toUpperCase()}</span>
           <span class="outliner-name-label">${escapeHtml(comp.name)}</span>
+          ${comp.boolean?.enabled ? `<span class="outliner-bool-tag" title="Booleana: ${comp.boolean.operation || 'difference'} con ${escapeHtml(comp.boolean.targetComponent || '')}">✂️</span>` : ''}
+          ${comp.array?.enabled ? `<span class="outliner-array-tag" title="Array: ×${comp.array.count || 2}">▦×${comp.array.count || 2}</span>` : ''}
           ${isChild ? `<span class="outliner-parent-tag" title="Vinculado al padre: ${escapeHtml(comp.parentId!)}">@${escapeHtml(comp.parentId!)}</span>` : ''}
         </div>
         <div class="outliner-item-actions">
@@ -2917,6 +2919,7 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     const isOpen = (secId: string) => inspectorSectionsOpen[secId] !== false;
     const activeTexBadge = comp.texturePreset ? escapeHtml(comp.texturePreset) : 'color plano';
 
+    const otherComponents = currentSpec.components.filter((_, idx) => idx !== selectedComponentIndex);
     const parentOptionsHtml = currentSpec.components
       .filter((other) => other.name !== comp.name && !ProceduralEngine.wouldCreateCycle(currentSpec.components, comp.name, other.name))
       .map((other) => {
@@ -2974,6 +2977,9 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
         </button>
         <button type="button" class="insp-tab-pill ${isOpen('array') ? 'active' : ''}" data-toggle-sec="array" title="Expandir/contraer Modificador Array (Repetición Lineal y Radial)">
           ▦ Array
+        </button>
+        <button type="button" class="insp-tab-pill ${isOpen('boolean') ? 'active' : ''}" data-toggle-sec="boolean" title="Expandir/contraer Operaciones Booleanas CSG (Corte, Unión, Intersección)">
+          ✂️ Booleana
         </button>
         <button type="button" class="insp-tab-pill ${isOpen('animation') ? 'active' : ''}" data-toggle-sec="animation" title="Expandir/contraer Pistas de Animación de esta pieza">
           🎬 Anim.
@@ -3370,7 +3376,139 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
         </div>
       </div>
 
-      <!-- SECTION 6: ANIMACIÓN -->
+      <!-- SECTION 6: MODIFICADOR ARRAY (REPETICIÓN) -->
+      <div class="prop-section collapsible-section ps1-inset ${isOpen('array') ? 'is-open' : 'is-collapsed'}" data-sec-id="array">
+        <div class="section-titlebar section-toggle-header" data-sec-target="array" role="button" tabindex="0" aria-expanded="${isOpen('array')}">
+          <span class="section-badge">6</span>
+          <span class="section-heading">MODIFICADOR ARRAY (REPETICIÓN)</span>
+          <span class="sec-chevron">${isOpen('array') ? '▼' : '▶'}</span>
+        </div>
+        <div class="section-body">
+          <div class="bool-header-row">
+            <label class="bool-toggle-label" title="Activar repetición lineal o radial">
+              <input type="checkbox" id="chk-array-enabled" ${comp.array?.enabled ? 'checked' : ''} />
+              <span class="bool-toggle-text">▦ Activar Repetición (Array)</span>
+            </label>
+          </div>
+          <div id="array-controls-wrap" class="array-controls-wrap ${comp.array?.enabled ? '' : 'disabled-wrap'}">
+            <div class="prop-field-block">
+              <label class="field-label">Tipo de Distribución:</label>
+              <div class="bool-ops-grid">
+                <button type="button" class="btn-mini btn-outline btn-array-type ${(!comp.array?.type || comp.array?.type === 'linear') ? 'active' : ''}" data-type="linear">Lineal</button>
+                <button type="button" class="btn-mini btn-outline btn-array-type ${comp.array?.type === 'radial' ? 'active' : ''}" data-type="radial">Radial / Circular</button>
+              </div>
+            </div>
+            <div class="prop-field-block">
+              <label class="field-label">Número de Copias:</label>
+              <input type="number" min="2" max="64" step="1" id="inp-array-count" class="form-input" value="${comp.array?.count || 3}" />
+            </div>
+            <div id="array-linear-fields" style="${comp.array?.type === 'radial' ? 'display: none;' : ''}">
+              <div class="field-label-row">
+                <label class="field-label">Espaciado [X, Y, Z]:</label>
+              </div>
+              <div class="coord-3-grid">
+                <div class="coord-input-wrap">
+                  <span class="axis-tag axis-x">X</span>
+                  <input type="number" step="0.05" id="inp-arr-off-x" class="coord-num-inp" value="${comp.array?.offset?.[0] ?? 0.5}" />
+                </div>
+                <div class="coord-input-wrap">
+                  <span class="axis-tag axis-y">Y</span>
+                  <input type="number" step="0.05" id="inp-arr-off-y" class="coord-num-inp" value="${comp.array?.offset?.[1] ?? 0}" />
+                </div>
+                <div class="coord-input-wrap">
+                  <span class="axis-tag axis-z">Z</span>
+                  <input type="number" step="0.05" id="inp-arr-off-z" class="coord-num-inp" value="${comp.array?.offset?.[2] ?? 0}" />
+                </div>
+              </div>
+            </div>
+            <div id="array-radial-fields" style="${comp.array?.type === 'radial' ? '' : 'display: none;'}">
+              <div class="prop-field-block">
+                <label class="field-label">Eje Radial:</label>
+                <select id="sel-arr-radial-axis" class="form-select">
+                  <option value="y" ${(!comp.array?.radialAxis || comp.array?.radialAxis === 'y') ? 'selected' : ''}>Eje Y (Vertical)</option>
+                  <option value="x" ${comp.array?.radialAxis === 'x' ? 'selected' : ''}>Eje X</option>
+                  <option value="z" ${comp.array?.radialAxis === 'z' ? 'selected' : ''}>Eje Z</option>
+                </select>
+              </div>
+              <div class="prop-field-block">
+                <label class="field-label">Radio (distancia al centro):</label>
+                <input type="number" step="0.05" id="inp-arr-radial-radius" class="form-input" value="${comp.array?.radialRadius ?? 1.0}" />
+              </div>
+              <div class="prop-field-block">
+                <label class="field-label">Ángulo de Cobertura (°):</label>
+                <input type="number" step="15" min="1" max="360" id="inp-arr-radial-angle" class="form-input" value="${comp.array?.radialAngle ?? 360}" />
+              </div>
+            </div>
+            <div class="bool-actions-row" style="margin-top: 0.6rem;">
+              <button type="button" id="btn-unroll-array" class="btn-ps1-block" title="Desglosar copias en piezas independientes individuales">
+                Desglosar a Piezas Individuales
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION 7: OPERACIONES BOOLEANAS (CSG) -->
+      <div class="prop-section collapsible-section ps1-inset ${isOpen('boolean') ? 'is-open' : 'is-collapsed'}" data-sec-id="boolean">
+        <div class="section-titlebar section-toggle-header" data-sec-target="boolean" role="button" tabindex="0" aria-expanded="${isOpen('boolean')}">
+          <span class="section-badge">7</span>
+          <span class="section-heading">OPERACIONES BOOLEANAS (CSG)</span>
+          <span class="sec-chevron">${isOpen('boolean') ? '▼' : '▶'}</span>
+        </div>
+
+        <div class="section-body">
+          <div class="bool-header-row">
+            <label class="bool-toggle-label" title="Activar operación booleana en esta pieza">
+              <input type="checkbox" id="chk-bool-enabled" ${comp.boolean?.enabled ? 'checked' : ''} />
+              <span class="bool-toggle-text">✂️ Activar Modificador Booleano</span>
+            </label>
+          </div>
+
+          <div id="bool-controls-wrap" class="bool-controls-wrap ${comp.boolean?.enabled ? '' : 'disabled-wrap'}">
+            <!-- Selector de Operación: Diferencia, Unión, Intersección -->
+            <div class="prop-field-block">
+              <label class="field-label">Tipo de Operación:</label>
+              <div class="bool-ops-grid">
+                <button type="button" class="btn-mini btn-outline btn-bool-op ${(!comp.boolean?.operation || comp.boolean?.operation === 'difference') ? 'active' : ''}" data-op="difference" title="Diferencia: sustrae y corta huecos o perforaciones con la pieza objetivo">
+                  ➖ Corte
+                </button>
+                <button type="button" class="btn-mini btn-outline btn-bool-op ${comp.boolean?.operation === 'union' ? 'active' : ''}" data-op="union" title="Unión: fusiona ambas piezas en un único volumen continuo">
+                  ➕ Unión
+                </button>
+                <button type="button" class="btn-mini btn-outline btn-bool-op ${comp.boolean?.operation === 'intersection' ? 'active' : ''}" data-op="intersection" title="Intersección: conserva solo el volumen compartido donde se tocan">
+                  ✖ Intersec.
+                </button>
+              </div>
+            </div>
+
+            <!-- Selector de Pieza Objetivo -->
+            <div class="prop-field-block">
+              <label class="field-label">Pieza Objetivo (Cortadora / Fusión):</label>
+              <select id="select-bool-target" class="form-select bool-target-select">
+                <option value="">-- Seleccionar pieza --</option>
+                ${otherComponents.map(c => `<option value="${c.name}" ${comp.boolean?.targetComponent === c.name ? 'selected' : ''}>${c.name} (${c.shape})</option>`).join('')}
+              </select>
+            </div>
+
+            <!-- Ocultar cortadora -->
+            <div class="prop-field-block">
+              <label class="lock-proportions-toggle" title="Ocultar la pieza cortadora del render final">
+                <input type="checkbox" id="chk-bool-hide-target" ${comp.boolean?.hideTarget !== false ? 'checked' : ''} />
+                <span>Ocultar pieza cortadora</span>
+              </label>
+            </div>
+
+            <!-- Botón Hornear / Bake -->
+            <div class="bool-actions-row" style="margin-top: 0.6rem;">
+              <button type="button" id="btn-bake-boolean" class="btn-ps1-block btn-bake-bool" title="Hornear permanentemente el corte/unión en una malla estanca única">
+                🍳 Hornear a Malla Única
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION 8: ANIMACIÓN -->
       <div class="prop-section collapsible-section ps1-inset ${isOpen('animation') ? 'is-open' : 'is-collapsed'}" data-sec-id="animation">
         <div class="section-titlebar section-toggle-header" data-sec-target="animation" role="button" tabindex="0" aria-expanded="${isOpen('animation')}">
           <span class="section-badge">6</span>
@@ -4810,7 +4948,160 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
       renderCurrentSpec('visual', true, false);
     });
 
-    // Section 6: Animation & Mechanics logic for this component
+    // Section 6: Array Modifier
+    const chkArrayEnabled = document.getElementById('chk-array-enabled') as HTMLInputElement | null;
+    const inpArrayCount = document.getElementById('inp-array-count') as HTMLInputElement | null;
+    const inpArrOffX = document.getElementById('inp-arr-off-x') as HTMLInputElement | null;
+    const inpArrOffY = document.getElementById('inp-arr-off-y') as HTMLInputElement | null;
+    const inpArrOffZ = document.getElementById('inp-arr-off-z') as HTMLInputElement | null;
+    const selArrRadialAxis = document.getElementById('sel-arr-radial-axis') as HTMLSelectElement | null;
+    const inpArrRadialRadius = document.getElementById('inp-arr-radial-radius') as HTMLInputElement | null;
+    const inpArrRadialAngle = document.getElementById('inp-arr-radial-angle') as HTMLInputElement | null;
+    const btnUnrollArray = document.getElementById('btn-unroll-array');
+
+    chkArrayEnabled?.addEventListener('change', () => {
+      if (!comp.array) {
+        comp.array = { enabled: chkArrayEnabled.checked, type: 'linear', count: 3, offset: [0.5, 0, 0] };
+      } else {
+        comp.array.enabled = chkArrayEnabled.checked;
+      }
+      renderCurrentSpec('visual', true, true);
+    });
+
+    inspectorContentMount?.querySelectorAll('.btn-array-type').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const type = (btn as HTMLElement).dataset.type as 'linear' | 'radial';
+        if (!type) return;
+        if (!comp.array) {
+          comp.array = { enabled: true, type, count: 3 };
+        } else {
+          comp.array.type = type;
+        }
+        renderCurrentSpec('visual', true, true);
+      });
+    });
+
+    inpArrayCount?.addEventListener('change', () => {
+      const c = parseInt(inpArrayCount.value, 10);
+      if (c >= 2 && c <= 64) {
+        if (!comp.array) comp.array = { enabled: true, type: 'linear', count: c };
+        else comp.array.count = c;
+        renderCurrentSpec('visual', true, false);
+      }
+    });
+
+    const updateArrayOffset = () => {
+      if (!comp.array) comp.array = { enabled: true, type: 'linear', count: 3 };
+      comp.array.offset = [
+        parseFloat(inpArrOffX?.value || '0.5'),
+        parseFloat(inpArrOffY?.value || '0'),
+        parseFloat(inpArrOffZ?.value || '0')
+      ];
+      renderCurrentSpec('visual', true, false);
+    };
+    inpArrOffX?.addEventListener('change', updateArrayOffset);
+    inpArrOffY?.addEventListener('change', updateArrayOffset);
+    inpArrOffZ?.addEventListener('change', updateArrayOffset);
+
+    selArrRadialAxis?.addEventListener('change', () => {
+      if (!comp.array) comp.array = { enabled: true, type: 'radial', count: 4 };
+      comp.array.radialAxis = (selArrRadialAxis.value || 'y') as any;
+      renderCurrentSpec('visual', true, false);
+    });
+
+    inpArrRadialRadius?.addEventListener('change', () => {
+      if (!comp.array) comp.array = { enabled: true, type: 'radial', count: 4 };
+      comp.array.radialRadius = parseFloat(inpArrRadialRadius.value || '1.0');
+      renderCurrentSpec('visual', true, false);
+    });
+
+    inpArrRadialAngle?.addEventListener('change', () => {
+      if (!comp.array) comp.array = { enabled: true, type: 'radial', count: 4 };
+      comp.array.radialAngle = parseFloat(inpArrRadialAngle.value || '360');
+      renderCurrentSpec('visual', true, false);
+    });
+
+    btnUnrollArray?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (!comp.array?.enabled) return;
+      currentSpec = ProceduralEngine.unrollArrayModifier(currentSpec, selectedComponentIndex!);
+      pushHistoryState(currentSpec);
+      renderCurrentSpec('visual', true, true);
+      showStudioToast('▦ Array desglosado en piezas independientes');
+    });
+
+    // Section 7: Boolean CSG operations
+    const chkBoolEnabled = document.getElementById('chk-bool-enabled') as HTMLInputElement | null;
+    const selectBoolTarget = document.getElementById('select-bool-target') as HTMLSelectElement | null;
+    const chkBoolHideTarget = document.getElementById('chk-bool-hide-target') as HTMLInputElement | null;
+    const btnBakeBoolean = document.getElementById('btn-bake-boolean');
+
+    chkBoolEnabled?.addEventListener('change', () => {
+      const otherComps = currentSpec.components.filter((_, idx) => idx !== selectedComponentIndex);
+      const firstOther = otherComps[0]?.name || '';
+      if (!comp.boolean) {
+        comp.boolean = {
+          enabled: chkBoolEnabled.checked,
+          operation: 'difference',
+          targetComponent: firstOther,
+          hideTarget: true
+        };
+      } else {
+        comp.boolean.enabled = chkBoolEnabled.checked;
+        if (!comp.boolean.targetComponent && firstOther) {
+          comp.boolean.targetComponent = firstOther;
+        }
+      }
+      renderCurrentSpec('visual', true, true);
+    });
+
+    inspectorContentMount?.querySelectorAll('.btn-bool-op').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const op = (btn as HTMLElement).dataset.op as any;
+        if (!op) return;
+        const otherComps = currentSpec.components.filter((_, idx) => idx !== selectedComponentIndex);
+        const firstOther = otherComps[0]?.name || '';
+        if (!comp.boolean) {
+          comp.boolean = { enabled: true, operation: op, targetComponent: firstOther, hideTarget: true };
+        } else {
+          comp.boolean.operation = op;
+        }
+        renderCurrentSpec('visual', true, true);
+      });
+    });
+
+    selectBoolTarget?.addEventListener('change', () => {
+      const target = selectBoolTarget.value;
+      if (!comp.boolean) {
+        comp.boolean = { enabled: true, operation: 'difference', targetComponent: target, hideTarget: true };
+      } else {
+        comp.boolean.targetComponent = target;
+      }
+      renderCurrentSpec('visual', true, true);
+    });
+
+    chkBoolHideTarget?.addEventListener('change', () => {
+      if (comp.boolean) {
+        comp.boolean.hideTarget = chkBoolHideTarget.checked;
+        renderCurrentSpec('visual', true, true);
+      }
+    });
+
+    btnBakeBoolean?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (!comp.boolean?.targetComponent) {
+        showStudioToast('⚠️ Selecciona primero una pieza objetivo para la booleana', true);
+        return;
+      }
+      currentSpec = ProceduralEngine.bakeBooleanOperation(currentSpec, selectedComponentIndex!, true);
+      pushHistoryState(currentSpec);
+      renderCurrentSpec('visual', true, true);
+      showStudioToast('🍳 Booleana horneada con éxito a malla única');
+    });
+
+    // Section 8: Animation & Mechanics logic for this component
     const animsWrap = document.getElementById('inspector-comp-anims-wrap');
     const btnQuickAddAnim = document.getElementById('btn-quick-add-anim');
 
@@ -9064,6 +9355,89 @@ if __name__ == "__main__":
     border-color: var(--ps1-gold);
     color: var(--ps1-gold);
     background: #15243d;
+  }
+
+  /* Boolean & Array Blocks */
+  .bool-header-row {
+    margin-bottom: 0.5rem;
+  }
+  .bool-toggle-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: var(--font-pixel);
+    font-size: 0.68rem;
+    color: var(--ps1-cyan);
+    cursor: pointer;
+  }
+  .bool-ops-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.3rem;
+    margin-top: 0.25rem;
+  }
+  .btn-bool-op, .btn-array-type {
+    font-size: 0.62rem;
+    padding: 0.25rem 0.2rem;
+    background: #091122;
+    border: 1px solid #1e293b;
+    color: #94a3b8;
+    cursor: pointer;
+    text-align: center;
+    white-space: nowrap;
+    transition: all 0.12s ease;
+  }
+  .btn-bool-op:hover, .btn-array-type:hover {
+    border-color: var(--ps1-cyan);
+    color: #fff;
+  }
+  .btn-bool-op.active, .btn-array-type.active {
+    background: var(--ps1-cyan);
+    color: #000;
+    font-weight: bold;
+    border-color: var(--ps1-cyan);
+  }
+  .bool-target-select {
+    width: 100%;
+    margin-top: 0.25rem;
+  }
+  .btn-bake-bool {
+    background: #0f1c33;
+    border: 1px solid var(--ps1-gold);
+    color: var(--ps1-gold);
+    font-family: var(--font-pixel);
+    font-size: 0.65rem;
+    padding: 0.35rem 0.5rem;
+    cursor: pointer;
+    width: 100%;
+    transition: all 0.15s ease;
+  }
+  .btn-bake-bool:hover {
+    background: var(--ps1-gold);
+    color: #000;
+    font-weight: bold;
+  }
+  .disabled-wrap {
+    opacity: 0.45;
+    pointer-events: none;
+  }
+  .outliner-bool-tag {
+    font-size: 0.55rem;
+    background: rgba(0, 255, 204, 0.2);
+    border: 1px solid var(--ps1-cyan);
+    color: var(--ps1-cyan);
+    padding: 0 0.25rem;
+    border-radius: 2px;
+    margin-left: 0.25rem;
+  }
+  .outliner-array-tag {
+    font-size: 0.55rem;
+    background: rgba(255, 215, 0, 0.2);
+    border: 1px solid var(--ps1-gold);
+    color: var(--ps1-gold);
+    padding: 0 0.25rem;
+    border-radius: 2px;
+    margin-left: 0.25rem;
   }
 
   /* Gizmo Toolbar */

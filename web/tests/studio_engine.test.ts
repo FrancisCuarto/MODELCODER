@@ -3022,6 +3022,167 @@ test('Precision Alignment: alignComponentToParentFace alinea hijo a caras del pa
   assert.equal(Math.abs(boundsFront.min.z - 1.0) < 0.002, true, 'El hijo debe apoyarse en la cara frontal del padre');
 });
 
+test('Boolean Operations: Difference (Sustracción) corta un orificio cilíndrico en una caja', async () => {
+  const { ProceduralEngine } = await import('../src/lib/studio/procedural-engine.ts');
+
+  const spec: any = {
+    id: 'test.boolean.difference',
+    name: 'Caja con Orificio',
+    units: 'meters',
+    dimensions: { width: 2, depth: 2, height: 2 },
+    components: [
+      {
+        name: 'bloque',
+        shape: 'box',
+        size: [2, 2, 2],
+        position: [0, 1, 0],
+        boolean: {
+          enabled: true,
+          operation: 'difference',
+          targetComponent: 'perforador',
+          hideTarget: true
+        }
+      },
+      {
+        name: 'perforador',
+        shape: 'cylinder',
+        size: [0.5, 0.5, 4, 16],
+        position: [0, 1, 0]
+      }
+    ]
+  };
+
+  const { group, stats } = ProceduralEngine.buildModelFromSpec(spec);
+  assert.ok(group);
+
+  const bloqueMesh = group.children.find((c: any) => c.name === 'bloque') as any;
+  const perforadorMesh = group.children.find((c: any) => c.name === 'perforador') as any;
+
+  assert.ok(bloqueMesh, 'El bloque debe existir en la escena');
+  assert.ok(perforadorMesh, 'El perforador debe existir en la escena');
+  assert.equal(perforadorMesh.visible, false, 'El cortador debe quedar oculto');
+
+  // Una caja estándar tiene 12 triángulos. Al sustraer un cilindro de 16 segmentos, tiene > 80 triángulos.
+  const triCount = bloqueMesh.geometry.index.count / 3;
+  assert.ok(triCount > 50, `El bloque cortado debe tener más triángulos que una caja estándar (actual: ${triCount})`);
+
+  ProceduralEngine.disposeHierarchy(group);
+});
+
+test('Boolean Operations: Union e Intersección generan geometrías CSG válidas', async () => {
+  const { ProceduralEngine } = await import('../src/lib/studio/procedural-engine.ts');
+
+  // 1. Unión
+  const unionSpec: any = {
+    id: 'test.boolean.union',
+    name: 'Unión de Piezas',
+    units: 'meters',
+    dimensions: { width: 3, depth: 1, height: 1 },
+    components: [
+      {
+        name: 'caja_a',
+        shape: 'box',
+        size: [1, 1, 1],
+        position: [0, 0.5, 0],
+        boolean: {
+          enabled: true,
+          operation: 'union',
+          targetComponent: 'caja_b',
+          hideTarget: true
+        }
+      },
+      {
+        name: 'caja_b',
+        shape: 'box',
+        size: [1, 1, 1],
+        position: [0.5, 0.5, 0]
+      }
+    ]
+  };
+
+  const { group: groupUnion } = ProceduralEngine.buildModelFromSpec(unionSpec);
+  const meshUnion = groupUnion.children.find((c: any) => c.name === 'caja_a') as any;
+  assert.ok(meshUnion.geometry.index.count > 0, 'La geometría unida debe tener triángulos');
+  ProceduralEngine.disposeHierarchy(groupUnion);
+
+  // 2. Intersección
+  const intersectSpec: any = {
+    id: 'test.boolean.intersection',
+    name: 'Intersección',
+    units: 'meters',
+    dimensions: { width: 1, depth: 1, height: 1 },
+    components: [
+      {
+        name: 'caja_1',
+        shape: 'box',
+        size: [1, 1, 1],
+        position: [0, 0.5, 0],
+        boolean: {
+          enabled: true,
+          operation: 'intersection',
+          targetComponent: 'caja_2',
+          hideTarget: true
+        }
+      },
+      {
+        name: 'caja_2',
+        shape: 'box',
+        size: [1, 1, 1],
+        position: [0.3, 0.5, 0]
+      }
+    ]
+  };
+
+  const { group: groupIntersect } = ProceduralEngine.buildModelFromSpec(intersectSpec);
+  const meshIntersect = groupIntersect.children.find((c: any) => c.name === 'caja_1') as any;
+  assert.ok(meshIntersect.geometry.index.count > 0, 'La geometría intersección debe ser válida');
+  ProceduralEngine.disposeHierarchy(groupIntersect);
+});
+
+test('Boolean Operations: bakeBooleanOperation convierte la booleana a shape mesh y elimina la pieza cortadora', async () => {
+  const { ProceduralEngine } = await import('../src/lib/studio/procedural-engine.ts');
+
+  const spec: any = {
+    id: 'test.boolean.bake',
+    name: 'Bake Booleana',
+    units: 'meters',
+    dimensions: { width: 2, depth: 2, height: 2 },
+    components: [
+      {
+        name: 'base_bloque',
+        shape: 'box',
+        size: [2, 2, 2],
+        position: [0, 1, 0],
+        boolean: {
+          enabled: true,
+          operation: 'difference',
+          targetComponent: 'broca_cilindro'
+        }
+      },
+      {
+        name: 'broca_cilindro',
+        shape: 'cylinder',
+        size: [0.4, 0.4, 3, 16],
+        position: [0, 1, 0]
+      }
+    ]
+  };
+
+  const bakedSpec = ProceduralEngine.bakeBooleanOperation(spec, 0, true);
+  assert.equal(bakedSpec.components.length, 1, 'Debe quedar sólo 1 componente tras hornear y eliminar la cortadora');
+  assert.equal(bakedSpec.components[0].name, 'base_bloque');
+  assert.equal(bakedSpec.components[0].shape, 'mesh');
+  assert.ok(bakedSpec.components[0].meshId, 'Debe tener un meshId registrado');
+  assert.equal(bakedSpec.components[0].boolean, undefined, 'El modificador debe eliminarse al hornear');
+
+  // Verificar que el spec horneado se construye y renderiza correctamente
+  const { group } = ProceduralEngine.buildModelFromSpec(bakedSpec);
+  assert.ok(group);
+  const bakedObj = group.children[0] as any;
+  assert.ok(bakedObj.geometry.index.count / 3 > 50, 'La malla horneada debe conservar los cortes');
+  ProceduralEngine.disposeHierarchy(group);
+});
+
 // Teardown: ensure Node exits cleanly after tests
 test('Teardown: Exit cleanly', () => {
   setTimeout(() => process.exit(0), 100);

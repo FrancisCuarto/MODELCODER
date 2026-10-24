@@ -1,5 +1,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
+import { Evaluator, Brush, SUBTRACTION, ADDITION, INTERSECTION } from 'three-bvh-csg';
+import type { BooleanOperationType } from './types.ts';
 import type { ModelSpec, ComponentDef, GeometricStats, ShapePrimitive, PivotPresetType } from './types.ts';
 import { TextureLibrary } from './texture-library.ts';
 
@@ -627,6 +629,28 @@ export class ProceduralEngine {
       }
     }
 
+    // Apply non-destructive Boolean (CSG) modifiers
+    for (let i = 0; i < spec.components.length; i++) {
+      const comp = spec.components[i];
+      if (
+        comp.boolean &&
+        comp.boolean.enabled &&
+        comp.boolean.targetComponent &&
+        comp.boolean.targetComponent !== comp.name &&
+        meshMap.has(comp.name) &&
+        meshMap.has(comp.boolean.targetComponent)
+      ) {
+        const meshA = meshMap.get(comp.name)!;
+        const meshB = meshMap.get(comp.boolean.targetComponent)!;
+
+        this.applyBooleanToMesh(meshA, meshB, comp.boolean.operation);
+
+        if (comp.boolean.hideTarget !== false) {
+          meshB.visible = false;
+        }
+      }
+    }
+
     // Measure real geometry statistics
     const stats = this.computeGroupStats(group);
 
@@ -981,6 +1005,120 @@ export class ProceduralEngine {
   /**
    * Creates a watertight hollow pipe (cylinder with concentric bore) using ExtrudeGeometry.
    */
+  /**
+   * Evaluates a Boolean CSG operation (difference, union, intersection) between two meshes.
+   * Updates meshA's geometry in its local coordinate space.
+   */
+  public static applyBooleanToMesh(
+    meshA: THREE.Object3D,
+    meshB: THREE.Object3D,
+    operation: BooleanOperationType = 'difference'
+  ): void {
+    if (!meshA || !meshB) return;
+
+    meshA.updateWorldMatrix(true, false);
+    meshB.updateWorldMatrix(true, false);
+
+    let actualMeshA: THREE.Mesh | null = null;
+    let actualMeshB: THREE.Mesh | null = null;
+
+    meshA.traverse((child) => {
+      if (!actualMeshA && (child as THREE.Mesh).isMesh && (child as THREE.Mesh).geometry) {
+        actualMeshA = child as THREE.Mesh;
+      }
+    });
+
+    meshB.traverse((child) => {
+      if (!actualMeshB && (child as THREE.Mesh).isMesh && (child as THREE.Mesh).geometry) {
+        actualMeshB = child as THREE.Mesh;
+      }
+    });
+
+    if (!actualMeshA || !actualMeshB) return;
+
+    try {
+      const invA = actualMeshA.matrixWorld.clone().invert();
+      const relB = new THREE.Matrix4().multiplyMatrices(invA, actualMeshB.matrixWorld);
+
+      const brushA = new Brush(actualMeshA.geometry.clone(), actualMeshA.material);
+      const brushB = new Brush(actualMeshB.geometry.clone(), actualMeshB.material);
+
+      brushA.matrix.identity();
+      brushA.matrixAutoUpdate = false;
+
+      brushB.matrix.copy(relB);
+      brushB.matrixAutoUpdate = false;
+
+      let opCode = SUBTRACTION;
+      if (operation === 'union') opCode = ADDITION;
+      else if (operation === 'intersection') opCode = INTERSECTION;
+
+      const evaluator = new Evaluator();
+      evaluator.useGroups = false;
+      const result = evaluator.evaluate(brushA, brushB, opCode);
+
+      if (result && result.geometry) {
+        result.geometry.computeVertexNormals();
+        actualMeshA.geometry = result.geometry;
+      }
+    } catch (err) {
+      console.warn('[ProceduralEngine] Error al evaluar operación booleana CSG:', err);
+    }
+  }
+
+  /**
+   * Bakes a Boolean CSG modifier into a permanent custom mesh ('shape: mesh').
+   * Registers the resulting geometry and optionally deletes the cutter target component.
+   */
+  public static bakeBooleanOperation(
+    spec: ModelSpec,
+    compIndex: number,
+    deleteTarget: boolean = true
+  ): ModelSpec {
+    if (compIndex < 0 || compIndex >= spec.components.length) return spec;
+    const copy: ModelSpec = JSON.parse(JSON.stringify(spec));
+    const compA = copy.components[compIndex];
+    if (!compA || !compA.boolean || !compA.boolean.targetComponent) return spec;
+
+    const targetName = compA.boolean.targetComponent;
+
+    let group: THREE.Group | null = null;
+    try {
+      const built = this.buildModelFromSpec(copy);
+      group = built.group;
+
+      let bakedMesh: THREE.Mesh | null = null;
+      group.traverse((obj) => {
+        if (!bakedMesh && obj.userData && obj.userData.componentIndex === compIndex) {
+          obj.traverse((child) => {
+            if (!bakedMesh && (child as THREE.Mesh).isMesh && (child as THREE.Mesh).geometry) {
+              bakedMesh = child as THREE.Mesh;
+            }
+          });
+        }
+      });
+
+      if (bakedMesh && (bakedMesh as THREE.Mesh).geometry) {
+        const meshId = `baked_csg_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+        this.registerGeometry(meshId, (bakedMesh as THREE.Mesh).geometry.clone());
+        compA.shape = 'mesh';
+        compA.meshId = meshId;
+      }
+    } finally {
+      if (group) {
+        this.disposeHierarchy(group);
+      }
+    }
+
+    delete compA.boolean;
+
+    if (deleteTarget) {
+      copy.components = copy.components.filter((c) => c.name !== targetName);
+    }
+
+    return copy;
+  }
+
   public static createPipeGeometry(
     rOuter: number,
     rInner: number,
