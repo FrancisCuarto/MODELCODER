@@ -479,6 +479,24 @@ test('AIGenerator: Synthesizer genera estación de soldadura industrial detallad
   assert.ok(normalized.components[1].position[1] >= 0, 'Las patas deben descansar en el suelo');
 });
 
+test('AIGenerator: Synthesizer genera estación de recarga de oxígeno y trajes completa con tanques y display', () => {
+  const oxSpec = AIGenerator.synthesizeProceduralSpec('maquina con pantalla que sirve para llenar con oxigeno los trajes');
+  assert.equal(oxSpec.id, 'below_nominal.station.oxygen_recharge_station');
+  assert.ok(oxSpec.components.length >= 18, `Debe tener al menos 18 piezas detalladas, tiene ${oxSpec.components.length}`);
+
+  const names = oxSpec.components.map(c => c.name);
+  assert.ok(names.includes('heavy_base'), 'Debe incluir base pesada');
+  assert.ok(names.includes('main_cabinet'), 'Debe incluir gabinete principal');
+  assert.ok(names.includes('tank_left') && names.includes('tank_right'), 'Debe incluir tanques de oxígeno dobles');
+  assert.ok(names.includes('screen_display'), 'Debe incluir pantalla digital');
+  assert.ok(names.includes('gauge_o2_flow'), 'Debe incluir manómetro de flujo');
+  assert.ok(names.includes('emergency_valve'), 'Debe incluir válvula de corte de emergencia');
+  assert.ok(names.includes('hose_eva_left'), 'Debe incluir manguera flexible de recarga EVA');
+
+  const normalized = AIGenerator.normalizeSpecGeometry(oxSpec);
+  assert.ok(normalized.components.length >= 18);
+});
+
 test('AIGenerator: normalizeSpecGeometry preserva y valida primitivas avanzadas, jerarquía, pivotes y modificadores', () => {
   const advancedSpec: ModelSpec = {
     id: 'test.advanced.mech',

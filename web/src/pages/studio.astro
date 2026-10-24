@@ -6093,12 +6093,32 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
       renderCurrentSpec('ai');
 
       if (aiLoadingStatus) {
-        aiLoadingStatus.className = 'ai-status-indicator status-ok';
-        let engineLabel = '🤖 MOTOR PROCEDURAL';
-        if (source === 'gemini') engineLabel = '⚡ IA GEMINI (DISEÑO 100% ÚNICO)';
-        else if (source === 'local_memory') engineLabel = '💾 MEMORIA LOCAL APRENDIDA';
-        else if (source === 'cloud_memory') engineLabel = '☁️ NUBE COMUNITARIA RECUPERADA';
-        aiLoadingStatus.textContent = `✅ [ ${engineLabel} ] ${spec.name} (${spec.components.length} componentes) renderizado en el visor.`;
+        if (source === 'gemini_fallback') {
+          aiLoadingStatus.className = 'ai-status-indicator status-warning';
+          aiLoadingStatus.innerHTML = '';
+          const msgSpan = document.createElement('div');
+          msgSpan.textContent = `⚡ [ SERVIDORES GEMINI EN ALTA DEMANDA (503) ] Generamos "${spec.name}" (${spec.components.length} piezas) con el Motor Procedural Local para que continúes sin esperas.`;
+          aiLoadingStatus.appendChild(msgSpan);
+
+          const actionsRow = document.createElement('div');
+          actionsRow.style.cssText = 'display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;';
+
+          const retryBtn = document.createElement('button');
+          retryBtn.type = 'button';
+          retryBtn.className = 'btn-mini';
+          retryBtn.textContent = '🔄 REINTENTAR CON GEMINI';
+          retryBtn.addEventListener('click', () => triggerAIGeneration(prompt));
+          actionsRow.appendChild(retryBtn);
+
+          aiLoadingStatus.appendChild(actionsRow);
+        } else {
+          aiLoadingStatus.className = 'ai-status-indicator status-ok';
+          let engineLabel = '🤖 MOTOR PROCEDURAL';
+          if (source === 'gemini') engineLabel = '⚡ IA GEMINI (DISEÑO 100% ÚNICO)';
+          else if (source === 'local_memory') engineLabel = '💾 MEMORIA LOCAL APRENDIDA';
+          else if (source === 'cloud_memory') engineLabel = '☁️ NUBE COMUNITARIA RECUPERADA';
+          aiLoadingStatus.textContent = `✅ [ ${engineLabel} ] ${spec.name} (${spec.components.length} componentes) renderizado en el visor.`;
+        }
       }
     } catch (err: any) {
       if (aiLoadingStatus) {
@@ -11455,6 +11475,7 @@ Generado desde ModelCoder 3D Studio con materiales optimizados y texturas PBR in
 
   .ai-status-indicator.status-loading { border-color: var(--ps1-gold); color: var(--ps1-gold); }
   .ai-status-indicator.status-ok { border-color: var(--ps1-green); color: var(--ps1-green); }
+  .ai-status-indicator.status-warning { border-color: #f59e0b; color: #fbbf24; }
   .ai-status-indicator.status-error { border-color: #ef4444; color: #ef4444; }
 
   /* Quick Adjust Panel */

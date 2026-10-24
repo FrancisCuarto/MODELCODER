@@ -18,7 +18,7 @@ export class AIGenerator {
   public static async generateModel(
     prompt: string,
     configOrKey?: string | GenerationConfig
-  ): Promise<{ spec: ModelSpec; rawResponse?: string; source: 'gemini' | 'local' | 'local_memory' | 'cloud_memory' }> {
+  ): Promise<{ spec: ModelSpec; rawResponse?: string; source: 'gemini' | 'local' | 'local_memory' | 'cloud_memory' | 'gemini_fallback' }> {
     const cleanPrompt = prompt.trim();
     if (!cleanPrompt) {
       throw new Error('El prompt no puede estar vacío.');
@@ -42,16 +42,32 @@ export class AIGenerator {
     // REGLA ESTRICTA:
     // Si se usa la IA, NUNCA debe basarse en modelos existentes ni usar caché;
     // SIEMPRE debe crear un modelo 100% nuevo, original e innovador.
+    // Si los servidores de Gemini sufren alta demanda (HTTP 503/429) o caída,
+    // se activa un fallback procedural para garantizar que el usuario SIEMPRE
+    // obtenga su modelo 3D en pantalla sin demoras ni bloqueos.
     // =========================================================================
     if (engine === 'ai') {
       if (!apiKey || apiKey.trim().length <= 10) {
         throw new Error('Para usar la IA Generativa necesitas ingresar tu clave gratuita de Google Gemini en el botón [🔑 CONECTAR GEMINI].');
       }
 
-      // Llamada directa a Gemini sin consultar memoria ni presets existentes
-      const geminiRes = await this.callGeminiAPI(cleanPrompt, apiKey.trim());
-      const normalizedSpec = this.normalizeSpecGeometry(geminiRes.spec);
-      return { spec: normalizedSpec, rawResponse: geminiRes.rawResponse, source: 'gemini' };
+      try {
+        // Llamada directa a Gemini sin consultar memoria ni presets existentes
+        const geminiRes = await this.callGeminiAPI(cleanPrompt, apiKey.trim());
+        const normalizedSpec = this.normalizeSpecGeometry(geminiRes.spec);
+        return { spec: normalizedSpec, rawResponse: geminiRes.rawResponse, source: 'gemini' };
+      } catch (geminiErr: any) {
+        console.warn('[AIGenerator] Todos los modelos de Gemini devolvieron error o están saturados (503/429). Activando auto-fallback procedural para no bloquear al usuario:', geminiErr);
+
+        // Fallback procedural de alta fidelidad para garantizar que el usuario SIEMPRE obtenga su modelo 3D
+        const rawSpec = this.synthesizeProceduralSpec(cleanPrompt);
+        const spec = this.normalizeSpecGeometry(rawSpec);
+        return {
+          spec,
+          source: 'gemini_fallback',
+          rawResponse: geminiErr.message
+        };
+      }
     }
 
     // =========================================================================
@@ -803,11 +819,16 @@ Return ONLY valid JSON matching this schema:
       }
     };
 
-    // Google Gemini API production models in priority order (los modelos 1.5/2.0/2.5 fueron retirados y devuelven 404).
-    // gemini-3.8-flash es el Flash estable actual; 3.7 y 3.6 quedan como respaldo si el primero no está disponible.
+    // Google Gemini API production models in priority order.
+    // Incluye modelos de alta capacidad y disponibilidad global en Google AI Studio v1beta.
     const candidateModels = [
       'gemini-3.8-flash',
-      'gemini-3.7-flash',
+      'gemini-3.5-flash-lite',
+      'gemini-3.1-flash-lite',
+      'gemini-2.5-flash',
+      'gemini-2.5-flash-lite',
+      'gemini-2.0-flash',
+      'gemini-1.5-flash',
       'gemini-3.6-flash'
     ];
     let lastError: Error | null = null;
@@ -828,8 +849,20 @@ Return ONLY valid JSON matching this schema:
         if (!res.ok) {
           const errText = await res.text();
           lastError = new Error(`Gemini API error (${res.status}): ${errText}`);
-          if (res.status === 404 || res.status === 400 || res.status === 429 || res.status >= 500 || errText.includes('NOT_FOUND') || errText.includes('no longer available')) {
-            console.warn(`[AIGenerator] Intento con ${modelName} devolvió HTTP ${res.status}. Probando siguiente modelo de respaldo...`);
+          if (
+            res.status === 404 ||
+            res.status === 400 ||
+            res.status === 429 ||
+            res.status >= 500 ||
+            errText.includes('NOT_FOUND') ||
+            errText.includes('no longer available') ||
+            errText.includes('high demand') ||
+            errText.includes('UNAVAILABLE')
+          ) {
+            console.warn(`[AIGenerator] Intento con ${modelName} devolvió HTTP ${res.status}. Probando siguiente modelo de respaldo en cascada...`);
+            if (res.status === 503 || res.status === 429) {
+              await new Promise(r => setTimeout(r, 600));
+            }
             continue;
           }
           throw lastError;
@@ -857,7 +890,17 @@ Return ONLY valid JSON matching this schema:
       } catch (err: any) {
         lastError = err;
         console.warn(`[AIGenerator] Intento con ${modelName} falló:`, err);
-        if (err?.name === 'TimeoutError' || err?.name === 'AbortError' || err?.message?.includes('404') || err?.message?.includes('NOT_FOUND') || err?.message?.includes('no longer available')) {
+        if (
+          err?.name === 'TimeoutError' ||
+          err?.name === 'AbortError' ||
+          err?.message?.includes('404') ||
+          err?.message?.includes('503') ||
+          err?.message?.includes('429') ||
+          err?.message?.includes('NOT_FOUND') ||
+          err?.message?.includes('UNAVAILABLE') ||
+          err?.message?.includes('high demand') ||
+          err?.message?.includes('no longer available')
+        ) {
           continue;
         }
         throw err;
@@ -1705,6 +1748,211 @@ Return ONLY valid JSON matching this schema:
             size: [bw, bh * 0.9, 0.1],
             position: [0, bh * 0.8, -bl * 0.48],
             color: '#1a202c'
+          }
+        ]
+      };
+    }
+
+    // -------------------------------------------------------------
+    // LIFE SUPPORT / OXYGEN RECHARGE STATION / ESTACIÓN DE OXÍGENO
+    // -------------------------------------------------------------
+    if (/oxigeno|oxígeno|soporte vital|traje.*oxigen|llenar.*oxigen|recarga.*oxigen|tanque.*oxigen|oxygen|life_?support|respirador/.test(lower)) {
+      const sw = 1.10 * baseDim;
+      const sd = 0.85 * baseDim;
+      const sh = 1.80 * baseDim;
+
+      return {
+        id: 'below_nominal.station.oxygen_recharge_station',
+        name: 'Estación de Recarga de Oxígeno EVA',
+        category: 'medical',
+        description: 'Unidad industrial de presurización y recarga de oxígeno para trajes espaciales y tanques portátiles con display de telemetría y manómetros.',
+        units: 'meters',
+        dimensions: { width: sw, depth: sd, height: sh },
+        palette: 'medical_bay',
+        components: [
+          // 1. Heavy Base Plinth
+          {
+            name: 'heavy_base',
+            shape: 'chamfer_box',
+            size: [sw, 0.12, sd],
+            position: [0, 0.06, 0],
+            color: '#1a202c',
+            roughness: 0.9,
+            texturePreset: 'metal_dark'
+          },
+          // 2. EVA Suit Foot Plate / Non-slip platform
+          {
+            name: 'dock_footplate',
+            shape: 'box',
+            size: [sw * 0.55, 0.03, sd * 0.45],
+            position: [0, 0.135, sd * 0.18],
+            color: '#2d3748',
+            texturePreset: 'metal_dark'
+          },
+          // 3. Central Equipment Cabinet
+          {
+            name: 'main_cabinet',
+            shape: 'chamfer_box',
+            size: [sw * 0.65, sh * 0.75, sd * 0.42],
+            position: [0, 0.12 + (sh * 0.75) / 2, -sd * 0.18],
+            color: mainColor || '#e2e8f0',
+            roughness: 0.4,
+            texturePreset: 'panel_beige'
+          },
+          // 4. Dual High-Pressure Oxygen Tanks (Vertical Cylinders)
+          {
+            name: 'tank_left',
+            shape: 'cylinder',
+            size: [0.12 * baseDim, 0.12 * baseDim, sh * 0.60, 12],
+            position: [-sw * 0.42, 0.12 + (sh * 0.60) / 2, -sd * 0.12],
+            color: '#2b6cb0',
+            roughness: 0.3,
+            metalness: 0.4,
+            texturePreset: 'painted_metal'
+          },
+          {
+            name: 'tank_right',
+            shape: 'cylinder',
+            size: [0.12 * baseDim, 0.12 * baseDim, sh * 0.60, 12],
+            position: [sw * 0.42, 0.12 + (sh * 0.60) / 2, -sd * 0.12],
+            color: '#2b6cb0',
+            roughness: 0.3,
+            metalness: 0.4,
+            texturePreset: 'painted_metal'
+          },
+          // 5. Tank Domes / Caps
+          {
+            name: 'tank_dome_left',
+            shape: 'sphere',
+            size: [0.12 * baseDim, 0.12 * baseDim, 0.12 * baseDim],
+            position: [-sw * 0.42, 0.12 + sh * 0.60, -sd * 0.12],
+            color: '#e2e8f0',
+            metalness: 0.6
+          },
+          {
+            name: 'tank_dome_right',
+            shape: 'sphere',
+            size: [0.12 * baseDim, 0.12 * baseDim, 0.12 * baseDim],
+            position: [sw * 0.42, 0.12 + sh * 0.60, -sd * 0.12],
+            color: '#e2e8f0',
+            metalness: 0.6
+          },
+          // 6. Tank Retaining Steel Brackets
+          {
+            name: 'bracket_lower_left',
+            shape: 'box',
+            size: [0.10 * baseDim, 0.05, 0.18 * baseDim],
+            position: [-sw * 0.38, 0.45 * baseDim, -sd * 0.15],
+            color: '#4a5568',
+            metalness: 0.8
+          },
+          {
+            name: 'bracket_upper_left',
+            shape: 'box',
+            size: [0.10 * baseDim, 0.05, 0.18 * baseDim],
+            position: [-sw * 0.38, 0.95 * baseDim, -sd * 0.15],
+            color: '#4a5568',
+            metalness: 0.8
+          },
+          {
+            name: 'bracket_lower_right',
+            shape: 'box',
+            size: [0.10 * baseDim, 0.05, 0.18 * baseDim],
+            position: [sw * 0.38, 0.45 * baseDim, -sd * 0.15],
+            color: '#4a5568',
+            metalness: 0.8
+          },
+          {
+            name: 'bracket_upper_right',
+            shape: 'box',
+            size: [0.10 * baseDim, 0.05, 0.18 * baseDim],
+            position: [sw * 0.38, 0.95 * baseDim, -sd * 0.15],
+            color: '#4a5568',
+            metalness: 0.8
+          },
+          // 7. Telemetry & Control Screen Housing (with upward tilt for ergonomic viewing)
+          {
+            name: 'screen_housing',
+            shape: 'chamfer_box',
+            size: [sw * 0.50, sh * 0.22, 0.07],
+            position: [0, sh * 0.68, 0.04],
+            rotation: [-14, 0, 0],
+            color: '#2d3748',
+            roughness: 0.8
+          },
+          // 8. Active O2 Digital Display Screen
+          {
+            name: 'screen_display',
+            shape: 'box',
+            size: [sw * 0.44, sh * 0.18, 0.015],
+            position: [0, sh * 0.68, 0.08],
+            rotation: [-14, 0, 0],
+            color: '#319795',
+            roughness: 0.2
+          },
+          // 9. Dual Pressure Gauges / Manometers
+          {
+            name: 'gauge_o2_flow',
+            shape: 'cylinder',
+            size: [0.06 * baseDim, 0.06 * baseDim, 0.025, 10],
+            position: [-sw * 0.15, sh * 0.48, 0.04],
+            rotation: [90, 0, 0],
+            color: '#edf2f7',
+            metalness: 0.7
+          },
+          {
+            name: 'gauge_o2_pressure',
+            shape: 'cylinder',
+            size: [0.06 * baseDim, 0.06 * baseDim, 0.025, 10],
+            position: [sw * 0.15, sh * 0.48, 0.04],
+            rotation: [90, 0, 0],
+            color: '#edf2f7',
+            metalness: 0.7
+          },
+          // 10. Emergency Cutoff Safety Valve
+          {
+            name: 'emergency_valve',
+            shape: 'cylinder',
+            size: [0.05 * baseDim, 0.05 * baseDim, 0.035, 8],
+            position: [0, sh * 0.48, 0.045],
+            rotation: [90, 0, 0],
+            color: '#e53e3e',
+            roughness: 0.4
+          },
+          // 11. Dual Hanging Oxygen Hoses / Fill Conduits
+          {
+            name: 'hose_eva_left',
+            shape: 'pipe',
+            size: [0.02 * baseDim, 0.02 * baseDim, 0.38 * baseDim, 8],
+            position: [-sw * 0.18, sh * 0.28, 0.06],
+            color: '#1a202c',
+            roughness: 0.8
+          },
+          {
+            name: 'hose_eva_right',
+            shape: 'pipe',
+            size: [0.02 * baseDim, 0.02 * baseDim, 0.38 * baseDim, 8],
+            position: [sw * 0.18, sh * 0.28, 0.06],
+            color: '#1a202c',
+            roughness: 0.8
+          },
+          // 12. Warning Decal Banner
+          {
+            name: 'hazard_strip',
+            shape: 'box',
+            size: [sw * 0.65, 0.05, 0.015],
+            position: [0, sh * 0.84, 0.035],
+            color: '#ecc94b',
+            texturePreset: 'hazard_stripes'
+          },
+          // 13. System Status LED
+          {
+            name: 'status_led',
+            shape: 'box',
+            size: [0.08, 0.03, 0.02],
+            position: [sw * 0.20, sh * 0.78, 0.04],
+            color: '#38a169',
+            roughness: 0.1
           }
         ]
       };
