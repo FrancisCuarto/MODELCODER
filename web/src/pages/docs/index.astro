@@ -855,20 +855,20 @@ function animate() {
     align-items: center;
     gap: 1.5rem;
     flex-wrap: wrap;
-    background: #090e1a;
+    background: var(--site-surface);
   }
 
   .docs-main-heading {
     font-family: var(--font-pixel);
     font-size: 1.35rem;
-    color: var(--ps1-gold);
+    color: var(--text-bright);
     margin: 0 0 0.35rem 0;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.02em;
   }
 
   .docs-sub-heading {
     font-size: 0.85rem;
-    color: #c0d0e8;
+    color: var(--text-dim);
     margin: 0;
     max-width: 780px;
     line-height: 1.45;
@@ -892,8 +892,8 @@ function animate() {
   /* Sidebar de Navegación */
   .docs-sidebar {
     position: sticky;
-    top: 1rem;
-    max-height: calc(100vh - 2rem);
+    top: 4.5rem;
+    max-height: calc(100vh - 5.5rem);
     display: flex;
     flex-direction: column;
   }
@@ -926,40 +926,41 @@ function animate() {
 
   .nav-group-title {
     font-family: var(--font-pixel);
-    font-size: 0.65rem;
+    font-size: 0.68rem;
     color: var(--ps1-cyan);
-    letter-spacing: 0.05em;
+    letter-spacing: 0.03em;
     padding-bottom: 0.25rem;
-    border-bottom: 1px solid rgba(0, 240, 255, 0.2);
+    border-bottom: 1px solid var(--site-line);
     margin-bottom: 0.2rem;
   }
 
   .docs-nav-item {
     font-size: 0.78rem;
-    color: #9cb2cc;
+    color: var(--text-dim);
     text-decoration: none;
-    padding: 0.25rem 0.4rem;
+    padding: 0.28rem 0.5rem;
     border-left: 2px solid transparent;
+    border-radius: 0 6px 6px 0;
     transition: all 0.12s ease;
   }
 
   .docs-nav-item:hover {
-    color: var(--ps1-gold);
-    border-left-color: var(--ps1-gold);
-    background: rgba(255, 204, 0, 0.06);
+    color: var(--text-bright);
+    border-left-color: var(--site-accent);
+    background: var(--site-well);
     text-decoration: none;
   }
 
   .docs-nav-item.active {
-    color: var(--ps1-gold);
-    border-left-color: var(--ps1-gold);
-    background: rgba(255, 204, 0, 0.08);
-    font-weight: bold;
+    color: var(--site-accent);
+    border-left-color: var(--site-accent);
+    background: rgba(0, 112, 227, 0.08);
+    font-weight: 600;
   }
 
   .highlight-group .nav-group-title {
     color: var(--ps1-gold);
-    border-bottom-color: rgba(255, 204, 0, 0.3);
+    border-bottom-color: var(--site-line);
   }
 
   /* Contenido del Artículo */
@@ -975,8 +976,8 @@ function animate() {
   }
 
   .doc-block {
-    scroll-margin-top: 1.5rem;
-    border-bottom: 1px solid #142036;
+    scroll-margin-top: 5rem;
+    border-bottom: 1px solid var(--site-line);
     padding-bottom: 2rem;
   }
 
@@ -988,9 +989,9 @@ function animate() {
   .doc-h2 {
     font-family: var(--font-pixel);
     font-size: 1.15rem;
-    color: var(--ps1-gold);
+    color: var(--text-bright);
     margin: 0 0 1rem 0;
-    letter-spacing: 0.03em;
+    letter-spacing: 0.01em;
     display: flex;
     align-items: center;
     gap: 0.5rem;
@@ -998,7 +999,7 @@ function animate() {
 
   .doc-p {
     font-size: 0.88rem;
-    color: #c8d8ec;
+    color: var(--text-main);
     line-height: 1.65;
     margin: 0 0 1rem 0;
   }
@@ -1006,15 +1007,16 @@ function animate() {
   .doc-code {
     font-family: var(--font-mono);
     font-size: 0.85em;
-    background: #090e1a;
-    border: 1px solid #203254;
-    color: var(--ps1-cyan);
-    padding: 0.15rem 0.35rem;
+    background: var(--site-well);
+    border: 1px solid var(--site-line);
+    border-radius: 4px;
+    color: var(--site-accent);
+    padding: 0.12rem 0.38rem;
   }
 
   .doc-list, .doc-ordered-list {
     font-size: 0.85rem;
-    color: #b8cde6;
+    color: var(--text-main);
     line-height: 1.6;
     margin: 0 0 1.25rem 1.5rem;
   }
@@ -1027,8 +1029,9 @@ function animate() {
   .doc-table-wrap {
     overflow-x: auto;
     margin: 1rem 0 1.5rem 0;
-    border: 2px inset var(--ps1-steel);
-    background: #070c18;
+    border: 1px solid var(--site-line);
+    border-radius: 10px;
+    background: var(--site-surface);
   }
 
   .doc-table {
@@ -1039,57 +1042,61 @@ function animate() {
   }
 
   .doc-table th {
-    background: #111a2d;
-    color: var(--ps1-gold);
+    background: var(--site-well);
+    color: var(--text-bright);
     font-family: var(--font-pixel);
-    font-size: 0.65rem;
+    font-size: 0.7rem;
     padding: 0.65rem 0.85rem;
-    border-bottom: 2px solid var(--ps1-gold-border);
+    border-bottom: 1px solid var(--site-line);
   }
 
   .doc-table td {
     padding: 0.65rem 0.85rem;
-    border-bottom: 1px solid #162440;
-    color: #c4d4eb;
+    border-bottom: 1px solid var(--site-line);
+    color: var(--text-main);
     vertical-align: top;
   }
 
   .doc-table tr:hover td {
-    background: rgba(0, 240, 255, 0.04);
+    background: var(--site-well);
   }
 
-  /* Bloques de Código */
+  /* Bloques de Código (framed dark Multica showcase) */
   .doc-code-block {
     margin: 1.25rem 0;
-    border: 2px inset var(--ps1-steel);
-    background: #060a14;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 10px;
+    overflow: hidden;
+    background: #111318;
   }
 
   .code-block-header {
-    background: #10192b;
-    border-bottom: 1px solid #1a2a47;
-    padding: 0.4rem 0.75rem;
+    background: #181b22;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 0.45rem 0.85rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-family: var(--font-pixel);
-    font-size: 0.62rem;
-    color: var(--ps1-cyan);
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: #93c5fd;
   }
 
   .btn-copy-code {
-    background: #1a263d;
-    border: 1px solid var(--ps1-cyan);
-    color: var(--ps1-cyan);
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    color: #e2e8f0;
     font-family: var(--font-pixel);
-    font-size: 0.58rem;
-    padding: 0.2rem 0.55rem;
+    font-size: 0.65rem;
+    padding: 0.22rem 0.65rem;
+    border-radius: 999px;
     cursor: pointer;
   }
 
   .btn-copy-code:hover {
-    background: var(--ps1-cyan);
-    color: #000;
+    background: #0070e3;
+    border-color: #0070e3;
+    color: #ffffff;
   }
 
   .doc-code-block pre {
@@ -1099,47 +1106,50 @@ function animate() {
     font-family: var(--font-mono);
     font-size: 0.82rem;
     line-height: 1.5;
-    color: #e2ecfc;
+    color: #e2e8f0;
   }
 
   /* Callouts informativos */
   .doc-callout {
     padding: 1rem 1.25rem;
     margin: 1.25rem 0;
-    border-left: 4px solid var(--ps1-cyan);
-    background: #08101f;
+    border: 1px solid var(--site-line);
+    border-left: 4px solid var(--site-accent);
+    border-radius: 8px;
+    background: var(--site-well);
     font-size: 0.85rem;
-    color: #c4d4ec;
-    box-shadow: inset 1px 1px 0px rgba(0, 240, 255, 0.1);
+    color: var(--text-main);
   }
 
   .doc-callout-tip {
     border-left-color: var(--ps1-gold);
-    background: #121008;
+    background: var(--site-well);
   }
 
   /* Cajas de pasos de tutoriales */
   .doc-step-box {
     margin: 1rem 0;
     padding: 1.2rem;
-    background: #080d1a;
-    border: 1px solid #182845;
+    background: var(--site-well);
+    border: 1px solid var(--site-line);
+    border-radius: 10px;
   }
 
   .step-title {
     font-family: var(--font-pixel);
-    font-size: 0.8rem;
-    color: var(--ps1-gold);
+    font-size: 0.82rem;
+    color: var(--text-bright);
     margin: 0 0 0.6rem 0;
   }
 
   .doc-diagram {
-    background: #050811;
-    border: 1px dashed var(--ps1-cyan-dim);
+    background: #111318;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
     padding: 0.85rem;
     font-family: var(--font-mono);
     font-size: 0.78rem;
-    color: var(--ps1-cyan);
+    color: #7dd3fc;
     margin: 0.5rem 0;
     line-height: 1.4;
     overflow-x: auto;
@@ -1173,12 +1183,12 @@ function animate() {
       navigator.clipboard.writeText(codeText).then(() => {
         const originalText = btn.textContent;
         btn.textContent = '¡Copiado!';
-        btn.style.background = 'var(--ps1-green)';
-        btn.style.color = '#000000';
+        (btn as HTMLElement).style.background = '#059669';
+        (btn as HTMLElement).style.color = '#ffffff';
         setTimeout(() => {
           btn.textContent = originalText;
-          btn.style.background = '';
-          btn.style.color = '';
+          (btn as HTMLElement).style.background = '';
+          (btn as HTMLElement).style.color = '';
         }, 2000);
       });
     });

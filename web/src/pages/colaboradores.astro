@@ -19,7 +19,7 @@ import Layout from '../layouts/Layout.astro';
           Este apartado es exclusivo para el creador y colaboradores autorizados de ModelCoder para publicar modelos 3D directamente en el catálogo sin pasar por GitHub.
         </p>
         <div class="ps1-inset notice-inset">
-          <p style="margin: 0; font-size: 0.85rem; color: #c0d0e0; line-height: 1.5;">
+          <p style="margin: 0; font-size: 0.85rem; color: var(--text-main); line-height: 1.5;">
             🔒 Inicia sesión con tu cuenta de correo o GitHub para verificar tus credenciales de colaborador.
           </p>
         </div>
@@ -33,22 +33,22 @@ import Layout from '../layouts/Layout.astro';
 
     <!-- Pantalla 2: Usuario autenticado pero NO autorizado -->
     <div id="unauthorized-box" class="ps1-window state-window" style="display: none; border-color: var(--ps1-red);">
-      <div class="ps1-titlebar" style="background: linear-gradient(90deg, #440000, #1a0000);">
+      <div class="ps1-titlebar">
         <span>ACCESO DENEGADO · PERMISOS INSUFICIENTES</span>
         <span class="ps1-telemetry-tag" style="color: var(--ps1-red);">ACCESS RESTRICTED</span>
       </div>
       <div class="window-inner-pad">
         <h2 class="state-title" style="color: var(--ps1-red);">CUENTA NO AUTORIZADA</h2>
         <p class="state-desc">
-          Has iniciado sesión como <strong id="unauth-email-text" style="color: #ffffff;"></strong>, pero este identificador aún no se encuentra registrado en la lista de colaboradores.
+          Has iniciado sesión como <strong id="unauth-email-text" style="color: var(--text-bright);"></strong>, pero este identificador aún no se encuentra registrado en la lista de colaboradores.
         </p>
 
         <!-- Desbloqueo rápido para el Creador (FrancisCuarto) en nuevas PCs -->
-        <div class="ps1-inset" style="padding: 1rem; background: #080d1a; border-left: 4px solid var(--ps1-gold); margin-bottom: 1.25rem;">
+        <div class="ps1-inset" style="padding: 1rem; background: var(--site-well); border-left: 4px solid var(--ps1-gold); margin-bottom: 1.25rem;">
           <span style="font-family: var(--font-pixel); font-size: 0.78rem; color: var(--ps1-gold); display: block; margin-bottom: 0.35rem;">
             👑 ¿ERES FRANCISCUARTO EN UNA NUEVA COMPUTADORA?
           </span>
-          <p style="font-size: 0.78rem; color: #b8cde4; line-height: 1.45; margin-bottom: 0.75rem;">
+          <p style="font-size: 0.78rem; color: var(--text-dim); line-height: 1.45; margin-bottom: 0.75rem;">
             Si iniciaste sesión desde otra PC o navegador y GitHub no transmitió tu usuario automáticamente, ingresa tu clave maestra de creador para activar tus permisos de Dueño en este equipo:
           </p>
           <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
@@ -60,8 +60,8 @@ import Layout from '../layouts/Layout.astro';
           <div id="claim-owner-status" style="margin-top: 0.5rem; font-size: 0.75rem; display: none;"></div>
         </div>
 
-        <div class="ps1-inset" style="padding: 1rem; background: #0c0507; border-color: var(--ps1-red); margin-bottom: 1.5rem;">
-          <p style="margin: 0; font-size: 0.82rem; color: #ffb8b8; line-height: 1.5;">
+        <div class="ps1-inset" style="padding: 1rem; background: rgba(220, 38, 38, 0.08); border-color: var(--ps1-red); margin-bottom: 1.5rem;">
+          <p style="margin: 0; font-size: 0.82rem; color: var(--ps1-red); line-height: 1.5;">
             Si eres desarrollador externo o colaborador del proyecto, solicita al creador (Franciscuarto) que agregue tu correo o usuario de GitHub al panel de colaboradores.
           </p>
         </div>
@@ -550,12 +550,12 @@ ON CONFLICT (email) DO NOTHING;</code></pre>
       card.style.borderColor = 'var(--ps1-gold)';
 
       card.innerHTML = `
-        <div class="ps1-titlebar" style="background: linear-gradient(90deg, #332200, #171100);">
+        <div class="ps1-titlebar">
           <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 200px;">SOLICITUD: ${model.name}</span>
           <span class="ps1-telemetry-tag" style="color: var(--ps1-gold);">⏳ REVISIÓN</span>
         </div>
         <div class="model-card-body">
-          <div class="model-preview-box" style="background: #090c14;">
+          <div class="model-preview-box">
             <span class="preview-cube-icon">📦</span>
             <span class="preview-cat-badge">${model.category.toUpperCase()}</span>
           </div>
@@ -655,7 +655,7 @@ ON CONFLICT (email) DO NOTHING;</code></pre>
       const isPublic = model.is_public;
 
       card.innerHTML = `
-        <div class="ps1-titlebar" style="background: ${isPublic ? 'linear-gradient(90deg, #002233, #001122)' : 'linear-gradient(90deg, #332200, #110b00)'}">
+        <div class="ps1-titlebar">
           <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 200px;">${model.name}</span>
           <span class="ps1-telemetry-tag" style="color: ${isPublic ? 'var(--ps1-green)' : 'var(--ps1-gold)'}">
             ${isPublic ? '● EN CATÁLOGO' : '🔒 PRIVADO'}
@@ -744,7 +744,7 @@ ON CONFLICT (email) DO NOTHING;</code></pre>
       const tr = document.createElement('tr');
       const isOwner = c.role === 'owner';
       tr.innerHTML = `
-        <td><strong style="color: #ffffff;">${c.email}</strong></td>
+        <td><strong style="color: var(--text-bright);">${c.email}</strong></td>
         <td>${c.name || '—'}</td>
         <td><span class="role-pill role-${c.role}">${c.role.toUpperCase()}</span></td>
         <td>${c.created_at ? new Date(c.created_at).toLocaleDateString() : 'Activo'}</td>
@@ -826,21 +826,21 @@ ON CONFLICT (email) DO NOTHING;</code></pre>
   .state-title {
     font-family: var(--font-title);
     font-size: 1.25rem;
-    color: var(--ps1-gold);
+    color: var(--text-bright);
     margin-bottom: 0.75rem;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.02em;
   }
 
   .state-desc {
     font-size: 0.88rem;
-    color: #b0c0d8;
+    color: var(--text-dim);
     line-height: 1.55;
     margin-bottom: 1.25rem;
   }
 
   .notice-inset {
     padding: 1rem;
-    background: #080d1a;
+    background: var(--site-well);
   }
 
   /* Header del Dashboard */
@@ -872,7 +872,7 @@ ON CONFLICT (email) DO NOTHING;</code></pre>
   .user-greeting-email {
     font-family: var(--font-title);
     font-size: 1.2rem;
-    color: #ffffff;
+    color: var(--text-bright);
     margin: 0;
   }
 
@@ -884,7 +884,7 @@ ON CONFLICT (email) DO NOTHING;</code></pre>
   .panel-tabs-row {
     display: flex;
     gap: 0.5rem;
-    border-top: 1px solid var(--ps1-steel);
+    border-top: 1px solid var(--site-line);
     padding-top: 1rem;
     flex-wrap: wrap;
   }
@@ -893,23 +893,23 @@ ON CONFLICT (email) DO NOTHING;</code></pre>
     font-family: var(--font-pixel);
     font-size: 0.72rem;
     padding: 0.5rem 1rem;
-    background: #090e1c;
-    border: 1px solid var(--ps1-steel);
-    color: #a0b2cc;
+    background: var(--site-well);
+    border: 1px solid var(--site-line);
+    border-radius: 999px;
+    color: var(--text-dim);
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.15s ease;
   }
 
   .panel-tab:hover {
-    color: #ffffff;
-    border-color: var(--ps1-cyan);
+    color: var(--text-bright);
+    border-color: var(--site-line-strong);
   }
 
   .panel-tab.active {
-    background: #121c33;
-    border-color: var(--ps1-gold);
-    color: var(--ps1-gold);
-    box-shadow: 0 0 8px rgba(255, 176, 0, 0.2);
+    background: var(--site-accent);
+    border-color: var(--site-accent);
+    color: #ffffff;
   }
 
   /* Toolbar de Modelos */
@@ -928,7 +928,7 @@ ON CONFLICT (email) DO NOTHING;</code></pre>
     gap: 1rem;
     font-family: var(--font-mono);
     font-size: 0.8rem;
-    color: #a0b2cc;
+    color: var(--text-dim);
   }
 
   .models-filter-group {
@@ -939,17 +939,18 @@ ON CONFLICT (email) DO NOTHING;</code></pre>
   .btn-filter-models {
     font-family: var(--font-pixel);
     font-size: 0.65rem;
-    padding: 0.35rem 0.75rem;
-    background: #060912;
-    border: 1px solid var(--ps1-steel);
+    padding: 0.35rem 0.8rem;
+    background: var(--site-well);
+    border: 1px solid var(--site-line);
+    border-radius: 999px;
     color: var(--text-dim);
     cursor: pointer;
   }
 
   .btn-filter-models.active {
-    border-color: var(--ps1-cyan);
-    color: var(--ps1-cyan);
-    background: #0c1426;
+    border-color: var(--site-accent);
+    color: #ffffff;
+    background: var(--site-accent);
   }
 
   /* Grid de Modelos */
@@ -974,8 +975,9 @@ ON CONFLICT (email) DO NOTHING;</code></pre>
 
   .model-preview-box {
     height: 90px;
-    background: #050810;
-    border: 1px inset var(--ps1-steel);
+    background: #111318;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -984,7 +986,7 @@ ON CONFLICT (email) DO NOTHING;</code></pre>
 
   .preview-cube-icon {
     font-size: 2.2rem;
-    filter: drop-shadow(0 0 8px rgba(255, 176, 0, 0.4));
+    filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.35));
   }
 
   .preview-cat-badge {
@@ -993,22 +995,23 @@ ON CONFLICT (email) DO NOTHING;</code></pre>
     right: 8px;
     font-family: var(--font-pixel);
     font-size: 0.58rem;
-    color: var(--ps1-cyan);
-    background: #000;
-    padding: 0.1rem 0.35rem;
-    border: 1px solid var(--ps1-cyan);
+    color: #38bdf8;
+    background: rgba(17, 19, 24, 0.9);
+    padding: 0.15rem 0.45rem;
+    border-radius: 999px;
+    border: 1px solid rgba(56, 189, 248, 0.4);
   }
 
   .model-card-name {
     font-family: var(--font-title);
     font-size: 0.95rem;
-    color: #ffffff;
+    color: var(--text-bright);
     margin: 0;
   }
 
   .model-card-desc {
     font-size: 0.78rem;
-    color: #9cb2cc;
+    color: var(--text-dim);
     line-height: 1.4;
     margin: 0;
     flex: 1;
@@ -1020,7 +1023,7 @@ ON CONFLICT (email) DO NOTHING;</code></pre>
     font-family: var(--font-mono);
     font-size: 0.7rem;
     color: var(--text-dim);
-    border-top: 1px solid #142036;
+    border-top: 1px solid var(--site-line);
     padding-top: 0.5rem;
   }
 
@@ -1051,14 +1054,14 @@ ON CONFLICT (email) DO NOTHING;</code></pre>
 
   .box-desc {
     font-size: 0.82rem;
-    color: #a0b6d0;
+    color: var(--text-dim);
     line-height: 1.45;
     margin-bottom: 1rem;
   }
 
   .add-collab-box {
     padding: 1.25rem;
-    background: #080d1a;
+    background: var(--site-well);
   }
 
   .form-inputs-row {
@@ -1075,7 +1078,7 @@ ON CONFLICT (email) DO NOTHING;</code></pre>
 
   .form-field label {
     font-family: var(--font-pixel);
-    font-size: 0.62rem;
+    font-size: 0.65rem;
     color: var(--ps1-cyan);
   }
 
@@ -1091,51 +1094,53 @@ ON CONFLICT (email) DO NOTHING;</code></pre>
   }
 
   .collab-table th {
-    background: #0e1526;
-    color: var(--ps1-gold);
+    background: var(--site-well);
+    color: var(--text-bright);
     text-align: left;
     padding: 0.6rem 0.75rem;
     font-family: var(--font-pixel);
-    font-size: 0.65rem;
-    border-bottom: 2px solid var(--ps1-steel);
+    font-size: 0.68rem;
+    border-bottom: 1px solid var(--site-line);
   }
 
   .collab-table td {
     padding: 0.65rem 0.75rem;
-    border-bottom: 1px solid #142036;
-    color: #c0d0e0;
+    border-bottom: 1px solid var(--site-line);
+    color: var(--text-main);
   }
 
   .role-pill {
     font-family: var(--font-pixel);
-    font-size: 0.58rem;
-    padding: 0.15rem 0.45rem;
+    font-size: 0.6rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 999px;
     border: 1px solid;
   }
 
   .role-owner {
     color: var(--ps1-gold);
     border-color: var(--ps1-gold);
-    background: rgba(255, 176, 0, 0.1);
+    background: rgba(180, 83, 9, 0.1);
   }
 
   .role-admin {
     color: var(--ps1-cyan);
     border-color: var(--ps1-cyan);
-    background: rgba(0, 240, 255, 0.1);
+    background: rgba(0, 112, 227, 0.1);
   }
 
   .role-collaborator {
     color: var(--ps1-green);
     border-color: var(--ps1-green);
-    background: rgba(57, 255, 20, 0.1);
+    background: rgba(5, 150, 105, 0.1);
   }
 
   .sql-code-box {
-    background: #050810;
-    border: 1px inset var(--ps1-steel);
+    background: #111318;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
     padding: 1.25rem;
-    color: #9cb6d8;
+    color: #e2e8f0;
     font-family: var(--font-mono);
     font-size: 0.78rem;
     line-height: 1.45;
@@ -1147,17 +1152,18 @@ ON CONFLICT (email) DO NOTHING;</code></pre>
     padding: 0.5rem 0.75rem;
     font-family: var(--font-mono);
     font-size: 0.8rem;
+    border-radius: 8px;
   }
 
   .status-msg.success {
-    background: rgba(57, 255, 20, 0.12);
+    background: rgba(5, 150, 105, 0.12);
     border: 1px solid var(--ps1-green);
     color: var(--ps1-green);
   }
 
   .status-msg.error {
-    background: rgba(255, 56, 46, 0.12);
+    background: rgba(220, 38, 38, 0.12);
     border: 1px solid var(--ps1-red);
-    color: #ff7770;
+    color: var(--ps1-red);
   }
 </style>

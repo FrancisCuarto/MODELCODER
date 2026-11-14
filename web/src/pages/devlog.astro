@@ -212,9 +212,10 @@ const description = "Consulta la cronología completa de actualizaciones, nuevas
       display: inline-flex;
       align-items: center;
       gap: 0.4rem;
-      background: #090c14;
-      border: 1px inset var(--ps1-steel);
-      padding: 0.2rem 0.6rem;
+      background: var(--site-well);
+      border: 1px solid var(--site-line);
+      border-radius: 999px;
+      padding: 0.25rem 0.75rem;
       color: var(--ps1-green);
       font-family: var(--font-mono);
       font-size: 0.7rem;
@@ -222,8 +223,10 @@ const description = "Consulta la cronología completa de actualizaciones, nuevas
 
     /* Hero Header */
     .devlog-header {
-      background: var(--ps1-panel-dark);
-      border: 2px outset var(--ps1-steel-light);
+      background: var(--site-surface);
+      border: 1px solid var(--site-line);
+      border-radius: 12px;
+      overflow: hidden;
     }
 
     .titlebar-version {
@@ -242,9 +245,9 @@ const description = "Consulta la cronología completa de actualizaciones, nuevas
     .header-title {
       font-family: var(--font-pixel);
       font-size: 1.35rem;
-      color: #ffffff;
+      color: var(--text-bright);
       margin: 0 0 0.5rem 0;
-      letter-spacing: 0.05em;
+      letter-spacing: 0.02em;
     }
 
     .header-title .bracket {
@@ -254,10 +257,10 @@ const description = "Consulta la cronología completa de actualizaciones, nuevas
     .header-desc {
       font-family: var(--font-mono);
       font-size: 0.85rem;
-      color: var(--ps1-steel-light);
+      color: var(--text-dim);
       max-width: 900px;
       margin: 0;
-      line-height: 1.45;
+      line-height: 1.5;
     }
 
     /* Stats Grid */
@@ -265,14 +268,15 @@ const description = "Consulta la cronología completa de actualizaciones, nuevas
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
       gap: 0.75rem;
-      padding-top: 0.5rem;
-      border-top: 1px inset var(--ps1-steel);
+      padding-top: 0.75rem;
+      border-top: 1px solid var(--site-line);
     }
 
     .stat-card {
-      background: #090d18;
-      border: 1px inset var(--ps1-steel);
-      padding: 0.5rem 0.75rem;
+      background: var(--site-well);
+      border: 1px solid var(--site-line);
+      border-radius: 8px;
+      padding: 0.65rem 0.85rem;
       display: flex;
       flex-direction: column;
       gap: 0.2rem;
@@ -280,8 +284,8 @@ const description = "Consulta la cronología completa de actualizaciones, nuevas
 
     .stat-label {
       font-family: var(--font-pixel);
-      font-size: 0.62rem;
-      color: var(--ps1-steel-light);
+      font-size: 0.65rem;
+      color: var(--text-dim);
     }
 
     .stat-value {
@@ -300,15 +304,16 @@ const description = "Consulta la cronología completa de actualizaciones, nuevas
       align-items: center;
       flex-wrap: wrap;
       gap: 0.75rem;
-      background: #0c111e;
-      border: 1px inset var(--ps1-steel);
-      padding: 0.6rem 0.85rem;
+      background: var(--site-surface);
+      border: 1px solid var(--site-line);
+      border-radius: 10px;
+      padding: 0.65rem 0.9rem;
       font-family: var(--font-pixel);
       font-size: 0.72rem;
     }
 
     .filter-label {
-      color: var(--ps1-steel-light);
+      color: var(--text-dim);
     }
 
     .filter-buttons {
@@ -318,28 +323,28 @@ const description = "Consulta la cronología completa de actualizaciones, nuevas
     }
 
     .devlog-filter-btn {
-      background: #141b2d;
-      border: 1px outset var(--ps1-steel-light);
-      color: #cbd5e1;
-      padding: 0.3rem 0.65rem;
+      background: var(--site-well);
+      border: 1px solid var(--site-line);
+      color: var(--text-dim);
+      padding: 0.3rem 0.75rem;
+      border-radius: 999px;
       font-family: var(--font-pixel);
-      font-size: 0.68rem;
+      font-size: 0.7rem;
       cursor: pointer;
-      box-shadow: 1px 1px 0px #000;
-      transition: all 0.1s ease;
+      transition: all 0.12s ease;
     }
 
     .devlog-filter-btn:hover {
-      background: #1e293b;
-      color: var(--ps1-gold);
-      border-color: var(--ps1-gold);
+      background: var(--site-surface);
+      color: var(--text-bright);
+      border-color: var(--site-line-strong);
     }
 
     .devlog-filter-btn.active {
-      background: var(--ps1-gold);
-      color: #000000;
-      border-color: #ffffff;
-      font-weight: bold;
+      background: var(--site-accent);
+      color: #ffffff;
+      border-color: var(--site-accent);
+      font-weight: 600;
     }
 
     /* Timeline */
@@ -367,35 +372,38 @@ const description = "Consulta la cronología completa de actualizaciones, nuevas
     .marker-dot {
       width: 28px;
       height: 28px;
-      background: #101625;
-      border: 2px outset var(--ps1-steel-light);
+      background: var(--site-surface);
+      border: 1px solid var(--site-line-strong);
+      border-radius: 999px;
       display: flex;
       align-items: center;
       justify-content: center;
       color: var(--ps1-cyan);
       font-size: 0.8rem;
-      box-shadow: 2px 2px 0px #000;
+      box-shadow: var(--site-shadow-sm);
       z-index: 2;
     }
 
     .marker-dot.current {
-      background: #272210;
-      border-color: var(--ps1-gold);
-      color: var(--ps1-gold);
-      animation: ps1Pulse 1.5s infinite steps(2, start);
+      background: var(--site-accent);
+      border-color: var(--site-accent);
+      color: #ffffff;
     }
 
     .marker-line {
       flex: 1;
       width: 2px;
-      background: linear-gradient(180deg, var(--ps1-steel) 0%, rgba(71, 85, 105, 0.2) 100%);
+      background: var(--site-line);
       margin-top: 4px;
     }
 
     .timeline-card {
       flex: 1;
-      background: var(--ps1-panel-dark);
-      border: 2px outset var(--ps1-steel-light);
+      background: var(--site-surface);
+      border: 1px solid var(--site-line);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: var(--site-shadow-sm);
     }
 
     .card-titlebar {
@@ -404,8 +412,9 @@ const description = "Consulta la cronología completa de actualizaciones, nuevas
       align-items: center;
       flex-wrap: wrap;
       gap: 0.5rem;
-      background: #090c14;
-      padding: 0.4rem 0.75rem;
+      background: var(--site-well);
+      border-bottom: 1px solid var(--site-line);
+      padding: 0.5rem 0.85rem;
     }
 
     .titlebar-left {
@@ -418,38 +427,40 @@ const description = "Consulta la cronología completa de actualizaciones, nuevas
     .entry-version-tag {
       font-family: var(--font-pixel);
       font-size: 0.78rem;
-      font-weight: bold;
+      font-weight: 600;
       color: var(--ps1-gold);
     }
 
     .entry-date-tag {
       font-family: var(--font-mono);
       font-size: 0.72rem;
-      color: var(--ps1-steel-light);
+      color: var(--text-dim);
     }
 
     .entry-badge {
       font-family: var(--font-pixel);
-      font-size: 0.58rem;
-      padding: 0.12rem 0.4rem;
+      font-size: 0.62rem;
+      padding: 0.14rem 0.5rem;
+      border-radius: 999px;
       border: 1px solid currentColor;
-      background: rgba(0, 0, 0, 0.4);
-      letter-spacing: 0.05em;
+      background: var(--site-surface);
+      letter-spacing: 0.03em;
     }
 
     .badge-latest {
       font-family: var(--font-pixel);
-      font-size: 0.58rem;
+      font-size: 0.62rem;
       background: var(--ps1-green);
-      color: #000000;
-      padding: 0.12rem 0.4rem;
-      font-weight: bold;
+      color: #ffffff;
+      padding: 0.14rem 0.5rem;
+      border-radius: 999px;
+      font-weight: 600;
     }
 
     .titlebar-author {
       font-family: var(--font-mono);
       font-size: 0.68rem;
-      color: var(--ps1-steel-light);
+      color: var(--text-dim);
     }
 
     .card-body {
@@ -461,8 +472,8 @@ const description = "Consulta la cronología completa de actualizaciones, nuevas
 
     .entry-title {
       font-family: var(--font-pixel);
-      font-size: 0.95rem;
-      color: #ffffff;
+      font-size: 0.98rem;
+      color: var(--text-bright);
       margin: 0;
       line-height: 1.4;
     }
@@ -470,15 +481,16 @@ const description = "Consulta la cronología completa de actualizaciones, nuevas
     .entry-summary {
       font-family: var(--font-mono);
       font-size: 0.82rem;
-      color: #cbd5e1;
+      color: var(--text-dim);
       margin: 0;
-      line-height: 1.5;
+      line-height: 1.55;
     }
 
     /* Highlights Box */
     .entry-highlights-box {
-      background: #070a12;
-      border: 1px inset var(--ps1-steel);
+      background: var(--site-well);
+      border: 1px solid var(--site-line);
+      border-radius: 8px;
       padding: 0.85rem 1rem;
       display: flex;
       flex-direction: column;
@@ -487,9 +499,9 @@ const description = "Consulta la cronología completa de actualizaciones, nuevas
 
     .highlights-title {
       font-family: var(--font-pixel);
-      font-size: 0.65rem;
+      font-size: 0.68rem;
       color: var(--ps1-gold);
-      letter-spacing: 0.05em;
+      letter-spacing: 0.03em;
     }
 
     .highlights-list {
@@ -507,7 +519,7 @@ const description = "Consulta la cronología completa de actualizaciones, nuevas
       gap: 0.5rem;
       font-family: var(--font-mono);
       font-size: 0.78rem;
-      color: #e2e8f0;
+      color: var(--text-main);
       line-height: 1.45;
     }
 
@@ -528,8 +540,8 @@ const description = "Consulta la cronología completa de actualizaciones, nuevas
 
     .tags-prefix {
       font-family: var(--font-pixel);
-      font-size: 0.6rem;
-      color: var(--ps1-steel-light);
+      font-size: 0.62rem;
+      color: var(--text-dim);
       margin-right: 0.2rem;
     }
 
@@ -537,9 +549,10 @@ const description = "Consulta la cronología completa de actualizaciones, nuevas
       font-family: var(--font-mono);
       font-size: 0.68rem;
       color: var(--ps1-cyan);
-      background: #111827;
-      border: 1px solid #1e293b;
-      padding: 0.15rem 0.4rem;
+      background: var(--site-well);
+      border: 1px solid var(--site-line);
+      border-radius: 999px;
+      padding: 0.15rem 0.5rem;
     }
 
     /* Bottom CTA Strip */
@@ -550,8 +563,9 @@ const description = "Consulta la cronología completa de actualizaciones, nuevas
       flex-wrap: wrap;
       gap: 1rem;
       padding: 1rem 1.25rem;
-      background: #080d1a;
-      border: 2px inset var(--ps1-steel);
+      background: var(--site-surface);
+      border: 1px solid var(--site-line);
+      border-radius: 12px;
     }
 
     .cta-text {
@@ -560,7 +574,7 @@ const description = "Consulta la cronología completa de actualizaciones, nuevas
       gap: 0.6rem;
       font-family: var(--font-mono);
       font-size: 0.82rem;
-      color: var(--ps1-steel-light);
+      color: var(--text-dim);
       max-width: 700px;
     }
 

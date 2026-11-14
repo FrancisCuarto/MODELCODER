@@ -93,7 +93,7 @@ class MiFamiliaGenerator(BaseAssetGenerator):
         </p>
 
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-top: 1.5rem;">
-          <div class="ps1-inset" style="padding: 1rem; background: #070c18;">
+          <div class="ps1-inset" style="padding: 1rem;">
             <h3 style="font-family: var(--font-pixel); font-size: 0.85rem; color: var(--ps1-cyan); margin-bottom: 0.4rem;">
               🎮 Para Desarrolladores y Diseñadores
             </h3>
@@ -101,7 +101,7 @@ class MiFamiliaGenerator(BaseAssetGenerator):
               Elegí cualquier objeto del catálogo, ajustá sus dimensiones y paleta con los controles visuales, y descargá el archivo <strong>.GLB</strong> optimizado para importarlo directo en Godot 4, Unity o Blender.
             </p>
           </div>
-          <div class="ps1-inset" style="padding: 1rem; background: #070c18;">
+          <div class="ps1-inset" style="padding: 1rem;">
             <h3 style="font-family: var(--font-pixel); font-size: 0.85rem; color: var(--ps1-gold); margin-bottom: 0.4rem;">
               💻 Para Creadores y Programadores
             </h3>
@@ -115,7 +115,7 @@ class MiFamiliaGenerator(BaseAssetGenerator):
 
     <!-- 1-Click Fast Track: Zero Setup Cloud & Local -->
     <div class="ps1-window fast-track-window">
-      <div class="ps1-titlebar" style="background: linear-gradient(90deg, #003344, #001122);">
+      <div class="ps1-titlebar">
         <span>FAST TRACK: ACCESO EN 1-CLIC (SIN CONFIGURACIÓN MANUAL)</span>
         <span class="ps1-telemetry-tag" style="color: var(--ps1-cyan);">READY-TO-USE</span>
       </div>
@@ -260,19 +260,19 @@ class MiFamiliaGenerator(BaseAssetGenerator):
       </section>
 
       <!-- Sobre el Creador & IV Orbit Games -->
-      <section class="ps1-window step-card" style="border-color: var(--ps1-gold);">
-        <div class="ps1-titlebar" style="background: linear-gradient(90deg, #332200, #110b00);">
-          <span>SOBRE EL PROYECTO & EL ESTUDIO CREADOR</span>
+      <section class="ps1-window step-card" style="border-color: var(--site-accent);">
+        <div class="ps1-titlebar">
+          <span>SOBRE EL PROYECTO &amp; EL ESTUDIO CREADOR</span>
           <span class="ps1-telemetry-tag" style="color: var(--ps1-gold);">IV ORBIT GAMES</span>
         </div>
         <div class="step-body">
           <div style="display: flex; gap: 1.25rem; align-items: flex-start; flex-wrap: wrap;">
-            <img src="/logo.png" alt="ModelCoder Logo" style="width: 72px; height: 72px; object-fit: contain; background: transparent; border: none; filter: drop-shadow(0 0 16px rgba(255, 184, 0, 0.65)); flex-shrink: 0;" />
+            <img src="/logo.png" alt="ModelCoder Logo" style="width: 72px; height: 72px; object-fit: contain; background: transparent; border: none; filter: drop-shadow(0 4px 12px rgba(0, 112, 227, 0.2)); flex-shrink: 0;" />
             <div style="flex: 1; min-width: 250px;">
-              <h3 style="font-family: var(--font-title); font-size: 1.1rem; color: #ffffff; margin-bottom: 0.35rem;">
+              <h3 style="font-family: var(--font-title); font-size: 1.1rem; color: var(--text-bright); margin-bottom: 0.35rem;">
                 Franciscuarto &bull; IV Orbit Games
               </h3>
-              <p style="font-size: 0.85rem; color: #b8ccdf; line-height: 1.5; margin-bottom: 0.75rem;">
+              <p style="font-size: 0.85rem; color: var(--text-dim); line-height: 1.5; margin-bottom: 0.75rem;">
                 ModelCoder fue concebido y desarrollado de forma independiente desde Buenos Aires, Argentina. Surgió como la solución de producción técnica para generar y optimizar decenas de accesorios, consolas y módulos espaciales de <strong>Below Nominal</strong> (Godot Engine).
               </p>
               <div style="display: flex; gap: 0.6rem; flex-wrap: wrap;">
@@ -314,22 +314,21 @@ class MiFamiliaGenerator(BaseAssetGenerator):
 
   .ps1-telemetry-tag {
     font-family: var(--font-telemetry);
-    font-size: 1.1rem;
+    font-size: 0.8rem;
     color: var(--ps1-cyan);
   }
 
   .guide-title {
     font-family: var(--font-title);
-    font-size: 1.35rem;
-    line-height: 1.5;
-    color: var(--ps1-gold);
+    font-size: 1.45rem;
+    line-height: 1.35;
+    color: var(--text-bright);
     margin-bottom: 0.75rem;
-    text-shadow: 2px 2px 0px #000;
   }
 
   .guide-lead {
     font-size: 0.95rem;
-    color: #c0cde0;
+    color: var(--text-dim);
     line-height: 1.6;
   }
 
@@ -345,8 +344,8 @@ class MiFamiliaGenerator(BaseAssetGenerator):
   }
 
   .step-num {
-    font-family: var(--font-telemetry);
-    font-size: 1.15rem;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
     color: var(--ps1-gold);
   }
 
@@ -355,7 +354,7 @@ class MiFamiliaGenerator(BaseAssetGenerator):
   }
 
   .step-body p {
-    color: #b0c0d4;
+    color: var(--text-dim);
     margin-bottom: 0.75rem;
     font-size: 0.9rem;
     line-height: 1.55;
@@ -366,7 +365,8 @@ class MiFamiliaGenerator(BaseAssetGenerator):
     overflow-x: auto;
     font-family: var(--font-mono);
     font-size: 0.8rem;
-    color: #9cb2cc;
+    background: #111318;
+    color: #e2e8f0;
     line-height: 1.45;
   }
 
@@ -375,16 +375,17 @@ class MiFamiliaGenerator(BaseAssetGenerator):
     display: flex;
     flex-direction: column;
     gap: 0.35rem;
+    background: #111318;
   }
 
   .terminal-cmd-label {
     font-family: var(--font-pixel);
     font-size: 0.68rem;
-    color: var(--ps1-gold);
+    color: #fbbf24;
   }
 
   .terminal-command-card code {
-    color: var(--ps1-cyan);
+    color: #38bdf8;
     font-family: var(--font-mono);
     font-size: 0.85rem;
   }
@@ -394,17 +395,16 @@ class MiFamiliaGenerator(BaseAssetGenerator):
     display: flex;
     flex-direction: column;
     gap: 0.6rem;
-    color: #a0b2c6;
+    color: var(--text-dim);
     font-size: 0.88rem;
   }
 
   .guidelines-list strong {
-    color: var(--ps1-gold);
+    color: var(--text-bright);
   }
 
   .fast-track-window {
-    border-color: var(--ps1-cyan);
-    box-shadow: 0 4px 16px rgba(0, 240, 255, 0.12);
+    border-color: var(--site-accent);
   }
 
   .fast-track-grid {
@@ -418,6 +418,6 @@ class MiFamiliaGenerator(BaseAssetGenerator):
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    background: #080d1a;
+    background: var(--site-well);
   }
 </style>

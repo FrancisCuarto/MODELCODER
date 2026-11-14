@@ -7,7 +7,7 @@ interface Props {
   ogType?: string;
   schemaData?: Record<string, any>;
   useModelViewer?: boolean;
-  forceTheme?: 'ps1' | 'dark-professional';
+  forceTheme?: 'light' | 'dark' | 'ps1' | 'dark-professional';
   hideGlobalNav?: boolean;
 }
 
@@ -32,6 +32,7 @@ const baseModelsCount = catalog.length + getAllModularModels().length;
 const siteOrigin = Astro.site ? Astro.site.toString().replace(/\/$/, '') : 'https://modelcoder.vercel.app';
 const canonicalURL = new URL(Astro.url.pathname, siteOrigin).href;
 const fullOgImage = ogImage.startsWith('http') ? ogImage : `${siteOrigin}${ogImage.startsWith('/') ? '' : '/'}${ogImage}`;
+const currentPath = Astro.url.pathname;
 
 const globalJsonLd = {
   "@context": "https://schema.org",
@@ -77,20 +78,20 @@ const globalJsonLd = {
     <script is:inline define:vars={{ forceTheme }}>
       (function () {
         try {
-          if (forceTheme === 'ps1' || forceTheme === 'dark-professional') {
+          if (forceTheme === 'light' || forceTheme === 'dark' || forceTheme === 'ps1' || forceTheme === 'dark-professional') {
             window.__MODELCODER_FORCE_THEME__ = forceTheme;
             document.documentElement.setAttribute('data-theme', forceTheme);
             return;
           }
           const storageKey = 'modelcoder-theme';
-          const raw = localStorage.getItem(storageKey) || 'dark-professional';
+          const raw = localStorage.getItem(storageKey) || 'light';
           let theme = raw;
           if (theme === 'system') {
             const prefDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-            theme = prefDark ? 'dark-professional' : 'dark-professional';
+            theme = prefDark ? 'dark' : 'light';
           }
-          if (theme !== 'ps1' && theme !== 'dark-professional') {
-            theme = 'dark-professional';
+          if (theme !== 'light' && theme !== 'dark' && theme !== 'dark-professional' && theme !== 'ps1') {
+            theme = 'light';
           }
           document.documentElement.setAttribute('data-theme', theme);
         } catch (e) {}
@@ -125,16 +126,16 @@ const globalJsonLd = {
     <!-- Branding & PWA Elements -->
     <link rel="icon" type="image/png" href="/logo.png" />
     <link rel="apple-touch-icon" href="/logo.png" />
-    <meta name="theme-color" content="#06080e" />
+    <meta name="theme-color" content="#fbfbfb" />
     <meta name="generator" content={Astro.generator} />
 
     <!-- Schema.org JSON-LD Structured Data -->
     <script type="application/ld+json" set:html={JSON.stringify(globalJsonLd)} />
 
-    <!-- Retro PS1 / Bitmap Typography -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Share+Tech+Mono&family=Silkscreen:wght@400;700&family=VT323&display=swap" rel="stylesheet">
+    <!-- Editorial Typography (Inter + JetBrains Mono + optional Silkscreen for PS1 mode) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Silkscreen:wght@400;700&display=swap" rel="stylesheet" />
 
     <!-- Google Model Viewer Web Component -->
     {useModelViewer && (
@@ -142,124 +143,109 @@ const globalJsonLd = {
     )}
   </head>
   <body class={hideGlobalNav ? 'is-dcc-app' : ''}>
-    <!-- CRT Scanlines Overlay -->
     {!hideGlobalNav && <div class="ps1-scanlines" aria-hidden="true"></div>}
 
     {!hideGlobalNav && (
     <header class="site-header">
       <div class="header-container">
-        <a href="/" class="brand-logo" title="ModelCoder — Generadores 3D Procedurales por IV Orbit Games">
-          <img src="/logo.png" alt="Logo de ModelCoder" class="brand-logo-img" width="30" height="30" />
-          <span class="brand-bracket">[</span>
-          <span class="brand-name">MODELCODER</span>
-          <span class="brand-bracket">]</span>
-          <span class="brand-badge">MODELOS 3D</span>
+        <a href="/" class="brand-logo" title="ModelCoder — Plataforma 3D Procedural por IV Orbit Games">
+          <img src="/logo.png" alt="Logo de ModelCoder" class="brand-logo-img" width="26" height="26" />
+          <span class="brand-name">ModelCoder</span>
+          <span class="brand-count-pill">
+            <span class="status-dot"></span>
+            <span id="header-models-count" data-base-count={baseModelsCount}>{baseModelsCount} modelos</span>
+          </span>
         </a>
 
-        <div class="system-status-indicator" title="Modelos 3D disponibles para personalizar y descargar">
-          <span class="status-dot"></span>
-          <span id="header-models-count" class="status-text" data-base-count={baseModelsCount}>{baseModelsCount} MODELOS DISPONIBLES</span>
-        </div>
+        <nav class="nav-links" aria-label="Navegación principal">
+          <a href="/" class={`nav-link ${currentPath === '/' ? 'active' : ''}`}>Catálogo</a>
+          <a href="/docs" class={`nav-link ${currentPath.startsWith('/docs') ? 'active' : ''}`}>Docs</a>
+          <a href="/devlog" class={`nav-link ${currentPath.startsWith('/devlog') ? 'active' : ''}`}>Devlog</a>
+          <a href="/contribute" class={`nav-link ${currentPath.startsWith('/contribute') ? 'active' : ''}`}>Cómo funciona</a>
 
-        <nav class="nav-links">
-          <a href="/" class="nav-link">&gt; Catálogo</a>
-          <a href="/studio" class="nav-link nav-link-studio" style="color: var(--ps1-gold); border-color: var(--ps1-gold);">&gt; Studio 3D (Crear)</a>
-          <a href="https://ivorbitgames.online/herramientas/texture-studio" target="_blank" rel="noopener noreferrer" class="nav-link nav-link-texstudio" style="color: var(--ps1-cyan); border-color: var(--ps1-cyan);" title="IV Orbit Texture Studio: Suite libre para extraer texturas y generar mapas PBR">🪐 Texture Studio</a>
-
-          <!-- Menú Desplegable Retro PS1: Más Opciones / Explorar -->
+          <!-- Dropdown Más -->
           <div id="nav-more-container" class="nav-more-container">
-            <button id="btn-toggle-nav-more" class="nav-link nav-more-trigger" type="button" aria-haspopup="menu" aria-expanded="false" title="Más herramientas y enlaces">
-              <span>⋯ MÁS</span>
-              <span class="nav-caret">▼</span>
+            <button id="btn-toggle-nav-more" class="nav-link nav-more-trigger" type="button" aria-haspopup="menu" aria-expanded="false">
+              <span>Más</span>
+              <span class="nav-caret">▾</span>
             </button>
-            <div id="nav-more-menu" class="nav-more-menu-ps1 hidden" role="menu">
-              <a href="https://ivorbitgames.online/herramientas/texture-studio" target="_blank" rel="noopener noreferrer" class="more-dropdown-item" role="menuitem" style="color: var(--ps1-gold); font-weight: bold;">
-                <span class="item-icon">🪐</span>
-                <span>&gt; Texture Studio (PBR)</span>
-                <span class="badge-new" style="background: var(--ps1-gold); color: #000; font-weight: bold;">NUEVA APP</span>
-              </a>
-              <a href="/devlog" class="more-dropdown-item" role="menuitem">
-                <span class="item-icon">📰</span>
-                <span>&gt; Devlog & Actualizaciones</span>
-                <span class="badge-new">NEW</span>
-              </a>
-              <a href="/docs" class="more-dropdown-item" role="menuitem">
-                <span class="item-icon">📖</span>
-                <span>&gt; Documentación</span>
-              </a>
-              <button id="btn-open-global-inventory" class="more-dropdown-item" type="button" role="menuitem" title="Mi Inventario: Borradores, Favoritos y Colecciones">
-                <span class="item-icon">🎒</span>
-                <span>&gt; Mi Inventario (<span id="global-inv-count">0</span>)</span>
+            <div id="nav-more-menu" class="mc-dropdown-menu hidden" role="menu">
+              <button id="btn-open-global-inventory" class="mc-dropdown-item" type="button" role="menuitem">
+                <span>🎒 Mi Inventario</span>
+                <span class="mc-badge-pill" id="global-inv-count">0</span>
               </button>
-              <a href="/contribute" class="more-dropdown-item" role="menuitem">
-                <span class="item-icon">ℹ️</span>
-                <span>&gt; Cómo funciona</span>
+              <a href="https://ivorbitgames.online/herramientas/texture-studio" target="_blank" rel="noopener noreferrer" class="mc-dropdown-item" role="menuitem">
+                <span>🪐 Texture Studio (PBR)</span>
+                <span class="mc-badge-accent">App</span>
               </a>
-              <a href="/colaboradores" id="nav-collab-link" class="more-dropdown-item" style="display: none; color: var(--ps1-gold);" role="menuitem">
-                <span class="item-icon">👑</span>
-                <span>&gt; Portal Colaboradores</span>
+              <a href="/colaboradores" id="nav-collab-link" class="mc-dropdown-item" style="display: none;" role="menuitem">
+                <span>👑 Portal Colaboradores</span>
               </a>
-              <!-- Selector de Tema -->
-              <div class="more-dropdown-divider"></div>
-              <div class="more-dropdown-group" role="group" aria-label="Tema de interfaz">
-                <span class="more-dropdown-label" style="font-size: 0.65rem; color: var(--text-tertiary); padding: 0.25rem 0.65rem 0.15rem; display: block; font-family: var(--font-pixel); letter-spacing: 0.05em;">
-                  &gt; TEMA DE INTERFAZ
-                </span>
-                <button class="more-dropdown-item theme-option" type="button" role="menuitemradio" data-theme-choice="dark-professional" aria-checked="true">
-                  <span class="item-icon">🌙</span>
-                  <span>Oscuro Profesional</span>
+              <div class="mc-dropdown-divider"></div>
+              <div class="mc-dropdown-group" role="group" aria-label="Tema de interfaz">
+                <span class="mc-dropdown-label">Apariencia</span>
+                <button class="mc-dropdown-item theme-option" type="button" role="menuitemradio" data-theme-choice="light" aria-checked="true">
+                  <span>☀️ Claro (Multica)</span>
                   <span class="theme-check">●</span>
                 </button>
-                <button class="more-dropdown-item theme-option" type="button" role="menuitemradio" data-theme-choice="ps1" aria-checked="false">
-                  <span class="item-icon">🕹️</span>
-                  <span>PS1 Retro</span>
+                <button class="mc-dropdown-item theme-option" type="button" role="menuitemradio" data-theme-choice="dark" aria-checked="false">
+                  <span>🌙 Oscuro</span>
                   <span class="theme-check">○</span>
                 </button>
-                <button class="more-dropdown-item theme-option" type="button" role="menuitemradio" data-theme-choice="system" aria-checked="false">
-                  <span class="item-icon">🖥️</span>
-                  <span>Según Sistema</span>
+                <button class="mc-dropdown-item theme-option" type="button" role="menuitemradio" data-theme-choice="system" aria-checked="false">
+                  <span>💻 Según Sistema</span>
+                  <span class="theme-check">○</span>
+                </button>
+                <button class="mc-dropdown-item theme-option" type="button" role="menuitemradio" data-theme-choice="ps1" aria-checked="false">
+                  <span>🕹️ Retro PS1</span>
                   <span class="theme-check">○</span>
                 </button>
               </div>
-              <div class="more-dropdown-divider"></div>
-              <a href="https://ivorbitgames.online" target="_blank" rel="noopener noreferrer" class="more-dropdown-item item-external" role="menuitem" title="Estudio Creador: IV Orbit Games (Argentina)">
-                <span class="item-icon">🪐</span>
-                <span>IV Orbit Games ↗</span>
+              <div class="mc-dropdown-divider"></div>
+              <a href="https://ivorbitgames.online" target="_blank" rel="noopener noreferrer" class="mc-dropdown-item" role="menuitem">
+                <span>IV Orbit Games</span>
+                <span class="mc-ext-arrow">↗</span>
               </a>
-              <a href="https://github.com/FrancisCuarto/MODELCODER" target="_blank" rel="noopener noreferrer" class="more-dropdown-item item-external" role="menuitem" title="Ver código fuente en GitHub">
-                <span class="item-icon">🐱</span>
-                <span>GitHub ↗</span>
+              <a href="https://github.com/FrancisCuarto/MODELCODER" target="_blank" rel="noopener noreferrer" class="mc-dropdown-item" role="menuitem">
+                <span>GitHub</span>
+                <span class="mc-ext-arrow">↗</span>
               </a>
-            </div>
-          </div>
-
-          <!-- User Authentication Widget -->
-          <div id="user-auth-root" class="user-auth-container">
-            <button id="btn-open-auth" class="ps1-btn-auth" type="button" title="Acceso de Usuario">
-              <span class="auth-icon">👤</span>
-              <span class="auth-label">&gt; Acceder</span>
-            </button>
-
-            <div id="user-logged-box" class="user-logged-pill hidden">
-              <button id="user-profile-btn" class="user-profile-trigger" type="button" aria-haspopup="menu">
-                <span class="user-avatar-tag">👾</span>
-                <span id="user-display-name" class="user-display-name">PILOTO</span>
-                <span class="user-caret">▼</span>
-              </button>
-              <div id="user-dropdown-menu" class="user-dropdown-ps1 hidden">
-                <div class="user-dropdown-header">
-                  <span class="ps1-badge-gold">SESIÓN SUPABASE</span>
-                  <span id="user-email-text" class="user-email-text"></span>
-                </div>
-                <button id="dropdown-open-inventory" class="dropdown-item" type="button" style="text-align: left; width: 100%; background: transparent; border: none; font-family: inherit; font-size: inherit; cursor: pointer; color: var(--ps1-cyan);">&gt; MI INVENTARIO 🎒</button>
-                <button id="btn-export-session-code" class="dropdown-item" type="button" style="text-align: left; width: 100%; background: transparent; border: none; font-family: inherit; font-size: inherit; cursor: pointer; color: var(--ps1-gold); font-weight: bold;">&gt; COPIAR CÓDIGO PARA APP ESCRITORIO 🔑</button>
-                <a href="/studio" class="dropdown-item">&gt; STUDIO WORKSPACE</a>
-                <a href="/colaboradores" class="dropdown-item" style="color: var(--ps1-gold); font-weight: bold;">&gt; PANEL COLABORADORES 👑</a>
-                <button id="btn-logout" class="dropdown-item dropdown-item-danger" type="button">&gt; CERRAR SESIÓN</button>
-              </div>
             </div>
           </div>
         </nav>
+
+        <div class="nav-actions">
+          <!-- User Authentication Widget -->
+          <div id="user-auth-root" class="user-auth-container">
+            <button id="btn-open-auth" class="btn btn-outline btn-sm" type="button" title="Acceder con tu cuenta">
+              Acceder
+            </button>
+
+            <div id="user-logged-box" class="user-logged-pill hidden">
+              <button id="user-profile-btn" class="btn btn-outline btn-sm" type="button" aria-haspopup="menu">
+                <span id="user-display-name">@PILOTO</span>
+                <span class="user-caret">▾</span>
+              </button>
+              <div id="user-dropdown-menu" class="mc-dropdown-menu mc-dropdown-right hidden">
+                <div class="mc-dropdown-header">
+                  <span class="mc-dropdown-sub">Sesión activa</span>
+                  <span id="user-email-text" class="mc-dropdown-email"></span>
+                </div>
+                <button id="dropdown-open-inventory" class="mc-dropdown-item" type="button">🎒 Mi Inventario</button>
+                <button id="btn-export-session-code" class="mc-dropdown-item" type="button">🔑 Sincronizar App Escritorio</button>
+                <a href="/studio" class="mc-dropdown-item">⚡ Abrir Studio 3D</a>
+                <a href="/colaboradores" class="mc-dropdown-item">👑 Panel Colaboradores</a>
+                <div class="mc-dropdown-divider"></div>
+                <button id="btn-logout" class="mc-dropdown-item mc-dropdown-danger" type="button">Cerrar sesión</button>
+              </div>
+            </div>
+          </div>
+
+          <a href="/studio" class="nav-cta-studio">
+            <span>Abrir Studio</span>
+            <span aria-hidden="true">→</span>
+          </a>
+        </div>
       </div>
     </header>
     )}
@@ -268,41 +254,36 @@ const globalJsonLd = {
       <slot />
     </main>
 
-    <!-- Modal Retro PS1 de Autenticación de Usuarios (Supabase) -->
-    <div id="ps1-auth-modal" class="ps1-modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="auth-modal-title">
-      <div class="ps1-window auth-modal-window">
-        <div class="ps1-titlebar">
-          <div class="titlebar-title" id="auth-modal-title">
-            <span class="title-glyph">▲</span>
-            <span>BIOS · IDENTIFICACIÓN DE USUARIO</span>
-          </div>
-          <button type="button" class="ps1-window-btn" id="btn-close-auth-modal" aria-label="Cerrar">✕</button>
+    <!-- Modal de Autenticación de Usuarios (Supabase) -->
+    <div id="ps1-auth-modal" class="mc-modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="auth-modal-title">
+      <div class="mc-modal-window auth-modal-window">
+        <div class="mc-modal-header">
+          <div class="mc-modal-title" id="auth-modal-title">Acceso a ModelCoder</div>
+          <button type="button" class="mc-modal-close" id="btn-close-auth-modal" aria-label="Cerrar">✕</button>
         </div>
 
         <div class="auth-modal-body">
           <div class="auth-tabs">
-            <button type="button" class="auth-tab active" data-tab="oauth">OAUTH GITHUB</button>
-            <button type="button" class="auth-tab" data-tab="login">INICIAR SESIÓN</button>
-            <button type="button" class="auth-tab" data-tab="signup">REGISTRARSE</button>
-            <button type="button" class="auth-tab" data-tab="desktop-sync" id="tab-btn-desktop-sync" style="color: var(--ps1-gold);">VINCULAR SESIÓN 🔑</button>
+            <button type="button" class="auth-tab active" data-tab="oauth">GitHub</button>
+            <button type="button" class="auth-tab" data-tab="login">Entrar</button>
+            <button type="button" class="auth-tab" data-tab="signup">Crear cuenta</button>
+            <button type="button" class="auth-tab" data-tab="desktop-sync" id="tab-btn-desktop-sync">Vincular App</button>
           </div>
 
           <!-- TAB 1: GITHUB OAUTH -->
           <div class="auth-tab-panel" id="tab-oauth">
-            <p class="auth-desc">Identifícate con tu cuenta de GitHub para guardar tus configuraciones y sincronizar tus modelos procedurales en la nube.</p>
+            <p class="auth-desc">Identificate con GitHub para guardar tus configuraciones, borradores y modelos en la nube.</p>
             <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-              <button type="button" class="btn auth-action-btn btn-github-oauth" id="btn-auth-github">
-                <span class="auth-btn-icon">🐱</span>
-                <span>CONTINUAR CON GITHUB</span>
+              <button type="button" class="btn btn-primary auth-action-btn" id="btn-auth-github">
+                <span>Continuar con GitHub</span>
               </button>
-              <button type="button" class="btn auth-action-btn btn-outline" id="btn-auth-browser" style="display: none; border-color: var(--ps1-cyan); color: var(--ps1-cyan); justify-content: center;">
-                <span class="auth-btn-icon">🌐</span>
-                <span>INICIAR SESIÓN EN EL NAVEGADOR WEB ↗</span>
+              <button type="button" class="btn btn-outline auth-action-btn" id="btn-auth-browser" style="display: none;">
+                <span>Iniciar sesión en navegador web ↗</span>
               </button>
             </div>
             <div class="auth-note-box">
-              <span class="note-tag">[SUPABASE AUTH]</span>
-              <span>Conexión cifrada sin cookies de rastreo. Compatible con Vercel & Supabase.</span>
+              <span class="note-tag">Supabase Auth</span>
+              <span>Conexión cifrada sin cookies de rastreo.</span>
             </div>
           </div>
 
@@ -310,15 +291,15 @@ const globalJsonLd = {
           <div class="auth-tab-panel hidden" id="tab-login">
             <form id="form-login" class="auth-form">
               <div class="auth-field">
-                <label for="login-email">&gt; CORREO ELECTRÓNICO</label>
+                <label for="login-email">Correo electrónico</label>
                 <input type="email" id="login-email" class="ps1-input" required placeholder="piloto@below-nominal.space" />
               </div>
               <div class="auth-field">
-                <label for="login-password">&gt; CONTRASEÑA</label>
+                <label for="login-password">Contraseña</label>
                 <input type="password" id="login-password" class="ps1-input" required placeholder="••••••••" />
               </div>
-              <button type="submit" class="btn auth-action-btn" id="btn-submit-login">
-                <span>[ ENTRAR ]</span>
+              <button type="submit" class="btn btn-primary auth-action-btn" id="btn-submit-login">
+                <span>Iniciar sesión</span>
               </button>
             </form>
           </div>
@@ -327,127 +308,101 @@ const globalJsonLd = {
           <div class="auth-tab-panel hidden" id="tab-signup">
             <form id="form-signup" class="auth-form">
               <div class="auth-field">
-                <label for="signup-email">&gt; CORREO NUEVO</label>
+                <label for="signup-email">Correo nuevo</label>
                 <input type="email" id="signup-email" class="ps1-input" required placeholder="nuevo_piloto@ejemplo.com" />
               </div>
               <div class="auth-field">
-                <label for="signup-password">&gt; CONTRASEÑA (MÍN. 6 CARACTERES)</label>
+                <label for="signup-password">Contraseña (mín. 6 caracteres)</label>
                 <input type="password" id="signup-password" minlength="6" class="ps1-input" required placeholder="••••••••" />
               </div>
-              <button type="submit" class="btn auth-action-btn" id="btn-submit-signup" style="border-color: var(--ps1-cyan); color: var(--ps1-cyan);">
-                <span>[ CREAR CUENTA ]</span>
+              <button type="submit" class="btn btn-brand auth-action-btn" id="btn-submit-signup">
+                <span>Crear cuenta</span>
               </button>
             </form>
           </div>
 
-          <!-- TAB 4: VINCULAR DESDE WEB (DESKTOP SYNC) -->
+          <!-- TAB 4: DESKTOP SYNC -->
           <div class="auth-tab-panel hidden" id="tab-desktop-sync">
             <p class="auth-desc">
-              Si ya tenés iniciada tu sesión en <strong>modelcoder.vercel.app</strong> en Chrome o tu navegador habitual, podés sincronizarla con esta app en 1 segundo:
+              Si ya iniciaste sesión en <strong>modelcoder.vercel.app</strong> desde tu navegador, podés sincronizarla con la app de escritorio:
             </p>
-            <ol style="font-size: 0.72rem; color: #a0aec0; margin: 0 0 0.85rem 1.2rem; padding: 0; line-height: 1.6;">
-              <li>En la web, hacé clic en tu avatar y elegí <strong>"🔑 Copiar código para app escritorio"</strong>.</li>
-              <li>Pegá el código aquí abajo y hacé clic en <strong>Vincular Sesión</strong>.</li>
+            <ol style="font-size: 0.8rem; color: var(--site-muted); margin: 0 0 0.85rem 1.2rem; padding: 0; line-height: 1.6;">
+              <li>En la web, hacé clic en tu perfil y elegí <strong>"Sincronizar App Escritorio"</strong>.</li>
+              <li>Pegá el código aquí abajo y presioná <strong>Vincular Sesión</strong>.</li>
             </ol>
             <div class="auth-field">
-              <label for="inp-sync-token">&gt; CÓDIGO DE SESIÓN</label>
-              <textarea id="inp-sync-token" class="ps1-input" rows="3" placeholder="Pegá el código de acceso aquí..." style="font-family: monospace; font-size: 0.68rem; resize: vertical;"></textarea>
+              <label for="inp-sync-token">Código de sesión</label>
+              <textarea id="inp-sync-token" class="ps1-input" rows="3" placeholder="Pegá el código de acceso aquí..." style="font-family: var(--font-mono); font-size: 0.76rem; resize: vertical;"></textarea>
             </div>
-            <button type="button" class="btn auth-action-btn" id="btn-submit-sync" style="border-color: var(--ps1-gold); color: var(--ps1-gold);">
-              <span>[ VINCULAR SESIÓN 🔑 ]</span>
+            <button type="button" class="btn btn-primary auth-action-btn" id="btn-submit-sync">
+              <span>Vincular sesión</span>
             </button>
           </div>
 
-          <!-- Mensaje de estado dinámico -->
           <div id="auth-status-msg" class="auth-status-box hidden"></div>
         </div>
       </div>
     </div>
 
-    <!-- Modal Retro PS1 de Mi Inventario, Favoritos y Colecciones -->
-    <div id="ps1-inventory-modal" class="ps1-modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="inv-modal-title">
-      <div class="ps1-window inv-modal-window" style="max-width: 840px; width: 95%;">
-        <div class="ps1-titlebar">
-          <div class="titlebar-title" id="inv-modal-title">
-            <span class="title-glyph">▲</span>
-            <span>BASE DE DATOS · MI INVENTARIO & COLECCIONES</span>
-          </div>
-          <button type="button" class="ps1-window-btn" id="btn-close-inventory-modal" aria-label="Cerrar">✕</button>
+    <!-- Modal de Mi Inventario, Favoritos y Colecciones -->
+    <div id="ps1-inventory-modal" class="mc-modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="inv-modal-title">
+      <div class="mc-modal-window inv-modal-window">
+        <div class="mc-modal-header">
+          <div class="mc-modal-title" id="inv-modal-title">Mi Inventario y Colecciones</div>
+          <button type="button" class="mc-modal-close" id="btn-close-inventory-modal" aria-label="Cerrar">✕</button>
         </div>
 
-        <div class="inv-modal-body" style="padding: 1.25rem;">
-          <!-- Tabs -->
-          <div class="inv-tabs" style="display: flex; gap: 0.5rem; margin-bottom: 1rem; border-bottom: 2px solid var(--ps1-steel); padding-bottom: 0.5rem; flex-wrap: wrap;">
+        <div class="inv-modal-body">
+          <div class="inv-tabs">
             <button type="button" class="inv-tab-btn active" data-tab="drafts">
-              📁 BORRADORES EN CURSO (<span id="inv-tab-drafts-count">0</span>)
+              Borradores (<span id="inv-tab-drafts-count">0</span>)
             </button>
             <button type="button" class="inv-tab-btn" data-tab="favorites">
-              ⭐ MODELOS FAVORITOS (<span id="inv-tab-favs-count">0</span>)
+              Favoritos (<span id="inv-tab-favs-count">0</span>)
             </button>
             <button type="button" class="inv-tab-btn" data-tab="collections">
-              🗂️ COLECCIONES (<span id="inv-tab-colls-count">0</span>)
+              Colecciones (<span id="inv-tab-colls-count">0</span>)
             </button>
           </div>
 
-          <!-- TAB 1: DRAFTS -->
           <div class="inv-tab-panel" id="inv-panel-drafts">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
-              <span style="font-size: 0.75rem; color: var(--text-dim);">
-                Modelos que estás construyendo en el Studio. Puedes retomarlos en cualquier momento sin perder tu trabajo.
-              </span>
-              <a href="/studio" class="btn-mini btn-gold" style="text-decoration: none;">
-                ➕ NUEVO MODELO EN STUDIO
-              </a>
+            <div class="inv-panel-head">
+              <span class="inv-panel-sub">Modelos en curso guardados desde Studio 3D.</span>
+              <a href="/studio" class="btn btn-primary btn-sm">+ Nuevo en Studio</a>
             </div>
-            <div id="inv-drafts-list" style="max-height: 440px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.65rem;">
-              <!-- Dynamic list of drafts -->
-            </div>
+            <div id="inv-drafts-list" class="inv-items-list"></div>
           </div>
 
-          <!-- TAB 2: FAVORITES -->
           <div class="inv-tab-panel hidden" id="inv-panel-favorites">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
-              <span style="font-size: 0.75rem; color: var(--text-dim);">
-                Generadores y modelos guardados con estrella ⭐ en el catálogo para acceso rápido.
-              </span>
-              <a href="/#catalog-controls" class="btn-mini btn-outline" style="text-decoration: none;">
-                🔍 EXPLORAR CATÁLOGO
-              </a>
+            <div class="inv-panel-head">
+              <span class="inv-panel-sub">Generadores y modelos guardados con estrella.</span>
+              <a href="/#catalog-controls" class="btn btn-outline btn-sm">Explorar catálogo</a>
             </div>
-            <div id="inv-favorites-list" style="max-height: 440px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.65rem;">
-              <!-- Dynamic list of favorites -->
-            </div>
+            <div id="inv-favorites-list" class="inv-items-list"></div>
           </div>
 
-          <!-- TAB 3: COLLECTIONS -->
           <div class="inv-tab-panel hidden" id="inv-panel-collections">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
-              <span style="font-size: 0.75rem; color: var(--text-dim);">
-                Agrupa tus modelos y piezas procedurales en conjuntos temáticos para tus escenas de Below Nominal.
-              </span>
-              <button id="btn-create-collection" class="btn-mini btn-cyan" type="button">
-                ➕ NUEVA COLECCIÓN
-              </button>
+            <div class="inv-panel-head">
+              <span class="inv-panel-sub">Agrupá modelos en colecciones temáticas para tus escenas.</span>
+              <button id="btn-create-collection" class="btn btn-brand btn-sm" type="button">+ Nueva colección</button>
             </div>
-            <div id="inv-create-coll-form" class="ps1-inset hidden" style="padding: 0.75rem; margin-bottom: 1rem; background: #07101e;">
-              <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: flex-end;">
-                <div style="flex-grow: 1; min-width: 200px;">
-                  <label for="new-coll-name" style="display: block; font-family: var(--font-pixel); font-size: 0.7rem; color: var(--ps1-gold); margin-bottom: 0.25rem;">NOMBRE DE LA COLECCIÓN</label>
-                  <input type="text" id="new-coll-name" class="ps1-input" placeholder="Ej: Laboratorio Subterráneo" style="width: 100%; font-size: 0.8rem;" />
+            <div id="inv-create-coll-form" class="mc-sunken hidden" style="padding: 0.85rem; margin-bottom: 1rem;">
+              <div style="display: flex; gap: 0.6rem; flex-wrap: wrap; align-items: flex-end;">
+                <div style="flex: 1; min-width: 180px;">
+                  <label for="new-coll-name" class="inv-field-lbl">Nombre</label>
+                  <input type="text" id="new-coll-name" class="ps1-input" placeholder="Ej: Laboratorio Subterráneo" style="width: 100%;" />
                 </div>
-                <div style="flex-grow: 1; min-width: 200px;">
-                  <label for="new-coll-desc" style="display: block; font-family: var(--font-pixel); font-size: 0.7rem; color: var(--ps1-cyan); margin-bottom: 0.25rem;">DESCRIPCIÓN (OPCIONAL)</label>
-                  <input type="text" id="new-coll-desc" class="ps1-input" placeholder="Props para el sector médico..." style="width: 100%; font-size: 0.8rem;" />
+                <div style="flex: 1; min-width: 180px;">
+                  <label for="new-coll-desc" class="inv-field-lbl">Descripción (opcional)</label>
+                  <input type="text" id="new-coll-desc" class="ps1-input" placeholder="Props para el sector médico..." style="width: 100%;" />
                 </div>
                 <div style="display: flex; gap: 0.4rem;">
-                  <button id="btn-submit-new-coll" class="btn-mini btn-gold" type="button">CREAR</button>
-                  <button id="btn-cancel-new-coll" class="btn-mini btn-outline" type="button">CANCELAR</button>
+                  <button id="btn-submit-new-coll" class="btn btn-primary btn-sm" type="button">Crear</button>
+                  <button id="btn-cancel-new-coll" class="btn btn-outline btn-sm" type="button">Cancelar</button>
                 </div>
               </div>
             </div>
-            <div id="inv-collections-list" style="max-height: 440px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.75rem;">
-              <!-- Dynamic list of collections -->
-            </div>
+            <div id="inv-collections-list" class="inv-items-list"></div>
           </div>
         </div>
       </div>
@@ -456,112 +411,58 @@ const globalJsonLd = {
     {!hideGlobalNav && (
     <footer class="site-footer">
       <div class="footer-container">
-        <!-- Columna 1: Marca & Propósito -->
-        <div class="footer-col footer-col-brand">
+        <div class="footer-col">
           <div class="footer-brand-header">
-            <img src="/logo.png" alt="ModelCoder Logo" class="footer-brand-logo" width="36" height="36" />
-            <div class="footer-brand-text">
-              <span class="footer-brand-title">[ MODELCODER ]</span>
-              <span class="footer-brand-tagline">HERRAMIENTA PROCEDURAL 3D</span>
-            </div>
+            <img src="/logo.png" alt="ModelCoder Logo" class="footer-brand-logo" width="28" height="28" />
+            <span class="footer-brand-title">ModelCoder</span>
           </div>
           <p class="footer-desc">
-            Plataforma web abierta para crear, personalizar y descargar modelos 3D low-poly en formato universal GLB. Diseñada con enfoque práctico para videojuegos independientes.
+            Plataforma abierta para diseñar, personalizar y exportar modelos 3D low-poly en formato universal GLB para Godot 4, Unity y Blender.
           </p>
-          <div class="footer-badges">
-            <span class="footer-tag">BLENDER 5.0</span>
-            <span class="footer-tag">GLTF / GLB UNIVERSAL</span>
-            <span class="footer-tag">GODOT 4 & UNITY</span>
-            <span class="footer-tag">LICENCIA CC-BY 4.0</span>
-          </div>
         </div>
 
-        <!-- Columna 2: Creador & Estudio (IV Orbit Games) -->
-        <div class="footer-col footer-col-creator">
-          <h4 class="footer-col-title">EL CREADOR & EL ESTUDIO</h4>
-          <p class="footer-creator-text">
-            Desarrollado y mantenido por <strong>Franciscuarto</strong> bajo el sello independiente <strong>IV Orbit Games</strong> desde Buenos Aires, Argentina.
-          </p>
-          <p class="footer-creator-mission">
-            ModelCoder nació como el conjunto de herramientas internas para generar la maquinaria, mobiliario y accesorios modulares de <em>Below Nominal</em> (desarrollado con Godot Engine).
-          </p>
-          <div class="footer-creator-links">
-            <a href="https://ivorbitgames.online" target="_blank" rel="noopener noreferrer" class="creator-link link-highlight">
-              🪐 ivorbitgames.online (Web Oficial) &rarr;
-            </a>
-            <a href="https://iv-orbit.itch.io" target="_blank" rel="noopener noreferrer" class="creator-link">
-              🎮 itch.io (Juegos & Demos) &rarr;
-            </a>
-            <a href="https://www.youtube.com/@Franciscuarto" target="_blank" rel="noopener noreferrer" class="creator-link">
-              📺 YouTube (@Franciscuarto) &rarr;
-            </a>
-            <a href="https://github.com/FrancisCuarto" target="_blank" rel="noopener noreferrer" class="creator-link">
-              🐙 GitHub (@FrancisCuarto) &rarr;
-            </a>
-          </div>
+        <div class="footer-col">
+          <h4 class="footer-col-title">Recursos</h4>
+          <ul class="footer-links-list">
+            <li><a href="/">Catálogo 3D</a></li>
+            <li><a href="/studio">Studio 3D Online</a></li>
+            <li><a href="/docs">Documentación</a></li>
+            <li><a href="/devlog">Devlog</a></li>
+            <li><a href="/contribute">Cómo contribuir</a></li>
+          </ul>
         </div>
 
-        <!-- Columna 3: Videojuegos & Proyectos de IV Orbit Games -->
-        <div class="footer-col footer-col-projects">
-          <h4 class="footer-col-title">HERRAMIENTAS & JUEGOS DE IV ORBIT</h4>
-          <ul class="footer-project-list">
-            <li>
-              <a href="https://ivorbitgames.online/herramientas/texture-studio" target="_blank" rel="noopener noreferrer" class="project-item" style="border-color: var(--ps1-gold);">
-                <div class="project-header">
-                  <span class="project-name" style="color: var(--ps1-gold);">🪐 Texture Studio (PBR)</span>
-                  <span class="project-badge" style="background: var(--ps1-gold); color: #000; font-weight: bold;">NUEVA APP</span>
-                </div>
-                <span class="project-desc">Suite de escritorio para rectificar perspectiva 3×3, mosaicos seamless y mapas PBR (PC).</span>
-              </a>
-            </li>
-            <li>
-              <a href="https://iv-orbit.itch.io/belownominal" target="_blank" rel="noopener noreferrer" class="project-item">
-                <div class="project-header">
-                  <span class="project-name">🧊 Below Nominal</span>
-                  <span class="project-badge">EN DESARROLLO</span>
-                </div>
-                <span class="project-desc">Terror y supervivencia bajo el hielo de Europa (Godot Engine, PC).</span>
-              </a>
-            </li>
-            <li>
-              <a href="https://ivorbitgames.online/juegos/puchito" target="_blank" rel="noopener noreferrer" class="project-item">
-                <div class="project-header">
-                  <span class="project-name">🚗 Puchito</span>
-                  <span class="project-badge badge-avail">DISPONIBLE</span>
-                </div>
-                <span class="project-desc">Gestión y minijuegos arcade en taller espacial (PC).</span>
-              </a>
-            </li>
-            <li>
-              <a href="https://ivorbitgames.online/juegos/topoloco" target="_blank" rel="noopener noreferrer" class="project-item">
-                <div class="project-header">
-                  <span class="project-name">🎯 Topoloco</span>
-                  <span class="project-badge badge-avail">ANDROID</span>
-                </div>
-                <span class="project-desc">Arcade casual de reflejos rápidos para móviles.</span>
-              </a>
-            </li>
+        <div class="footer-col">
+          <h4 class="footer-col-title">IV Orbit Games</h4>
+          <ul class="footer-links-list">
+            <li><a href="https://ivorbitgames.online" target="_blank" rel="noopener noreferrer">Web Oficial ↗</a></li>
+            <li><a href="https://ivorbitgames.online/herramientas/texture-studio" target="_blank" rel="noopener noreferrer">Texture Studio PBR ↗</a></li>
+            <li><a href="https://iv-orbit.itch.io/belownominal" target="_blank" rel="noopener noreferrer">Below Nominal ↗</a></li>
+            <li><a href="https://ivorbitgames.online/juegos/puchito" target="_blank" rel="noopener noreferrer">Puchito ↗</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h4 class="footer-col-title">Comunidad</h4>
+          <ul class="footer-links-list">
+            <li><a href="https://github.com/FrancisCuarto/MODELCODER" target="_blank" rel="noopener noreferrer">GitHub Open Source ↗</a></li>
+            <li><a href="https://www.youtube.com/@Franciscuarto" target="_blank" rel="noopener noreferrer">YouTube (@Franciscuarto) ↗</a></li>
+            <li><a href="https://iv-orbit.itch.io" target="_blank" rel="noopener noreferrer">itch.io ↗</a></li>
+            <li><a href="https://ivorbitgames.online/contacto" target="_blank" rel="noopener noreferrer">Contacto ↗</a></li>
           </ul>
         </div>
       </div>
 
-      <!-- Barra Inferior de Derechos -->
       <div class="footer-bottom-bar">
-        <div class="footer-bottom-inner">
-          <span>&copy; 2026 IV Orbit Games &bull; Franciscuarto &bull; Buenos Aires, Argentina</span>
-          <div class="footer-bottom-links">
-            <a href="/docs">Documentación & Tutoriales</a>
-            <span class="sep">&bull;</span>
-            <a href="https://github.com/FrancisCuarto/MODELCODER" target="_blank" rel="noopener noreferrer">Repositorio Open Source</a>
-            <span class="sep">&bull;</span>
-            <a href="https://ivorbitgames.online/contacto" target="_blank" rel="noopener noreferrer">Contacto Directo</a>
-          </div>
+        <span>© 2026 IV Orbit Games · Franciscuarto · Buenos Aires, Argentina · Licencia CC-BY 4.0</span>
+        <div class="footer-bottom-links">
+          <a href="/docs">Documentación</a>
+          <a href="https://github.com/FrancisCuarto/MODELCODER" target="_blank" rel="noopener noreferrer">GitHub</a>
         </div>
       </div>
     </footer>
     )}
 
-    <!-- Script de Inicialización de Autenticación de Supabase -->
     <script>
       import { getSupabase, signInWithGitHub, signInWithEmail, signUpWithEmail, signOut, onAuthStateChange, checkUserRole, getCommunityModels, getSessionExportCode, importSessionFromCode } from '../lib/supabase';
       import { isTauriDesktop, initDesktopLinkInterceptor, openInExternalBrowser, getTauriInvoke } from '../lib/tauri-bridge';
@@ -576,7 +477,6 @@ const globalJsonLd = {
         toggleModelInCollection
       } from '../lib/user-inventory';
 
-      // Interceptar enlaces externos y window.open en la versión de escritorio
       initDesktopLinkInterceptor();
 
       function escapeHtml(str: unknown): string {
@@ -588,7 +488,6 @@ const globalJsonLd = {
           .replace(/'/g, '&#39;');
       }
 
-      // Sincronizar contador global de modelos en el encabezado
       async function syncHeaderModelCount() {
         try {
           const commModels = await getCommunityModels({ onlyPublic: true });
@@ -596,75 +495,56 @@ const globalJsonLd = {
           const baseCount = Number(el?.dataset?.baseCount) || 201;
           const totalCount = baseCount + (commModels ? commModels.length : 0);
           if (el) {
-            el.textContent = `${totalCount} MODELOS DISPONIBLES`;
+            el.textContent = `${totalCount} modelos`;
           }
         } catch {}
       }
       syncHeaderModelCount();
 
-      // Detección y Adaptación para Modo Escritorio (Tauri v2 Offline Workstation)
       const isDesktop = isTauriDesktop();
       if (isDesktop) {
         document.documentElement.classList.add('is-desktop-app');
-
-        // Mostrar botón de inicio de sesión en navegador externo
         const btnAuthBrowser = document.getElementById('btn-auth-browser');
         if (btnAuthBrowser) btnAuthBrowser.style.display = 'inline-flex';
 
-        // 1. Logo conduce al Studio
         const brandLink = document.querySelector('.brand-logo');
         if (brandLink) {
           brandLink.setAttribute('href', '/studio');
-          const badge = brandLink.querySelector('.brand-badge');
-          if (badge) badge.textContent = 'DESKTOP';
         }
 
-        // 2. Enlace al Catálogo Web Comunitario externo
         const catalogLinks = document.querySelectorAll('a[href="/"]');
         catalogLinks.forEach((link) => {
           if (link.classList.contains('nav-link') || link.textContent?.includes('Catálogo')) {
-            link.textContent = '> Catálogo Web ↗';
+            link.textContent = 'Catálogo Web ↗';
             link.setAttribute('href', 'https://modelcoder.vercel.app');
             link.setAttribute('target', '_blank');
             link.setAttribute('rel', 'noopener noreferrer');
-            link.setAttribute('title', 'Explorar catálogo de creaciones comunitarias en tu navegador web');
           }
         });
 
-        // 3. Indicador de estado local offline
         const statusText = document.getElementById('header-models-count');
         if (statusText) {
-          statusText.textContent = 'ESTUDIO OFFLINE';
-          statusText.style.color = '#39ff14';
+          statusText.textContent = 'Estudio Offline';
         }
 
-        // 4. Botón de acceso directo a Texturas Locales en disco
         const navLinks = document.querySelector('.nav-links');
         if (navLinks && !document.getElementById('btn-desktop-textures')) {
           const btnTextures = document.createElement('button');
           btnTextures.id = 'btn-desktop-textures';
           btnTextures.className = 'nav-link';
           btnTextures.type = 'button';
-          btnTextures.style.background = 'transparent';
-          btnTextures.style.cursor = 'pointer';
-          btnTextures.style.color = 'var(--ps1-cyan)';
-          btnTextures.style.borderColor = 'var(--ps1-cyan)';
           btnTextures.textContent = '📂 Texturas';
           btnTextures.title = 'Abrir carpeta local de texturas personalizadas en disco';
           btnTextures.addEventListener('click', async () => {
             try {
               const invoke = getTauriInvoke();
-              if (invoke) {
-                await invoke('open_textures_folder');
-              }
+              if (invoke) await invoke('open_textures_folder');
             } catch (err) {
               console.warn('No se pudo invocar open_textures_folder:', err);
             }
           });
           const moreContainer = document.getElementById('nav-more-container');
-          if (moreContainer) {
-            navLinks.insertBefore(btnTextures, moreContainer);
-          }
+          if (moreContainer) navLinks.insertBefore(btnTextures, moreContainer);
         }
       }
 
@@ -714,53 +594,30 @@ const globalJsonLd = {
 
       btnOpenAuth?.addEventListener('click', openModal);
       btnCloseAuthModal?.addEventListener('click', closeModal);
-
-      // Close modal on backdrop click
       authModal?.addEventListener('click', (e) => {
         if (e.target === authModal) closeModal();
       });
 
-      // Tab switcher
       tabs.forEach((tab) => {
         tab.addEventListener('click', () => {
           tabs.forEach((t) => t.classList.remove('active'));
           tab.classList.add('active');
-          const target = tab.getAttribute('data-tab');
-          Object.keys(tabPanels).forEach((key) => {
-            if (key === target) {
-              tabPanels[key]?.classList.remove('hidden');
-            } else {
-              tabPanels[key]?.classList.add('hidden');
-            }
+          const key = tab.getAttribute('data-tab') || 'oauth';
+          Object.entries(tabPanels).forEach(([k, p]) => {
+            if (p) p.classList.toggle('hidden', k !== key);
           });
           clearStatus();
         });
       });
 
-      // Toggle user profile dropdown
       userProfileBtn?.addEventListener('click', (e) => {
         e.stopPropagation();
         navMoreMenu?.classList.add('hidden');
         navMoreContainer?.classList.remove('open');
+        btnToggleNavMore?.setAttribute('aria-expanded', 'false');
         userDropdownMenu?.classList.toggle('hidden');
       });
 
-      // Exportar código de sesión para la app de escritorio
-      document.getElementById('btn-export-session-code')?.addEventListener('click', async () => {
-        try {
-          const code = await getSessionExportCode();
-          if (!code) {
-            alert('No se pudo generar el código. Asegurate de tener una sesión activa.');
-            return;
-          }
-          await navigator.clipboard.writeText(code);
-          alert('✅ Código de sesión copiado al portapapeles. ¡Abrí tu app de escritorio y pegalo en la pestaña "Vincular Sesión"!');
-        } catch (err: any) {
-          alert(`Error al copiar: ${err?.message || err}`);
-        }
-      });
-
-      // Toggle "⋯ MÁS" dropdown
       const btnToggleNavMore = document.getElementById('btn-toggle-nav-more');
       const navMoreMenu = document.getElementById('nav-more-menu');
       const navMoreContainer = document.getElementById('nav-more-container');
@@ -774,25 +631,23 @@ const globalJsonLd = {
         navMoreContainer?.classList.toggle('open', isOpen);
       });
 
-      // THEME MANAGER
+      // THEME MANAGER (Light Multica default, Dark, System, Retro PS1)
       (function initThemeToggle() {
         const storageKey = 'modelcoder-theme';
         const options = document.querySelectorAll('.theme-option');
         const root = document.documentElement;
         const mql = window.matchMedia('(prefers-color-scheme: dark)');
-        // Tema forzado por la pagina (ej. Studio 3D mantiene siempre estetica PS1).
-        // La preferencia global si se guarda y se aplica en el resto del sitio.
         const forcedTheme = (window as any).__MODELCODER_FORCE_THEME__ as string | undefined;
 
-        const getStored = () => localStorage.getItem(storageKey) || 'dark-professional';
+        const getStored = () => localStorage.getItem(storageKey) || 'light';
 
         function applyTheme(raw: string) {
           let resolved = raw;
           if (raw === 'system') {
-            resolved = mql.matches ? 'dark-professional' : 'dark-professional';
+            resolved = mql.matches ? 'dark' : 'light';
           }
-          if (resolved !== 'ps1' && resolved !== 'dark-professional') {
-            resolved = 'dark-professional';
+          if (resolved !== 'light' && resolved !== 'dark' && resolved !== 'dark-professional' && resolved !== 'ps1') {
+            resolved = 'light';
           }
           if (!forcedTheme) {
             root.setAttribute('data-theme', resolved);
@@ -838,7 +693,6 @@ const globalJsonLd = {
         btnToggleNavMore?.setAttribute('aria-expanded', 'false');
       });
 
-      // GitHub OAuth button
       document.getElementById('btn-auth-github')?.addEventListener('click', async () => {
         try {
           showStatus('Iniciando redirección a GitHub...');
@@ -848,84 +702,95 @@ const globalJsonLd = {
         }
       });
 
-      // Botón para iniciar sesión en el navegador externo (Desktop)
-      document.getElementById('btn-auth-browser')?.addEventListener('click', () => {
-        openInExternalBrowser('https://modelcoder.vercel.app/studio');
-        showStatus('Abriendo modelcoder.vercel.app en tu navegador web. Iniciá sesión allí y luego copiá tu código de sesión.', false);
+      document.getElementById('btn-auth-browser')?.addEventListener('click', async () => {
+        try {
+          await openInExternalBrowser('https://modelcoder.vercel.app/');
+          tabs.forEach(t => t.classList.remove('active'));
+          document.getElementById('tab-btn-desktop-sync')?.classList.add('active');
+          Object.entries(tabPanels).forEach(([k, p]) => {
+            if (p) p.classList.toggle('hidden', k !== 'desktop-sync');
+          });
+        } catch (err: any) {
+          showStatus(`Error abriendo navegador: ${err?.message || err}`, true);
+        }
       });
 
-      // Botón para vincular sesión con token/código (Desktop)
+      document.getElementById('btn-export-session-code')?.addEventListener('click', async () => {
+        try {
+          const code = await getSessionExportCode();
+          if (code && navigator.clipboard) {
+            await navigator.clipboard.writeText(code);
+            alert('Código de sesión copiado al portapapeles. Pegalo en la app de escritorio.');
+          }
+        } catch (err: any) {
+          alert(`No se pudo copiar el código: ${err?.message || err}`);
+        }
+      });
+
       document.getElementById('btn-submit-sync')?.addEventListener('click', async () => {
-        const inp = document.getElementById('inp-sync-token') as HTMLTextAreaElement | null;
-        const code = inp?.value?.trim();
+        const tokenInp = document.getElementById('inp-sync-token') as HTMLTextAreaElement | null;
+        const code = tokenInp?.value?.trim();
         if (!code) {
-          showStatus('Por favor pegá el código de sesión copiado desde la web.', true);
+          showStatus('Pegá el código de sesión primero.', true);
           return;
         }
         try {
-          showStatus('Vinculando sesión de piloto...');
-          await importSessionFromCode(code);
-          showStatus('¡Sesión vinculada con éxito! Cargando inventario...', false);
-          setTimeout(() => {
-            closeModal();
-            window.location.reload();
-          }, 800);
+          showStatus('Validando sesión...');
+          const res = await importSessionFromCode(code);
+          if (res?.user) {
+            showStatus('¡Sesión vinculada correctamente!');
+            updateSessionUI(res.user);
+            setTimeout(() => closeModal(), 900);
+          } else {
+            showStatus('Código inválido o expirado.', true);
+          }
         } catch (err: any) {
           showStatus(`Error al vincular: ${err?.message || err}`, true);
         }
       });
 
-      // Form Login Email
       document.getElementById('form-login')?.addEventListener('submit', async (e) => {
         e.preventDefault();
         const email = (document.getElementById('login-email') as HTMLInputElement)?.value;
         const password = (document.getElementById('login-password') as HTMLInputElement)?.value;
         try {
-          showStatus('Verificando credenciales...');
+          showStatus('Iniciando sesión...');
           await signInWithEmail(email, password);
-          showStatus('¡Acceso correcto! Cargando sesión...', false);
-          setTimeout(() => {
-            closeModal();
-            window.location.reload();
-          }, 800);
+          closeModal();
         } catch (err: any) {
           showStatus(`Error: ${err?.message || err}`, true);
         }
       });
 
-      // Form Signup Email
       document.getElementById('form-signup')?.addEventListener('submit', async (e) => {
         e.preventDefault();
         const email = (document.getElementById('signup-email') as HTMLInputElement)?.value;
         const password = (document.getElementById('signup-password') as HTMLInputElement)?.value;
         try {
-          showStatus('Registrando nuevo piloto...');
+          showStatus('Creando cuenta...');
           await signUpWithEmail(email, password);
-          showStatus('¡Cuenta creada! Revisa tu bandeja de entrada si requiere confirmación.', false);
+          showStatus('¡Cuenta creada! Revisá tu correo si requiere confirmación.', false);
         } catch (err: any) {
           showStatus(`Error al registrar: ${err?.message || err}`, true);
         }
       });
 
-      // Logout button
       btnLogout?.addEventListener('click', async () => {
         await signOut();
       });
 
-      // Auth state observer
       async function updateSessionUI(user: any) {
         const navCollabLink = document.getElementById('nav-collab-link');
         if (user) {
           btnOpenAuth?.classList.add('hidden');
           userLoggedBox?.classList.remove('hidden');
           const name = user.user_metadata?.user_name || user.user_metadata?.name || user.email?.split('@')[0] || 'PILOTO';
-          if (userDisplayName) userDisplayName.textContent = `@${name.toUpperCase()}`;
+          if (userDisplayName) userDisplayName.textContent = `@${name}`;
           if (userEmailText) userEmailText.textContent = user.email || '';
 
-          // Verificar si es colaborador para mostrar el acceso directo
           const { isCollaborator, role } = await checkUserRole(user);
           if (navCollabLink) {
-            navCollabLink.style.display = isCollaborator ? 'inline-flex' : 'none';
+            navCollabLink.style.display = isCollaborator ? 'flex' : 'none';
             if (role === 'owner') {
               navCollabLink.textContent = '👑 Colaboradores';
             }
@@ -937,10 +802,7 @@ const globalJsonLd = {
         }
       }
 
-      // Check current session
-      // ==========================================
-      // GESTOR DE INVENTARIO, FAVORITOS Y COLECCIONES
-      // ==========================================
+      // Inventory & Collections Manager
       const btnOpenInventory = document.getElementById('btn-open-global-inventory');
       const dropdownOpenInventory = document.getElementById('dropdown-open-inventory');
       const invModal = document.getElementById('ps1-inventory-modal');
@@ -979,14 +841,10 @@ const globalJsonLd = {
         const drafts = getProjectDrafts();
         if (drafts.length === 0) {
           invDraftsList.innerHTML = `
-            <div class="ps1-inset" style="padding: 2rem 1rem; text-align: center; color: var(--text-dim); background: #070d18;">
-              <div style="font-size: 2.2rem; margin-bottom: 0.4rem;">📁</div>
-              <p style="font-family: var(--font-pixel); font-size: 0.78rem; color: var(--ps1-gold); margin-bottom: 0.35rem;">
-                NO TIENES BORRADORES NI PROYECTOS GUARDADOS
-              </p>
-              <span style="font-size: 0.75rem;">
-                Entra a <a href="/studio" style="color: var(--ps1-cyan); text-decoration: underline;">Studio 3D</a> y guarda tu avance con 💾 GUARDAR para retomarlo cuando quieras.
-              </span>
+            <div class="inv-empty-box">
+              <div style="font-size: 1.75rem; margin-bottom: 0.4rem;">📁</div>
+              <p class="inv-empty-title">No tenés borradores guardados</p>
+              <span class="inv-empty-sub">Entrá a <a href="/studio">Studio 3D</a> y guardá tu avance para retomarlo cuando quieras.</span>
             </div>
           `;
           return;
@@ -995,12 +853,8 @@ const globalJsonLd = {
         invDraftsList.innerHTML = '';
         drafts.forEach(draft => {
           const item = document.createElement('div');
-          item.className = 'ps1-inset';
-          item.style.padding = '0.75rem';
-          item.style.background = '#090e1c';
-          item.style.border = '1px solid var(--ps1-steel)';
+          item.className = 'inv-item-card';
           const dStr = new Date(draft.updated_at).toLocaleString();
-
           const safeName = escapeHtml(draft.name);
           const safeCat = escapeHtml(draft.category);
           const safeDesc = escapeHtml(draft.description || 'Sin notas.');
@@ -1008,35 +862,29 @@ const globalJsonLd = {
 
           item.innerHTML = `
             <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
-              <div style="width: 64px; height: 64px; background: #060911; border: 1px solid var(--ps1-steel); display: flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden;">
+              <div class="inv-thumb-box">
                 ${draft.thumbnail
                   ? `<img src="${escapeHtml(draft.thumbnail)}" alt="${safeName}" style="width: 100%; height: 100%; object-fit: contain;" />`
-                  : `<span style="font-size: 1.5rem;">📦</span>`
+                  : `<span style="font-size: 1.3rem;">📦</span>`
                 }
               </div>
               <div style="flex-grow: 1; min-width: 180px;">
                 <div style="display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.2rem; flex-wrap: wrap;">
-                  <strong style="font-family: var(--font-pixel); font-size: 0.78rem; color: var(--ps1-gold);">${safeName}</strong>
-                  <span class="category-badge category-${safeCat}" style="font-size: 0.65rem;">${safeCat}</span>
+                  <strong class="inv-item-title">${safeName}</strong>
+                  <span class="category-badge category-${safeCat}">${safeCat}</span>
                 </div>
-                <p style="font-size: 0.72rem; color: var(--text-dim); margin: 0 0 0.3rem 0;">
-                  ${safeDesc}
-                </p>
-                <div style="font-size: 0.68rem; color: var(--ps1-cyan); display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                  <span>📐 ${Number(draft.components_count) || 0} piezas</span>
-                  <span>&bull;</span>
-                  <span>🔺 ~${Number(draft.tri_count) || 0} tris</span>
-                  <span>&bull;</span>
-                  <span style="color: var(--text-dim);">🕒 ${escapeHtml(dStr)}</span>
+                <p class="inv-item-desc">${safeDesc}</p>
+                <div class="inv-item-meta">
+                  <span>${Number(draft.components_count) || 0} piezas</span>
+                  <span>·</span>
+                  <span>~${Number(draft.tri_count) || 0} tris</span>
+                  <span>·</span>
+                  <span>${escapeHtml(dStr)}</span>
                 </div>
               </div>
               <div style="display: flex; gap: 0.35rem; align-items: center;">
-                <a href="/studio?draft=${encodeURIComponent(draft.id)}" class="btn-mini btn-gold" style="text-decoration: none;">
-                  ⚡ RETOMAR EN STUDIO
-                </a>
-                <button type="button" class="btn-mini btn-danger btn-del-inv-draft" data-id="${safeId}" title="Eliminar borrador">
-                  🗑️
-                </button>
+                <a href="/studio?draft=${encodeURIComponent(draft.id)}" class="btn btn-primary btn-sm">Retomar</a>
+                <button type="button" class="btn-mini btn-danger btn-del-inv-draft" data-id="${safeId}" title="Eliminar borrador">✕</button>
               </div>
             </div>
           `;
@@ -1061,14 +909,10 @@ const globalJsonLd = {
         const favs = getFavorites();
         if (favs.length === 0) {
           invFavoritesList.innerHTML = `
-            <div class="ps1-inset" style="padding: 2rem 1rem; text-align: center; color: var(--text-dim); background: #070d18;">
-              <div style="font-size: 2.2rem; margin-bottom: 0.4rem;">⭐</div>
-              <p style="font-family: var(--font-pixel); font-size: 0.78rem; color: var(--ps1-gold); margin-bottom: 0.35rem;">
-                NO TIENES MODELOS EN FAVORITOS
-              </p>
-              <span style="font-size: 0.75rem;">
-                Explora el catálogo y marca con estrella ⭐ los modelos que quieras guardar en tu inventario.
-              </span>
+            <div class="inv-empty-box">
+              <div style="font-size: 1.75rem; margin-bottom: 0.4rem;">⭐</div>
+              <p class="inv-empty-title">No tenés modelos en favoritos</p>
+              <span class="inv-empty-sub">Explorá el catálogo y marcá con estrella los modelos que quieras guardar.</span>
             </div>
           `;
           return;
@@ -1077,10 +921,7 @@ const globalJsonLd = {
         invFavoritesList.innerHTML = '';
         favs.forEach(fav => {
           const item = document.createElement('div');
-          item.className = 'ps1-inset';
-          item.style.padding = '0.75rem';
-          item.style.background = '#090e1c';
-          item.style.border = '1px solid var(--ps1-steel)';
+          item.className = 'inv-item-card';
           const dStr = new Date(fav.added_at).toLocaleDateString();
           const safeFavName = escapeHtml(fav.name);
           const safeFavCat = escapeHtml(fav.category);
@@ -1090,20 +931,15 @@ const globalJsonLd = {
             <div style="display: flex; gap: 0.75rem; align-items: center; justify-content: space-between; flex-wrap: wrap;">
               <div>
                 <div style="display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.2rem; flex-wrap: wrap;">
-                  <span style="color: var(--ps1-gold);">⭐</span>
-                  <strong style="font-family: var(--font-pixel); font-size: 0.8rem; color: var(--ps1-gold);">${safeFavName}</strong>
-                  <span class="category-badge category-${safeFavCat}" style="font-size: 0.65rem;">${safeFavCat}</span>
-                  <span class="ps1-telemetry-tag" style="font-size: 0.65rem;">${escapeHtml(fav.type.toUpperCase())}</span>
+                  <strong class="inv-item-title">${safeFavName}</strong>
+                  <span class="category-badge category-${safeFavCat}">${safeFavCat}</span>
+                  <span class="preset-badge">${escapeHtml(fav.type.toUpperCase())}</span>
                 </div>
-                <span style="font-size: 0.7rem; color: var(--text-dim);">Agregado: ${escapeHtml(dStr)}</span>
+                <span class="inv-item-meta">Agregado: ${escapeHtml(dStr)}</span>
               </div>
               <div style="display: flex; gap: 0.4rem; align-items: center;">
-                <a href="${fav.type === 'catalog' ? `/generators/${encodeURIComponent(fav.id)}` : '/studio'}" class="btn-mini btn-cyan" style="text-decoration: none;">
-                  👁️ VER EN 3D
-                </a>
-                <button type="button" class="btn-mini btn-outline btn-del-inv-fav" data-id="${safeFavId}" title="Quitar de favoritos">
-                  ✕ QUITAR
-                </button>
+                <a href="${fav.type === 'catalog' ? `/generators/${encodeURIComponent(fav.id)}` : '/studio'}" class="btn btn-outline btn-sm">Ver en 3D</a>
+                <button type="button" class="btn-mini btn-danger btn-del-inv-fav" data-id="${safeFavId}" title="Quitar de favoritos">Quitar</button>
               </div>
             </div>
           `;
@@ -1129,14 +965,10 @@ const globalJsonLd = {
         const colls = getCollections();
         if (colls.length === 0) {
           invCollectionsList.innerHTML = `
-            <div class="ps1-inset" style="padding: 2rem 1rem; text-align: center; color: var(--text-dim); background: #070d18;">
-              <div style="font-size: 2.2rem; margin-bottom: 0.4rem;">🗂️</div>
-              <p style="font-family: var(--font-pixel); font-size: 0.78rem; color: var(--ps1-gold); margin-bottom: 0.35rem;">
-                NO HAS CREADO COLECCIONES AÚN
-              </p>
-              <span style="font-size: 0.75rem;">
-                Crea una colección como "Estación Subterránea" o "Módulo Médico" para organizar tus sets de assets.
-              </span>
+            <div class="inv-empty-box">
+              <div style="font-size: 1.75rem; margin-bottom: 0.4rem;">🗂️</div>
+              <p class="inv-empty-title">Todavía no creaste colecciones</p>
+              <span class="inv-empty-sub">Creá una colección para organizar tus sets de assets.</span>
             </div>
           `;
           return;
@@ -1145,44 +977,35 @@ const globalJsonLd = {
         invCollectionsList.innerHTML = '';
         colls.forEach(coll => {
           const item = document.createElement('div');
-          item.className = 'ps1-inset';
-          item.style.padding = '0.75rem';
-          item.style.background = '#090e1c';
-          item.style.border = '1px solid var(--ps1-steel)';
-
+          item.className = 'inv-item-card';
           const modelIds = Array.isArray(coll.model_ids) ? coll.model_ids : [];
           const safeCollId = escapeHtml(coll.id);
           const safeCollName = escapeHtml(coll.name);
-          const safeCollDesc = escapeHtml(coll.description || 'Colección personalizada de modelos procedurales.');
+          const safeCollDesc = escapeHtml(coll.description || 'Colección personalizada.');
 
           item.innerHTML = `
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem; flex-wrap: wrap; gap: 0.4rem;">
               <div style="display: flex; align-items: center; gap: 0.5rem;">
-                <span style="font-size: 1.1rem;">🗂️</span>
-                <strong style="font-family: var(--font-pixel); font-size: 0.82rem; color: var(--ps1-cyan);">${safeCollName}</strong>
-                <span class="ps1-telemetry-tag" style="font-size: 0.65rem;">${modelIds.length} MODELOS</span>
+                <strong class="inv-item-title">${safeCollName}</strong>
+                <span class="preset-badge">${modelIds.length} modelos</span>
               </div>
-              <button type="button" class="btn-mini btn-danger btn-del-coll" data-id="${safeCollId}" title="Eliminar colección">
-                🗑️ ELIMINAR
-              </button>
+              <button type="button" class="btn-mini btn-danger btn-del-coll" data-id="${safeCollId}">Eliminar</button>
             </div>
-            <p style="font-size: 0.74rem; color: var(--text-dim); margin: 0 0 0.5rem 0;">
-              ${safeCollDesc}
-            </p>
+            <p class="inv-item-desc" style="margin-bottom: 0.5rem;">${safeCollDesc}</p>
             ${modelIds.length > 0 ? `
               <div style="display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 0.5rem;">
                 ${modelIds.map(id => {
                   const safeMid = escapeHtml(id);
-                  return `<span class="ps1-telemetry-tag" style="font-size: 0.68rem; background: #060911; display: inline-flex; align-items: center; gap: 0.35rem; padding: 2px 6px;">
-                    <a href="/generators/${encodeURIComponent(id)}" style="color: var(--ps1-cyan); text-decoration: none;" title="Abrir modelo #${safeMid}">#${safeMid}</a>
-                    <button type="button" class="btn-remove-coll-model" data-coll-id="${safeCollId}" data-model-id="${safeMid}" title="Quitar #${safeMid} de la colección" style="background:none; border:none; color:var(--ps1-red); cursor:pointer; font-size:0.68rem; padding:0; line-height:1;">✕</button>
+                  return `<span class="preset-badge" style="display: inline-flex; align-items: center; gap: 0.35rem;">
+                    <a href="/generators/${encodeURIComponent(id)}" style="color: var(--brand);">#${safeMid}</a>
+                    <button type="button" class="btn-remove-coll-model" data-coll-id="${safeCollId}" data-model-id="${safeMid}" style="background:none; border:none; color:var(--accent-rose); cursor:pointer; font-size:0.7rem;">✕</button>
                   </span>`;
                 }).join('')}
               </div>
-            ` : `<div style="font-size: 0.7rem; color: var(--text-dim); font-style: italic; margin-bottom: 0.5rem;">Colección vacía. Añade modelos desde la vista de cualquier generador o escribe su ID aquí abajo:</div>`}
-            <div style="display: flex; gap: 0.35rem; align-items: center; margin-top: 0.35rem;">
-              <input type="text" class="ps1-input input-add-coll-model" data-coll-id="${safeCollId}" placeholder="Añadir ID de modelo (ej. crate, arcade_cabinet)..." style="font-size: 0.7rem; padding: 0.25rem 0.45rem; flex: 1;" />
-              <button type="button" class="btn-mini btn-cyan btn-add-coll-model" data-coll-id="${safeCollId}">+ AÑADIR</button>
+            ` : `<div class="inv-item-meta" style="margin-bottom: 0.5rem;">Colección vacía. Añadí modelos por su ID:</div>`}
+            <div style="display: flex; gap: 0.35rem; align-items: center;">
+              <input type="text" class="ps1-input input-add-coll-model" data-coll-id="${safeCollId}" placeholder="ID del modelo (ej. crate, arcade_cabinet)..." style="font-size: 0.78rem; padding: 0.32rem 0.55rem; flex: 1;" />
+              <button type="button" class="btn btn-outline btn-sm btn-add-coll-model" data-coll-id="${safeCollId}">+ Añadir</button>
             </div>
           `;
           invCollectionsList.appendChild(item);
@@ -1235,16 +1058,10 @@ const globalJsonLd = {
         if (!invModal) return;
         updateInventoryBadgeCounts();
         invTabBtns.forEach(btn => {
-          if (btn.getAttribute('data-tab') === defaultTab) {
-            btn.classList.add('active');
-          } else {
-            btn.classList.remove('active');
-          }
+          btn.classList.toggle('active', btn.getAttribute('data-tab') === defaultTab);
         });
         Object.entries(invPanels).forEach(([key, panel]) => {
-          if (panel) {
-            panel.classList.toggle('hidden', key !== defaultTab);
-          }
+          if (panel) panel.classList.toggle('hidden', key !== defaultTab);
         });
         if (defaultTab === 'drafts') renderInvDrafts();
         else if (defaultTab === 'favorites') renderInvFavorites();
@@ -1268,15 +1085,10 @@ const globalJsonLd = {
         if (e.target === invModal) closeInventoryModal();
       });
 
-      // Global Escape key listener to close Auth and Inventory modals
       document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
-          if (invModal && !invModal.classList.contains('hidden')) {
-            closeInventoryModal();
-          }
-          if (authModal && !authModal.classList.contains('hidden')) {
-            closeModal();
-          }
+          if (invModal && !invModal.classList.contains('hidden')) closeInventoryModal();
+          if (authModal && !authModal.classList.contains('hidden')) closeModal();
         }
       });
 
@@ -1294,7 +1106,6 @@ const globalJsonLd = {
         });
       });
 
-      // Collections creation form
       const btnCreateCollection = document.getElementById('btn-create-collection');
       const invCreateCollForm = document.getElementById('inv-create-coll-form');
       const btnSubmitNewColl = document.getElementById('btn-submit-new-coll');
@@ -1303,12 +1114,12 @@ const globalJsonLd = {
       const inputNewCollDesc = document.getElementById('new-coll-desc') as HTMLInputElement | null;
 
       btnCreateCollection?.addEventListener('click', () => {
-        if (invCreateCollForm) invCreateCollForm.classList.remove('hidden');
-        if (inputNewCollName) inputNewCollName.focus();
+        invCreateCollForm?.classList.remove('hidden');
+        inputNewCollName?.focus();
       });
 
       btnCancelNewColl?.addEventListener('click', () => {
-        if (invCreateCollForm) invCreateCollForm.classList.add('hidden');
+        invCreateCollForm?.classList.add('hidden');
       });
 
       btnSubmitNewColl?.addEventListener('click', () => {
@@ -1316,8 +1127,8 @@ const globalJsonLd = {
         const desc = inputNewCollDesc?.value?.trim() || '';
         if (!name) {
           if (inputNewCollName) {
-            inputNewCollName.style.borderColor = 'var(--ps1-red)';
-            inputNewCollName.placeholder = '⚠️ Escribe un nombre para la colección...';
+            inputNewCollName.style.borderColor = 'var(--accent-rose)';
+            inputNewCollName.placeholder = 'Escribí un nombre...';
             inputNewCollName.focus();
           }
           return;
@@ -1326,7 +1137,7 @@ const globalJsonLd = {
         saveCollection({ name, description: desc });
         if (inputNewCollName) inputNewCollName.value = '';
         if (inputNewCollDesc) inputNewCollDesc.value = '';
-        if (invCreateCollForm) invCreateCollForm.classList.add('hidden');
+        invCreateCollForm?.classList.add('hidden');
         updateInventoryBadgeCounts();
         renderInvCollections();
       });
@@ -1343,10 +1154,8 @@ const globalJsonLd = {
         }
       });
 
-      // Check current session
       const supabase = getSupabase();
       if (supabase) {
-        // Si la URL contiene access_token de OAuth tras una redirección
         if (typeof window !== 'undefined' && window.location.hash.includes('access_token')) {
           supabase.auth.getSession().then(({ data }) => {
             if (data.session?.user) {
@@ -1367,16 +1176,14 @@ const globalJsonLd = {
     </script>
 
     <style>
-      /* Modo DCC Minimalista (Estilo IV Orbit Texture Studio) */
       :global(body.is-dcc-app) {
         overflow: hidden !important;
         height: 100vh !important;
         max-height: 100vh !important;
         margin: 0 !important;
         padding: 0 !important;
-        background: #121316 !important;
+        background: var(--site-canvas) !important;
         background-image: none !important;
-        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif !important;
       }
       :global(body.is-dcc-app) .dcc-main-content {
         margin: 0 !important;
@@ -1386,51 +1193,8 @@ const globalJsonLd = {
         overflow: hidden !important;
       }
 
-      /* Optimizaciones de interfaz para Modo Escritorio (Tauri v2) */
-      :global(.is-desktop-app) .site-header {
-        padding: 0.25rem 0.75rem;
-        background: #080c16;
-        border-bottom: 1px solid var(--ps1-steel);
-      }
       :global(.is-desktop-app) .site-footer {
         display: none;
-      }
-
-      .nav-link-inventory {
-        background: transparent;
-        border: 1px solid var(--ps1-steel);
-        color: var(--ps1-cyan);
-        font-family: inherit;
-        font-size: inherit;
-        cursor: pointer;
-        padding: 0.25rem 0.5rem;
-        display: inline-flex;
-        align-items: center;
-        gap: 0.35rem;
-      }
-      .nav-link-inventory:hover {
-        border-color: var(--ps1-cyan);
-        background: rgba(0, 240, 255, 0.08);
-      }
-      .inv-tab-btn {
-        background: #090e1c;
-        border: 1px solid var(--ps1-steel);
-        color: var(--text-dim);
-        font-family: var(--font-pixel);
-        font-size: 0.72rem;
-        padding: 0.4rem 0.75rem;
-        cursor: pointer;
-        transition: all 0.15s ease;
-      }
-      .inv-tab-btn:hover {
-        color: var(--text-bright);
-        border-color: var(--ps1-cyan);
-      }
-      .inv-tab-btn.active {
-        background: var(--ps1-gold);
-        color: #000;
-        border-color: var(--ps1-gold);
-        font-weight: bold;
       }
 
       .user-auth-container {
@@ -1439,217 +1203,157 @@ const globalJsonLd = {
         align-items: center;
       }
 
-      .ps1-btn-auth {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.4rem;
-        background: #192030;
-        border: 2px outset var(--ps1-steel-light);
-        padding: 0.35rem 0.65rem;
-        color: var(--ps1-cyan);
-        font-family: var(--font-pixel);
-        font-size: 0.75rem;
-        cursor: pointer;
-        box-shadow: 1px 1px 0px #000;
-      }
-
-      .ps1-btn-auth:hover {
-        background: #27344d;
-        color: var(--ps1-gold);
-        border-color: var(--ps1-gold);
-      }
-
       .user-logged-pill {
         position: relative;
       }
 
-      .user-profile-trigger {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.4rem;
-        background: #101625;
-        border: 2px outset var(--ps1-gold);
-        padding: 0.35rem 0.65rem;
-        color: var(--ps1-gold);
-        font-family: var(--font-pixel);
-        font-size: 0.72rem;
-        cursor: pointer;
-        box-shadow: 1px 1px 0px #000;
+      .user-caret,
+      .nav-caret {
+        font-size: 0.65rem;
+        opacity: 0.7;
       }
 
-      .user-profile-trigger:hover {
-        background: #1c2742;
-      }
-
-      .user-caret {
-        font-size: 0.6rem;
-      }
-
-      /* ==========================================================================
-         NAV MORE DROPDOWN MENU
-         ========================================================================== */
       .nav-more-container {
         position: relative;
-        display: inline-block;
-      }
-
-      .nav-more-trigger {
-        display: flex;
-        align-items: center;
-        gap: 0.35rem;
-        cursor: pointer;
-        font-family: inherit;
-        font-size: inherit;
-      }
-
-      .nav-caret {
-        font-size: 0.55rem;
-        transition: transform 0.15s ease;
+        display: inline-flex;
       }
 
       .nav-more-container.open .nav-caret {
         transform: rotate(180deg);
       }
 
-      .nav-more-menu-ps1 {
+      .mc-dropdown-menu {
         position: absolute;
-        top: calc(100% + 4px);
+        top: calc(100% + 6px);
         left: 0;
-        min-width: 250px;
-        background: var(--ps1-panel-dark, #0d131f);
-        border: 2px outset var(--ps1-steel-light, #94a3b8);
-        box-shadow: 3px 3px 0px #000;
+        min-width: 230px;
+        background: var(--site-surface);
+        border: 1px solid var(--site-line);
+        border-radius: var(--radius-card);
+        box-shadow: var(--shadow-menu);
         z-index: 1000;
         display: flex;
         flex-direction: column;
-        padding: 0.3rem 0;
+        padding: 0.35rem;
+        gap: 0.12rem;
       }
 
-      .nav-more-menu-ps1.hidden {
-        display: none !important;
-      }
-
-      .more-dropdown-item {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        padding: 0.5rem 0.85rem;
-        color: #ffffff;
-        text-decoration: none;
-        font-family: var(--font-pixel);
-        font-size: 0.72rem;
-        background: transparent;
-        border: none;
-        width: 100%;
-        text-align: left;
-        cursor: pointer;
-        transition: background 0.1s ease;
-        white-space: nowrap;
-      }
-
-      .more-dropdown-item:hover, .more-dropdown-item:focus {
-        background: #1e293b;
-        color: var(--ps1-gold);
-        text-decoration: none;
-      }
-
-      .more-dropdown-item .item-icon {
-        font-size: 0.85rem;
-      }
-
-      .more-dropdown-item .badge-new {
-        margin-left: auto;
-        font-size: 0.55rem;
-        background: var(--ps1-red, #e53e3e);
-        color: #fff;
-        padding: 0.1rem 0.35rem;
-        border: 1px inset #000;
-        letter-spacing: 0.05em;
-      }
-
-      .more-dropdown-divider {
-        height: 1px;
-        background: var(--ps1-steel, #475569);
-        margin: 0.35rem 0;
-        border-bottom: 1px inset #000;
-      }
-
-      .item-external {
-        color: var(--ps1-cyan, #38bdf8);
-        font-size: 0.68rem;
-      }
-
-      .user-dropdown-ps1 {
-        position: absolute;
-        top: calc(100% + 4px);
+      .mc-dropdown-right {
+        left: auto;
         right: 0;
-        min-width: 200px;
-        background: var(--ps1-panel-dark);
-        border: 2px outset var(--ps1-steel-light);
-        box-shadow: 3px 3px 0px #000;
-        z-index: 1000;
+      }
+
+      .mc-dropdown-header {
+        padding: 0.5rem 0.65rem;
+        border-bottom: 1px solid var(--site-rule);
+        margin-bottom: 0.25rem;
         display: flex;
         flex-direction: column;
+        gap: 0.1rem;
       }
 
-      .user-dropdown-header {
-        padding: 0.6rem;
-        background: #090c14;
-        border-bottom: 1px inset var(--ps1-steel);
-        display: flex;
-        flex-direction: column;
-        gap: 0.25rem;
-      }
-
-      .ps1-badge-gold {
-        font-family: var(--font-telemetry);
-        font-size: 0.95rem;
-        color: var(--ps1-gold);
-        letter-spacing: 0.05em;
-      }
-
-      .user-email-text {
+      .mc-dropdown-sub {
         font-family: var(--font-mono);
-        font-size: 0.75rem;
-        color: var(--text-dim);
+        font-size: 0.65rem;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--site-faint);
+      }
+
+      .mc-dropdown-email {
+        font-size: 0.78rem;
+        color: var(--site-ink);
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
       }
 
-      .dropdown-item {
-        padding: 0.5rem 0.7rem;
-        font-family: var(--font-pixel);
-        font-size: 0.7rem;
-        color: var(--text-main);
-        text-align: left;
-        background: transparent;
-        border: none;
-        cursor: pointer;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      .mc-dropdown-label {
+        font-family: var(--font-mono);
+        font-size: 0.65rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--site-faint);
+        padding: 0.35rem 0.65rem 0.15rem;
+        display: block;
       }
 
-      .dropdown-item:hover {
-        background: #192338;
-        color: var(--ps1-cyan);
+      .mc-dropdown-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.5rem;
+        padding: 0.45rem 0.65rem;
+        border-radius: var(--radius-inner);
+        color: var(--site-ink);
+        font-family: var(--font-sans);
+        font-size: 0.82rem;
+        font-weight: 500;
+        background: transparent;
+        border: none;
+        width: 100%;
+        text-align: left;
+        cursor: pointer;
+        text-decoration: none;
+        transition: background 0.12s ease;
+        white-space: nowrap;
+      }
+
+      .mc-dropdown-item:hover {
+        background: var(--site-sunken);
+        color: var(--site-ink);
         text-decoration: none;
       }
 
-      .dropdown-item-danger {
-        color: var(--ps1-red);
+      .mc-dropdown-danger {
+        color: var(--accent-rose);
       }
 
-      .dropdown-item-danger:hover {
-        background: rgba(255, 56, 46, 0.15);
-        color: #ff6e66;
+      .mc-dropdown-danger:hover {
+        background: var(--accent-rose-soft);
+        color: var(--accent-rose);
       }
 
-      /* Modal Styling */
-      .ps1-modal-backdrop {
+      .mc-dropdown-divider {
+        height: 1px;
+        background: var(--site-rule);
+        margin: 0.25rem 0;
+      }
+
+      .mc-badge-pill {
+        font-family: var(--font-mono);
+        font-size: 0.7rem;
+        background: var(--site-sunken);
+        color: var(--site-muted);
+        padding: 0.08rem 0.45rem;
+        border-radius: 9999px;
+      }
+
+      .mc-badge-accent {
+        font-family: var(--font-mono);
+        font-size: 0.65rem;
+        background: var(--brand-soft);
+        color: var(--brand);
+        padding: 0.08rem 0.45rem;
+        border-radius: 9999px;
+      }
+
+      .mc-ext-arrow {
+        color: var(--site-faint);
+        font-size: 0.75rem;
+      }
+
+      .theme-check {
+        font-size: 0.75rem;
+        color: var(--brand);
+      }
+
+      /* Modals */
+      .mc-modal-backdrop {
         position: fixed;
         inset: 0;
-        background: rgba(0, 4, 36, 0.85);
-        backdrop-filter: blur(2px);
+        background: rgba(9, 9, 11, 0.5);
+        backdrop-filter: blur(4px);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -1657,125 +1361,131 @@ const globalJsonLd = {
         padding: 1rem;
       }
 
-      .auth-modal-window {
+      .mc-modal-window {
         width: 100%;
-        max-width: 480px;
-        background: #0d1220;
+        background: var(--site-surface);
+        color: var(--site-ink);
+        border: 1px solid var(--site-line);
+        border-radius: var(--radius-panel);
+        box-shadow: var(--shadow-menu);
+        overflow: hidden;
       }
 
-      .ps1-titlebar {
+      .auth-modal-window {
+        max-width: 460px;
+      }
+
+      .inv-modal-window {
+        max-width: 820px;
+      }
+
+      .mc-modal-header {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        background: linear-gradient(90deg, #18223c 0%, #0d1220 100%);
-        border-bottom: 2px outset var(--ps1-steel);
-        padding: 0.45rem 0.75rem;
+        padding: 0.9rem 1.25rem;
+        border-bottom: 1px solid var(--site-rule);
       }
 
-      .titlebar-title {
-        display: flex;
-        align-items: center;
-        gap: 0.4rem;
-        font-family: var(--font-pixel);
-        font-size: 0.72rem;
-        color: var(--ps1-gold);
-        letter-spacing: 0.04em;
+      .mc-modal-title {
+        font-size: 0.95rem;
+        font-weight: 600;
+        letter-spacing: -0.01em;
       }
 
-      .title-glyph {
-        color: var(--ps1-cyan);
-        font-size: 0.65rem;
-      }
-
-      .ps1-window-btn {
-        background: #192030;
-        border: 2px outset var(--ps1-steel-light);
-        color: #ffffff;
-        font-family: var(--font-pixel);
-        font-size: 0.7rem;
-        padding: 0.15rem 0.45rem;
+      .mc-modal-close {
+        background: transparent;
+        border: 1px solid transparent;
+        color: var(--site-muted);
+        width: 28px;
+        height: 28px;
+        border-radius: var(--radius-inner);
         cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.85rem;
       }
 
-      .ps1-window-btn:hover {
-        background: var(--ps1-red);
-        border-color: #ff6e66;
+      .mc-modal-close:hover {
+        background: var(--site-sunken);
+        color: var(--site-ink);
       }
 
       .auth-modal-body {
         padding: 1.25rem;
       }
 
-      .auth-tabs {
+      .auth-tabs,
+      .inv-tabs {
         display: flex;
-        gap: 0.35rem;
-        border-bottom: 2px solid var(--ps1-steel);
-        margin-bottom: 1.25rem;
+        gap: 0.25rem;
+        background: var(--site-sunken);
+        padding: 0.25rem;
+        border-radius: var(--radius-inner);
+        margin-bottom: 1.15rem;
+        flex-wrap: wrap;
       }
 
-      .auth-tab {
-        background: #151b2a;
-        border: 2px outset var(--ps1-steel);
-        border-bottom: none;
-        color: var(--text-dim);
-        font-family: var(--font-pixel);
-        font-size: 0.65rem;
-        padding: 0.45rem 0.65rem;
+      .auth-tab,
+      .inv-tab-btn {
+        flex: 1;
+        background: transparent;
+        border: none;
+        color: var(--site-muted);
+        font-family: var(--font-sans);
+        font-size: 0.8rem;
+        font-weight: 500;
+        padding: 0.42rem 0.65rem;
+        border-radius: 4px;
         cursor: pointer;
+        white-space: nowrap;
+        transition: all 0.12s ease;
       }
 
-      .auth-tab:hover {
-        color: var(--text-main);
-        background: #1d263b;
+      .auth-tab:hover,
+      .inv-tab-btn:hover {
+        color: var(--site-ink);
       }
 
-      .auth-tab.active {
-        background: #25314d;
-        color: var(--ps1-gold);
-        border-color: var(--ps1-gold);
-        font-weight: bold;
+      .auth-tab.active,
+      .inv-tab-btn.active {
+        background: var(--site-surface);
+        color: var(--site-ink);
+        box-shadow: var(--shadow-xs);
+        font-weight: 600;
       }
 
       .auth-desc {
-        font-family: var(--font-mono);
-        font-size: 0.85rem;
-        color: var(--text-dim);
-        margin-bottom: 1.25rem;
-        line-height: 1.4;
+        font-size: 0.86rem;
+        color: var(--site-muted);
+        margin-bottom: 1.1rem;
+        line-height: 1.5;
       }
 
       .auth-action-btn {
         width: 100%;
-        padding: 0.75rem;
-        font-size: 0.75rem;
-        margin-bottom: 1rem;
-      }
-
-      .btn-github-oauth {
-        background: #24292e;
-        border-color: var(--ps1-gold);
-        color: var(--ps1-gold);
-      }
-
-      .btn-github-oauth:hover {
-        background: #2f363d;
-        color: #ffffff;
+        padding: 0.62rem 1rem;
+        margin-bottom: 0.75rem;
       }
 
       .auth-note-box {
         display: flex;
+        align-items: center;
         gap: 0.5rem;
-        background: #080c16;
-        border: 1px inset var(--ps1-steel);
+        background: var(--site-sunken);
+        border: 1px solid var(--site-line);
+        border-radius: var(--radius-inner);
         padding: 0.6rem 0.75rem;
-        font-family: var(--font-mono);
-        font-size: 0.75rem;
-        color: var(--text-dim);
+        font-size: 0.78rem;
+        color: var(--site-muted);
       }
 
       .note-tag {
-        color: var(--ps1-cyan);
-        font-weight: bold;
+        font-family: var(--font-mono);
+        font-size: 0.72rem;
+        color: var(--brand);
+        font-weight: 600;
         flex-shrink: 0;
       }
 
@@ -1791,50 +1501,121 @@ const globalJsonLd = {
         gap: 0.35rem;
       }
 
-      .auth-field label {
-        font-family: var(--font-pixel);
-        font-size: 0.65rem;
-        color: var(--ps1-gold);
-      }
-
-      .ps1-input {
-        background: #060912;
-        border: 2px inset var(--ps1-steel);
-        color: #ffffff;
-        font-family: var(--font-mono);
-        font-size: 0.85rem;
-        padding: 0.5rem 0.65rem;
-        outline: none;
-      }
-
-      .ps1-input:focus {
-        border-color: var(--ps1-cyan);
-        box-shadow: 0 0 5px rgba(0, 240, 255, 0.4);
+      .auth-field label,
+      .inv-field-lbl {
+        font-size: 0.78rem;
+        font-weight: 500;
+        color: var(--site-ink-secondary);
+        display: block;
+        margin-bottom: 0.25rem;
       }
 
       .auth-status-box {
         margin-top: 1rem;
-        padding: 0.65rem;
-        font-family: var(--font-mono);
-        font-size: 0.8rem;
-        border: 1px inset var(--ps1-steel);
-        background: #090e1c;
+        padding: 0.65rem 0.85rem;
+        border-radius: var(--radius-inner);
+        font-size: 0.82rem;
+        border: 1px solid var(--site-line);
+        background: var(--site-sunken);
       }
 
       .auth-status-box.error {
-        color: #ff6e66;
-        border-color: var(--ps1-red);
-        background: rgba(255, 56, 46, 0.12);
+        color: var(--accent-rose);
+        border-color: rgba(220, 38, 38, 0.3);
+        background: var(--accent-rose-soft);
       }
 
       .auth-status-box.success {
-        color: var(--ps1-green);
-        border-color: var(--ps1-green);
-        background: rgba(57, 255, 20, 0.1);
+        color: var(--accent-emerald);
+        border-color: rgba(5, 150, 105, 0.3);
+        background: var(--accent-emerald-soft);
       }
 
-      .hidden {
-        display: none !important;
+      .inv-modal-body {
+        padding: 1.25rem;
+      }
+
+      .inv-panel-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.9rem;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+      }
+
+      .inv-panel-sub {
+        font-size: 0.82rem;
+        color: var(--site-muted);
+      }
+
+      .inv-items-list {
+        max-height: 420px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 0.65rem;
+      }
+
+      :global(.inv-empty-box) {
+        padding: 2.25rem 1rem;
+        text-align: center;
+        background: var(--site-sunken);
+        border: 1px solid var(--site-line);
+        border-radius: var(--radius-card);
+      }
+
+      :global(.inv-empty-title) {
+        font-weight: 600;
+        font-size: 0.92rem;
+        color: var(--site-ink);
+        margin-bottom: 0.25rem;
+      }
+
+      :global(.inv-empty-sub) {
+        font-size: 0.82rem;
+        color: var(--site-muted);
+      }
+
+      :global(.inv-item-card) {
+        padding: 0.85rem;
+        background: var(--site-surface);
+        border: 1px solid var(--site-line);
+        border-radius: var(--radius-inner);
+      }
+
+      :global(.inv-thumb-box) {
+        width: 56px;
+        height: 56px;
+        background: var(--site-sunken);
+        border: 1px solid var(--site-line);
+        border-radius: var(--radius-inner);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        overflow: hidden;
+      }
+
+      :global(.inv-item-title) {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--site-ink);
+      }
+
+      :global(.inv-item-desc) {
+        font-size: 0.8rem;
+        color: var(--site-muted);
+        margin: 0.15rem 0 0.3rem;
+      }
+
+      :global(.inv-item-meta) {
+        font-family: var(--font-mono);
+        font-size: 0.72rem;
+        color: var(--site-faint);
+        display: flex;
+        gap: 0.45rem;
+        flex-wrap: wrap;
       }
     </style>
   </body>
