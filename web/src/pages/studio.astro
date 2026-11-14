@@ -24,7 +24,7 @@ import catalog from '../data/catalog.json';
         }
       } catch (e) {}
     </script>
-    <!-- Studio Main Header (Multica Workspace Bar) -->
+    <!-- Studio Main Header (Workspace Bar) -->
     <header class="dcc-window-header" id="studio-topbar">
       <!-- Tier 1: Brand + Menubar + Workspace Switcher + Fullscreen -->
       <div class="dcc-titlebar-row">
@@ -108,7 +108,7 @@ import catalog from '../data/catalog.json';
                 <div class="dcc-menu-sep"></div>
                 <button type="button" class="dcc-menu-action" id="menu-item-fullscreen"><span>⛶ Pantalla Completa</span><kbd>F11</kbd></button>
                 <div class="dcc-menu-sep"></div>
-                <button type="button" class="dcc-menu-action" id="menu-item-theme-modern"><span>☀️ Tema: Claro (Multica)</span><span id="menu-check-modern" class="menu-check">✓</span></button>
+                <button type="button" class="dcc-menu-action" id="menu-item-theme-modern"><span>☀️ Tema: Claro</span><span id="menu-check-modern" class="menu-check">✓</span></button>
                 <button type="button" class="dcc-menu-action" id="menu-item-theme-dark"><span>🌙 Tema: Oscuro (Zinc)</span><span id="menu-check-dark" class="menu-check hidden">✓</span></button>
                 <button type="button" class="dcc-menu-action" id="menu-item-theme-retro"><span>🕹️ Tema: Retro PS1 (CRT)</span><span id="menu-check-retro" class="menu-check hidden">✓</span></button>
               </div>
@@ -2611,7 +2611,7 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     openDocsBtn?.click();
   });
 
-  // --- STUDIO UI THEME TOGGLE (Claro Multica / Oscuro Zinc / Retro PS1) ---
+  // --- STUDIO UI THEME TOGGLE (Claro / Oscuro Zinc / Retro PS1) ---
   type StudioUITheme = 'modern' | 'dark' | 'retro';
   function applyStudioTheme(theme: StudioUITheme, showToast = false): void {
     const container = document.getElementById('studio-container');
@@ -2652,7 +2652,7 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
           ? '🕹️ Tema Retro PS1 activado'
           : theme === 'dark'
           ? '🌙 Tema Oscuro (Zinc) activado'
-          : '☀️ Tema Claro (Multica) activado';
+          : '☀️ Tema Claro activado';
       showStudioToast(msg);
     }
   }
@@ -3518,7 +3518,7 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
         </div>
       </div>
 
-      <!-- 4 Clean Inspector Tabs (Multica Segmented Control) -->
+      <!-- 4 Clean Inspector Tabs (Segmented Control) -->
       <div class="inspector-tabs-bar" role="tablist" aria-label="Categorías del inspector">
         <button type="button" role="tab" aria-selected="${activeInspectorTab === 'design'}" class="insp-tab-pill ${activeInspectorTab === 'design' ? 'active' : ''}" data-insp-tab="design" title="Transformación y Geometría">
           Diseño
@@ -4532,7 +4532,7 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
       reparentComponent(comp.name, chosenParent);
     });
 
-    // 4-Tab Segmented Inspector Switching (Multica Style)
+    // 4-Tab Segmented Inspector Switching
     const switchInspectorTab = (tabId: 'design' | 'material' | 'modifiers' | 'anim') => {
       activeInspectorTab = tabId;
       inspectorContentMount?.querySelectorAll('.insp-tab-pill[data-insp-tab]').forEach((pill) => {
@@ -8989,9 +8989,9 @@ Generado desde ModelCoder 3D Studio con materiales optimizados y texturas PBR in
 
 <style is:global>
   /* ========================================================
-     MODELCODER 3D STUDIO — MULTICA WORKSPACE DESIGN SYSTEM
-     Themes: modern (Multica Editorial Light, default)
-             dark   (Multica Zinc Dark)
+     MODELCODER 3D STUDIO — WORKSPACE DESIGN SYSTEM
+     Themes: modern (Editorial Light, default)
+             dark   (Zinc Dark)
              retro  (Classic PS1 CRT)
      ======================================================== */
   :root,
@@ -10327,7 +10327,7 @@ Generado desde ModelCoder 3D Studio con materiales optimizados y texturas PBR in
     color: var(--dcc-text-bright) !important;
   }
 
-  /* Framed Dark 3D Stage (Multica Signature Showcase Frame) */
+  /* Framed Dark 3D Stage */
   .studio-viewport-surface {
     position: relative;
     width: 100%;
@@ -11372,7 +11372,7 @@ Generado desde ModelCoder 3D Studio con materiales optimizados y texturas PBR in
   }
 
   /* ----------------------------------------------------
-     CODE EDITOR & AI COPILOT (Multica Framed Surfaces)
+     CODE EDITOR & AI COPILOT (Framed Surfaces)
      ---------------------------------------------------- */
   .editor-window {
     display: flex;

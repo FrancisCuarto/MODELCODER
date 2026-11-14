@@ -1,13 +1,13 @@
 /* ==========================================================================
-   MODELCODER — MULTICA-INSPIRED EDITORIAL & WORKSPACE DESIGN SYSTEM
-   Supports: light (default, Multica Editorial), dark (Zinc Dark), ps1 (Retro)
+   MODELCODER — EDITORIAL & WORKSPACE DESIGN SYSTEM
+   Supports: light (default, Editorial Light), dark (Zinc Dark), ps1 (Retro)
    ========================================================================== */
 
 :root,
 [data-theme="light"] {
   color-scheme: light;
 
-  /* Multica Editorial Surface Tokens */
+  /* Editorial Light Surface Tokens */
   --site-canvas: #fbfbfb;
   --site-surface: #ffffff;
   --site-sunken: #f3f3f4;
@@ -98,7 +98,7 @@
 }
 
 /* ==========================================================================
-   CLEAN DARK THEME (Multica Dark Zinc)
+   CLEAN DARK THEME (Zinc Dark)
    ========================================================================== */
 [data-theme="dark"],
 [data-theme="dark-professional"] {
@@ -270,7 +270,7 @@ a:hover {
 }
 
 /* ==========================================================================
-   SURFACE PRIMITIVES (Clean Multica Cards & Containers)
+   SURFACE PRIMITIVES (Clean Cards & Containers)
    ========================================================================== */
 .mc-card,
 .ps1-window,
@@ -336,7 +336,7 @@ dialog::backdrop {
 }
 
 /* ==========================================================================
-   SITE HEADER & NAVIGATION (Multica Clean Sticky Glass Header)
+   SITE HEADER & NAVIGATION (Clean Sticky Glass Header)
    ========================================================================== */
 header.site-header {
   position: sticky;
@@ -526,7 +526,7 @@ body.studio-fullscreen-active main.site-content {
 }
 
 /* ==========================================================================
-   BUTTONS (Clean Multica Pill & Rounded Controls)
+   BUTTONS (Clean Pill & Rounded Controls)
    ========================================================================== */
 .btn {
   display: inline-flex;
@@ -861,7 +861,7 @@ body.studio-fullscreen-active main.site-content {
 }
 
 /* ==========================================================================
-   SITE FOOTER (Multica Clean Editorial Footer)
+   SITE FOOTER (Clean Editorial Footer)
    ========================================================================== */
 footer.site-footer {
   border-top: 1px solid var(--site-line);
