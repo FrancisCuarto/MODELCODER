@@ -1298,6 +1298,32 @@ export class StudioViewport {
   }
 
   /**
+   * Captures a clean PNG or JPEG Data URL of the current 3D viewport (without gizmos or selection overlays)
+   * suitable for Multimodal Vision LLMs (Gemini, GPT-4o, Claude, Ollama Vision).
+   */
+  public captureViewportBase64(mimeType: 'image/png' | 'image/jpeg' = 'image/jpeg', quality = 0.85): string {
+    const prevGizmoHelper = typeof this.transformControls.getHelper === 'function'
+      ? this.transformControls.getHelper()
+      : (this.transformControls as any);
+    const wasGizmoVisible = prevGizmoHelper ? prevGizmoHelper.visible : false;
+    const wasSelectionVisible = this.selectionBox.visible;
+
+    try {
+      if (prevGizmoHelper) prevGizmoHelper.visible = false;
+      this.selectionBox.visible = false;
+
+      this.renderer.render(this.scene, this.camera);
+      return this.renderer.domElement.toDataURL(mimeType, quality);
+    } catch (e) {
+      console.warn('[StudioViewport] Failed to capture viewport base64:', e);
+      return '';
+    } finally {
+      if (prevGizmoHelper) prevGizmoHelper.visible = wasGizmoVisible;
+      this.selectionBox.visible = wasSelectionVisible;
+    }
+  }
+
+  /**
    * Captures a clean, compact PNG/JPEG thumbnail data URL for project drafts and inventory.
    * Resizes to 160x160 to prevent localStorage quota exhaustion.
    */

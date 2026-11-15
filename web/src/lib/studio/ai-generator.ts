@@ -2,19 +2,194 @@ import * as THREE from 'three';
 import type { ModelSpec, ComponentDef } from './types.ts';
 import { ProceduralMemory } from './procedural-memory.ts';
 import { ProceduralEngine } from './procedural-engine.ts';
+import { CodeSandbox } from './code-sandbox.ts';
+
+export type AIProviderType =
+  | 'gemini'
+  | 'openai'
+  | 'openrouter'
+  | 'groq'
+  | 'deepseek'
+  | 'anthropic'
+  | 'ollama'
+  | 'custom';
+
+export type AIOutputFormat = 'json' | 'dsl';
+export type AIAgentMode = 'create' | 'agent' | 'vision_critique';
+
+export interface AIProviderPreset {
+  id: AIProviderType;
+  label: string;
+  baseUrl: string;
+  requiresKey: boolean;
+  keyPlaceholder: string;
+  keyHelpUrl?: string;
+  defaultModels: { id: string; label: string }[];
+}
+
+export interface AgentToolAction {
+  action:
+    | 'add_component'
+    | 'update_component'
+    | 'delete_component'
+    | 'mirror_component'
+    | 'reparent_component'
+    | 'apply_material_all'
+    | 'add_animation'
+    | 'align_to_ground'
+    | 'replace_spec';
+  component?: Partial<ComponentDef>;
+  targetName?: string;
+  changes?: Partial<ComponentDef>;
+  axis?: 'x' | 'y' | 'z';
+  newName?: string;
+  parentId?: string;
+  texturePreset?: string;
+  color?: string;
+  wear?: number;
+  roughness?: number;
+  metalness?: number;
+  animation?: any;
+  spec?: ModelSpec;
+}
 
 export interface GenerationConfig {
   engine?: 'ai' | 'local';
+  provider?: AIProviderType;
   apiKey?: string;
+  baseUrl?: string;
   forceFresh?: boolean;
   model?: string;
+  outputFormat?: AIOutputFormat;
+  agentMode?: AIAgentMode;
+  currentSpec?: ModelSpec;
+  viewportImageBase64?: string;
 }
 
 export class AIGenerator {
+  public static readonly PROVIDER_PRESETS: Record<AIProviderType, AIProviderPreset> = {
+    gemini: {
+      id: 'gemini',
+      label: 'Google Gemini',
+      baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
+      requiresKey: true,
+      keyPlaceholder: 'AIzaSy...',
+      keyHelpUrl: 'https://aistudio.google.com/app/apikey',
+      defaultModels: [
+        { id: 'auto', label: '🔄 Automático (Cascada Resiliente)' },
+        { id: 'gemini-2.5-flash', label: '🚀 Gemini 2.5 Flash (Recomendado)' },
+        { id: 'gemini-2.5-pro', label: '🧠 Gemini 2.5 Pro (Máxima precisión 3D)' },
+        { id: 'gemini-2.0-flash', label: '🌐 Gemini 2.0 Flash' },
+        { id: 'gemini-3.8-flash', label: '⚡ Gemini 3.8 Flash' },
+        { id: 'gemini-2.5-flash-lite', label: '⚡ Gemini 2.5 Flash-Lite' },
+        { id: 'gemini-1.5-flash', label: '🛡️ Gemini 1.5 Flash' }
+      ]
+    },
+    openai: {
+      id: 'openai',
+      label: 'OpenAI (GPT-4o / o3)',
+      baseUrl: 'https://api.openai.com/v1',
+      requiresKey: true,
+      keyPlaceholder: 'sk-proj-...',
+      keyHelpUrl: 'https://platform.openai.com/api-keys',
+      defaultModels: [
+        { id: 'gpt-4o', label: '🧠 GPT-4o (Multimodal + 3D)' },
+        { id: 'gpt-4o-mini', label: '⚡ GPT-4o Mini (Rápido)' },
+        { id: 'o3-mini', label: '🔬 o3-mini (Razonamiento Espacial)' },
+        { id: 'gpt-4.1', label: '🚀 GPT-4.1' },
+        { id: 'gpt-4.1-mini', label: '⚡ GPT-4.1 Mini' }
+      ]
+    },
+    openrouter: {
+      id: 'openrouter',
+      label: 'OpenRouter (200+ Modelos)',
+      baseUrl: 'https://openrouter.ai/api/v1',
+      requiresKey: true,
+      keyPlaceholder: 'sk-or-v1-...',
+      keyHelpUrl: 'https://openrouter.ai/keys',
+      defaultModels: [
+        { id: 'anthropic/claude-3.7-sonnet', label: '🎭 Claude 3.7 Sonnet' },
+        { id: 'google/gemini-2.5-pro-preview', label: '🧠 Gemini 2.5 Pro' },
+        { id: 'deepseek/deepseek-chat-v3-0324:free', label: '🐳 DeepSeek V3 (Gratis)' },
+        { id: 'qwen/qwen-2.5-coder-32b-instruct', label: '💻 Qwen 2.5 Coder 32B' },
+        { id: 'meta-llama/llama-3.3-70b-instruct', label: '🦙 Llama 3.3 70B' },
+        { id: 'openai/gpt-4o-mini', label: '⚡ GPT-4o Mini' }
+      ]
+    },
+    groq: {
+      id: 'groq',
+      label: 'Groq (Inferencia Ultra-Rápida)',
+      baseUrl: 'https://api.groq.com/openai/v1',
+      requiresKey: true,
+      keyPlaceholder: 'gsk_...',
+      keyHelpUrl: 'https://console.groq.com/keys',
+      defaultModels: [
+        { id: 'llama-3.3-70b-versatile', label: '🦙 Llama 3.3 70B Versatile' },
+        { id: 'deepseek-r1-distill-llama-70b', label: '🧠 DeepSeek R1 Distill 70B' },
+        { id: 'qwen-qwq-32b', label: '💻 Qwen QwQ 32B' },
+        { id: 'llama-3.1-8b-instant', label: '⚡ Llama 3.1 8B Instant' }
+      ]
+    },
+    deepseek: {
+      id: 'deepseek',
+      label: 'DeepSeek (V3 / R1)',
+      baseUrl: 'https://api.deepseek.com/v1',
+      requiresKey: true,
+      keyPlaceholder: 'sk-...',
+      keyHelpUrl: 'https://platform.deepseek.com/api_keys',
+      defaultModels: [
+        { id: 'deepseek-chat', label: '🐳 DeepSeek V3 (Chat / Coder)' },
+        { id: 'deepseek-reasoner', label: '🧠 DeepSeek R1 (Reasoner)' }
+      ]
+    },
+    anthropic: {
+      id: 'anthropic',
+      label: 'Anthropic (Claude)',
+      baseUrl: 'https://api.anthropic.com/v1',
+      requiresKey: true,
+      keyPlaceholder: 'sk-ant-...',
+      keyHelpUrl: 'https://console.anthropic.com/settings/keys',
+      defaultModels: [
+        { id: 'claude-3-7-sonnet-latest', label: '🎭 Claude 3.7 Sonnet' },
+        { id: 'claude-3-5-sonnet-latest', label: '🎭 Claude 3.5 Sonnet' },
+        { id: 'claude-3-5-haiku-latest', label: '⚡ Claude 3.5 Haiku' }
+      ]
+    },
+    ollama: {
+      id: 'ollama',
+      label: 'Ollama / LM Studio (IA Local)',
+      baseUrl: 'http://localhost:11434/v1',
+      requiresKey: false,
+      keyPlaceholder: 'ollama (No requiere clave)',
+      defaultModels: [
+        { id: 'qwen2.5-coder:14b', label: '💻 Qwen 2.5 Coder 14B (Local)' },
+        { id: 'qwen2.5-coder:7b', label: '💻 Qwen 2.5 Coder 7B (Local)' },
+        { id: 'llama3.2:latest', label: '🦙 Llama 3.2 (Local)' },
+        { id: 'deepseek-r1:14b', label: '🧠 DeepSeek R1 14B (Local)' },
+        { id: 'mistral:latest', label: '🌪️ Mistral 7B (Local)' },
+        { id: 'llava:latest', label: '👁️ LLaVA Vision (Local)' }
+      ]
+    },
+    custom: {
+      id: 'custom',
+      label: 'Endpoint OpenAI-Compatible',
+      baseUrl: 'http://localhost:1234/v1',
+      requiresKey: false,
+      keyPlaceholder: 'Clave API opcional...',
+      defaultModels: [
+        { id: 'local-model', label: '🖥️ Modelo Personalizado / Local' }
+      ]
+    }
+  };
+
   /**
-   * Generates a structured ModelSpec from a natural language user prompt.
-   * - In AI Mode (Gemini): ALWAYS creates fresh, unique models. Never reuses or caches existing models.
-   * - In Local Mode: Uses deterministic procedural blueprints, semantic synthesis, and persistent memory.
+   * Generates or mutates a structured ModelSpec from a natural language user prompt.
+   * Supports:
+   * - Multi-Provider AI (Gemini, OpenAI, OpenRouter, Groq, DeepSeek, Anthropic, Ollama, Custom)
+   * - JSON Spec synthesis OR JavaScript DSL (ProceduralBuilderContext) synthesis
+   * - Conversational Agent Mode (incremental tool-calling edits over currentSpec)
+   * - Multimodal Vision Self-Critique (inspects 3D viewport capture + spec to repair geometry)
+   * - Deterministic Local Procedural Engine & Memory
    */
   public static async generateModel(
     prompt: string,
@@ -22,8 +197,12 @@ export class AIGenerator {
   ): Promise<{
     spec: ModelSpec;
     rawResponse?: string;
-    source: 'gemini' | 'local' | 'local_memory' | 'cloud_memory' | 'gemini_fallback';
+    dslCode?: string;
+    agentActions?: AgentToolAction[];
+    agentSummary?: string;
+    source: 'gemini' | 'ai_provider' | 'local' | 'local_memory' | 'cloud_memory' | 'gemini_fallback';
     usedModel?: string;
+    usedProvider?: AIProviderType;
   }> {
     const cleanPrompt = prompt.trim();
     if (!cleanPrompt) {
@@ -31,46 +210,102 @@ export class AIGenerator {
     }
 
     let engine: 'ai' | 'local' = 'local';
+    let provider: AIProviderType = 'gemini';
     let apiKey: string | undefined = undefined;
+    let baseUrl: string | undefined = undefined;
     let forceFresh = false;
     let model: string | undefined = undefined;
+    let outputFormat: AIOutputFormat = 'json';
+    let agentMode: AIAgentMode = 'create';
+    let currentSpec: ModelSpec | undefined = undefined;
+    let viewportImageBase64: string | undefined = undefined;
 
     if (typeof configOrKey === 'string') {
       apiKey = configOrKey;
       engine = (apiKey && apiKey.trim().length > 10) ? 'ai' : 'local';
     } else if (configOrKey) {
       engine = configOrKey.engine || 'local';
+      provider = configOrKey.provider || 'gemini';
       apiKey = configOrKey.apiKey;
+      baseUrl = configOrKey.baseUrl;
       forceFresh = configOrKey.forceFresh ?? (engine === 'ai');
       model = configOrKey.model;
+      outputFormat = configOrKey.outputFormat || 'json';
+      agentMode = configOrKey.agentMode || 'create';
+      currentSpec = configOrKey.currentSpec;
+      viewportImageBase64 = configOrKey.viewportImageBase64;
     }
 
+    const preset = this.PROVIDER_PRESETS[provider] || this.PROVIDER_PRESETS.gemini;
+
     // =========================================================================
-    // MODO IA (GOOGLE GEMINI)
-    // REGLA ESTRICTA:
-    // Si se usa la IA, NUNCA debe basarse en modelos existentes ni usar caché;
-    // SIEMPRE debe crear un modelo 100% nuevo, original e innovador.
-    // Si los servidores de Gemini sufren alta demanda (HTTP 503/429) o caída,
-    // se activa un fallback procedural para garantizar que el usuario SIEMPRE
-    // obtenga su modelo 3D en pantalla sin demoras ni bloqueos.
+    // MODO IA MULTI-PROVEEDOR Y AGENTES
     // =========================================================================
     if (engine === 'ai') {
-      if (!apiKey || apiKey.trim().length <= 10) {
-        throw new Error('Para usar la IA Generativa necesitas ingresar tu clave gratuita de Google Gemini en el botón [🔑 CONECTAR GEMINI].');
+      if (preset.requiresKey && (!apiKey || apiKey.trim().length <= 5)) {
+        if (provider === 'gemini') {
+          throw new Error('Para usar la IA Generativa necesitas ingresar tu clave gratuita de Google Gemini en el botón [🔑 CONECTAR GEMINI].');
+        }
+        throw new Error(`Para usar ${preset.label} necesitas ingresar tu API Key en el panel [🔑 CONFIGURAR IA].`);
       }
 
       try {
-        // Llamada directa a Gemini sin consultar memoria ni presets existentes
-        const geminiRes = await this.callGeminiAPI(cleanPrompt, apiKey.trim(), model);
-        const normalizedSpec = this.normalizeSpecGeometry(geminiRes.spec);
+        // 1. Conversational Agent Mode or Vision Self-Critique over an existing model
+        if ((agentMode === 'agent' || agentMode === 'vision_critique') && currentSpec && currentSpec.components?.length > 0) {
+          const agentRes = await this.runAgentTurn(cleanPrompt, currentSpec, {
+            provider,
+            apiKey: apiKey?.trim(),
+            baseUrl: baseUrl?.trim() || preset.baseUrl,
+            model,
+            outputFormat,
+            agentMode,
+            viewportImageBase64
+          });
+          return {
+            spec: agentRes.spec,
+            rawResponse: agentRes.rawResponse,
+            dslCode: agentRes.dslCode,
+            agentActions: agentRes.actions,
+            agentSummary: agentRes.summary,
+            source: provider === 'gemini' ? 'gemini' : 'ai_provider',
+            usedModel: agentRes.usedModel,
+            usedProvider: provider
+          };
+        }
+
+        // 2. Fresh 3D Creation Mode (JSON Spec or Procedural DSL)
+        const aiRes = await this.callMultiProviderLLM(cleanPrompt, {
+          provider,
+          apiKey: apiKey?.trim(),
+          baseUrl: baseUrl?.trim() || preset.baseUrl,
+          model,
+          outputFormat,
+          viewportImageBase64
+        });
+        const normalizedSpec = this.normalizeSpecGeometry(aiRes.spec);
         return {
           spec: normalizedSpec,
-          rawResponse: geminiRes.rawResponse,
-          source: 'gemini',
-          usedModel: geminiRes.usedModel
+          rawResponse: aiRes.rawResponse,
+          dslCode: aiRes.dslCode,
+          source: provider === 'gemini' ? 'gemini' : 'ai_provider',
+          usedModel: aiRes.usedModel,
+          usedProvider: provider
         };
-      } catch (geminiErr: any) {
-        console.warn('[AIGenerator] Todos los modelos de Gemini devolvieron error o están saturados (503/429). Activando auto-fallback procedural para no bloquear al usuario:', geminiErr);
+      } catch (aiErr: any) {
+        console.warn(`[AIGenerator] Proveedor ${provider} devolvió error o está saturado. Activando auto-fallback inteligente:`, aiErr);
+
+        // If in Agent Mode and LLM failed, apply deterministic local agent edits over currentSpec
+        if ((agentMode === 'agent' || agentMode === 'vision_critique') && currentSpec && currentSpec.components?.length > 0) {
+          const localAgent = this.applyLocalHeuristicAgentEdit(cleanPrompt, currentSpec);
+          return {
+            spec: localAgent.spec,
+            agentActions: localAgent.actions,
+            agentSummary: localAgent.summary,
+            source: 'gemini_fallback',
+            rawResponse: aiErr.message,
+            usedProvider: provider
+          };
+        }
 
         // Fallback procedural de alta fidelidad para garantizar que el usuario SIEMPRE obtenga su modelo 3D
         const rawSpec = this.synthesizeProceduralSpec(cleanPrompt);
@@ -78,14 +313,25 @@ export class AIGenerator {
         return {
           spec,
           source: 'gemini_fallback',
-          rawResponse: geminiErr.message
+          rawResponse: aiErr.message,
+          usedProvider: provider
         };
       }
     }
 
     // =========================================================================
-    // MODO MOTOR PROCEDURAL LOCAL
+    // MODO MOTOR PROCEDURAL LOCAL (CON SOPORTE DE AGENTE HEURÍSTICO LOCAL)
     // =========================================================================
+    if ((agentMode === 'agent' || agentMode === 'vision_critique') && currentSpec && currentSpec.components?.length > 0) {
+      const localAgent = this.applyLocalHeuristicAgentEdit(cleanPrompt, currentSpec);
+      return {
+        spec: localAgent.spec,
+        agentActions: localAgent.actions,
+        agentSummary: localAgent.summary,
+        source: 'local'
+      };
+    }
+
     if (!forceFresh) {
       const learned = await ProceduralMemory.findLearnedModel(cleanPrompt);
       if (learned) {
@@ -968,19 +1214,14 @@ Return ONLY valid JSON matching this schema:
           throw new Error(`Gemini (${modelName}) no devolvió texto en la respuesta.`);
         }
 
-        const cleanedJsonText = String(candidateText)
-          .trim()
-          .replace(/^```(?:json)?\s*/i, '')
-          .replace(/\s*```$/i, '')
-          .trim();
-
-        const parsed = JSON.parse(cleanedJsonText) as ModelSpec;
-        if (!parsed.components || parsed.components.length === 0) {
-          throw new Error('La respuesta de Gemini no incluye componentes geométricos.');
-        }
-
-        const normalized = this.normalizeSpecGeometry(parsed);
-        return { spec: normalized, rawResponse: cleanedJsonText, usedModel: modelName };
+        const parsedResult = this.parseModelOrDslOutput(String(candidateText));
+        const normalized = this.normalizeSpecGeometry(parsedResult.spec);
+        return {
+          spec: normalized,
+          rawResponse: parsedResult.rawResponse,
+          dslCode: parsedResult.dslCode,
+          usedModel: modelName
+        };
       } catch (err: any) {
         lastError = err;
         console.warn(`[AIGenerator] Intento con ${modelName} falló:`, err);
@@ -1006,6 +1247,786 @@ Return ONLY valid JSON matching this schema:
     }
 
     throw lastError || new Error('No se pudo conectar con ningún modelo de Gemini disponible.');
+  }
+
+  /**
+   * Parses either a JSON ModelSpec or JavaScript ProceduralBuilderContext DSL script from an LLM response.
+   */
+  public static parseModelOrDslOutput(rawText: string): {
+    spec: ModelSpec;
+    rawResponse: string;
+    dslCode?: string;
+  } {
+    const trimmed = String(rawText || '').trim();
+
+    // Strip reasoning tags (<think>...</think> from DeepSeek R1 / QwQ)
+    const withoutThink = trimmed.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+
+    // Check if fenced code block or raw builder DSL script
+    const fencedMatch = withoutThink.match(/```(?:javascript|js|ts|json)?\s*([\s\S]*?)```/i);
+    const candidateContent = fencedMatch ? fencedMatch[1].trim() : withoutThink;
+
+    // 1. Check if it is ProceduralBuilderContext DSL code (contains `builder.`)
+    if (candidateContent.includes('builder.')) {
+      const execRes = CodeSandbox.executeCode(candidateContent);
+      if (execRes.error || !execRes.spec.components || execRes.spec.components.length === 0) {
+        throw new Error(execRes.error || 'El código DSL generado por la IA no produjo componentes válidos.');
+      }
+      return {
+        spec: execRes.spec,
+        rawResponse: JSON.stringify(execRes.spec, null, 2),
+        dslCode: candidateContent
+      };
+    }
+
+    // 2. Extract JSON object if surrounded by extra text
+    let jsonStr = candidateContent;
+    const firstBrace = jsonStr.indexOf('{');
+    const lastBrace = jsonStr.lastIndexOf('}');
+    if (firstBrace !== -1 && lastBrace > firstBrace) {
+      jsonStr = jsonStr.substring(firstBrace, lastBrace + 1);
+    }
+
+    const parsed = JSON.parse(jsonStr) as any;
+
+    // Check if the LLM returned `{ "dsl": "builder.setName(...)" }`
+    if (typeof parsed.dsl === 'string' && parsed.dsl.includes('builder.')) {
+      const execRes = CodeSandbox.executeCode(parsed.dsl);
+      if (execRes.error || !execRes.spec.components || execRes.spec.components.length === 0) {
+        throw new Error(execRes.error || 'El código DSL incluido en JSON no produjo componentes válidos.');
+      }
+      return {
+        spec: execRes.spec,
+        rawResponse: JSON.stringify(execRes.spec, null, 2),
+        dslCode: parsed.dsl
+      };
+    }
+
+    if (!parsed.components || !Array.isArray(parsed.components) || parsed.components.length === 0) {
+      throw new Error('La respuesta de la IA no incluye componentes geométricos.');
+    }
+
+    return {
+      spec: parsed as ModelSpec,
+      rawResponse: jsonStr
+    };
+  }
+
+  /**
+   * Builds the system prompt for either JSON ModelSpec output or JavaScript DSL output.
+   */
+  public static build3DSystemPrompt(outputFormat: AIOutputFormat = 'json'): string {
+    const uniqueNonce = `${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+
+    if (outputFormat === 'dsl') {
+      return `You are ModelCoder 3D Master Architect & Procedural Coder.
+Write clean, executable JavaScript code using the global \`builder\` (ProceduralBuilderContext) object to construct a grounded, detailed 3D model (12 to 28 components) with ZERO floating geometry and floor level at Y = 0.
+
+AVAILABLE BUILDER API METHODS:
+- builder.setName("Nombre en Español").setCategory("infrastructure").setDescription("Descripción en español");
+- builder.addBox({ name, size: [w, h, d], position: [x, y, z], rotation: [rx, ry, rz], color, texturePreset, parentId, pivot, wear, emissive, emissiveIntensity });
+- builder.addChamferBox({ name, size: [w, h, d, bevelRadius, bevelSegs], position: [x, y, z], color, texturePreset, parentId });
+- builder.addCylinder({ name, size: [rTop, rBottom, height, segs], position: [x, y, z], rotation: [rx, ry, rz], color, texturePreset, parentId });
+- builder.addPipe({ name, size: [rOuter, rInner, height, segs], position: [x, y, z], rotation: [rx, ry, rz], color, texturePreset, parentId });
+- builder.addPrism({ name, size: [radius, height, sides], position: [x, y, z], color, texturePreset, parentId });
+- builder.addPyramid({ name, size: [radius, height, sides], position: [x, y, z], color, texturePreset, parentId });
+- builder.addWedge({ name, size: [w, h, d], position: [x, y, z], rotation: [rx, ry, rz], color, texturePreset, parentId });
+- builder.addSphere({ name, size: [radius, wSegs, hSegs], position: [x, y, z], color, texturePreset, parentId });
+- builder.addCapsule({ name, size: [radius, length, capSegs, radSegs], position: [x, y, z], color, texturePreset, parentId });
+- builder.addCone({ name, size: [radius, height, segs], position: [x, y, z], color, texturePreset, parentId });
+- builder.addTorus({ name, size: [radius, tubeRadius, radSegs, tubSegs], position: [x, y, z], rotation: [rx, ry, rz], color, texturePreset, parentId });
+- builder.addPlane({ name, size: [w, h], position: [x, y, z], rotation: [rx, ry, rz], color, texturePreset, parentId });
+- builder.mirror("left_part_name", "x", "right_part_name"); // Bilateral symmetry!
+- builder.setPivot("door_name", "left" | "bottom" | [ox, oy, oz]);
+- builder.addPresetAnimation("spin_continuous" | "hinge_lid" | "sliding_door" | "idle_hover", { targetComponent: "part_name", name: "AnimName", duration: 2.0, axis: "y" });
+
+MANDATORY RULES:
+1. Ground Y = 0: Lowest component of height H must have position Y = H/2.
+2. You may use standard JavaScript loops (for) and math variables to arrange ribs, vents, wheels, bolts, or steps with exact mathematical precision!
+3. Every component MUST include a valid \`texturePreset\` ("worn_metal", "steel_galvanized", "diamond_plate", "painted_metal_blue", "painted_metal_white", "iron_cast", "brass_burnished", "plastic_abs_matte", "crt_screen_green", "hazard_stripes", "rubber_black", "clean_glass", "plasma_core_glow", "vent_grill").
+4. Output ONLY executable JavaScript code using \`builder.*\`. Do not wrap in markdown explanations.`;
+    }
+
+    return `You are ModelCoder 3D Master Architect, an expert procedural 3D modeler for retro-modern, sci-fi, industrial, and cybernetic games.
+Construct realistic, mechanically solid 3D models with ZERO floating geometry, ground alignment at Y = 0, 14-28 components, and authentic PBR texturePresets.
+Allowed shapes: "box", "chamfer_box", "cylinder", "pipe", "prism", "pyramid", "wedge", "sphere", "capsule", "torus", "cone", "plane".
+Allowed texturePresets: "worn_metal", "steel_polished", "steel_galvanized", "iron_cast", "copper_polished", "brass_burnished", "titanium_aerospace", "diamond_plate", "painted_metal_white", "painted_metal_blue", "painted_metal_olive", "red_paint_worn", "pcb_green_gold", "carbon_fiber", "solar_panel_blue", "vent_grill", "crt_screen_green", "crt_screen_amber", "plasma_core_glow", "hazard_stripes", "rubber_black", "plastic_abs_matte", "polymer_tactical", "clean_glass", "hologram_cyan".
+Return ONLY valid JSON matching the ModelSpec schema with id "below_nominal.generated.${uniqueNonce}", name, category, description, dimensions, palette, components[], and optional animations[].`;
+  }
+
+  /**
+   * Unified Multi-Provider LLM dispatcher supporting:
+   * - Google Gemini (REST v1beta with multimodal vision support)
+   * - OpenAI / OpenRouter / Groq / DeepSeek / Ollama / LM Studio (OpenAI Chat Completions v1)
+   * - Anthropic Claude (Messages API v1 or via local proxy)
+   */
+  public static async callMultiProviderLLM(
+    prompt: string,
+    options: {
+      provider: AIProviderType;
+      apiKey?: string;
+      baseUrl?: string;
+      model?: string;
+      outputFormat?: AIOutputFormat;
+      viewportImageBase64?: string;
+    }
+  ): Promise<{ spec: ModelSpec; rawResponse: string; dslCode?: string; usedModel: string }> {
+    const { provider, apiKey = '', baseUrl, model, outputFormat = 'json', viewportImageBase64 } = options;
+
+    if (provider === 'gemini' && outputFormat === 'json' && !viewportImageBase64) {
+      return await this.callGeminiAPI(prompt, apiKey, model);
+    }
+
+    const systemPrompt = this.build3DSystemPrompt(outputFormat);
+    const userInstruction = outputFormat === 'dsl'
+      ? `USER PROMPT: ${prompt}\nINSTRUCTION: Write the complete JavaScript ProceduralBuilderContext (builder.*) script to build this 3D model.`
+      : `USER PROMPT: ${prompt}\nINSTRUCTION: Synthesize a brand-new, mechanically coherent, grounded 3D model JSON spec with ZERO floating geometry.`;
+
+    const rawTextResponse = await this.dispatchRawLLMRequest({
+      provider,
+      apiKey,
+      baseUrl,
+      model,
+      systemPrompt,
+      userPrompt: userInstruction,
+      jsonMode: outputFormat === 'json',
+      imageBase64: viewportImageBase64
+    });
+
+    const parsed = this.parseModelOrDslOutput(rawTextResponse.text);
+    return {
+      spec: parsed.spec,
+      rawResponse: parsed.rawResponse,
+      dslCode: parsed.dslCode,
+      usedModel: rawTextResponse.usedModel
+    };
+  }
+
+  /**
+   * Dispatches a raw chat/completion request to any supported provider and returns `{ text, usedModel }`.
+   */
+  public static async dispatchRawLLMRequest(params: {
+    provider: AIProviderType;
+    apiKey?: string;
+    baseUrl?: string;
+    model?: string;
+    systemPrompt: string;
+    userPrompt: string;
+    jsonMode?: boolean;
+    imageBase64?: string;
+  }): Promise<{ text: string; usedModel: string }> {
+    const preset = this.PROVIDER_PRESETS[params.provider] || this.PROVIDER_PRESETS.gemini;
+    const chosenModel = (params.model && params.model !== 'auto')
+      ? params.model
+      : (preset.defaultModels.find(m => m.id !== 'auto')?.id || preset.defaultModels[0].id);
+    const endpointBase = (params.baseUrl || preset.baseUrl).replace(/\/+$/, '');
+    const signal = typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function'
+      ? AbortSignal.timeout(28000)
+      : undefined;
+
+    // 1. GOOGLE GEMINI (including DSL or Multimodal Vision)
+    if (params.provider === 'gemini') {
+      const geminiModel = chosenModel === 'auto' ? 'gemini-2.5-flash' : chosenModel;
+      const parts: any[] = [{ text: params.userPrompt }];
+      if (params.imageBase64) {
+        const cleanB64 = params.imageBase64.replace(/^data:image\/\w+;base64,/, '');
+        parts.push({
+          inline_data: {
+            mime_type: 'image/jpeg',
+            data: cleanB64
+          }
+        });
+      }
+      const payload: any = {
+        system_instruction: { parts: [{ text: params.systemPrompt }] },
+        contents: [{ role: 'user', parts }],
+        generationConfig: {
+          temperature: 0.2,
+          ...(params.jsonMode ? { responseMimeType: 'application/json' } : {})
+        }
+      };
+      const url = `${endpointBase}/models/${geminiModel}:generateContent?key=${params.apiKey || ''}`;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+        signal
+      });
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(`Gemini error (${res.status}): ${errText}`);
+      }
+      const data = await res.json();
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      if (!text) throw new Error('Gemini devolvió una respuesta vacía.');
+      return { text, usedModel: geminiModel };
+    }
+
+    // 2. ANTHROPIC CLAUDE (Direct or via CORS header)
+    if (params.provider === 'anthropic') {
+      const url = endpointBase.endsWith('/messages') ? endpointBase : `${endpointBase}/messages`;
+      const userContent: any[] = [{ type: 'text', text: params.userPrompt }];
+      if (params.imageBase64) {
+        const cleanB64 = params.imageBase64.replace(/^data:image\/\w+;base64,/, '');
+        userContent.unshift({
+          type: 'image',
+          source: {
+            type: 'base64',
+            media_type: 'image/jpeg',
+            data: cleanB64
+          }
+        });
+      }
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': params.apiKey || '',
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true'
+        },
+        body: JSON.stringify({
+          model: chosenModel,
+          max_tokens: 4096,
+          temperature: 0.2,
+          system: params.systemPrompt,
+          messages: [{ role: 'user', content: userContent }]
+        }),
+        signal
+      });
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(`Anthropic API error (${res.status}): ${errText}`);
+      }
+      const data = await res.json();
+      const text = data.content?.find((c: any) => c.type === 'text')?.text || '';
+      if (!text) throw new Error('Anthropic Claude devolvió una respuesta vacía.');
+      return { text, usedModel: chosenModel };
+    }
+
+    // 3. OPENAI-COMPATIBLE (OpenAI, OpenRouter, Groq, DeepSeek, Ollama, LM Studio, Custom)
+    const chatUrl = endpointBase.endsWith('/chat/completions')
+      ? endpointBase
+      : `${endpointBase}/chat/completions`;
+
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json'
+    };
+    if (params.apiKey && params.apiKey.trim()) {
+      headers['Authorization'] = `Bearer ${params.apiKey.trim()}`;
+    }
+    if (params.provider === 'openrouter') {
+      headers['HTTP-Referer'] = 'https://modelcoder.ivorbitgames.online';
+      headers['X-Title'] = 'ModelCoder 3D Studio';
+    }
+
+    let userContent: any = params.userPrompt;
+    if (params.imageBase64) {
+      const dataUrl = params.imageBase64.startsWith('data:')
+        ? params.imageBase64
+        : `data:image/jpeg;base64,${params.imageBase64}`;
+      userContent = [
+        { type: 'text', text: params.userPrompt },
+        { type: 'image_url', image_url: { url: dataUrl } }
+      ];
+    }
+
+    const body: any = {
+      model: chosenModel,
+      temperature: 0.2,
+      messages: [
+        { role: 'system', content: params.systemPrompt },
+        { role: 'user', content: userContent }
+      ]
+    };
+
+    if (params.jsonMode && params.provider !== 'ollama' && params.provider !== 'custom' && !chosenModel.includes('reasoner') && !chosenModel.includes('r1')) {
+      body.response_format = { type: 'json_object' };
+    }
+
+    const res = await fetch(chatUrl, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(body),
+      signal
+    });
+
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error(`${preset.label} API error (${res.status}): ${errText}`);
+    }
+
+    const data = await res.json();
+    const text = data.choices?.[0]?.message?.content || '';
+    if (!text) {
+      throw new Error(`${preset.label} (${chosenModel}) no devolvió contenido.`);
+    }
+
+    return { text, usedModel: data.model || chosenModel };
+  }
+
+  // ===========================================================================
+  // CONVERSATIONAL 3D AGENT & VISION SELF-CRITIQUE ENGINE
+  // ===========================================================================
+  /**
+   * Runs an incremental Agent Turn over an existing `currentSpec`.
+   * Instead of destroying the model, the agent inspects the current components and emits
+   * structured tool actions (`add_component`, `update_component`, `delete_component`,
+   * `mirror_component`, `apply_material_all`, `add_animation`, `align_to_ground`) or a refined spec.
+   */
+  public static async runAgentTurn(
+    instruction: string,
+    currentSpec: ModelSpec,
+    options: {
+      provider: AIProviderType;
+      apiKey?: string;
+      baseUrl?: string;
+      model?: string;
+      outputFormat?: AIOutputFormat;
+      agentMode?: AIAgentMode;
+      viewportImageBase64?: string;
+    }
+  ): Promise<{
+    spec: ModelSpec;
+    actions: AgentToolAction[];
+    summary: string;
+    rawResponse: string;
+    dslCode?: string;
+    usedModel: string;
+  }> {
+    const isVisionCritique = options.agentMode === 'vision_critique';
+
+    // Build a compact summary of the current scene so the LLM has exact spatial coordinates
+    const compactScene = {
+      name: currentSpec.name,
+      category: currentSpec.category,
+      dimensions: currentSpec.dimensions,
+      components: currentSpec.components.map((c) => ({
+        name: c.name,
+        shape: c.shape,
+        size: c.size,
+        position: c.position,
+        rotation: c.rotation,
+        color: c.color,
+        texturePreset: c.texturePreset,
+        parentId: c.parentId,
+        pivot: c.pivot,
+        wear: c.wear,
+        emissive: c.emissive
+      })),
+      animations: currentSpec.animations || []
+    };
+
+    const agentSystemPrompt = `You are ModelCoder Autonomous 3D Agent & Spatial Inspector.
+You modify an EXISTING 3D model in real time by returning a JSON object with tool actions.
+
+AVAILABLE TOOL ACTIONS (in "actions" array):
+1. { "action": "add_component", "component": { "name": "<unique_name>", "shape": "box"|"chamfer_box"|"cylinder"|"pipe"|"prism"|"pyramid"|"wedge"|"sphere"|"capsule"|"torus"|"cone"|"plane", "size": [...], "position": [x, y, z], "rotation": [rx, ry, rz], "color": "#hex", "texturePreset": "<preset>", "parentId": "<optional_parent>", "emissive": "<optional_hex>", "emissiveIntensity": 1.5 } }
+2. { "action": "update_component", "targetName": "<existing_name>", "changes": { "size": [...], "position": [x,y,z], "rotation": [rx,ry,rz], "color": "#hex", "texturePreset": "<preset>", "wear": 0.5, "emissive": "#hex" } }
+3. { "action": "delete_component", "targetName": "<existing_name>" }
+4. { "action": "mirror_component", "targetName": "<existing_name>", "axis": "x"|"y"|"z", "newName": "<mirrored_name>" }
+5. { "action": "reparent_component", "targetName": "<child_name>", "parentId": "<parent_name>" }
+6. { "action": "apply_material_all", "texturePreset": "<preset>", "color": "<optional_hex>", "wear": <optional_0_to_1> }
+7. { "action": "add_animation", "animation": { "name": "<ClipName>", "duration": 2.0, "loop": "repeat"|"pingpong", "presetType": "spin_continuous"|"hinge_lid"|"sliding_door"|"idle_hover", "tracks": [{ "targetComponent": "<comp_name>", "property": "rotation"|"position", "keyframes": [{ "time": 0, "value": [0,0,0] }, { "time": 2.0, "value": [0,360,0] }] }] } }
+8. { "action": "align_to_ground" }
+
+SPATIAL STACKING LAWS:
+- Ground is at Y = 0.
+- To place a new component of height H on top of a parent/base whose top is at Y_top, set position Y = Y_top + H/2.
+- Valid texturePresets: "worn_metal", "steel_polished", "steel_galvanized", "iron_cast", "brass_burnished", "titanium_aerospace", "diamond_plate", "painted_metal_white", "painted_metal_blue", "painted_metal_olive", "red_paint_worn", "carbon_fiber", "solar_panel_blue", "vent_grill", "crt_screen_green", "crt_screen_amber", "plasma_core_glow", "hazard_stripes", "rubber_black", "plastic_abs_matte", "clean_glass", "hologram_cyan".
+
+Return ONLY valid JSON with this structure:
+{
+  "summary": "<Brief explanation in Spanish of the modifications applied>",
+  "actions": [ ... ]
+}`;
+
+    const userPrompt = isVisionCritique
+      ? `CURRENT 3D SCENE SPEC:\n${JSON.stringify(compactScene)}\n\nVISION & SPATIAL SELF-CRITIQUE TASK: ${instruction || 'Inspecciona el modelo actual, corrige cualquier pieza flotante o desalineada, mejora el nivel de detalle mecánico añadiendo piezas complementarias (rejillas, conductos, indicadores LED o soportes) y asegura materiales PBR coherentes.'}`
+      : `CURRENT 3D SCENE SPEC:\n${JSON.stringify(compactScene)}\n\nUSER EDIT INSTRUCTION: ${instruction}\nApply the requested modifications to the current 3D model using the tool actions.`;
+
+    const llmRes = await this.dispatchRawLLMRequest({
+      provider: options.provider,
+      apiKey: options.apiKey,
+      baseUrl: options.baseUrl,
+      model: options.model,
+      systemPrompt: agentSystemPrompt,
+      userPrompt,
+      jsonMode: true,
+      imageBase64: options.viewportImageBase64
+    });
+
+    const withoutThink = llmRes.text.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+    const firstBrace = withoutThink.indexOf('{');
+    const lastBrace = withoutThink.lastIndexOf('}');
+    const jsonText = (firstBrace !== -1 && lastBrace > firstBrace)
+      ? withoutThink.substring(firstBrace, lastBrace + 1)
+      : withoutThink;
+
+    const parsed = JSON.parse(jsonText);
+
+    // If the model returned a full replacement spec instead of actions
+    if (Array.isArray(parsed.components) && parsed.components.length > 0 && !Array.isArray(parsed.actions)) {
+      const norm = this.normalizeSpecGeometry(parsed as ModelSpec);
+      return {
+        spec: norm,
+        actions: [{ action: 'replace_spec', spec: norm }],
+        summary: `Modelo actualizado (${norm.components.length} piezas).`,
+        rawResponse: JSON.stringify(norm, null, 2),
+        usedModel: llmRes.usedModel
+      };
+    }
+
+    const actions: AgentToolAction[] = Array.isArray(parsed.actions) ? parsed.actions : [];
+    const updatedSpec = this.executeAgentTools(currentSpec, actions);
+    const summary = typeof parsed.summary === 'string' && parsed.summary.trim()
+      ? parsed.summary.trim()
+      : `Agente aplicó ${actions.length} acción(es) sobre "${updatedSpec.name}".`;
+
+    return {
+      spec: updatedSpec,
+      actions,
+      summary,
+      rawResponse: JSON.stringify(updatedSpec, null, 2),
+      usedModel: llmRes.usedModel
+    };
+  }
+
+  /**
+   * Executes an array of `AgentToolAction` deterministically over a cloned `ModelSpec`.
+   */
+  public static executeAgentTools(baseSpec: ModelSpec, actions: AgentToolAction[]): ModelSpec {
+    const spec: ModelSpec = JSON.parse(JSON.stringify(baseSpec));
+    if (!Array.isArray(spec.components)) {
+      spec.components = [];
+    }
+
+    for (const act of actions) {
+      if (!act || typeof act !== 'object') continue;
+
+      switch (act.action) {
+        case 'add_component': {
+          if (act.component) {
+            const c = act.component;
+            const newName = (c.name || `pieza_${spec.components.length + 1}`).trim().replace(/\s+/g, '_');
+            spec.components.push({
+              name: newName,
+              shape: (c.shape as any) || 'box',
+              size: Array.isArray(c.size) ? c.size : [0.4, 0.4, 0.4],
+              position: Array.isArray(c.position) && c.position.length >= 3 ? [c.position[0], c.position[1], c.position[2]] : [0, 0.5, 0],
+              rotation: Array.isArray(c.rotation) && c.rotation.length >= 3 ? [c.rotation[0], c.rotation[1], c.rotation[2]] : [0, 0, 0],
+              color: c.color || '#718096',
+              texturePreset: c.texturePreset || 'worn_metal',
+              roughness: c.roughness ?? 0.65,
+              metalness: c.metalness ?? 0.3,
+              wear: c.wear,
+              parentId: c.parentId,
+              pivot: c.pivot,
+              emissive: c.emissive,
+              emissiveIntensity: c.emissiveIntensity,
+              array: c.array,
+              boolean: c.boolean
+            });
+          }
+          break;
+        }
+
+        case 'update_component': {
+          const target = spec.components.find(
+            (c) => c.name.toLowerCase() === (act.targetName || '').toLowerCase()
+          );
+          if (target && act.changes) {
+            Object.assign(target, act.changes);
+          }
+          break;
+        }
+
+        case 'delete_component': {
+          if (spec.components.length > 1 && act.targetName) {
+            const targetLower = act.targetName.toLowerCase();
+            spec.components = spec.components.filter((c) => c.name.toLowerCase() !== targetLower);
+          }
+          break;
+        }
+
+        case 'mirror_component': {
+          const orig = spec.components.find(
+            (c) => c.name.toLowerCase() === (act.targetName || '').toLowerCase()
+          );
+          if (orig) {
+            const axis = act.axis || 'x';
+            const copy = ProceduralEngine.createMirroredComponent(orig, axis, act.newName);
+            spec.components.push(copy);
+          }
+          break;
+        }
+
+        case 'reparent_component': {
+          if (act.targetName) {
+            ProceduralEngine.reparentComponentPreservingWorldTransform(
+              spec.components,
+              act.targetName,
+              act.parentId || undefined
+            );
+          }
+          break;
+        }
+
+        case 'apply_material_all': {
+          for (const comp of spec.components) {
+            if (act.texturePreset) comp.texturePreset = act.texturePreset;
+            if (act.color) comp.color = act.color;
+            if (typeof act.wear === 'number') comp.wear = act.wear;
+            if (typeof act.roughness === 'number') comp.roughness = act.roughness;
+            if (typeof act.metalness === 'number') comp.metalness = act.metalness;
+          }
+          break;
+        }
+
+        case 'add_animation': {
+          if (act.animation) {
+            if (!Array.isArray(spec.animations)) spec.animations = [];
+            spec.animations.push(act.animation);
+          }
+          break;
+        }
+
+        case 'replace_spec': {
+          if (act.spec && Array.isArray(act.spec.components) && act.spec.components.length > 0) {
+            return this.normalizeSpecGeometry(act.spec);
+          }
+          break;
+        }
+
+        case 'align_to_ground':
+        default:
+          break;
+      }
+    }
+
+    return this.normalizeSpecGeometry(spec);
+  }
+
+  /**
+   * Local deterministic Agent Heuristic Engine:
+   * Allows conversational edits ("añade una antena arriba", "ponle ruedas", "hazlo oxidado",
+   * "cambia el color a rojo", "añade animación de giro", "duplica en espejo") even offline!
+   */
+  public static applyLocalHeuristicAgentEdit(
+    prompt: string,
+    currentSpec: ModelSpec
+  ): { spec: ModelSpec; actions: AgentToolAction[]; summary: string } {
+    const lower = prompt.toLowerCase();
+    const actions: AgentToolAction[] = [];
+    const summaries: string[] = [];
+
+    // Compute current bounding box to place new parts accurately on top or sides
+    const { group } = ProceduralEngine.buildModelFromSpec(currentSpec);
+    const bbox = new THREE.Box3().setFromObject(group);
+    const maxY = !bbox.isEmpty() ? bbox.max.y : 0.8;
+    const maxX = !bbox.isEmpty() ? Math.max(0.25, bbox.max.x) : 0.4;
+    const maxZ = !bbox.isEmpty() ? Math.max(0.25, bbox.max.z) : 0.4;
+    const rootParent = currentSpec.components[0]?.name;
+
+    // 1. Add antenna / radar / sensor on top
+    if (/(antena|radar|parab[oó]lica|sensor|baliza|faro|luz|sirena)/.test(lower)) {
+      const mastName = `antena_mastil_${currentSpec.components.length + 1}`;
+      const beaconName = `baliza_superior_${currentSpec.components.length + 2}`;
+      actions.push({
+        action: 'add_component',
+        component: {
+          name: mastName,
+          shape: 'cylinder',
+          size: [0.025, 0.035, 0.45, 10],
+          position: [0, parseFloat((maxY + 0.225).toFixed(3)), 0],
+          rotation: [0, 0, 0],
+          color: '#a0aec0',
+          texturePreset: 'steel_polished',
+          parentId: rootParent
+        }
+      });
+      actions.push({
+        action: 'add_component',
+        component: {
+          name: beaconName,
+          shape: 'sphere',
+          size: [0.06, 12, 8],
+          position: [0, parseFloat((maxY + 0.48).toFixed(3)), 0],
+          rotation: [0, 0, 0],
+          color: '#00ffcc',
+          texturePreset: 'plasma_core_glow',
+          emissive: '#00ffcc',
+          emissiveIntensity: 2.2,
+          parentId: mastName
+        }
+      });
+      summaries.push('se añadió mástil de antena y baliza emisiva en la parte superior');
+    }
+
+    // 2. Add wheels / tires
+    if (/(rueda|llanta|neum[aá]tico|tren de rodaje)/.test(lower)) {
+      const wheelPositions: [string, [number, number, number]][] = [
+        ['rueda_del_izq', [-maxX, 0.14, maxZ * 0.65]],
+        ['rueda_del_der', [maxX, 0.14, maxZ * 0.65]],
+        ['rueda_tras_izq', [-maxX, 0.14, -maxZ * 0.65]],
+        ['rueda_tras_der', [maxX, 0.14, -maxZ * 0.65]]
+      ];
+      for (const [wName, wPos] of wheelPositions) {
+        actions.push({
+          action: 'add_component',
+          component: {
+            name: wName,
+            shape: 'cylinder',
+            size: [0.14, 0.14, 0.10, 14],
+            position: wPos,
+            rotation: [0, 0, 90],
+            color: '#1a202c',
+            texturePreset: 'rubber_black'
+          }
+        });
+      }
+      summaries.push('se instalaron 4 ruedas simétricas con neumáticos de caucho');
+    }
+
+    // 3. Add CRT screen / monitor / console
+    if (/(pantalla|monitor|crt|consola|display|visor)/.test(lower)) {
+      actions.push({
+        action: 'add_component',
+        component: {
+          name: `pantalla_crt_${currentSpec.components.length + 1}`,
+          shape: 'box',
+          size: [0.32, 0.22, 0.03],
+          position: [0, parseFloat((maxY * 0.65).toFixed(3)), parseFloat((maxZ + 0.015).toFixed(3))],
+          rotation: [0, 0, 0],
+          color: '#00ffcc',
+          texturePreset: 'crt_screen_green',
+          emissive: '#00ffcc',
+          emissiveIntensity: 1.8
+        }
+      });
+      summaries.push('se montó una pantalla CRT frontal de telemetría');
+    }
+
+    // 4. Add exhaust pipe / thruster / cannon / turret
+    if (/(ca[ñn][oó]n|tobera|propulsor|escape|tubo|torreta)/.test(lower)) {
+      actions.push({
+        action: 'add_component',
+        component: {
+          name: `tobera_conducto_${currentSpec.components.length + 1}`,
+          shape: 'pipe',
+          size: [0.10, 0.07, 0.35, 12],
+          position: [0, parseFloat((maxY + 0.12).toFixed(3)), parseFloat((maxZ * 0.4).toFixed(3))],
+          rotation: [90, 0, 0],
+          color: '#4a5568',
+          texturePreset: 'titanium_aerospace'
+        }
+      });
+      summaries.push('se integró un conducto/tobera tubular');
+    }
+
+    // 5. Weathering / rust / wear adjustments
+    if (/(oxid|desgast|viej|batalla|sucio|usado)/.test(lower)) {
+      actions.push({
+        action: 'apply_material_all',
+        wear: 0.72,
+        texturePreset: 'worn_metal'
+      });
+      summaries.push('se aplicó desgaste de batalla (72%) y metal envejecido');
+    } else if (/(nuevo|limpio|f[aá]brica|pulido|brillante|cromado)/.test(lower)) {
+      actions.push({
+        action: 'apply_material_all',
+        wear: 0.0,
+        texturePreset: 'steel_polished',
+        roughness: 0.25,
+        metalness: 0.85
+      });
+      summaries.push('se restauró el acabado a acero pulido de fábrica');
+    }
+
+    // 6. Color changes
+    const colorMap: [RegExp, string, string, string][] = [
+      [/(rojo|red|escarlata)/, '#e53e3e', 'red_paint_worn', 'rojo'],
+      [/(azul|blue|cobalto)/, '#3182ce', 'painted_metal_blue', 'azul'],
+      [/(verde|green|militar|oliva)/, '#38a169', 'painted_metal_olive', 'verde'],
+      [/(blanco|white|[aá]rtico)/, '#edf2f7', 'painted_metal_white', 'blanco'],
+      [/(dorado|oro|gold|lat[oó]n)/, '#ecc94b', 'brass_burnished', 'dorado'],
+      [/(negro|black|oscuro|carbono)/, '#1a202c', 'carbon_fiber', 'negro carbono'],
+      [/(amarillo|peligro|hazard)/, '#eab308', 'hazard_stripes', 'amarillo industrial']
+    ];
+    for (const [regex, hex, preset, label] of colorMap) {
+      if (regex.test(lower)) {
+        actions.push({
+          action: 'apply_material_all',
+          color: hex,
+          texturePreset: preset
+        });
+        summaries.push(`se actualizó el acabado a ${label}`);
+        break;
+      }
+    }
+
+    // 7. Add animation
+    if (/(anim|gir|rotar|spin|radar|h[eé]lice)/.test(lower)) {
+      const targetComp = currentSpec.components[currentSpec.components.length - 1]?.name || currentSpec.components[0]?.name || 'Base';
+      actions.push({
+        action: 'add_animation',
+        animation: {
+          id: `anim_agent_${Date.now().toString().slice(-4)}`,
+          name: 'Giro_Continuo_IA',
+          duration: 2.5,
+          loop: 'repeat',
+          presetType: 'spin_continuous',
+          tracks: [
+            {
+              targetComponent: targetComp,
+              property: 'rotation',
+              keyframes: [
+                { time: 0, value: [0, 0, 0] },
+                { time: 2.5, value: [0, 360, 0] }
+              ]
+            }
+          ]
+        }
+      });
+      summaries.push(`se añadió animación de giro continuo sobre "${targetComp}"`);
+    }
+
+    // 8. Default detail enhancement (if vision critique or general improvement requested)
+    if (actions.length === 0) {
+      actions.push({
+        action: 'add_component',
+        component: {
+          name: `rejilla_ventilacion_${currentSpec.components.length + 1}`,
+          shape: 'box',
+          size: [0.28, 0.14, 0.02],
+          position: [0, parseFloat((maxY * 0.5).toFixed(3)), parseFloat((maxZ + 0.01).toFixed(3))],
+          rotation: [0, 0, 0],
+          color: '#2d3748',
+          texturePreset: 'vent_grill'
+        }
+      });
+      actions.push({
+        action: 'add_component',
+        component: {
+          name: `indicador_estado_${currentSpec.components.length + 2}`,
+          shape: 'cylinder',
+          size: [0.025, 0.025, 0.02, 10],
+          position: [0.16, parseFloat((maxY * 0.72).toFixed(3)), parseFloat((maxZ + 0.01).toFixed(3))],
+          rotation: [90, 0, 0],
+          color: '#39ff14',
+          emissive: '#39ff14',
+          emissiveIntensity: 2.0
+        }
+      });
+      summaries.push('se optimizó el asentamiento a suelo (Y=0) y se añadieron detalles mecánicos (rejilla de ventilación e indicador LED)');
+    }
+
+    const updated = this.executeAgentTools(currentSpec, actions);
+    return {
+      spec: updated,
+      actions,
+      summary: `Agente 3D: ${summaries.join(', ')}.`
+    };
   }
 
   /**

@@ -271,48 +271,73 @@ import catalog from '../data/catalog.json';
       <!-- LEFT COLUMN: CREATION / OUTLINER -->
       <div class="creation-column">
         
-        <!-- MODE A: AI COPILOT WINDOW -->
+        <!-- MODE A: AI COPILOT & MULTI-AGENT WINDOW -->
         <div id="ai-mode-container" class="mode-panel">
           <div class="ps1-window">
             <div class="ps1-titlebar ai-titlebar">
               <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
                 <span class="ai-status-pulse"></span>
-                <span>Copiloto IA</span>
+                <span>Copiloto & Agente IA</span>
                 <span id="ai-engine-badge" class="ai-badge-gemini">Motor Procedural Local</span>
               </div>
               <div class="ai-titlebar-tools">
-                <button type="button" id="toggle-gemini-key-btn" class="ps1-ctrl-btn" title="Configurar API Key de Google Gemini">
-                  🔑 Conectar Gemini
+                <button type="button" id="toggle-gemini-key-btn" class="ps1-ctrl-btn" title="Configurar Proveedor IA, Clave API o Endpoint Local">
+                  🔑 Conectar IA
                 </button>
               </div>
             </div>
 
             <div class="ai-copilot-body">
-              <!-- API Key Drawer -->
+              <!-- Multi-Provider API Key & Endpoint Drawer -->
               <div id="gemini-key-drawer" class="gemini-key-drawer" style="display: none;">
-                <div class="ps1-inset key-inset">
-                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem; flex-wrap: wrap; gap: 0.3rem;">
-                    <label for="gemini-api-key-input" class="field-label" style="margin: 0;">
-                      Clave de Google Gemini API:
+                <div class="ps1-inset key-inset" style="display: flex; flex-direction: column; gap: 0.55rem;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.3rem;">
+                    <label for="ai-provider-select" class="field-label" style="margin: 0;">
+                      Proveedor de IA / LLM:
                     </label>
-                    <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" style="color: var(--studio-brand); font-size: 0.72rem; text-decoration: underline;">
-                      Obtener clave gratuita ↗
+                    <a id="ai-provider-help-link" href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" style="color: var(--studio-brand); font-size: 0.72rem; text-decoration: underline;">
+                      Obtener clave API ↗
                     </a>
                   </div>
-                  <div style="display: flex; gap: 0.5rem;">
-                    <input 
-                      type="password" 
-                      id="gemini-api-key-input" 
-                      placeholder="Pega aquí tu clave: AIzaSy..." 
-                      class="form-input" 
+
+                  <select id="ai-provider-select" class="form-select" style="font-size: 0.76rem;">
+                    <option value="gemini">⚡ Google Gemini (API Gratuita / Flash / Pro)</option>
+                    <option value="openai">🧠 OpenAI (GPT-4o / GPT-4.1 / o3-mini)</option>
+                    <option value="openrouter">🌐 OpenRouter (Claude, DeepSeek, Qwen, Llama)</option>
+                    <option value="groq">🚀 Groq (Llama 3.3 / DeepSeek R1 Ultra-Veloz)</option>
+                    <option value="deepseek">🐳 DeepSeek (DeepSeek V3 / R1)</option>
+                    <option value="anthropic">🎭 Anthropic (Claude 3.7 / 3.5 Sonnet)</option>
+                    <option value="ollama">🖥️ Ollama / LM Studio (100% Local en tu PC)</option>
+                    <option value="custom">🔌 Endpoint OpenAI-Compatible Personalizado</option>
+                  </select>
+
+                  <div id="ai-endpoint-row" style="display: none; flex-direction: column; gap: 0.25rem;">
+                    <label for="ai-endpoint-input" class="field-label" style="margin: 0; font-size: 0.68rem;">
+                      Endpoint Base URL (OpenAI-Compatible / Ollama):
+                    </label>
+                    <input
+                      type="text"
+                      id="ai-endpoint-input"
+                      placeholder="http://localhost:11434/v1"
+                      class="form-input"
+                      style="font-family: var(--font-mono); font-size: 0.74rem;"
+                    />
+                  </div>
+
+                  <div id="ai-key-input-row" style="display: flex; gap: 0.5rem;">
+                    <input
+                      type="password"
+                      id="gemini-api-key-input"
+                      placeholder="Pega aquí tu clave: AIzaSy..."
+                      class="form-input"
                       style="flex: 1; font-family: var(--font-mono); font-size: 0.75rem;"
                     />
                     <button type="button" id="save-gemini-key-btn" class="btn btn-gold" style="font-size: 0.72rem; padding: 0.35rem 0.85rem;">
                       Guardar
                     </button>
                   </div>
-                  <small style="color: var(--studio-muted); font-size: 0.68rem; margin-top: 0.35rem; display: block;">
-                    Sin clave, el estudio utiliza el sintetizador procedural geométrico local sin costo alguno.
+                  <small id="ai-drawer-hint" style="color: var(--studio-muted); font-size: 0.68rem; display: block;">
+                    Tus claves se guardan localmente en tu navegador. También puedes usar Ollama local o el Motor Procedural sin clave.
                   </small>
                 </div>
               </div>
@@ -321,37 +346,68 @@ import catalog from '../data/catalog.json';
               <div class="engine-selector-row">
                 <span class="selector-heading">Motor:</span>
                 <div class="engine-toggle-buttons">
-                  <button type="button" class="btn-engine-toggle" id="btn-engine-ai" data-engine="ai" title="Google Gemini Generative AI">
-                    ⚡ IA Generativa (Gemini) <span class="badge-unique">Nuevo</span>
+                  <button type="button" class="btn-engine-toggle" id="btn-engine-ai" data-engine="ai" title="Modelos LLM (Gemini, OpenAI, Claude, DeepSeek, Ollama)">
+                    ⚡ IA Multi-Modelo <span class="badge-unique">LLM</span>
                   </button>
-                  <button type="button" class="btn-engine-toggle active" id="btn-engine-local" data-engine="local" title="Motor Procedural Local">
+                  <button type="button" class="btn-engine-toggle active" id="btn-engine-local" data-engine="local" title="Motor Procedural Local Offline">
                     🤖 Procedural Local
                   </button>
                 </div>
               </div>
 
-              <!-- Gemini Model Selector Row -->
-              <div class="gemini-model-row" id="gemini-model-row" style="display: none;">
-                <span class="selector-heading">Modelo Gemini:</span>
-                <select id="gemini-model-select" class="form-select gemini-model-select" title="Selecciona el modelo de IA de Google Gemini">
-                  <option value="auto">🔄 Automático (Recomendado)</option>
-                  <option value="gemini-3.8-flash">⚡ Gemini 3.8 Flash (Mayor razonamiento 3D)</option>
-                  <option value="gemini-2.5-flash">🚀 Gemini 2.5 Flash (Ultra veloz)</option>
-                  <option value="gemini-2.0-flash">🌐 Gemini 2.0 Flash (Alta disponibilidad)</option>
-                  <option value="gemini-1.5-flash">🛡️ Gemini 1.5 Flash (Clásico)</option>
-                  <option value="gemini-3.5-flash-lite">⚡ Gemini 3.5 Flash-Lite</option>
-                  <option value="gemini-2.5-flash-lite">⚡ Gemini 2.5 Flash-Lite</option>
-                  <option value="gemini-3.1-flash-lite">⚡ Gemini 3.1 Flash-Lite</option>
-                </select>
+              <!-- Multi-Provider & Model Selector Row -->
+              <div class="gemini-model-row" id="gemini-model-row" style="display: none; flex-wrap: wrap; gap: 0.45rem;">
+                <div style="display: flex; align-items: center; gap: 0.35rem; flex: 1; min-width: 190px;">
+                  <span class="selector-heading">Modelo:</span>
+                  <select id="gemini-model-select" class="form-select gemini-model-select" style="flex: 1;" title="Selecciona el modelo de IA activo">
+                    <option value="auto">🔄 Automático (Cascada Resiliente)</option>
+                    <option value="gemini-2.5-flash">🚀 Gemini 2.5 Flash (Recomendado)</option>
+                    <option value="gemini-2.5-pro">🧠 Gemini 2.5 Pro (Máxima precisión 3D)</option>
+                    <option value="gemini-2.0-flash">🌐 Gemini 2.0 Flash</option>
+                    <option value="gemini-3.8-flash">⚡ Gemini 3.8 Flash</option>
+                    <option value="gemini-2.5-flash-lite">⚡ Gemini 2.5 Flash-Lite</option>
+                    <option value="gemini-1.5-flash">🛡️ Gemini 1.5 Flash</option>
+                  </select>
+                </div>
+                <input
+                  type="text"
+                  id="ai-custom-model-input"
+                  class="form-input"
+                  placeholder="o escribe ID de modelo (ej. qwen2.5-coder:14b)"
+                  style="display: none; flex: 1; min-width: 170px; font-family: var(--font-mono); font-size: 0.73rem; padding: 0.32rem 0.55rem;"
+                />
+                <div style="display: flex; align-items: center; gap: 0.35rem;">
+                  <span class="selector-heading">Síntesis:</span>
+                  <select id="ai-output-format-select" class="form-select" style="font-size: 0.72rem; padding: 0.28rem 0.5rem;" title="Formato de síntesis: Especificación JSON o Código Procedural DSL">
+                    <option value="json">📐 Spec JSON</option>
+                    <option value="dsl">💻 Código DSL (Builder)</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Agent Operation Mode Bar (Create New vs Conversational Edit Agent vs Vision Critique) -->
+              <div class="ai-agent-mode-bar" style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap; padding: 0.35rem 0.5rem; background: var(--site-sunken); border: 1px solid var(--site-line); border-radius: 8px;">
+                <div style="display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap;">
+                  <span class="selector-heading" style="font-size: 0.68rem;">Modo Agente:</span>
+                  <button type="button" id="btn-agent-mode-create" class="btn-mini btn-outline active" data-agent-mode="create" title="Crear un modelo 3D completamente nuevo desde cero">
+                    ✨ Crear Nuevo 3D
+                  </button>
+                  <button type="button" id="btn-agent-mode-edit" class="btn-mini btn-outline" data-agent-mode="agent" title="Agente Conversacional: modifica el modelo actual en escena (añadir piezas, cambiar materiales, animar) sin borrar tu trabajo">
+                    🛠️ Agente Editor (Iterar Escena)
+                  </button>
+                </div>
+                <button type="button" id="btn-ai-vision-critique" class="btn-mini btn-cyan" title="Captura el visor 3D actual y hace que el Agente de Visión inspeccione, asiente piezas y mejore el detalle mecánico">
+                  👁️ Auto-Crítica Visual 3D
+                </button>
               </div>
 
               <!-- Prompt Input Row -->
               <div class="ai-prompt-row">
                 <div class="prompt-input-wrap">
-                  <input 
-                    type="text" 
-                    id="ai-prompt-input" 
-                    placeholder="ej. auto deportivo rojo / caza espacial / robot mech / consola CRT" 
+                  <input
+                    type="text"
+                    id="ai-prompt-input"
+                    placeholder="ej. auto deportivo rojo / caza espacial / robot mech / consola CRT"
                     class="ai-prompt-input"
                   />
                 </div>
@@ -360,15 +416,24 @@ import catalog from '../data/catalog.json';
                 </button>
               </div>
 
-              <!-- Quick Chips -->
-              <div class="ai-chips-row">
-                <span class="chips-label">Ejemplos:</span>
+              <!-- Quick Chips (Dynamic for Create vs Agent Mode) -->
+              <div class="ai-chips-row" id="ai-chips-create">
+                <span class="chips-label">Crear:</span>
                 <button type="button" class="ai-chip" data-prompt="Auto deportivo retro con chasis bajo y cuatro ruedas con llantas metálicas">🚗 Auto Sci-Fi</button>
                 <button type="button" class="ai-chip" data-prompt="Nave espacial interceptora orbital con alas en cuña y propulsores dobles">🚀 Caza Espacial</button>
                 <button type="button" class="ai-chip" data-prompt="Robot bípedo de seguridad con torso acorazado y visor óptico">🤖 Robot Mech</button>
-                <button type="button" class="ai-chip" data-prompt="Tarjeta de acceso de seguridad con chip dorado y banda magnética">💳 Tarjeta Acceso</button>
+                <button type="button" class="ai-chip" data-prompt="Generador industrial con chasis biselado, radiador lineal y pantalla CRT">⚡ Generador</button>
                 <button type="button" class="ai-chip" data-prompt="Blaster de plasma con cañón cilíndrico y celda de energía">🔫 Blaster Láser</button>
                 <button type="button" class="ai-chip" data-prompt="Consola de navegación espacial con dos pantallas CRT inclinadas">🖥️ Consola CRT</button>
+              </div>
+
+              <div class="ai-chips-row" id="ai-chips-agent" style="display: none;">
+                <span class="chips-label">Ordenar al Agente:</span>
+                <button type="button" class="ai-chip" data-prompt="Añade una antena parabólica con baliza LED emisiva en la parte superior">📡 + Antena Superior</button>
+                <button type="button" class="ai-chip" data-prompt="Instala 4 ruedas simétricas de caucho en la base del modelo">🛞 + 4 Ruedas</button>
+                <button type="button" class="ai-chip" data-prompt="Monta una pantalla CRT verde de telemetría en el frente">🖥️ + Pantalla CRT</button>
+                <button type="button" class="ai-chip" data-prompt="Aplica textura de metal oxidado con desgaste de batalla al 70%">錆 Metal Oxidado</button>
+                <button type="button" class="ai-chip" data-prompt="Añade una animación de giro continuo 360 grados a la pieza superior">🔄 + Animar Giro</button>
               </div>
 
               <div id="ai-loading-status" class="ai-status-indicator" style="display: none;"></div>
@@ -2230,20 +2295,161 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
   btnOutlinerUndo?.addEventListener('click', () => undo());
   btnOutlinerRedo?.addEventListener('click', () => redo());
 
-  // --- ENGINE SELECTION (AI vs LOCAL) ---
+  // --- ENGINE, MULTI-PROVIDER & AGENT SELECTION ---
   let currentEngine: 'ai' | 'local' = (localStorage.getItem('modelcoder_selected_engine') as any) || 'local';
+  let currentAIProvider: any = localStorage.getItem('modelcoder_ai_provider') || 'gemini';
+  let currentAIOutputFormat: 'json' | 'dsl' = (localStorage.getItem('modelcoder_ai_format') as any) || 'json';
+  let currentAIAgentMode: 'create' | 'agent' = 'create';
 
   const geminiModelRow = document.getElementById('gemini-model-row');
   const geminiModelSelect = document.getElementById('gemini-model-select') as HTMLSelectElement;
-  const savedModel = localStorage.getItem('modelcoder_gemini_model') || 'auto';
-  if (geminiModelSelect) {
-    geminiModelSelect.value = savedModel;
-    geminiModelSelect.addEventListener('change', () => {
-      localStorage.setItem('modelcoder_gemini_model', geminiModelSelect.value);
-      updateAIEngineBadge();
-      showStudioToast(`⚡ Modelo activo: ${geminiModelSelect.options[geminiModelSelect.selectedIndex]?.text || geminiModelSelect.value}`);
+  const aiProviderSelect = document.getElementById('ai-provider-select') as HTMLSelectElement | null;
+  const aiEndpointRow = document.getElementById('ai-endpoint-row');
+  const aiEndpointInput = document.getElementById('ai-endpoint-input') as HTMLInputElement | null;
+  const aiKeyInputRow = document.getElementById('ai-key-input-row');
+  const aiProviderHelpLink = document.getElementById('ai-provider-help-link') as HTMLAnchorElement | null;
+  const aiCustomModelInput = document.getElementById('ai-custom-model-input') as HTMLInputElement | null;
+  const aiOutputFormatSelect = document.getElementById('ai-output-format-select') as HTMLSelectElement | null;
+  const btnAgentModeCreate = document.getElementById('btn-agent-mode-create');
+  const btnAgentModeEdit = document.getElementById('btn-agent-mode-edit');
+  const btnAiVisionCritique = document.getElementById('btn-ai-vision-critique');
+  const aiChipsCreate = document.getElementById('ai-chips-create');
+  const aiChipsAgent = document.getElementById('ai-chips-agent');
+
+  function getProviderKeyStorageName(provider: string): string {
+    return provider === 'gemini' ? 'modelcoder_gemini_key' : `modelcoder_key_${provider}`;
+  }
+
+  function getProviderEndpointStorageName(provider: string): string {
+    return `modelcoder_endpoint_${provider}`;
+  }
+
+  function getProviderModelStorageName(provider: string): string {
+    return provider === 'gemini' ? 'modelcoder_gemini_model' : `modelcoder_model_${provider}`;
+  }
+
+  function populateProviderModels(provider: string): void {
+    const preset = (AIGenerator.PROVIDER_PRESETS as any)[provider] || AIGenerator.PROVIDER_PRESETS.gemini;
+    if (aiProviderSelect && aiProviderSelect.value !== provider) {
+      aiProviderSelect.value = provider;
+    }
+
+    if (aiProviderHelpLink) {
+      if (preset.keyHelpUrl) {
+        aiProviderHelpLink.href = preset.keyHelpUrl;
+        aiProviderHelpLink.style.display = 'inline';
+      } else {
+        aiProviderHelpLink.style.display = 'none';
+      }
+    }
+
+    if (aiEndpointRow && aiEndpointInput) {
+      const showEndpoint = provider === 'ollama' || provider === 'custom' || provider === 'openrouter';
+      aiEndpointRow.style.display = showEndpoint ? 'flex' : 'none';
+      aiEndpointInput.placeholder = preset.baseUrl;
+      aiEndpointInput.value = localStorage.getItem(getProviderEndpointStorageName(provider)) || preset.baseUrl;
+    }
+
+    if (geminiApiKeyInput) {
+      geminiApiKeyInput.placeholder = preset.keyPlaceholder;
+      geminiApiKeyInput.value = localStorage.getItem(getProviderKeyStorageName(provider)) || '';
+    }
+
+    if (geminiModelSelect) {
+      geminiModelSelect.innerHTML = '';
+      for (const m of preset.defaultModels) {
+        const opt = document.createElement('option');
+        opt.value = m.id;
+        opt.textContent = m.label;
+        geminiModelSelect.appendChild(opt);
+      }
+      const customOpt = document.createElement('option');
+      customOpt.value = '__custom__';
+      customOpt.textContent = '✏️ Escribir otro ID de modelo...';
+      geminiModelSelect.appendChild(customOpt);
+
+      const savedMod = localStorage.getItem(getProviderModelStorageName(provider)) || preset.defaultModels[0]?.id || 'auto';
+      const existsInList = preset.defaultModels.some((m: any) => m.id === savedMod);
+      if (existsInList) {
+        geminiModelSelect.value = savedMod;
+        if (aiCustomModelInput) aiCustomModelInput.style.display = 'none';
+      } else {
+        geminiModelSelect.value = '__custom__';
+        if (aiCustomModelInput) {
+          aiCustomModelInput.style.display = 'block';
+          aiCustomModelInput.value = savedMod;
+        }
+      }
+    }
+  }
+
+  populateProviderModels(currentAIProvider);
+
+  if (aiOutputFormatSelect) {
+    aiOutputFormatSelect.value = currentAIOutputFormat;
+    aiOutputFormatSelect.addEventListener('change', () => {
+      currentAIOutputFormat = (aiOutputFormatSelect.value as 'json' | 'dsl') || 'json';
+      localStorage.setItem('modelcoder_ai_format', currentAIOutputFormat);
+      showStudioToast(
+        currentAIOutputFormat === 'dsl'
+          ? '💻 Modo Síntesis: Código Procedural DSL (Builder)'
+          : '📐 Modo Síntesis: Especificación JSON Estructurada'
+      );
     });
   }
+
+  aiProviderSelect?.addEventListener('change', () => {
+    currentAIProvider = aiProviderSelect.value || 'gemini';
+    localStorage.setItem('modelcoder_ai_provider', currentAIProvider);
+    populateProviderModels(currentAIProvider);
+    updateAIEngineBadge();
+    const preset = (AIGenerator.PROVIDER_PRESETS as any)[currentAIProvider];
+    showStudioToast(`🔌 Proveedor IA: ${preset?.label || currentAIProvider}`);
+  });
+
+  if (geminiModelSelect) {
+    geminiModelSelect.addEventListener('change', () => {
+      if (geminiModelSelect.value === '__custom__') {
+        if (aiCustomModelInput) {
+          aiCustomModelInput.style.display = 'block';
+          aiCustomModelInput.focus();
+        }
+      } else {
+        if (aiCustomModelInput) aiCustomModelInput.style.display = 'none';
+        localStorage.setItem(getProviderModelStorageName(currentAIProvider), geminiModelSelect.value);
+        updateAIEngineBadge();
+        showStudioToast(`⚡ Modelo activo: ${geminiModelSelect.options[geminiModelSelect.selectedIndex]?.text || geminiModelSelect.value}`);
+      }
+    });
+  }
+
+  aiCustomModelInput?.addEventListener('change', () => {
+    const val = aiCustomModelInput.value.trim();
+    if (val) {
+      localStorage.setItem(getProviderModelStorageName(currentAIProvider), val);
+      updateAIEngineBadge();
+      showStudioToast(`⚡ Modelo personalizado activo: ${val}`);
+    }
+  });
+
+  function setAgentOperationMode(mode: 'create' | 'agent'): void {
+    currentAIAgentMode = mode;
+    btnAgentModeCreate?.classList.toggle('active', mode === 'create');
+    btnAgentModeEdit?.classList.toggle('active', mode === 'agent');
+    if (aiChipsCreate) aiChipsCreate.style.display = mode === 'create' ? 'flex' : 'none';
+    if (aiChipsAgent) aiChipsAgent.style.display = mode === 'agent' ? 'flex' : 'none';
+    if (generateAiBtn) {
+      generateAiBtn.textContent = mode === 'agent' ? '🛠️ Aplicar con Agente' : '⚡ Generar 3D';
+    }
+    if (aiPromptInput) {
+      aiPromptInput.placeholder = mode === 'agent'
+        ? '🛠️ Ordena al Agente sobre el modelo actual: ej. "añade una antena arriba", "ponle 4 ruedas", "hazlo oxidado"...'
+        : '⚡ Describe el modelo 3D a crear: ej. "auto deportivo rojo", "caza espacial", "robot mech", "consola CRT"...';
+    }
+  }
+
+  btnAgentModeCreate?.addEventListener('click', () => setAgentOperationMode('create'));
+  btnAgentModeEdit?.addEventListener('click', () => setAgentOperationMode('agent'));
 
   function setEngineMode(engine: 'ai' | 'local'): void {
     currentEngine = engine;
@@ -2253,11 +2459,9 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
       btnEngineAi?.classList.add('active');
       btnEngineLocal?.classList.remove('active');
       if (geminiModelRow) geminiModelRow.style.display = 'flex';
-      if (aiPromptInput) {
-        aiPromptInput.placeholder = '⚡ Describe lo que quieras: la IA inventará un diseño 3D 100% nuevo y original...';
-      }
-      const savedKey = localStorage.getItem('modelcoder_gemini_key');
-      if (!savedKey || savedKey.trim().length <= 10) {
+      const preset = (AIGenerator.PROVIDER_PRESETS as any)[currentAIProvider] || AIGenerator.PROVIDER_PRESETS.gemini;
+      const savedKey = localStorage.getItem(getProviderKeyStorageName(currentAIProvider));
+      if (preset.requiresKey && (!savedKey || savedKey.trim().length <= 5)) {
         if (geminiKeyDrawer) geminiKeyDrawer.style.display = 'block';
         geminiApiKeyInput?.focus();
       }
@@ -2265,10 +2469,8 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
       btnEngineLocal?.classList.add('active');
       btnEngineAi?.classList.remove('active');
       if (geminiModelRow) geminiModelRow.style.display = 'none';
-      if (aiPromptInput) {
-        aiPromptInput.placeholder = 'ej. auto deportivo rojo con ruedas / caza espacial con alas / robot mech / tarjeta de acceso';
-      }
     }
+    setAgentOperationMode(currentAIAgentMode);
     updateAIEngineBadge();
   }
 
@@ -2276,17 +2478,19 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
   btnEngineLocal?.addEventListener('click', () => setEngineMode('local'));
 
   function updateAIEngineBadge(): void {
-    const key = localStorage.getItem('modelcoder_gemini_key');
-    const model = localStorage.getItem('modelcoder_gemini_model') || 'auto';
+    const preset = (AIGenerator.PROVIDER_PRESETS as any)[currentAIProvider] || AIGenerator.PROVIDER_PRESETS.gemini;
+    const key = localStorage.getItem(getProviderKeyStorageName(currentAIProvider));
+    const model = localStorage.getItem(getProviderModelStorageName(currentAIProvider)) || preset.defaultModels[0]?.id || 'auto';
     if (aiEngineBadge) {
       if (currentEngine === 'ai') {
-        const modelLabel = model === 'auto' ? 'AUTO' : model.replace('gemini-', '');
-        if (key && key.trim().length > 10) {
-          aiEngineBadge.textContent = `⚡ IA GEMINI [${modelLabel.toUpperCase()}]`;
+        const shortModel = model === 'auto' ? 'AUTO' : model.replace(/^gemini-/, '').split('/').pop() || model;
+        const provTag = currentAIProvider.toUpperCase();
+        if (!preset.requiresKey || (key && key.trim().length > 5)) {
+          aiEngineBadge.textContent = `⚡ ${provTag} [${shortModel}]`;
           aiEngineBadge.style.borderColor = 'var(--ps1-gold)';
           aiEngineBadge.style.color = 'var(--ps1-gold)';
         } else {
-          aiEngineBadge.textContent = `⚡ IA GEMINI [${modelLabel.toUpperCase()}] (FALTA CLAVE)`;
+          aiEngineBadge.textContent = `⚡ ${provTag} [${shortModel}] (FALTA CLAVE)`;
           aiEngineBadge.style.borderColor = 'var(--ps1-gold)';
           aiEngineBadge.style.color = 'var(--ps1-gold)';
         }
@@ -5934,10 +6138,15 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
     }
   });
 
-  // --- AI GENERATION COPILOT ---
+  // --- AI GENERATION COPILOT & CONVERSATIONAL AGENT ---
   generateAiBtn?.addEventListener('click', () => triggerAIGeneration());
   aiPromptInput?.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') triggerAIGeneration();
+  });
+
+  btnAiVisionCritique?.addEventListener('click', () => {
+    const customInstruction = aiPromptInput?.value.trim() || 'Inspecciona el visor 3D actual, alinea todas las piezas al suelo (Y >= 0), corrige flotaciones y añade detalles geométricos realistas faltantes.';
+    triggerAIGeneration(customInstruction, 'vision_critique');
   });
 
   aiChips.forEach((chip) => {
@@ -5950,11 +6159,12 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
 
   let isGeneratingAI = false;
 
-  async function triggerAIGeneration(overridePrompt?: string) {
+  async function triggerAIGeneration(overridePrompt?: string, overrideAgentMode?: 'create' | 'agent' | 'vision_critique') {
     if (isGeneratingAI) return;
+    const effectiveAgentMode = overrideAgentMode || currentAIAgentMode;
     const prompt = (overridePrompt || aiPromptInput?.value || '').trim();
-    if (!prompt) {
-      showStudioToast('⚠️ Escribe una descripción del modelo que deseas generar.', true);
+    if (!prompt && effectiveAgentMode !== 'vision_critique') {
+      showStudioToast('⚠️ Escribe una descripción o instrucción para el modelo 3D.', true);
       aiPromptInput?.focus();
       return;
     }
@@ -5963,42 +6173,70 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
 
     if (generateAiBtn) {
       generateAiBtn.disabled = true;
-      generateAiBtn.textContent = '⏳ GENERANDO GEOMETRÍA...';
+      generateAiBtn.textContent = effectiveAgentMode === 'vision_critique'
+        ? '👁️ ANALIZANDO VISOR...'
+        : (effectiveAgentMode === 'agent' ? '🛠️ EJECUTANDO AGENTE...' : '⏳ GENERANDO GEOMETRÍA...');
     }
+
+    const preset = (AIGenerator.PROVIDER_PRESETS as any)[currentAIProvider] || AIGenerator.PROVIDER_PRESETS.gemini;
+    const apiKey = localStorage.getItem(getProviderKeyStorageName(currentAIProvider)) || undefined;
+    const baseUrl = (aiEndpointInput?.value.trim()) || localStorage.getItem(getProviderEndpointStorageName(currentAIProvider)) || preset.baseUrl;
+    const rawSelectModel = (document.getElementById('gemini-model-select') as HTMLSelectElement)?.value || 'auto';
+    const selectedModel = rawSelectModel === '__custom__'
+      ? (aiCustomModelInput?.value.trim() || localStorage.getItem(getProviderModelStorageName(currentAIProvider)) || preset.defaultModels[0]?.id || 'auto')
+      : rawSelectModel;
 
     if (aiLoadingStatus) {
       aiLoadingStatus.style.display = 'block';
       aiLoadingStatus.className = 'ai-status-indicator status-loading';
-      aiLoadingStatus.textContent = currentEngine === 'ai'
-        ? '⚡ Gemini AI sintetizando geometría 3D única y original (sin plantillas)...'
-        : '🧠 Computando componentes geométricos procedurales...';
+      if (effectiveAgentMode === 'vision_critique') {
+        aiLoadingStatus.textContent = `👁️ Capturando visor 3D y ejecutando auto-crítica visual con ${currentEngine === 'ai' ? preset.label : 'Agente Heurístico Local'}...`;
+      } else if (effectiveAgentMode === 'agent') {
+        aiLoadingStatus.textContent = `🛠️ Agente 3D (${currentEngine === 'ai' ? preset.label : 'Heurístico Local'}) modificando "${currentSpec.name}"...`;
+      } else {
+        aiLoadingStatus.textContent = currentEngine === 'ai'
+          ? `⚡ ${preset.label} (${currentAIOutputFormat === 'dsl' ? 'DSL Builder' : 'JSON Spec'}) sintetizando geometría 3D...`
+          : '🧠 Computando componentes geométricos procedurales...';
+      }
     }
 
     if (statusBadge && statusBadgeText) {
       statusBadge.className = 'generation-status-badge status-generating';
-      statusBadgeText.textContent = 'GENERANDO...';
+      statusBadgeText.textContent = effectiveAgentMode === 'agent' ? 'AGENTE 3D...' : 'GENERANDO...';
     }
 
-    const apiKey = localStorage.getItem('modelcoder_gemini_key') || undefined;
-    const selectedModel = (document.getElementById('gemini-model-select') as HTMLSelectElement)?.value || localStorage.getItem('modelcoder_gemini_model') || 'auto';
+    const viewportImageBase64 = (effectiveAgentMode === 'vision_critique' && viewport)
+      ? (viewport.captureViewportBase64('image/jpeg', 0.82) || undefined)
+      : undefined;
 
     try {
-      const { spec, source, usedModel } = await AIGenerator.generateModel(prompt, {
+      const { spec, source, usedModel, usedProvider, agentSummary, synthesizedDsl } = await AIGenerator.generateModel(prompt, {
         engine: currentEngine,
+        provider: currentAIProvider as any,
         apiKey,
+        baseUrl,
         forceFresh: currentEngine === 'ai',
-        model: selectedModel
+        model: selectedModel,
+        outputFormat: currentAIOutputFormat,
+        agentMode: effectiveAgentMode,
+        currentSpec,
+        viewportImageBase64
       });
       currentSpec = spec;
-      selectedComponentIndex = 0;
+      selectedComponentIndex = Math.max(0, spec.components.length - 1);
       renderCurrentSpec('ai');
+
+      if (synthesizedDsl && activeFile === 'script' && codeTextarea) {
+        codeTextarea.value = synthesizedDsl;
+        updateLineNumbers();
+      }
 
       if (aiLoadingStatus) {
         if (source === 'gemini_fallback') {
           aiLoadingStatus.className = 'ai-status-indicator status-warning';
           aiLoadingStatus.innerHTML = '';
           const msgSpan = document.createElement('div');
-          msgSpan.textContent = `⚡ [ SERVIDORES GEMINI EN ALTA DEMANDA (503) ] Generamos "${spec.name}" (${spec.components.length} piezas) con el Motor Procedural Local para que continúes sin esperas.`;
+          msgSpan.textContent = `⚡ [ PROVEEDOR IA EN ALTA DEMANDA ] Generamos "${spec.name}" (${spec.components.length} piezas) con el Motor Procedural Local para que continúes sin esperas.`;
           aiLoadingStatus.appendChild(msgSpan);
 
           const actionsRow = document.createElement('div');
@@ -6007,18 +6245,26 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
           const retryBtn = document.createElement('button');
           retryBtn.type = 'button';
           retryBtn.className = 'btn-mini';
-          retryBtn.textContent = '🔄 REINTENTAR CON GEMINI';
-          retryBtn.addEventListener('click', () => triggerAIGeneration(prompt));
+          retryBtn.textContent = '🔄 REINTENTAR CON IA';
+          retryBtn.addEventListener('click', () => triggerAIGeneration(prompt, effectiveAgentMode));
           actionsRow.appendChild(retryBtn);
 
           aiLoadingStatus.appendChild(actionsRow);
         } else {
           aiLoadingStatus.className = 'ai-status-indicator status-ok';
           let engineLabel = '🤖 MOTOR PROCEDURAL';
-          if (source === 'gemini') engineLabel = `⚡ IA GEMINI (${usedModel || selectedModel})`;
-          else if (source === 'local_memory') engineLabel = '💾 MEMORIA LOCAL APRENDIDA';
-          else if (source === 'cloud_memory') engineLabel = '☁️ NUBE COMUNITARIA RECUPERADA';
-          aiLoadingStatus.textContent = `✅ [ ${engineLabel} ] ${spec.name} (${spec.components.length} componentes) renderizado en el visor.`;
+          if (source === 'agent_edit') {
+            engineLabel = `🛠️ AGENTE 3D (${usedModel || selectedModel})`;
+          } else if (source === 'gemini' || source === 'llm_provider') {
+            const provPreset = (AIGenerator.PROVIDER_PRESETS as any)[usedProvider || currentAIProvider] || preset;
+            engineLabel = `⚡ ${provPreset.label.toUpperCase()} (${usedModel || selectedModel})`;
+          } else if (source === 'local_memory') {
+            engineLabel = '💾 MEMORIA LOCAL APRENDIDA';
+          } else if (source === 'cloud_memory') {
+            engineLabel = '☁️ NUBE COMUNITARIA RECUPERADA';
+          }
+          const summarySuffix = agentSummary ? ` — ${agentSummary}` : '';
+          aiLoadingStatus.textContent = `✅ [ ${engineLabel} ] ${spec.name} (${spec.components.length} componentes)${summarySuffix}`;
         }
       }
     } catch (err: any) {
@@ -6036,7 +6282,7 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
         retryBtn.type = 'button';
         retryBtn.className = 'btn-mini';
         retryBtn.textContent = '🔄 REINTENTAR';
-        retryBtn.addEventListener('click', () => triggerAIGeneration(prompt));
+        retryBtn.addEventListener('click', () => triggerAIGeneration(prompt, effectiveAgentMode));
         actionsRow.appendChild(retryBtn);
 
         if (currentEngine === 'ai') {
@@ -6045,17 +6291,17 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
           fallbackBtn.className = 'btn-mini';
           fallbackBtn.style.borderColor = 'var(--ps1-cyan)';
           fallbackBtn.style.color = 'var(--ps1-cyan)';
-          fallbackBtn.textContent = '🤖 GENERAR CON MOTOR PROCEDURAL LOCAL';
+          fallbackBtn.textContent = '🤖 EJECUTAR CON MOTOR LOCAL';
           fallbackBtn.addEventListener('click', () => {
             setEngineMode('local');
-            triggerAIGeneration(prompt);
+            triggerAIGeneration(prompt, effectiveAgentMode);
           });
           actionsRow.appendChild(fallbackBtn);
         }
 
         aiLoadingStatus.appendChild(actionsRow);
       }
-      if (err.message && err.message.includes('🔑 CONECTAR GEMINI')) {
+      if (err.message && (err.message.includes('🔑 CONECTAR') || err.message.includes('API Key'))) {
         if (geminiKeyDrawer) geminiKeyDrawer.style.display = 'block';
         geminiApiKeyInput?.focus();
       }
@@ -6066,34 +6312,40 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
       isGeneratingAI = false;
       if (generateAiBtn) {
         generateAiBtn.disabled = false;
-        generateAiBtn.textContent = '⚡ GENERAR GEOMETRÍA';
+        generateAiBtn.textContent = currentAIAgentMode === 'agent' ? '🛠️ Aplicar con Agente' : '⚡ Generar 3D';
       }
     }
   }
 
-  // Gemini API Key Drawer
+  // Multi-Provider API Key & Endpoint Drawer
   toggleGeminiKeyBtn?.addEventListener('click', () => {
     if (geminiKeyDrawer) {
       geminiKeyDrawer.style.display = geminiKeyDrawer.style.display === 'none' ? 'block' : 'none';
     }
   });
 
-  const savedKey = localStorage.getItem('modelcoder_gemini_key');
-  if (savedKey && geminiApiKeyInput) {
-    geminiApiKeyInput.value = savedKey;
-  }
-
   saveGeminiKeyBtn?.addEventListener('click', () => {
     const key = geminiApiKeyInput?.value.trim() || '';
+    const endpoint = aiEndpointInput?.value.trim() || '';
+    const preset = (AIGenerator.PROVIDER_PRESETS as any)[currentAIProvider] || AIGenerator.PROVIDER_PRESETS.gemini;
+
+    if (endpoint) {
+      localStorage.setItem(getProviderEndpointStorageName(currentAIProvider), endpoint);
+    }
+
     if (key) {
-      localStorage.setItem('modelcoder_gemini_key', key);
+      localStorage.setItem(getProviderKeyStorageName(currentAIProvider), key);
       setEngineMode('ai');
-      showStudioToast('🔑 Clave de Google Gemini guardada. Modo [⚡ IA GENERATIVA] activo.');
+      showStudioToast(`🔑 Credenciales de ${preset.label} guardadas. Modo [⚡ IA Multi-Modelo] activo.`);
+      if (geminiKeyDrawer) geminiKeyDrawer.style.display = 'none';
+    } else if (!preset.requiresKey) {
+      setEngineMode('ai');
+      showStudioToast(`🔌 Endpoint de ${preset.label} activado sin API Key.`);
       if (geminiKeyDrawer) geminiKeyDrawer.style.display = 'none';
     } else {
-      localStorage.removeItem('modelcoder_gemini_key');
+      localStorage.removeItem(getProviderKeyStorageName(currentAIProvider));
       setEngineMode('local');
-      showStudioToast('🤖 Clave eliminada. Modo [MOTOR PROCEDURAL LOCAL] activo.');
+      showStudioToast(`🤖 Clave de ${preset.label} eliminada. Modo [Motor Procedural Local] activo.`);
     }
   });
 
@@ -6111,9 +6363,23 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
   }
 
   function generateDslScriptFromSpec(spec: ModelSpec): string {
+    const shapeToMethod: Record<string, string> = {
+      box: 'addBox',
+      chamfer_box: 'addChamferBox',
+      cylinder: 'addCylinder',
+      pipe: 'addPipe',
+      prism: 'addPrism',
+      sphere: 'addSphere',
+      pyramid: 'addPyramid',
+      cone: 'addCone',
+      wedge: 'addWedge',
+      torus: 'addTorus',
+      capsule: 'addCapsule',
+      plane: 'addPlane'
+    };
     let out = `// ModelCoder Procedural Builder\nbuilder.setName(${JSON.stringify(spec.name)});\n\n`;
     spec.components.forEach((c) => {
-      const fn = c.shape === 'cylinder' ? 'addCylinder' : (c.shape === 'sphere' ? 'addSphere' : (c.shape === 'wedge' ? 'addWedge' : 'addBox'));
+      const fn = shapeToMethod[c.shape] || 'addBox';
       const opts: any = {
         name: c.name,
         size: c.size || [1, 1, 1],
@@ -6123,6 +6389,11 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
       if (c.rotation && (c.rotation[0] !== 0 || c.rotation[1] !== 0 || c.rotation[2] !== 0)) {
         opts.rotation = c.rotation;
       }
+      if (c.parent) opts.parent = c.parent;
+      if (c.bevel !== undefined) opts.bevel = c.bevel;
+      if (c.thickness !== undefined) opts.thickness = c.thickness;
+      if (c.sides !== undefined) opts.sides = c.sides;
+      if (c.arc !== undefined) opts.arc = c.arc;
       if (c.texturePreset) opts.texturePreset = c.texturePreset;
       if (c.materialType) opts.materialType = c.materialType;
       if (c.roughness !== undefined) opts.roughness = c.roughness;

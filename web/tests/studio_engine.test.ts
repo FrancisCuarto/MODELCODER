@@ -3781,6 +3781,137 @@ test('Boolean Operations & Persistence: La malla bakeada persiste su geometría 
   ProceduralEngine.disposeHierarchy(group);
 });
 
+test('Multi-Provider & DSL Builder: CodeSandbox soporta las 12 primitivas completas en scripts builder.*', () => {
+  const dslScript = `
+    builder.setName("Arsenal 12 Primitivas");
+    builder.addBox({ name: "p_box", size: [1, 0.5, 1], position: [0, 0.25, 0] });
+    builder.addChamferBox({ name: "p_chamfer", size: [0.8, 0.4, 0.8], bevel: 0.06, position: [0, 0.7, 0] });
+    builder.addCylinder({ name: "p_cyl", size: [0.2, 0.2, 0.6, 12], position: [-0.5, 0.3, 0] });
+    builder.addPipe({ name: "p_pipe", size: [0.25, 0.25, 0.5, 12], thickness: 0.05, position: [0.5, 0.25, 0] });
+    builder.addPrism({ name: "p_prism", size: [0.2, 0.3], sides: 6, position: [0, 1.05, 0] });
+    builder.addSphere({ name: "p_sphere", size: [0.2, 10, 8], position: [0, 1.35, 0] });
+    builder.addPyramid({ name: "p_pyr", size: [0.3, 0.4], sides: 4, position: [-0.5, 0.8, 0] });
+    builder.addCone({ name: "p_cone", size: [0.2, 0.4, 10], position: [0.5, 0.7, 0] });
+    builder.addWedge({ name: "p_wedge", size: [0.4, 0.2, 0.5], position: [0, 0.1, 0.6] });
+    builder.addTorus({ name: "p_torus", size: [0.3, 0.06, 8, 16], arc: 360, position: [0, 1.35, 0] });
+    builder.addCapsule({ name: "p_cap", size: [0.12, 0.4, 4, 8], position: [-0.5, 1.2, 0] });
+    builder.addPlane({ name: "p_plane", size: [1.5, 1.5], position: [0, 0.01, 0] });
+  `;
+
+  const { spec, error } = CodeSandbox.executeCode(dslScript);
+  assert.equal(error, undefined, `No debe haber error en DSL de 12 primitivas: ${error}`);
+  assert.equal(spec.components.length, 12, 'Deben registrarse las 12 primitivas');
+
+  const shapes = spec.components.map((c) => c.shape);
+  assert.deepEqual(shapes, [
+    'box', 'chamfer_box', 'cylinder', 'pipe', 'prism', 'sphere',
+    'pyramid', 'cone', 'wedge', 'torus', 'capsule', 'plane'
+  ]);
+
+  const { group, stats } = ProceduralEngine.buildModelFromSpec(spec);
+  assert.equal(group.children.length, 12);
+  assert.ok(stats.triangles > 150);
+  ProceduralEngine.disposeHierarchy(group);
+});
+
+test('Multi-Provider & DSL Parser: AIGenerator.parseModelOrDslOutput procesa bloques <think>, código DSL y JSON', () => {
+  // 1. Verificar que están registrados los 8 proveedores multi-modelo
+  const providers = Object.keys(AIGenerator.PROVIDER_PRESETS);
+  for (const expected of ['gemini', 'openai', 'openrouter', 'groq', 'deepseek', 'anthropic', 'ollama', 'custom']) {
+    assert.ok(providers.includes(expected), `El proveedor ${expected} debe estar configurado en PROVIDER_PRESETS`);
+  }
+
+  // 2. Parsear salida con bloque <think> (DeepSeek R1 / Qwen) + código DSL JavaScript
+  const rawDslWithThink = `
+    <think>
+    Voy a construir un dron táctico usando bucles for para sus 4 rotores.
+    </think>
+    \`\`\`javascript
+    builder.setName("Dron Tactico DSL");
+    builder.addChamferBox({ name: "Nucleo_Central", size: [0.6, 0.2, 0.6], position: [0, 0.3, 0], texturePreset: "carbon_fiber" });
+    for (let i = 0; i < 4; i++) {
+      const x = (i % 2 === 0 ? -1 : 1) * 0.45;
+      const z = (i < 2 ? -1 : 1) * 0.45;
+      builder.addPipe({ name: "Rotor_" + (i + 1), size: [0.2, 0.2, 0.08, 12], position: [x, 0.35, z], parent: "Nucleo_Central" });
+    }
+    \`\`\`
+  `;
+
+  const parsedDsl = AIGenerator.parseModelOrDslOutput(rawDslWithThink, 'dron tactico');
+  assert.equal(parsedDsl.spec.name, 'Dron Tactico DSL');
+  assert.equal(parsedDsl.spec.components.length, 5, '1 núcleo + 4 rotores generados por bucle for');
+  assert.ok(parsedDsl.synthesizedDsl && parsedDsl.synthesizedDsl.includes('builder.addChamferBox'));
+});
+
+test('Conversational 3D Agent: executeAgentTools y applyLocalHeuristicAgentEdit editan el modelo incrementalmente', () => {
+  const initialSpec: ModelSpec = {
+    id: 'test.agent.vehicle',
+    name: 'Chasis Base',
+    category: 'vehicles',
+    description: 'Modelo inicial para agente',
+    units: 'meters',
+    dimensions: { width: 1.5, depth: 2.0, height: 0.8 },
+    palette: 'industrial_hazard',
+    components: [
+      {
+        name: 'Chasis_Principal',
+        shape: 'box',
+        size: [1.2, 0.4, 2.0],
+        position: [0, 0.4, 0],
+        color: '#2d3748',
+        texturePreset: 'steel_brushed'
+      }
+    ]
+  };
+
+  // 1. Prueba de herramientas estructuradas del Agente (add_component, mirror_component, update_component, add_animation)
+  const toolResult = AIGenerator.executeAgentTools(initialSpec, [
+    {
+      action: 'add_component',
+      component: {
+        name: 'Ala_Izq',
+        shape: 'wedge',
+        size: [0.6, 0.1, 0.8],
+        position: [-0.9, 0.4, 0],
+        color: '#e53e3e'
+      }
+    },
+    {
+      action: 'mirror_component',
+      targetName: 'Ala_Izq',
+      axis: 'x',
+      newName: 'Ala_Der'
+    },
+    {
+      action: 'add_component',
+      component: {
+        name: 'Radar_Superior',
+        shape: 'cylinder',
+        size: [0.25, 0.25, 0.2, 12],
+        position: [0, 0.7, 0]
+      }
+    },
+    {
+      action: 'add_animation',
+      targetName: 'Radar_Superior',
+      preset: 'spin_continuous',
+      axis: 'y',
+      duration: 2.5
+    }
+  ], 'Añadidas alas simétricas y radar giratorio');
+
+  assert.equal(toolResult.spec.components.length, 4, 'Debe tener Chasis + Ala_Izq + Ala_Der + Radar_Superior');
+  assert.ok(toolResult.spec.components.some((c) => c.name === 'Ala_Der'), 'Debe existir la pieza reflejada Ala_Der');
+  assert.equal(toolResult.spec.animations?.length, 1, 'Debe haberse creado la pista de animación');
+
+  // 2. Prueba del Agente Heurístico Local (añadir 4 ruedas y oxidar)
+  const heuristicWheels = AIGenerator.applyLocalHeuristicAgentEdit(toolResult.spec, 'añade 4 ruedas de goma con llantas');
+  assert.equal(heuristicWheels.spec.components.length, 8, 'Debe haber añadido las 4 ruedas al modelo existente');
+
+  const heuristicRust = AIGenerator.applyLocalHeuristicAgentEdit(heuristicWheels.spec, 'aplica textura metal oxidado industrial a todo el modelo');
+  assert.equal(heuristicRust.spec.components[0].texturePreset, 'metal_rusted');
+});
+
 // Teardown: ensure Node exits cleanly after tests
 test('Teardown: Exit cleanly', () => {
   setTimeout(() => process.exit(0), 100);

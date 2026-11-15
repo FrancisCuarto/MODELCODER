@@ -222,6 +222,356 @@ export class ProceduralBuilderContext {
     });
   }
 
+  public addChamferBox(opts: {
+    name?: string;
+    parentId?: string;
+    parent?: string;
+    pivot?: [number, number, number];
+    size?: [number, number, number, number?, number?];
+    bevelRadius?: number;
+    bevelSegments?: number;
+    position?: [number, number, number];
+    rotation?: [number, number, number];
+    color?: string;
+    roughness?: number;
+    metalness?: number;
+    texturePreset?: string;
+    materialType?: string;
+    emissive?: string;
+    emissiveIntensity?: number;
+    uvScale?: [number, number];
+  }): this {
+    const baseSize = opts.size || [1, 1, 1];
+    const s = [
+      baseSize[0] ?? 1,
+      baseSize[1] ?? 1,
+      baseSize[2] ?? 1,
+      baseSize[3] ?? opts.bevelRadius ?? 0.03,
+      baseSize[4] ?? opts.bevelSegments ?? 1
+    ];
+    return this.addComponent({
+      name: opts.name || `chamfer_box_${this.spec.components.length + 1}`,
+      shape: 'chamfer_box',
+      parentId: opts.parentId || opts.parent,
+      pivot: opts.pivot,
+      size: s,
+      position: opts.position || [0, 0, 0],
+      rotation: opts.rotation || [0, 0, 0],
+      color: opts.color || '#4a5568',
+      roughness: opts.roughness,
+      metalness: opts.metalness,
+      texturePreset: opts.texturePreset,
+      materialType: opts.materialType,
+      emissive: opts.emissive,
+      emissiveIntensity: opts.emissiveIntensity,
+      uvScale: opts.uvScale
+    });
+  }
+
+  public addPipe(opts: {
+    name?: string;
+    parentId?: string;
+    parent?: string;
+    pivot?: [number, number, number];
+    radiusOuter?: number;
+    radiusInner?: number;
+    height?: number;
+    segments?: number;
+    size?: [number, number, number, number?];
+    position?: [number, number, number];
+    rotation?: [number, number, number];
+    color?: string;
+    roughness?: number;
+    metalness?: number;
+    texturePreset?: string;
+    materialType?: string;
+    emissive?: string;
+    emissiveIntensity?: number;
+    uvScale?: [number, number];
+  }): this {
+    const ro = opts.size?.[0] ?? opts.radiusOuter ?? 0.3;
+    const ri = opts.size?.[1] ?? opts.radiusInner ?? ro * 0.7;
+    const h = opts.size?.[2] ?? opts.height ?? 0.8;
+    const segs = opts.size?.[3] ?? opts.segments ?? 12;
+    return this.addComponent({
+      name: opts.name || `pipe_${this.spec.components.length + 1}`,
+      shape: 'pipe',
+      parentId: opts.parentId || opts.parent,
+      pivot: opts.pivot,
+      size: [ro, Math.min(ri, ro * 0.92), h, segs],
+      position: opts.position || [0, 0, 0],
+      rotation: opts.rotation || [0, 0, 0],
+      color: opts.color || '#4a5568',
+      roughness: opts.roughness,
+      metalness: opts.metalness,
+      texturePreset: opts.texturePreset,
+      materialType: opts.materialType,
+      emissive: opts.emissive,
+      emissiveIntensity: opts.emissiveIntensity,
+      uvScale: opts.uvScale
+    });
+  }
+
+  public addPrism(opts: {
+    name?: string;
+    parentId?: string;
+    parent?: string;
+    pivot?: [number, number, number];
+    radius?: number;
+    height?: number;
+    sides?: number;
+    size?: [number, number, number?];
+    position?: [number, number, number];
+    rotation?: [number, number, number];
+    color?: string;
+    roughness?: number;
+    metalness?: number;
+    texturePreset?: string;
+    materialType?: string;
+    emissive?: string;
+    emissiveIntensity?: number;
+    uvScale?: [number, number];
+  }): this {
+    const s = [
+      opts.size?.[0] ?? opts.radius ?? 0.35,
+      opts.size?.[1] ?? opts.height ?? 0.8,
+      opts.size?.[2] ?? opts.sides ?? 6
+    ];
+    return this.addComponent({
+      name: opts.name || `prism_${this.spec.components.length + 1}`,
+      shape: 'prism',
+      parentId: opts.parentId || opts.parent,
+      pivot: opts.pivot,
+      size: s,
+      position: opts.position || [0, 0, 0],
+      rotation: opts.rotation || [0, 0, 0],
+      color: opts.color || '#4a5568',
+      roughness: opts.roughness,
+      metalness: opts.metalness,
+      texturePreset: opts.texturePreset,
+      materialType: opts.materialType,
+      emissive: opts.emissive,
+      emissiveIntensity: opts.emissiveIntensity,
+      uvScale: opts.uvScale
+    });
+  }
+
+  public addPyramid(opts: {
+    name?: string;
+    parentId?: string;
+    parent?: string;
+    pivot?: [number, number, number];
+    radius?: number;
+    height?: number;
+    sides?: number;
+    size?: [number, number, number?];
+    position?: [number, number, number];
+    rotation?: [number, number, number];
+    color?: string;
+    roughness?: number;
+    metalness?: number;
+    texturePreset?: string;
+    materialType?: string;
+    emissive?: string;
+    emissiveIntensity?: number;
+    uvScale?: [number, number];
+  }): this {
+    const s = [
+      opts.size?.[0] ?? opts.radius ?? 0.4,
+      opts.size?.[1] ?? opts.height ?? 0.7,
+      opts.size?.[2] ?? opts.sides ?? 4
+    ];
+    return this.addComponent({
+      name: opts.name || `pyramid_${this.spec.components.length + 1}`,
+      shape: 'pyramid',
+      parentId: opts.parentId || opts.parent,
+      pivot: opts.pivot,
+      size: s,
+      position: opts.position || [0, 0, 0],
+      rotation: opts.rotation || [0, 0, 0],
+      color: opts.color || '#4a5568',
+      roughness: opts.roughness,
+      metalness: opts.metalness,
+      texturePreset: opts.texturePreset,
+      materialType: opts.materialType,
+      emissive: opts.emissive,
+      emissiveIntensity: opts.emissiveIntensity,
+      uvScale: opts.uvScale
+    });
+  }
+
+  public addCone(opts: {
+    name?: string;
+    parentId?: string;
+    parent?: string;
+    pivot?: [number, number, number];
+    radius?: number;
+    height?: number;
+    segments?: number;
+    size?: [number, number, number?];
+    position?: [number, number, number];
+    rotation?: [number, number, number];
+    color?: string;
+    roughness?: number;
+    metalness?: number;
+    texturePreset?: string;
+    materialType?: string;
+    emissive?: string;
+    emissiveIntensity?: number;
+    uvScale?: [number, number];
+  }): this {
+    const s = [
+      opts.size?.[0] ?? opts.radius ?? 0.35,
+      opts.size?.[1] ?? opts.height ?? 0.8,
+      opts.size?.[2] ?? opts.segments ?? 8
+    ];
+    return this.addComponent({
+      name: opts.name || `cone_${this.spec.components.length + 1}`,
+      shape: 'cone',
+      parentId: opts.parentId || opts.parent,
+      pivot: opts.pivot,
+      size: s,
+      position: opts.position || [0, 0, 0],
+      rotation: opts.rotation || [0, 0, 0],
+      color: opts.color || '#dd6b20',
+      roughness: opts.roughness,
+      metalness: opts.metalness,
+      texturePreset: opts.texturePreset,
+      materialType: opts.materialType,
+      emissive: opts.emissive,
+      emissiveIntensity: opts.emissiveIntensity,
+      uvScale: opts.uvScale
+    });
+  }
+
+  public addTorus(opts: {
+    name?: string;
+    parentId?: string;
+    parent?: string;
+    pivot?: [number, number, number];
+    radius?: number;
+    tubeRadius?: number;
+    radialSegments?: number;
+    tubularSegments?: number;
+    size?: [number, number, number?, number?];
+    position?: [number, number, number];
+    rotation?: [number, number, number];
+    color?: string;
+    roughness?: number;
+    metalness?: number;
+    texturePreset?: string;
+    materialType?: string;
+    emissive?: string;
+    emissiveIntensity?: number;
+    uvScale?: [number, number];
+  }): this {
+    const s = [
+      opts.size?.[0] ?? opts.radius ?? 0.4,
+      opts.size?.[1] ?? opts.tubeRadius ?? 0.1,
+      opts.size?.[2] ?? opts.radialSegments ?? 6,
+      opts.size?.[3] ?? opts.tubularSegments ?? 12
+    ];
+    return this.addComponent({
+      name: opts.name || `torus_${this.spec.components.length + 1}`,
+      shape: 'torus',
+      parentId: opts.parentId || opts.parent,
+      pivot: opts.pivot,
+      size: s,
+      position: opts.position || [0, 0, 0],
+      rotation: opts.rotation || [0, 0, 0],
+      color: opts.color || '#4a5568',
+      roughness: opts.roughness,
+      metalness: opts.metalness,
+      texturePreset: opts.texturePreset,
+      materialType: opts.materialType,
+      emissive: opts.emissive,
+      emissiveIntensity: opts.emissiveIntensity,
+      uvScale: opts.uvScale
+    });
+  }
+
+  public addCapsule(opts: {
+    name?: string;
+    parentId?: string;
+    parent?: string;
+    pivot?: [number, number, number];
+    radius?: number;
+    length?: number;
+    capSegments?: number;
+    radialSegments?: number;
+    size?: [number, number, number?, number?];
+    position?: [number, number, number];
+    rotation?: [number, number, number];
+    color?: string;
+    roughness?: number;
+    metalness?: number;
+    texturePreset?: string;
+    materialType?: string;
+    emissive?: string;
+    emissiveIntensity?: number;
+    uvScale?: [number, number];
+  }): this {
+    const s = [
+      opts.size?.[0] ?? opts.radius ?? 0.2,
+      opts.size?.[1] ?? opts.length ?? 0.5,
+      opts.size?.[2] ?? opts.capSegments ?? 4,
+      opts.size?.[3] ?? opts.radialSegments ?? 8
+    ];
+    return this.addComponent({
+      name: opts.name || `capsule_${this.spec.components.length + 1}`,
+      shape: 'capsule',
+      parentId: opts.parentId || opts.parent,
+      pivot: opts.pivot,
+      size: s,
+      position: opts.position || [0, 0, 0],
+      rotation: opts.rotation || [0, 0, 0],
+      color: opts.color || '#3182ce',
+      roughness: opts.roughness,
+      metalness: opts.metalness,
+      texturePreset: opts.texturePreset,
+      materialType: opts.materialType,
+      emissive: opts.emissive,
+      emissiveIntensity: opts.emissiveIntensity,
+      uvScale: opts.uvScale
+    });
+  }
+
+  public addPlane(opts: {
+    name?: string;
+    parentId?: string;
+    parent?: string;
+    pivot?: [number, number, number];
+    size?: [number, number];
+    position?: [number, number, number];
+    rotation?: [number, number, number];
+    color?: string;
+    roughness?: number;
+    metalness?: number;
+    texturePreset?: string;
+    materialType?: string;
+    emissive?: string;
+    emissiveIntensity?: number;
+    uvScale?: [number, number];
+  }): this {
+    return this.addComponent({
+      name: opts.name || `plane_${this.spec.components.length + 1}`,
+      shape: 'plane',
+      parentId: opts.parentId || opts.parent,
+      pivot: opts.pivot,
+      size: opts.size || [1, 1],
+      position: opts.position || [0, 0, 0],
+      rotation: opts.rotation || [0, 0, 0],
+      color: opts.color || '#4a5568',
+      roughness: opts.roughness,
+      metalness: opts.metalness,
+      texturePreset: opts.texturePreset,
+      materialType: opts.materialType,
+      emissive: opts.emissive,
+      emissiveIntensity: opts.emissiveIntensity,
+      uvScale: opts.uvScale
+    });
+  }
+
   public addAnimation(clip: AnimationClipDef): this {
     if (!this.spec.animations) {
       this.spec.animations = [];
