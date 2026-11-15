@@ -407,24 +407,27 @@ import catalog from '../data/catalog.json';
                   <input
                     type="text"
                     id="ai-prompt-input"
-                    placeholder="ej. auto deportivo rojo / caza espacial / robot mech / consola CRT"
+                    placeholder="ej. tanque T-90 con radar / cápsula criogénica / helicóptero apache / arcade"
                     class="ai-prompt-input"
                   />
                 </div>
                 <button type="button" id="generate-ai-btn" class="btn btn-cyan ai-generate-btn">
                   ⚡ Generar 3D
                 </button>
+                <button type="button" id="btn-local-vary-seed" class="btn btn-outline" style="padding: 0.45rem 0.65rem; font-size: 0.76rem; white-space: nowrap;" title="Genera una nueva variación matemática (PRNG Seed + Wikidata + Kitbash) sin IA">
+                  🎲 Variar
+                </button>
               </div>
 
               <!-- Quick Chips (Dynamic for Create vs Agent Mode) -->
               <div class="ai-chips-row" id="ai-chips-create">
-                <span class="chips-label">Crear:</span>
-                <button type="button" class="ai-chip" data-prompt="Auto deportivo retro con chasis bajo y cuatro ruedas con llantas metálicas">🚗 Auto Sci-Fi</button>
-                <button type="button" class="ai-chip" data-prompt="Nave espacial interceptora orbital con alas en cuña y propulsores dobles">🚀 Caza Espacial</button>
-                <button type="button" class="ai-chip" data-prompt="Robot bípedo de seguridad con torso acorazado y visor óptico">🤖 Robot Mech</button>
-                <button type="button" class="ai-chip" data-prompt="Generador industrial con chasis biselado, radiador lineal y pantalla CRT">⚡ Generador</button>
-                <button type="button" class="ai-chip" data-prompt="Blaster de plasma con cañón cilíndrico y celda de energía">🔫 Blaster Láser</button>
-                <button type="button" class="ai-chip" data-prompt="Consola de navegación espacial con dos pantallas CRT inclinadas">🖥️ Consola CRT</button>
+                <span class="chips-label">Crear (Catálogo + Neufert + Wikidata):</span>
+                <button type="button" class="ai-chip" data-prompt="Tanque de combate blindado verde militar con radar y doble cañón">🛡️ Tanque MBT</button>
+                <button type="button" class="ai-chip" data-prompt="Helicóptero táctico de asalto con rotor animado y lanzacohetes">🚁 Helicóptero</button>
+                <button type="button" class="ai-chip" data-prompt="Cápsula criogénica de laboratorio médico cyberpunk">❄️ Cápsula Cryo</button>
+                <button type="button" class="ai-chip" data-prompt="Máquina recreativa arcade retro con pantalla CRT y botones">🕹️ Arcade CRT</button>
+                <button type="button" class="ai-chip" data-prompt="Mecha arácnido cuadrúpedo negro carbono con torreta láser">🕷️ Mecha Araña</button>
+                <button type="button" class="ai-chip" data-prompt="Motocicleta cyberbike roja con llantas emisivas y escape tubular">🏍️ Cyberbike</button>
               </div>
 
               <div class="ai-chips-row" id="ai-chips-agent" style="display: none;">
@@ -6139,9 +6142,22 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
   });
 
   // --- AI GENERATION COPILOT & CONVERSATIONAL AGENT ---
+  const btnLocalVarySeed = document.getElementById('btn-local-vary-seed') as HTMLButtonElement | null;
+  let localVariationCounter = 1;
+
   generateAiBtn?.addEventListener('click', () => triggerAIGeneration());
   aiPromptInput?.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') triggerAIGeneration();
+  });
+
+  btnLocalVarySeed?.addEventListener('click', () => {
+    localVariationCounter++;
+    const nextSeed = (Date.now() & 0xffff) + localVariationCounter * 7919;
+    const promptVal = aiPromptInput?.value.trim() || currentSpec.name || 'Vehículo Blindado';
+    if (aiPromptInput && !aiPromptInput.value.trim()) {
+      aiPromptInput.value = promptVal;
+    }
+    triggerAIGeneration(promptVal, 'create', nextSeed);
   });
 
   btnAiVisionCritique?.addEventListener('click', () => {
@@ -6159,7 +6175,11 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
 
   let isGeneratingAI = false;
 
-  async function triggerAIGeneration(overridePrompt?: string, overrideAgentMode?: 'create' | 'agent' | 'vision_critique') {
+  async function triggerAIGeneration(
+    overridePrompt?: string,
+    overrideAgentMode?: 'create' | 'agent' | 'vision_critique',
+    customSeed?: number
+  ) {
     if (isGeneratingAI) return;
     const effectiveAgentMode = overrideAgentMode || currentAIAgentMode;
     const prompt = (overridePrompt || aiPromptInput?.value || '').trim();
@@ -6196,7 +6216,7 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
       } else {
         aiLoadingStatus.textContent = currentEngine === 'ai'
           ? `⚡ ${preset.label} (${currentAIOutputFormat === 'dsl' ? 'DSL Builder' : 'JSON Spec'}) sintetizando geometría 3D...`
-          : '🧠 Computando componentes geométricos procedurales...';
+          : '🧠 Consultando Base de Conocimiento (100 Modelos + Neufert/ISO + Wikidata + Kitbashing)...';
       }
     }
 
@@ -6210,17 +6230,19 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
       : undefined;
 
     try {
-      const { spec, source, usedModel, usedProvider, agentSummary, synthesizedDsl } = await AIGenerator.generateModel(prompt, {
-        engine: currentEngine,
+      const { spec, source, usedModel, usedProvider, agentSummary, synthesizedDsl, knowledgeMetadata } = await AIGenerator.generateModel(prompt, {
+        engine: customSeed !== undefined ? 'local' : currentEngine,
         provider: currentAIProvider as any,
         apiKey,
         baseUrl,
-        forceFresh: currentEngine === 'ai',
+        forceFresh: currentEngine === 'ai' || customSeed !== undefined,
         model: selectedModel,
         outputFormat: currentAIOutputFormat,
         agentMode: effectiveAgentMode,
         currentSpec,
-        viewportImageBase64
+        viewportImageBase64,
+        seed: customSeed,
+        enableWikidataLookup: true
       });
       currentSpec = spec;
       selectedComponentIndex = Math.max(0, spec.components.length - 1);
@@ -6252,10 +6274,10 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
           aiLoadingStatus.appendChild(actionsRow);
         } else {
           aiLoadingStatus.className = 'ai-status-indicator status-ok';
-          let engineLabel = '🤖 MOTOR PROCEDURAL';
+          let engineLabel = '🤖 MOTOR PROCEDURAL + KNOWLEDGE DB';
           if (source === 'agent_edit') {
             engineLabel = `🛠️ AGENTE 3D (${usedModel || selectedModel})`;
-          } else if (source === 'gemini' || source === 'llm_provider') {
+          } else if (source === 'gemini' || source === 'llm_provider' || source === 'ai_provider') {
             const provPreset = (AIGenerator.PROVIDER_PRESETS as any)[usedProvider || currentAIProvider] || preset;
             engineLabel = `⚡ ${provPreset.label.toUpperCase()} (${usedModel || selectedModel})`;
           } else if (source === 'local_memory') {
@@ -6263,7 +6285,23 @@ builder.addSphere(&#123; radius: 0.3, segments: 8, position: [0, 1.2, 0], color:
           } else if (source === 'cloud_memory') {
             engineLabel = '☁️ NUBE COMUNITARIA RECUPERADA';
           }
-          const summarySuffix = agentSummary ? ` — ${agentSummary}` : '';
+          const extraBadges: string[] = [];
+          if (knowledgeMetadata?.matchedCatalogFamily) {
+            extraBadges.push(`Catálogo: ${knowledgeMetadata.matchedCatalogFamily}`);
+          } else if (knowledgeMetadata?.matchedArchetype) {
+            extraBadges.push(`Arquetipo: ${knowledgeMetadata.matchedArchetype}`);
+          }
+          if (knowledgeMetadata?.wikidataEntity) {
+            extraBadges.push(`Wikidata: ${knowledgeMetadata.wikidataEntity.entityId}`);
+          }
+          if (knowledgeMetadata?.appliedKitbashModules?.length) {
+            extraBadges.push(`Kitbash: +${knowledgeMetadata.appliedKitbashModules.join(', +')}`);
+          }
+          if (knowledgeMetadata?.appliedMaterialBiome) {
+            extraBadges.push(`Bioma: ${knowledgeMetadata.appliedMaterialBiome}`);
+          }
+          const kbSuffix = extraBadges.length > 0 ? ` [${extraBadges.join(' · ')}]` : '';
+          const summarySuffix = agentSummary ? ` — ${agentSummary}` : kbSuffix;
           aiLoadingStatus.textContent = `✅ [ ${engineLabel} ] ${spec.name} (${spec.components.length} componentes)${summarySuffix}`;
         }
       }

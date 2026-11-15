@@ -3,6 +3,13 @@ import type { ModelSpec, ComponentDef } from './types.ts';
 import { ProceduralMemory } from './procedural-memory.ts';
 import { ProceduralEngine } from './procedural-engine.ts';
 import { CodeSandbox } from './code-sandbox.ts';
+import {
+  ProceduralKnowledgeDB,
+  createSeededPRNG,
+  hashPromptString,
+  type WikidataKnowledgeResult,
+  type KnowledgeSynthesisMetadata
+} from './procedural-knowledge-db.ts';
 
 export type AIProviderType =
   | 'gemini'
@@ -50,6 +57,8 @@ export interface AgentToolAction {
   roughness?: number;
   metalness?: number;
   animation?: any;
+  preset?: string;
+  duration?: number;
   spec?: ModelSpec;
 }
 
@@ -64,6 +73,8 @@ export interface GenerationConfig {
   agentMode?: AIAgentMode;
   currentSpec?: ModelSpec;
   viewportImageBase64?: string;
+  seed?: number;
+  enableWikidataLookup?: boolean;
 }
 
 export class AIGenerator {
@@ -198,11 +209,13 @@ export class AIGenerator {
     spec: ModelSpec;
     rawResponse?: string;
     dslCode?: string;
+    synthesizedDsl?: string;
     agentActions?: AgentToolAction[];
     agentSummary?: string;
-    source: 'gemini' | 'ai_provider' | 'local' | 'local_memory' | 'cloud_memory' | 'gemini_fallback';
+    source: 'gemini' | 'ai_provider' | 'llm_provider' | 'agent_edit' | 'local' | 'local_memory' | 'cloud_memory' | 'gemini_fallback';
     usedModel?: string;
     usedProvider?: AIProviderType;
+    knowledgeMetadata?: KnowledgeSynthesisMetadata;
   }> {
     const cleanPrompt = prompt.trim();
     if (!cleanPrompt) {
@@ -219,6 +232,8 @@ export class AIGenerator {
     let agentMode: AIAgentMode = 'create';
     let currentSpec: ModelSpec | undefined = undefined;
     let viewportImageBase64: string | undefined = undefined;
+    let seed: number | undefined = undefined;
+    let enableWikidataLookup = false;
 
     if (typeof configOrKey === 'string') {
       apiKey = configOrKey;
@@ -234,6 +249,8 @@ export class AIGenerator {
       agentMode = configOrKey.agentMode || 'create';
       currentSpec = configOrKey.currentSpec;
       viewportImageBase64 = configOrKey.viewportImageBase64;
+      seed = configOrKey.seed;
+      enableWikidataLookup = configOrKey.enableWikidataLookup ?? false;
     }
 
     const preset = this.PROVIDER_PRESETS[provider] || this.PROVIDER_PRESETS.gemini;
@@ -265,6 +282,7 @@ export class AIGenerator {
             spec: agentRes.spec,
             rawResponse: agentRes.rawResponse,
             dslCode: agentRes.dslCode,
+            synthesizedDsl: agentRes.dslCode,
             agentActions: agentRes.actions,
             agentSummary: agentRes.summary,
             source: provider === 'gemini' ? 'gemini' : 'ai_provider',
@@ -287,6 +305,7 @@ export class AIGenerator {
           spec: normalizedSpec,
           rawResponse: aiRes.rawResponse,
           dslCode: aiRes.dslCode,
+          synthesizedDsl: aiRes.dslCode,
           source: provider === 'gemini' ? 'gemini' : 'ai_provider',
           usedModel: aiRes.usedModel,
           usedProvider: provider
@@ -308,7 +327,7 @@ export class AIGenerator {
         }
 
         // Fallback procedural de alta fidelidad para garantizar que el usuario SIEMPRE obtenga su modelo 3D
-        const rawSpec = this.synthesizeProceduralSpec(cleanPrompt);
+        const rawSpec = this.synthesizeProceduralSpec(cleanPrompt, { seed });
         const spec = this.normalizeSpecGeometry(rawSpec);
         return {
           spec,
@@ -320,7 +339,7 @@ export class AIGenerator {
     }
 
     // =========================================================================
-    // MODO MOTOR PROCEDURAL LOCAL (CON SOPORTE DE AGENTE HEURÍSTICO LOCAL)
+    // MODO MOTOR PROCEDURAL LOCAL (CON BASE DE CONOCIMIENTO Y AGENTE HEURÍSTICO)
     // =========================================================================
     if ((agentMode === 'agent' || agentMode === 'vision_critique') && currentSpec && currentSpec.components?.length > 0) {
       const localAgent = this.applyLocalHeuristicAgentEdit(cleanPrompt, currentSpec);
@@ -332,18 +351,29 @@ export class AIGenerator {
       };
     }
 
-    if (!forceFresh) {
+    if (!forceFresh && seed === undefined) {
       const learned = await ProceduralMemory.findLearnedModel(cleanPrompt);
       if (learned) {
         return { spec: this.normalizeSpecGeometry(learned.spec), source: learned.source };
       }
     }
 
-    const rawSpec = this.synthesizeProceduralSpec(cleanPrompt);
+    // Optional live Wikidata knowledge lookup for real-world vehicles/objects
+    let wikidataInfo: WikidataKnowledgeResult | null = null;
+    if (enableWikidataLookup) {
+      wikidataInfo = await ProceduralKnowledgeDB.queryWikidataKnowledge(cleanPrompt);
+    }
+
+    const rawSpec = this.synthesizeProceduralSpec(cleanPrompt, { seed, wikidata: wikidataInfo });
     const spec = this.normalizeSpecGeometry(rawSpec);
-    // Guarda en memoria local para acceso rápido offline
-    await ProceduralMemory.recordLearnedModel(cleanPrompt, spec);
-    return { spec, source: 'local' };
+    if (seed === undefined) {
+      await ProceduralMemory.recordLearnedModel(cleanPrompt, spec);
+    }
+    return {
+      spec,
+      source: 'local',
+      knowledgeMetadata: (rawSpec as any)._knowledgeMetadata
+    };
   }
 
   /**
@@ -1252,10 +1282,11 @@ Return ONLY valid JSON matching this schema:
   /**
    * Parses either a JSON ModelSpec or JavaScript ProceduralBuilderContext DSL script from an LLM response.
    */
-  public static parseModelOrDslOutput(rawText: string): {
+  public static parseModelOrDslOutput(rawText: string, _fallbackPrompt?: string): {
     spec: ModelSpec;
     rawResponse: string;
     dslCode?: string;
+    synthesizedDsl?: string;
   } {
     const trimmed = String(rawText || '').trim();
 
@@ -1275,7 +1306,8 @@ Return ONLY valid JSON matching this schema:
       return {
         spec: execRes.spec,
         rawResponse: JSON.stringify(execRes.spec, null, 2),
-        dslCode: candidateContent
+        dslCode: candidateContent,
+        synthesizedDsl: candidateContent
       };
     }
 
@@ -1298,7 +1330,8 @@ Return ONLY valid JSON matching this schema:
       return {
         spec: execRes.spec,
         rawResponse: JSON.stringify(execRes.spec, null, 2),
-        dslCode: parsed.dsl
+        dslCode: parsed.dsl,
+        synthesizedDsl: parsed.dsl
       };
     }
 
@@ -1678,16 +1711,13 @@ Return ONLY valid JSON with this structure:
     }
 
     const actions: AgentToolAction[] = Array.isArray(parsed.actions) ? parsed.actions : [];
-    const updatedSpec = this.executeAgentTools(currentSpec, actions);
-    const summary = typeof parsed.summary === 'string' && parsed.summary.trim()
-      ? parsed.summary.trim()
-      : `Agente aplicó ${actions.length} acción(es) sobre "${updatedSpec.name}".`;
+    const execRes = this.executeAgentTools(currentSpec, actions, parsed.summary);
 
     return {
-      spec: updatedSpec,
+      spec: execRes.spec,
       actions,
-      summary,
-      rawResponse: JSON.stringify(updatedSpec, null, 2),
+      summary: execRes.summary,
+      rawResponse: JSON.stringify(execRes.spec, null, 2),
       usedModel: llmRes.usedModel
     };
   }
@@ -1695,7 +1725,11 @@ Return ONLY valid JSON with this structure:
   /**
    * Executes an array of `AgentToolAction` deterministically over a cloned `ModelSpec`.
    */
-  public static executeAgentTools(baseSpec: ModelSpec, actions: AgentToolAction[]): ModelSpec {
+  public static executeAgentTools(
+    baseSpec: ModelSpec,
+    actions: AgentToolAction[],
+    customSummary?: string
+  ): { spec: ModelSpec; actions: AgentToolAction[]; summary: string } {
     const spec: ModelSpec = JSON.parse(JSON.stringify(baseSpec));
     if (!Array.isArray(spec.components)) {
       spec.components = [];
@@ -1720,7 +1754,7 @@ Return ONLY valid JSON with this structure:
               roughness: c.roughness ?? 0.65,
               metalness: c.metalness ?? 0.3,
               wear: c.wear,
-              parentId: c.parentId,
+              parentId: c.parentId || (c as any).parent,
               pivot: c.pivot,
               emissive: c.emissive,
               emissiveIntensity: c.emissiveIntensity,
@@ -1784,16 +1818,42 @@ Return ONLY valid JSON with this structure:
         }
 
         case 'add_animation': {
+          if (!Array.isArray(spec.animations)) spec.animations = [];
           if (act.animation) {
-            if (!Array.isArray(spec.animations)) spec.animations = [];
             spec.animations.push(act.animation);
+          } else if (act.targetName) {
+            const dur = act.duration || 2.5;
+            const axis = act.axis || 'y';
+            const endVal: [number, number, number] = axis === 'x' ? [360, 0, 0] : axis === 'z' ? [0, 0, 360] : [0, 360, 0];
+            spec.animations.push({
+              id: `anim_${spec.animations.length + 1}`,
+              name: `${act.preset || 'Spin'}_${act.targetName}`,
+              duration: dur,
+              loop: 'repeat',
+              presetType: (act.preset as any) || 'spin_continuous',
+              tracks: [
+                {
+                  targetComponent: act.targetName,
+                  property: 'rotation',
+                  keyframes: [
+                    { time: 0, value: [0, 0, 0] },
+                    { time: dur, value: endVal }
+                  ]
+                }
+              ]
+            });
           }
           break;
         }
 
         case 'replace_spec': {
           if (act.spec && Array.isArray(act.spec.components) && act.spec.components.length > 0) {
-            return this.normalizeSpecGeometry(act.spec);
+            const normReplaced = this.normalizeSpecGeometry(act.spec);
+            return {
+              spec: normReplaced,
+              actions,
+              summary: customSummary || `Modelo reemplazado (${normReplaced.components.length} piezas).`
+            };
           }
           break;
         }
@@ -1804,19 +1864,25 @@ Return ONLY valid JSON with this structure:
       }
     }
 
-    return this.normalizeSpecGeometry(spec);
+    const normSpec = this.normalizeSpecGeometry(spec);
+    return {
+      spec: normSpec,
+      actions,
+      summary: customSummary || `Agente aplicó ${actions.length} acción(es) sobre "${normSpec.name}".`
+    };
   }
 
   /**
    * Local deterministic Agent Heuristic Engine:
-   * Allows conversational edits ("añade una antena arriba", "ponle ruedas", "hazlo oxidado",
-   * "cambia el color a rojo", "añade animación de giro", "duplica en espejo") even offline!
+   * Accepts `(prompt, currentSpec)` OR `(currentSpec, prompt)` so both Studio and unit tests can invoke it seamlessly.
    */
   public static applyLocalHeuristicAgentEdit(
-    prompt: string,
-    currentSpec: ModelSpec
+    firstArg: string | ModelSpec,
+    secondArg: ModelSpec | string
   ): { spec: ModelSpec; actions: AgentToolAction[]; summary: string } {
-    const lower = prompt.toLowerCase();
+    const prompt = typeof firstArg === 'string' ? firstArg : (secondArg as string);
+    const currentSpec = typeof firstArg === 'string' ? (secondArg as ModelSpec) : firstArg;
+    const lower = String(prompt || '').toLowerCase();
     const actions: AgentToolAction[] = [];
     const summaries: string[] = [];
 
@@ -1929,9 +1995,9 @@ Return ONLY valid JSON with this structure:
       actions.push({
         action: 'apply_material_all',
         wear: 0.72,
-        texturePreset: 'worn_metal'
+        texturePreset: 'metal_rusted'
       });
-      summaries.push('se aplicó desgaste de batalla (72%) y metal envejecido');
+      summaries.push('se aplicó desgaste de batalla (72%) y metal oxidado');
     } else if (/(nuevo|limpio|f[aá]brica|pulido|brillante|cromado)/.test(lower)) {
       actions.push({
         action: 'apply_material_all',
@@ -2021,20 +2087,27 @@ Return ONLY valid JSON with this structure:
       summaries.push('se optimizó el asentamiento a suelo (Y=0) y se añadieron detalles mecánicos (rejilla de ventilación e indicador LED)');
     }
 
-    const updated = this.executeAgentTools(currentSpec, actions);
-    return {
-      spec: updated,
-      actions,
-      summary: `Agente 3D: ${summaries.join(', ')}.`
-    };
+    return this.executeAgentTools(currentSpec, actions, `Agente 3D: ${summaries.join(', ')}.`);
   }
 
   /**
-   * Deterministic local procedural synthesizer that turns natural language phrases
-   * into genuine, recognizable 3D models with proper components, proportions and colors.
+   * Knowledge-Driven Local Procedural Synthesizer V2:
+   * Connects to:
+   * 1. The 100 Modular Models Catalog (`ALL_MODULAR_MODELS` + `catalog.json` parameters/presets)
+   * 2. Neufert / ISO Engineering Archetypes (Tanks, Helicopters, Cyberbikes, Arcade Cabinets, Spider Mechs, Fortified Towers)
+   * 3. Live Wikidata Knowledge Graph (`queryWikidataKnowledge`) for real-world dimensions & classifications
+   * 4. Socket-based Kitbashing & Material Biome Post-Processor (`enhanceSpecWithKnowledgeAndKitbash`)
    */
-  public static synthesizeProceduralSpec(prompt: string): ModelSpec {
+  public static synthesizeProceduralSpec(
+    prompt: string,
+    options?: {
+      seed?: number;
+      wikidata?: WikidataKnowledgeResult | null;
+    }
+  ): ModelSpec {
     const lower = prompt.toLowerCase();
+    const seed = options?.seed ?? hashPromptString(prompt);
+    const rng = createSeededPRNG(seed);
 
     // Extract potential custom dimensions (e.g. "2 metros", "0.5m", "1.5x2")
     const dimMatch = lower.match(/(\d+(?:\.\d+)?)\s*(?:m|metros?|metres?)/);
@@ -2054,10 +2127,56 @@ Return ONLY valid JSON with this structure:
     else if (/gris|metal|acero|grey|gray/.test(lower)) mainColor = '#718096';
     else if (/marron|brown|oxido|rust/.test(lower)) mainColor = '#7b341e';
 
+    // Helper to finalize a base spec with Kitbashing sockets, Wikidata proportions, Material Biomes & Seed variations
+    const finalizeWithKnowledge = (baseSpec: ModelSpec, extraMeta?: Partial<KnowledgeSynthesisMetadata>): ModelSpec => {
+      const enhanced = ProceduralKnowledgeDB.enhanceSpecWithKnowledgeAndKitbash(baseSpec, prompt, options);
+      (enhanced.spec as any)._knowledgeMetadata = {
+        ...enhanced.metadata,
+        ...extraMeta
+      };
+      return enhanced.spec;
+    };
+
+    // -------------------------------------------------------------
+    // 0A. SEARCH 100 MODULAR MODELS CATALOG + CATALOG.JSON MANIFESTS
+    // -------------------------------------------------------------
+    const catalogMatch = ProceduralKnowledgeDB.searchModularCatalogMatch(prompt);
+    if (catalogMatch) {
+      if (dimMatch) {
+        ProceduralKnowledgeDB.scaleSpecToDimensions(catalogMatch.spec, {
+          width: (catalogMatch.spec.dimensions?.width || 1) * baseDim,
+          height: (catalogMatch.spec.dimensions?.height || 1) * baseDim,
+          depth: (catalogMatch.spec.dimensions?.depth || 1) * baseDim
+        });
+      }
+      if (mainColor !== '#4a5568' && catalogMatch.spec.components.length > 0) {
+        catalogMatch.spec.components[0].color = mainColor;
+      }
+      return finalizeWithKnowledge(catalogMatch.spec, {
+        matchedCatalogFamily: catalogMatch.family
+      });
+    }
+
+    // -------------------------------------------------------------
+    // 0B. NEUFERT / ISO ENGINEERING ARCHETYPES (12 PRIMITIVES + ARRAYS)
+    // -------------------------------------------------------------
+    const engArchetype = ProceduralKnowledgeDB.synthesizeEngineeringArchetype(
+      prompt,
+      baseDim,
+      mainColor,
+      rng,
+      options?.wikidata
+    );
+    if (engArchetype) {
+      return finalizeWithKnowledge(engArchetype.spec, {
+        matchedArchetype: engArchetype.archetypeName
+      });
+    }
+
     // -------------------------------------------------------------
     // 1. VEHICLES: CAR / AUTO / COCHE / CARRO / VEHICULO
     // -------------------------------------------------------------
-    if (/auto|coche|carro|automovil|vehiculo|car\b|buggy|rover/.test(lower)) {
+    if (/auto|coche|carro|automovil|vehiculo|car\b|buggy|rover/.test(lower) || options?.wikidata?.inferredCategory === 'car') {
       const cw = 1.6 * baseDim;
       const cd = 3.2 * baseDim;
       const ch = 0.45 * baseDim;
@@ -2067,9 +2186,9 @@ Return ONLY valid JSON with this structure:
       const axleX = cw * 0.52;
       const axleZ = cd * 0.30;
 
-      return {
+      return finalizeWithKnowledge({
         id: 'below_nominal.vehicles.retro_car',
-        name: 'Auto Terrestre PSX',
+        name: options?.wikidata?.label ? `Vehículo ${options.wikidata.label}` : 'Auto Terrestre PSX',
         category: 'vehicles',
         description: `Vehículo terrestre retro con chasis de ${cd.toFixed(1)}m, cabina acristalada y cuatro ruedas con llantas metálicas.`,
         units: 'meters',
@@ -2244,7 +2363,7 @@ Return ONLY valid JSON with this structure:
             metalness: 0.6
           }
         ]
-      };
+      }, { matchedArchetype: 'retro_car' });
     }
 
     // -------------------------------------------------------------
@@ -4086,15 +4205,15 @@ Return ONLY valid JSON with this structure:
       .trim();
     const titleCapitalized = cleanTitle.charAt(0).toUpperCase() + cleanTitle.slice(1);
 
-    return {
+    return finalizeWithKnowledge({
       id: `below_nominal.custom.${cleanTitle.toLowerCase().replace(/[^a-z0-9]/g, '_').substring(0, 32)}`,
-      name: `${titleCapitalized} Procedural`,
+      name: options?.wikidata?.label ? `${options.wikidata.label} (${titleCapitalized})` : `${titleCapitalized} Procedural`,
       category: 'furniture',
-      description: `Modelo procedural sintetizado para '${prompt}'.`,
+      description: options?.wikidata?.description || `Modelo procedural sintetizado para '${prompt}'.`,
       units: 'meters',
       dimensions: { width: pW * 1.15, depth: pD * 1.15, height: pH * 1.1 },
       palette: 'industrial_hazard',
       components
-    };
+    }, { matchedArchetype: 'dynamic_composite' });
   }
 }

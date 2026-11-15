@@ -3912,6 +3912,31 @@ test('Conversational 3D Agent: executeAgentTools y applyLocalHeuristicAgentEdit 
   assert.equal(heuristicRust.spec.components[0].texturePreset, 'metal_rusted');
 });
 
+test('ProceduralKnowledgeDB: Conecta el generador sin IA a los 100 modelos modulares, arquetipos Neufert/ISO, Kitbashing y Semillas PRNG', () => {
+  // 1. Coincidencia semántica con el catálogo de 100 modelos modulares (ej. "cápsula criogénica cyberpunk con antena")
+  const cryoSpec = AIGenerator.synthesizeProceduralSpec('cápsula criogénica cyberpunk con antena');
+  const cryoMeta = (cryoSpec as any)._knowledgeMetadata;
+  assert.ok(cryoMeta, 'Debe adjuntar _knowledgeMetadata');
+  assert.equal(cryoMeta.matchedCatalogFamily, 'cryo_stasis_pod', 'Debe conectar con la familia cryo_stasis_pod del catálogo modular');
+  assert.equal(cryoMeta.appliedMaterialBiome, 'cyberpunk_neon', 'Debe aplicar el bioma material cyberpunk_neon');
+  assert.ok(cryoMeta.appliedKitbashModules.includes('radar_giratorio'), 'Debe acoplar el módulo Kitbash de antena/radar superior');
+
+  // 2. Arquetipo de Ingeniería Neufert/ISO con las 12 primitivas y modificador Array ("tanque blindado")
+  const tankSpec = AIGenerator.synthesizeProceduralSpec('tanque de combate blindado oxidado con radar');
+  const tankMeta = (tankSpec as any)._knowledgeMetadata;
+  assert.equal(tankMeta.matchedArchetype, 'main_battle_tank');
+  assert.equal(tankMeta.appliedMaterialBiome, 'rusted_industrial');
+  assert.ok(tankSpec.components.some((c) => c.shape === 'chamfer_box'), 'El tanque usa chamfer_box');
+  assert.ok(tankSpec.components.some((c) => c.shape === 'pipe'), 'El tanque usa pipe hueco para el cañón');
+  assert.ok(tankSpec.components.some((c) => c.array?.enabled === true), 'El tanque usa modificador Array lineal para el tren de rodaje');
+
+  // 3. Variación determinista por Semilla PRNG (dos semillas distintas producen proporciones distintas sin IA)
+  const seedA = AIGenerator.synthesizeProceduralSpec('helicóptero táctico de asalto', { seed: 101 });
+  const seedB = AIGenerator.synthesizeProceduralSpec('helicóptero táctico de asalto', { seed: 999 });
+  assert.notDeepEqual(seedA.dimensions, seedB.dimensions, 'Semillas distintas deben generar variaciones proporcionales únicas');
+  assert.ok(seedA.animations && seedA.animations.length > 0, 'El helicóptero incluye animación automática de rotor');
+});
+
 // Teardown: ensure Node exits cleanly after tests
 test('Teardown: Exit cleanly', () => {
   setTimeout(() => process.exit(0), 100);
