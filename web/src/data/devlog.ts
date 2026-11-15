@@ -12,6 +12,23 @@ export interface DevlogEntry {
 
 export const DEVLOG_ENTRIES: DevlogEntry[] = [
   {
+    version: 'v3.1.0',
+    date: '15 de Noviembre, 2026',
+    badge: 'MAJOR',
+    badgeColor: '#00e5ff',
+    title: 'Motor IA Multi-Proveedor, Síntesis de Código DSL (12 Primitivas), Agente 3D Conversacional, Auto-Crítica Visual y Servidor MCP',
+    summary: 'Expansión integral de la arquitectura de Inteligencia Artificial de ModelCoder: soporte para 8 proveedores LLM (Cloud y Local), generación dual por especificación JSON o código procedural DSL con las 12 primitivas, Agente 3D conversacional con herramientas incrementales sobre la escena activa, bucle de auto-crítica visual multimodal y servidor MCP (Model Context Protocol) para conectar agentes externos.',
+    highlights: [
+      'Motor Multi-Proveedor LLM (Cloud + Local): Integración nativa con Google Gemini, OpenAI (GPT-4o, o3-mini), OpenRouter (Claude 3.7 Sonnet, DeepSeek R1, Qwen 2.5 Coder 32B, Llama 3.3 70B), Groq LPU, DeepSeek API, Anthropic Claude, Ollama Local (sin API Key) y cualquier endpoint compatible con OpenAI (LM Studio, vLLM, Llama.cpp).',
+      'Síntesis de Código Procedural DSL (Builder): Los modelos de IA ahora pueden escribir scripts JavaScript ejecutables sobre ProceduralBuilderContext usando las 12 primitivas completas (addBox, addChamferBox, addCylinder, addPipe, addPrism, addSphere, addPyramid, addCone, addWedge, addTorus, addCapsule, addPlane) con bucles for y funciones trigonométricas.',
+      'Agente 3D Conversacional Incremental: Nuevo modo "🛠️ Agente 3D (Editar Escena)" que aplica herramientas estructuradas (add_component, update_component, delete_component, mirror_component, reparent_component, apply_material_all, add_animation, align_to_ground) sobre el modelo actual sin destruir el trabajo previo, más un Agente Heurístico Local offline.',
+      'Bucle de Auto-Crítica Visual (Multimodal Vision): Nuevo botón "👁️ Auto-Crítica Visual" que captura el lienzo 3D en vivo desde Three.js y lo envía junto con el ModelSpec al modelo multimodal para corregir piezas flotantes, alinear al suelo (Y >= 0) y enriquecer detalles.',
+      'Servidor MCP (Model Context Protocol): Exposición de herramientas MCP en server/main.py tanto vía HTTP (/api/mcp/tools y /api/mcp/call) como por STDIO JSON-RPC 2.0 (python server/main.py --mcp) para agentes externos como Claude Code, Cursor, Windsurf y Codex.'
+    ],
+    tags: ['Multi-LLM', 'Agente 3D', 'DSL Builder', 'MCP Server', 'Vision Critique', 'Ollama Local', 'OpenRouter'],
+    author: 'Franciscuarto'
+  },
+  {
     version: 'v3.0.0',
     date: '24 de Octubre, 2026',
     badge: 'MAJOR',
